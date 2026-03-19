@@ -5,3 +5,10 @@
 # OS
 .DS_Store
 Thumbs.db
+
+# Logs (不提交日志文件，但保留目录)
+logs/*.log
+logs/.sync-*
+
+# Keep empty directories
+!.gitkeep
