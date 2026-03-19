@@ -1,6 +1,6 @@
 #!/bin/bash
-# 前端代码同步脚本 - 安全版本
-# 检测到冲突时暂停，通知用户处理
+# 前端代码同步脚本 - 分支版本
+# main 分支同步上游，dev 分支用于开发
 
 set -e
 
@@ -16,63 +16,77 @@ log() {
 
 cd "$FRONTEND_DIR"
 
-# 1. 检查是否有未提交的更改
+# 记录当前分支
+CURRENT_BRANCH=$(git branch --show-current)
+
+# 1. 切换到 main 分支
+log "🔄 切换到 main 分支..."
+git checkout main
+
+# 2. 暂存未提交的更改（如果有）
 if ! git diff-index --quiet HEAD --; then
     log "⚠️ 存在未提交的更改，先暂存..."
     git stash push -m "auto-stash-$(date +%Y%m%d%H%M%S)"
     STASHED=true
 fi
 
-# 2. 获取上游最新代码
+# 3. 获取上游最新代码
 log "📥 获取上游最新代码..."
 git fetch upstream
 
-# 3. 检查是否有更新
+# 4. 检查是否有更新
 UPSTREAM_HASH=$(git rev-parse upstream/main)
 LOCAL_HASH=$(git rev-parse main)
 
 if [ "$UPSTREAM_HASH" = "$LOCAL_HASH" ]; then
-    log "✅ 已是最新版本，无需更新"
+    log "✅ main 已是最新版本"
+    
+    # 恢复原来的分支
+    git checkout "$CURRENT_BRANCH"
+    [ "$STASHED" = true ] && git stash pop 2>/dev/null || true
+    
     rm -f "$CONFLICT_FLAG"
     exit 0
 fi
 
-# 4. 查看更新的文件
-CHANGED_COUNT=$(git diff --name-only main upstream/main | wc -l)
-log "📋 上游有 $CHANGED_COUNT 个文件更新"
+# 5. 更新 main 分支
+log "🔄 更新 main 分支..."
+git merge upstream/main --no-edit 2>> "$LOG_FILE" || {
+    log "❌ main 分支合并失败，请检查"
+    git checkout "$CURRENT_BRANCH"
+    exit 1
+}
 
-# 5. 尝试合并
-log "🔄 开始合并上游代码..."
-if git merge upstream/main --no-edit 2>> "$LOG_FILE"; then
-    log "✅ 合并成功，无冲突"
-    git push origin main
-    log "✅ 已推送到 origin"
-    rm -f "$CONFLICT_FLAG"
-else
-    # 合并失败，检查冲突
+git push origin main
+log "✅ main 分支已更新"
+
+# 6. 合并到 dev 分支
+log "🔄 合并更新到 dev 分支..."
+git checkout dev
+git merge main --no-edit 2>> "$LOG_FILE" || MERGE_FAILED=true
+
+if [ "$MERGE_FAILED" = true ]; then
     CONFLICTS=$(git diff --name-only --diff-filter=U 2>/dev/null || true)
     
     if [ -n "$CONFLICTS" ]; then
-        log "⚠️ 发现冲突，暂停合并等待处理"
+        log "⚠️ dev 分支发现冲突，暂停等待处理"
         
-        # 创建冲突标记文件
         echo "CONFLICT_DATE=$(date "+%Y-%m-%d %H:%M:%S")" > "$CONFLICT_FLAG"
-        echo "UPSTREAM_HASH=$UPSTREAM_HASH" >> "$CONFLICT_FLAG"
+        echo "BRANCH=dev" >> "$CONFLICT_FLAG"
         echo "CONFLICT_FILES:" >> "$CONFLICT_FLAG"
         echo "$CONFLICTS" >> "$CONFLICT_FLAG"
         
-        log "冲突文件列表："
-        log "$CONFLICTS"
-        
-        # 不自动处理，退出等待人工介入
+        log "冲突文件：$CONFLICTS"
         exit 2
-    else
-        log "❌ 合并失败（非冲突原因），请手动处理"
-        exit 1
     fi
 fi
 
-# 恢复暂存的更改
+git push origin dev
+log "✅ dev 分支已更新"
+
+# 恢复原来的分支
+[ "$CURRENT_BRANCH" != "dev" ] && git checkout "$CURRENT_BRANCH"
 [ "$STASHED" = true ] && git stash pop 2>/dev/null || true
 
+rm -f "$CONFLICT_FLAG"
 log "========== 同步完成 =========="
