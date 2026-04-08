@@ -13,3 +13,5 @@ logs/.sync-*
 # Keep empty directories
 !.gitkeep
 docs/
+.claude/
+.superpowers/
