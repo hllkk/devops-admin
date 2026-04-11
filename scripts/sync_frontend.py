@@ -152,34 +152,34 @@ def sync_and_merge_to_dev() -> bool:
     upstream_hash = get_branch_hash(f"{upstream_remote}/{upstream_branch}", frontend_dir)
     local_hash = get_branch_hash(main_branch, frontend_dir)
 
-    if upstream_hash == local_hash:
-        show_message("main 分支已是最新版本", "success")
-        checkout_branch(current_branch, frontend_dir)
-        if stashed:
-            stash_pop(frontend_dir)
-        return True
-
     # 记录当前状态
     main_before = local_hash
     dev_before = get_branch_hash(dev_branch, frontend_dir)
 
-    # 合并上游到 main
-    success, error = merge_branch(f"{upstream_remote}/{upstream_branch}", frontend_dir)
+    # 判断是否需要同步 main
+    need_sync_main = upstream_hash != local_hash
 
-    if not success:
-        show_warning("main 分支合并发现冲突")
-        success, error = handle_conflicts(frontend_dir)
+    if not need_sync_main:
+        show_message("main 分支已是最新版本，跳过同步", "info")
+        main_after = local_hash
+    else:
+        # 合并上游到 main
+        success, error = merge_branch(f"{upstream_remote}/{upstream_branch}", frontend_dir)
 
         if not success:
-            show_error(f"冲突处理失败: {error}")
-            checkout_branch(current_branch, frontend_dir)
-            return False
+            show_warning("main 分支合并发现冲突")
+            success, error = handle_conflicts(frontend_dir)
 
-    # 推送 main
-    show_spinner("推送 main 分支...", push_branch, main_branch, frontend_dir, "origin")
-    show_success("main 分支已更新")
+            if not success:
+                show_error(f"冲突处理失败: {error}")
+                checkout_branch(current_branch, frontend_dir)
+                return False
 
-    main_after = get_branch_hash(main_branch, frontend_dir)
+        # 推送 main
+        show_spinner("推送 main 分支...", push_branch, main_branch, frontend_dir, "origin")
+        show_success("main 分支已更新")
+
+        main_after = get_branch_hash(main_branch, frontend_dir)
 
     # 切换到 dev 分支
     show_spinner("切换到 dev 分支...", checkout_branch, dev_branch, frontend_dir)
