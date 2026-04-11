@@ -1,1 +1,34 @@
-{"records": []}
+{
+  "records": [
+    {
+      "id": "sync-2026-04-10-001",
+      "timestamp": "2026-04-10T22:17:49.684147",
+      "upstream_hash": "c0105c55ab2a59fa80c7514011a987a5e797ba9d",
+      "main_before": "af1b5f1d33873830a9460a000a3fb2ad7abc32c8",
+      "main_after": "c0105c55ab2a59fa80c7514011a987a5e797ba9d",
+      "dev_before": "",
+      "dev_after": "",
+      "status": "success"
+    },
+    {
+      "id": "sync-2026-04-10-002",
+      "timestamp": "2026-04-10T22:24:02.966209",
+      "upstream_hash": "c0105c55ab2a59fa80c7514011a987a5e797ba9d",
+      "main_before": "c0105c55ab2a59fa80c7514011a987a5e797ba9d",
+      "main_after": "c0105c55ab2a59fa80c7514011a987a5e797ba9d",
+      "dev_before": "f60a2a556a282299ad5cf48b75815c6ecab15899",
+      "dev_after": "f60a2a556a282299ad5cf48b75815c6ecab15899",
+      "status": "success"
+    },
+    {
+      "id": "sync-2026-04-10-003",
+      "timestamp": "2026-04-10T22:24:32.435171",
+      "upstream_hash": "c0105c55ab2a59fa80c7514011a987a5e797ba9d",
+      "main_before": "c0105c55ab2a59fa80c7514011a987a5e797ba9d",
+      "main_after": "c0105c55ab2a59fa80c7514011a987a5e797ba9d",
+      "dev_before": "f60a2a556a282299ad5cf48b75815c6ecab15899",
+      "dev_after": "",
+      "status": "conflict"
+    }
+  ]
+}
