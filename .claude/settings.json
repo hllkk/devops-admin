@@ -1,7 +1,11 @@
 {
   "environmentVariables": {
     "VIBECODING_VERSION": "1.0.0",
-    "LANGUAGE": "zh-Hans"
+    "LANGUAGE": "zh-Hans",
+    "LC_ALL": "zh-Hans",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "API_TIMEOUT_MS": "3000000",
+    "CLAUDE_CODE_SUBAGENT_MODEL": "kimi-k2.5"
   },
   "permissions": {
     "allow": [
