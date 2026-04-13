@@ -208,6 +208,216 @@ type ReadRecordItem struct {
 | `src/service/api/system/notice.ts` | 扩展 | 添加新接口函数 |
 | `src/views/manage/notice/modules/notice-operate-drawer.vue` | 重写 | 添加发布范围、时效、置顶表单项 |
 | `src/views/manage/notice/index.vue` | 扩展 | 添加阅读统计查看入口 |
+| `src/layouts/modules/global-header/components/message-button.vue` | 修改 | 将"前往 Gitee"改为"查看全部公告" |
+| `src/layouts/disk-layout/components/disk-header.vue` | 扩展 | 添加 MessageButton 组件 |
+| `src/layouts/dynamic-layout/index.vue` | 新增 | 动态 Layout 组件，根据当前模块切换 |
+| `src/views/_builtin/notice-user/index.vue` | 新增 | 用户公告查看页面 |
+| `src/router/routes/index.ts` | 扩展 | 添加路由配置和 layout 映射 |
+| `src/store/modules/notice/index.ts` | 重构 | 改为调用后端 API |
+
+---
+
+### 用户公告查看页面设计
+
+#### 路由配置
+
+路由路径：`/notice-user`
+路由名称：`notice-user`
+隐藏菜单：`hideInMenu: true`
+使用动态 Layout：根据用户当前所在模块（admin/disk）自动切换
+
+#### 页面功能
+
+1. **搜索功能**：
+   - 公告标题搜索
+   - 公告类型筛选（通知/公告）
+   - 已读/未读状态筛选
+
+2. **公告列表**：
+   - 显示用户可见的所有公告（包含按用户、角色、部门发送的）
+   - 置顶公告优先显示
+   - 显示公告标题、类型、发布时间、已读状态
+   - 点击公告查看详情并自动标记已读
+
+3. **公告详情弹窗**：
+   - 显示公告完整内容（富文本渲染）
+   - 显示阅读次数等信息
+
+---
+
+### 动态 Layout 设计
+
+**文件**：`src/layouts/dynamic-layout/index.vue`
+
+```vue
+<script setup lang="ts">
+import { computed } from 'vue';
+import { useRouteStore } from '@/store/modules/route';
+import BaseLayout from '../base-layout/index.vue';
+import DiskLayout from '../disk-layout/index.vue';
+
+defineOptions({ name: 'DynamicLayout' });
+
+const routeStore = useRouteStore();
+
+// 根据当前模块选择 layout
+const currentLayout = computed(() => {
+  return routeStore.currentModule === 'disk' ? DiskLayout : BaseLayout;
+});
+</script>
+
+<template>
+  <component :is="currentLayout" />
+</template>
+```
+
+---
+
+### 路由配置更新
+
+**文件**：`src/router/routes/index.ts`
+
+```typescript
+// customRoutes 添加
+const customRoutes: CustomRoute[] = [
+  {
+    name: 'notice-user',
+    path: '/notice-user',
+    component: 'layout.dynamic$view._builtin_notice-user',
+    meta: {
+      title: 'notice-user',
+      i18nKey: 'route.notice-user',
+      constant: true,
+      hideInMenu: true
+    }
+  }
+];
+
+// routeLayoutMap 添加映射
+const routeLayoutMap: Record<string, string> = {
+  login: 'blank',
+  disk: 'disk',
+  'notice-user': 'dynamic'
+};
+```
+
+---
+
+### MessageButton 组件修改
+
+**文件**：`src/layouts/modules/global-header/components/message-button.vue`
+
+修改内容：
+1. 将 footer 中的"前往 Gitee"按钮改为"查看全部公告"
+2. 点击跳转到 `/notice-user` 路由
+
+```vue
+<template #footer>
+  <div class="flex items-center justify-end">
+    <NButton type="primary" size="small" @click="router.push('/notice-user')">
+      查看全部公告
+    </NButton>
+  </div>
+</template>
+```
+
+---
+
+### DiskHeader 组件扩展
+
+**文件**：`src/layouts/disk-layout/components/disk-header.vue`
+
+添加 MessageButton 组件，使公告通知入口在网盘模块也可使用：
+
+```vue
+<script setup lang="ts">
+import { useFullscreen } from '@vueuse/core';
+import { useAppStore } from '@/store/modules/app';
+import { useThemeStore } from '@/store/modules/theme';
+import UserAvatar from '../../modules/global-header/components/user-avatar.vue';
+import MessageButton from '../../modules/global-header/components/message-button.vue';
+// ...
+</script>
+
+<template>
+  <DarkModeContainer class="h-full flex-y-center px-12px shadow-header">
+    <div class="h-full flex-y-center flex-1-hidden" />
+    <div class="h-full flex-y-center justify-end">
+      <MessageButton />
+      <FullScreen v-if="!appStore.isMobile" :full="isFullscreen" @click="toggle" />
+      <!-- ... -->
+    </div>
+  </DarkModeContainer>
+</template>
+```
+
+---
+
+### NoticeStore 重构
+
+**文件**：`src/store/modules/notice/index.ts`
+
+重构为调用后端 API：
+
+```typescript
+interface NoticeItem {
+  noticeId: number;
+  noticeTitle: string;
+  noticeType: string;
+  noticeContent: string;
+  createTime: string;
+  read: boolean;
+  readCount?: number;
+}
+
+export const useNoticeStore = defineStore(SetupStoreId.Notice, () => {
+  const state = reactive({
+    notices: [] as NoticeItem[],
+    unreadCount: 0
+  });
+
+  // 获取用户公告列表
+  const fetchMyNotices = async () => {
+    const { data } = await fetchGetMyNoticeList();
+    state.notices = data.list || [];
+  };
+
+  // 获取未读数量
+  const fetchUnreadCount = async () => {
+    const { data } = await fetchGetUnreadCount();
+    state.unreadCount = data || 0;
+  };
+
+  // 标记已读
+  const readNotice = async (noticeId: number) => {
+    await fetchGetMyNoticeDetail(noticeId);
+    // 更新本地状态
+    const notice = state.notices.find(n => n.noticeId === noticeId);
+    if (notice) notice.read = true;
+    state.unreadCount--;
+  };
+
+  // 全部已读
+  const readAll = async () => {
+    // 批量标记所有未读公告为已读
+    for (const notice of state.notices.filter(n => !n.read)) {
+      await fetchGetMyNoticeDetail(notice.noticeId);
+    }
+    state.notices.forEach(n => n.read = true);
+    state.unreadCount = 0;
+  };
+
+  return {
+    state,
+    fetchMyNotices,
+    fetchUnreadCount,
+    readNotice,
+    readAll
+  };
+});
+```
+
+---
 
 ### TypeScript 类型扩展
 
