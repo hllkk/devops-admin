@@ -6,7 +6,7 @@
 ### 子项目
 | 子项目 | 目录 | 技术栈 | .claude 位置 |
 |--------|------|--------|--------------|
-| 前端 | frontend/ | Vue3 + TS 6.0 + Naive UI | frontend/.claude/ |
+| 前端 | frontend/ | Vue3 + TS 6.0 + Naive UI + UnoCSS | frontend/.claude/ |
 | 后端 | backend/ | Go 1.26 + Gin + GORM | backend/.claude/ |
 
 ## 使用指引
