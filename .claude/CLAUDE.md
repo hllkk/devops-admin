@@ -16,6 +16,7 @@
 - 代码规范: 请参考前端和后端的开发规范
 - 前后端对接: 开发完成后，需要确认前端的请求和后端的响应是否一致，包括请求参数、数据类型、响应数据、请求方法、请求地址等。
 - 代码提交: 先调用 code-simplifier agent 对代码进行简化，如果code-simplifier agent不可用，就使用simplify skill，优化完成需要用户测试通过确认后提交。
+- 设计文档: 统一存放在 docs/ 目录下
 
 ## 子模块管理
 - frontend/ 是 git submodule (SoybeanAdmin 上游)
