@@ -1,0 +1,31 @@
+# DevOps Admin Docker 部署专用配置
+# 覆盖 backend/conf/config.yaml 中的容器相关连接信息
+# 其他配置保持默认
+
+mysql:
+  path: mysql         # Docker 服务名
+  port: "3306"
+  db-name: devops_admin
+  username: root
+  password: "devops_admin_2026"
+  prefix: ""
+  config: charset=utf8mb4&parseTime=True&loc=Local
+
+redis:
+  addr: "redis:6379"  # Docker 服务名
+  password: "devops_redis_2026"
+
+system:
+  oss-enable: true
+  oss-type: rustfs
+
+rustfs:
+  endpoint: "rustfs:9000"   # Docker 服务名
+  access-key-id: "devops-admin"
+  secret-access-key: "devops_rustfs_2026"
+  bucket-name: "devops-admin"
+  use-ssl: false
+  base-path: "/disk"
+
+local:
+  root-path: "/app/storage"
