@@ -5,11 +5,19 @@
     "pnpm-lock.yaml",
     "package-lock.json",
     "yarn.lock",
-    "*.md"
+    "*.md",
+    "package.json"
+  ],
+  "keep_local_patterns": [
+    "src/router/elegant/*.ts",
+    "src/typings/*.d.ts",
+    ".env*",
+    "vite.config.ts"
   ],
   "upstream_remote": "upstream",
   "upstream_branch": "main",
   "dev_branch": "dev",
   "main_branch": "main",
-  "max_history_records": 50
+  "max_history_records": 50,
+  "commit_message": "chore: 同步 upstream"
 }
