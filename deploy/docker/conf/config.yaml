@@ -29,3 +29,16 @@ rustfs:
 
 local:
   root-path: "/app/storage"
+
+transcode:
+  enable: true
+  max_threads: 4
+  bitrate_cond: 2500
+  height_cond: 720
+  frame_rate_cond: 30
+  bitrate: 2500
+  height: 720
+  frame_rate: 30
+  vtt_thumbnail_count: 6
+  is_re_transcode: true
+  thumbnail_worker_count: 3  # 缩略图Worker数量，默认3，最大10

@@ -30,6 +30,8 @@ services:
     container_name: ops-backend
     environment:
       - TZ=Asia/Shanghai
+      - DOCKER_ENV=true
+      - INIT_ADMIN_PASSWORD=${INIT_ADMIN_PASSWORD:-Admin@2026}  # 初始化管理员密码
     volumes:
       - app-storage:/app/storage
       - app-logs:/app/log

@@ -18,10 +18,12 @@ RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o devops-admin .
 # ============================================
 FROM debian:bookworm-slim
 
-# 安装运行时依赖：ImageMagick + exiftool + ca证书 + 时区
+# 安装运行时依赖：ImageMagick + exiftool + ca证书 + 时区 + PDF工具 + 中文字体
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     imagemagick \
+    poppler-utils \
+    fonts-noto-cjk \
     perl \
     libimage-exiftool-perl \
     tzdata \
@@ -30,6 +32,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # 设置时区
 ENV TZ=Asia/Shanghai
+# 标识Docker环境，用于自动初始化判断
+ENV DOCKER_ENV=true
 
 # 复制 FFmpeg 二进制（jellyfin-ffmpeg 静态编译，解压即用）
 # 将 jellyfin-ffmpeg*.tar.xz 放到 deploy/docker/bin/ 目录
@@ -53,5 +57,9 @@ WORKDIR /app
 RUN mkdir -p /app/storage /app/log
 
 EXPOSE 8888
+
+# 健康检查：每30秒检查一次，超时5秒，连续3次失败则标记为不健康
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8888/api/v1/health || exit 1
 
 CMD ["./devops-admin"]
