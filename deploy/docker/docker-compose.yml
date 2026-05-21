@@ -102,8 +102,10 @@ services:
     image: moqisoft/documentserver:9.3.10
     container_name: ops-onlyoffice
     environment:
-      - JWT_ENABLED=false
+      - JWT_ENABLED=true
       - TZ=Asia/Shanghai
+      - ALLOW_PRIVATE_IP_ADDRESS=true
+      - JWT_SECRET=53f82208d65f2995fa76ac477f10d8c80883d99b23e25ab52e80571591135263
     volumes:
       - /home/docker/onlyoffice-data:/var/lib/onlyoffice
       - /home/docker/onlyoffice-logs:/var/log/onlyoffice

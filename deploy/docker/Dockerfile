@@ -58,6 +58,9 @@ COPY --from=builder /build/devops-admin /app/devops-admin
 # 复制默认配置文件（docker-compose 会用卷覆盖 config.yaml）
 COPY backend/conf/ /app/conf/
 
+# 复制IP数据库文件（IP定位功能依赖）
+COPY backend/resource/ipdb/ /app/resource/ipdb/
+
 WORKDIR /app
 
 # 创建数据目录
