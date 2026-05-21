@@ -17,3 +17,5 @@ docs/
 .ai_state/
 claude-proxy/
 todo.md
+# Added by code-review-graph
+.code-review-graph/
