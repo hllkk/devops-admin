@@ -5,6 +5,9 @@ FROM golang:1.26-bookworm AS builder
 
 WORKDIR /build
 
+# 使用国内 Go 代理加速
+ENV GOPROXY=https://goproxy.cn,direct
+
 # 先复制依赖文件，利用 Docker 缓存
 COPY backend/go.mod backend/go.sum ./
 RUN go mod download
@@ -18,6 +21,9 @@ RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o devops-admin .
 # ============================================
 FROM debian:bookworm-slim
 
+# 使用国内镜像加速
+RUN sed -i 's|deb.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list.d/debian.sources
+
 # 安装运行时依赖：ImageMagick + exiftool + ca证书 + 时区 + PDF工具 + 中文字体
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
@@ -28,6 +34,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libimage-exiftool-perl \
     tzdata \
     curl \
+    xz-utils \
     && rm -rf /var/lib/apt/lists/*
 
 # 设置时区

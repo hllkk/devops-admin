@@ -10,6 +10,7 @@ backend/storage/
 
 # Deployment configs (not needed in image)
 deploy/
+!deploy/docker/bin/
 
 # Documentation
 *.md
