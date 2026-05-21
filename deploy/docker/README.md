@@ -9,12 +9,12 @@ deploy/docker/
 ├── .env                    # 环境变量（密码）
 ├── bin/                    # 二进制包（不提交 Git）
 │   ├── jellyfin-ffmpeg*.tar.xz
-│   ├── ImageMagick-*.tar.xz  (可选，当前用 apt)
 │   └── .gitignore
 ├── conf/
 │   ├── nginx.conf          # Nginx 配置
-│   └── config.yaml         # 后端 Docker 专用配置
+│   └── config.yaml         # 后端完整配置（Docker 专用）
 └── scripts/
+    ├── init-mysql.sql      # MySQL 初始化占位
     └── init-rustfs.sh      # RustFS 初始化脚本
 ```
 
@@ -31,11 +31,19 @@ cp /usr/local/src/ffmpeg/jellyfin-ffmpeg_*.tar.xz deploy/docker/bin/
 
 ### 2. 构建前端
 
+**必须在 `docker compose up` 之前完成**，否则 Nginx 返回 403。
+
 ```bash
 cd frontend
 pnpm install
 pnpm build
 # 产物在 frontend/dist/ 目录
+cd ../..
+```
+
+验证前端已构建：
+```bash
+ls frontend/dist/index.html
 ```
 
 ### 3. 修改环境变量
@@ -45,6 +53,15 @@ cd deploy/docker
 cp .env.example .env
 # 编辑 .env 修改所有默认密码
 ```
+
+> **重要：修改 .env 中的密码后，必须同步修改 conf/config.yaml 中对应的值！**
+>
+> | .env 变量 | config.yaml 对应位置 |
+> |-----------|---------------------|
+> | MYSQL_ROOT_PASSWORD | mysql.password |
+> | REDIS_PASSWORD | redis.password, redis-list[0].password |
+> | RUSTFS_ROOT_USER | rustfs.access-key-id |
+> | RUSTFS_ROOT_PASSWORD | rustfs.secret-access-key |
 
 ## 启动服务
 
@@ -112,24 +129,26 @@ docker compose down -v
 
 ## 后端构建说明
 
-Dockerfile 使用三阶段构建：
+Dockerfile 使用两阶段构建：
 
 1. **golang:1.26-bookworm** — 编译 Go 二进制
 2. **debian:bookworm-slim** — 运行时镜像，包含：
    - FFmpeg/FFprobe（从 .tar.xz 解压，静态编译）
-   - ImageMagick（apt 安装，6.9 版本）
-   - ExifTool（apt 安装，perl 模块）
+   - ImageMagick（apt 安装）
+   - ExifTool（apt 安装）
+   - 中文字体（Noto CJK）
 
 最终镜像约 350-400MB。
 
-## 配置覆盖
+仓库根目录的 `.dockerignore` 确保构建时排除 `storage/`、`frontend/` 等不需要的目录。
 
-`docker-compose.yml` 中将 `conf/config.yaml` 挂载为只读卷，覆盖后端默认配置。
-关键覆盖项：
+## 配置说明
 
-- MySQL/Redis 连接地址改为 Docker 服务名（mysql、redis）
-- RustFS endpoint 改为 `rustfs:9000`
-- 本地存储路径改为 `/app/storage`
+`conf/config.yaml` 是后端的完整配置文件，已针对 Docker 环境调整：
+- MySQL/Redis/RustFS 连接地址使用 Docker 服务名
+- 本地存储路径设为 `/app/storage`（通过命名卷持久化）
+- 日志目录设为 `/app/log`
+- 已启用 RustFS 作为 OSS 存储后端
 
 ## 故障排查
 
@@ -141,7 +160,17 @@ docker compose logs backend
 
 # 常见问题：
 # - MySQL 未就绪：等待 healthcheck 通过
-# - 配置文件错误：检查 conf/config.yaml
+# - 配置文件错误：检查 conf/config.yaml 是否完整
+# - 端口绑定失败：确认 8888 端口未被占用
+```
+
+### Nginx 403 Forbidden
+
+```bash
+# 前端未构建
+ls frontend/dist/index.html
+# 如果不存在，执行：
+cd frontend && pnpm install && pnpm build && cd ../..
 ```
 
 ### FFmpeg/ImageMagick 检查失败
@@ -169,4 +198,14 @@ curl http://localhost:9000/minio/health/live
 
 # 检查后端配置中的 endpoint
 docker compose exec backend cat conf/config.yaml | grep rustfs
+```
+
+### OnlyOffice 无法编辑
+
+```bash
+# OnlyOffice 启动较慢（约2分钟），检查健康状态
+docker compose ps onlyoffice
+
+# 查看日志
+docker compose logs onlyoffice
 ```

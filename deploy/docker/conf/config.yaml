@@ -1,44 +1,256 @@
 # DevOps Admin Docker 部署专用配置
-# 覆盖 backend/conf/config.yaml 中的容器相关连接信息
-# 其他配置保持默认
+# 基于 backend/conf/config.yaml，仅修改 Docker 环境相关连接信息
+# 注意：修改 .env 中的密码后，必须同步修改本文件中对应的密码值
 
-mysql:
-  path: mysql         # Docker 服务名
-  port: "3306"
-  db-name: devops_admin
-  username: root
-  password: "devops_admin_2026"
-  prefix: ""
-  config: charset=utf8mb4&parseTime=True&loc=Local
-
-redis:
-  addr: "redis:6379"  # Docker 服务名
-  password: "devops_redis_2026"
-
-system:
-  oss-enable: true
-  oss-type: rustfs
-
-rustfs:
-  endpoint: "rustfs:9000"   # Docker 服务名
-  access-key-id: "devops-admin"
-  secret-access-key: "devops_rustfs_2026"
-  bucket-name: "devops-admin"
-  use-ssl: false
-  base-path: "/disk"
-
+aliyun-oss:
+    endpoint: ""
+    access-key-id: ""
+    access-key-secret: ""
+    bucket-name: ""
+    region: ""
+    base-path: ""
+autocode:
+    web: frontend/src
+    root: /app
+    server: backend
+    module: github.com/hllkk/devopsAdmin/backend
+    ai-path: ""
+aws-s3:
+    access-key-id: ""
+    secret-access-key: ""
+    region: ""
+    bucket-name: ""
+    endpoint: ""
+    base-path: ""
+captcha:
+    open-captcha: true
+    captcha-type: click
+    captcha-len: 0
+    captcha-exp: 5
+    captcha-token-exp: 5
+    captcha-inaccuracy: 40
+cors:
+    mode: ""
+    whitelist: []
+db-list: []
+download:
+    max_tokens_per_minute: 10
+    token_expire_duration: 3m0s
+    buffer_size: 10240
+    rate_limit_count: 100
+    rate_limit_window: 1m0s
+    max_download_per_minute: 3
+    max_concurrent_downloads: 10
+    max_package_files: 0
+    max_package_size: 0
+    package_compression: 0
+    enable_resume: false
+    chunk_size: 0
+    max_retry_count: 0
+    retry_delay: 0s
+    download_timeout: 0s
+    task_queue_size: 0
+    max_concurrent_tasks: 0
+    alarm_threshold: 100
+    enable_virus_scan: false
+    allowed_file_types: []
+    blocked_file_types: []
+jwt:
+    signing-key: 39d7f6e3-2281-40f3-b6ad-32410f82449a
+    expires-time: 1h
+    buffer-time: 1d
+    refresh-expires-time: 8h
+    issuer: devops
 local:
-  root-path: "/app/storage"
-
+    root-path: /app/storage
+    user-img-path: /Image/
+    document-path: /Document/
+    chunk-file-path: /ChunkFileTemp/
+    video-cache-path: /VideoCache/
+    trash-path: .Trash/
+mcp:
+    name: OPS_MCP
+    version: v1.0.0
+    sse_path: /sse
+    message_path: /message
+    url_prefix: ""
+mongo:
+    coll: ""
+    options: ""
+    database: ""
+    username: ""
+    password: ""
+    auth-source: ""
+    min-pool-size: 0
+    max-pool-size: 100
+    socket-timeout-ms: 0
+    connect-timeout-ms: 0
+    is-zap: false
+    hosts:
+        - host: ""
+          port: ""
+mssql:
+    prefix: ""
+    port: ""
+    config: ""
+    db-name: ""
+    username: ""
+    password: ""
+    path: ""
+    engine: ""
+    log-mode: ""
+    max-idle-conns: 10
+    max-open-conns: 100
+    singular: false
+    log-zap: false
+# Docker: 使用服务名 mysql 替代 127.0.0.1
+mysql:
+    prefix: ""
+    port: "3306"
+    config: charset=utf8mb4&parseTime=True&loc=Local
+    db-name: devops_admin
+    username: root
+    password: "devops_admin_2026"
+    path: mysql
+    engine: ""
+    log-mode: error
+    max-idle-conns: 10
+    max-open-conns: 100
+    singular: false
+    log-zap: false
+oracle:
+    prefix: ""
+    port: ""
+    config: ""
+    db-name: ""
+    username: ""
+    password: ""
+    path: ""
+    engine: ""
+    log-mode: ""
+    max-idle-conns: 10
+    max-open-conns: 100
+    singular: false
+    log-zap: false
+pgsql:
+    prefix: ""
+    port: ""
+    config: ""
+    db-name: ""
+    username: ""
+    password: ""
+    path: ""
+    engine: ""
+    log-mode: ""
+    max-idle-conns: 10
+    max-open-conns: 100
+    singular: false
+    log-zap: false
+qiniu-oss:
+    access-key: ""
+    secret-key: ""
+    bucket: ""
+    domain: ""
+    base-path: ""
+# Docker: 使用服务名 redis 替代 127.0.0.1
+redis:
+    name: ""
+    addr: "redis:6379"
+    password: "devops_redis_2026"
+    db: 0
+    useCluster: false
+    clusterAddrs: []
+redis-list:
+    - name: cache
+      addr: "redis:6379"
+      password: "devops_redis_2026"
+      db: 0
+      useCluster: false
+      clusterAddrs: []
+# Docker: 使用服务名 rustfs 替代空值
+rustfs:
+    endpoint: "rustfs:9000"
+    access-key-id: "devops-admin"
+    secret-access-key: "devops_rustfs_2026"
+    bucket-name: "devops-admin"
+    use-ssl: false
+    base-path: "/disk"
+sqlite:
+    prefix: ""
+    port: ""
+    config: ""
+    db-name: ""
+    username: ""
+    password: ""
+    path: ""
+    engine: ""
+    log-mode: ""
+    max-idle-conns: 10
+    max-open-conns: 100
+    singular: false
+    log-zap: false
+# Docker: 启用 RustFS OSS 存储
+system:
+    node-id: 1
+    db-type: mysql
+    oss-enable: true
+    oss-proxy-enable: false
+    oss-type: rustfs
+    router-prefix: /api/v1
+    addr: 8888
+    iplimit-count: 30
+    iplimit-time: 300
+    use-multipoint: true
+    use-redis: true
+    use-mongo: false
+    use-strict-auth: false
+    show-super: true
+    show-admin: true
+    error-code: 4000
+    success-code: 0
+    download-rate: 10485760
+    enable-rate-limit: false
+    enable-wecom-login: false
+    cookie-secure: false
+    init-key: ""
+tencent-cos:
+    secret-id: ""
+    secret-key: ""
+    region: ""
+    bucket-name: ""
+    base-path: ""
 transcode:
-  enable: true
-  max_threads: 4
-  bitrate_cond: 2500
-  height_cond: 720
-  frame_rate_cond: 30
-  bitrate: 2500
-  height: 720
-  frame_rate: 30
-  vtt_thumbnail_count: 6
-  is_re_transcode: true
-  thumbnail_worker_count: 3  # 缩略图Worker数量，默认3，最大10
+    enable: true
+    max_threads: 4
+    bitrate_cond: 2500
+    height_cond: 720
+    frame_rate_cond: 30
+    bitrate: 2500
+    height: 720
+    frame_rate: 30
+    vtt_thumbnail_count: 6
+    is_re_transcode: true
+    thumbnail_worker_count: 3
+upload:
+    buffer-size: 1024
+    chunk-concurrency: 6
+    chunk-size-small: 10
+    chunk-size-medium: 20
+    chunk-size-large: 50
+wecom:
+    enable-work-wechat: true
+    corp-id: ""
+    agent-secret: ""
+    agent-id: 1000106
+    redirect-uri: https://j.chinargb.com.cn:3000/wecomCallback
+    default-role-code: ""
+zap:
+    level: info
+    prefix: '[DevOps-Backend]'
+    format: console
+    director: /app/log
+    encode-level: LowercaseColorLevelEncoder
+    stacktrace-key: stacktrace
+    show-line: true
+    log-in-console: true
+    retention-day: -1

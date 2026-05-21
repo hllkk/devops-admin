@@ -1,0 +1,41 @@
+# Git
+.git/
+.gitmodules
+
+# Frontend (served by nginx via volume mount)
+frontend/
+
+# User storage files (may contain Chinese filenames, mounted as volume)
+backend/storage/
+
+# Deployment configs (not needed in image)
+deploy/
+
+# Documentation
+*.md
+docs/
+
+# Scripts
+scripts/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+backend/devops-admin
+backend/devopsAdmin
+
+# Logs
+backend/log/
+*.log
+
+# Test files
+*_test.go
+testdata/

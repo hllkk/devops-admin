@@ -1,0 +1,4 @@
+-- DevOps Admin MySQL 初始化
+-- 数据库由 MYSQL_DATABASE 环境变量自动创建
+-- 表结构由 GORM AutoMigrate 在后端启动时自动迁移
+-- 此文件为占位文件，确保 docker-entrypoint-initdb.d 目录有效
