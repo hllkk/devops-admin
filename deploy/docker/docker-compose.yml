@@ -34,8 +34,8 @@ services:
       - GIN_MODE=release
       - INIT_ADMIN_PASSWORD=${INIT_ADMIN_PASSWORD:-Admin@2026}  # 初始化管理员密码
     volumes:
-      - app-storage:/app/storage
-      - app-logs:/app/log
+      - /home/docker/app-storage:/app/storage
+      - /home/docker/app-logs:/app/log
       - ./conf/config.yaml:/app/conf/config.yaml:ro  # 覆盖配置
     depends_on:
       mysql:
@@ -57,7 +57,7 @@ services:
       MYSQL_DATABASE: devops_admin
       TZ: Asia/Shanghai
     volumes:
-      - mysql-data:/var/lib/mysql
+      - /home/docker/mysql:/var/lib/mysql
       - ./scripts/init-mysql.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
       - "3306:3306"
@@ -83,7 +83,7 @@ services:
     container_name: ops-redis
     command: redis-server --requirepass ${REDIS_PASSWORD:-devops_redis_2026} --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
-      - redis-data:/data
+      - /home/docker/redis:/data
     ports:
       - "6379:6379"
     healthcheck:
@@ -105,8 +105,8 @@ services:
       - JWT_ENABLED=false
       - TZ=Asia/Shanghai
     volumes:
-      - onlyoffice-data:/var/lib/onlyoffice
-      - onlyoffice-logs:/var/log/onlyoffice
+      - /home/docker/onlyoffice-data:/var/lib/onlyoffice
+      - /home/docker/onlyoffice-logs:/var/log/onlyoffice
     ports:
       - "8443:80"
     healthcheck:
@@ -125,6 +125,7 @@ services:
   rustfs:
     image: rustfs/rustfs:latest
     container_name: ops-rustfs
+    user: root  # 以root用户运行，避免权限问题
     ports:
       - "9000:9000"   # S3 API
       - "9001:9001"   # Web 管理控制台
@@ -133,7 +134,7 @@ services:
       RUSTFS_ROOT_PASSWORD: ${RUSTFS_ROOT_PASSWORD:-devops_rustfs_2026}
       RUSTFS_BROWSER: "on"
     volumes:
-      - rustfs-data:/data
+      - /home/docker/rustfs:/data
     command: server /data --console-address ":9001"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/health/ready"]
@@ -143,19 +144,6 @@ services:
     restart: unless-stopped
     networks:
       - ops-net
-
-# ================================
-# 数据卷
-# ================================
-volumes:
-  mysql-data:
-  redis-data:
-  onlyoffice-data:
-  onlyoffice-logs:
-  rustfs-data:
-  app-storage:
-  app-logs:
-
 # ================================
 # 网络
 # ================================
