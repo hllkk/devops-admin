@@ -1,0 +1,108 @@
+# DevOps Admin 测试环境 Docker Compose
+# 端口映射避免与生产环境冲突
+# 数据存储到 /home/dev-dockerData 目录
+
+services:
+  # ================================
+  # MySQL 8.4 (测试环境)
+  # ================================
+  mysql:
+    image: mysql:8.4
+    container_name: dev-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: devops_admin_2026
+      MYSQL_DATABASE: devops_admin
+      TZ: Asia/Shanghai
+    volumes:
+      - /home/dev-dockerData/mysql:/var/lib/mysql
+    ports:
+      - "13306:3306"
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --max-connections=500
+      --innodb-buffer-pool-size=256M
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - dev-net
+
+  # ================================
+  # Redis 8 (测试环境)
+  # ================================
+  redis:
+    image: redis:8-alpine
+    container_name: dev-redis
+    command: redis-server --requirepass devops_redis_2026 --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - /home/dev-dockerData/redis:/data
+    ports:
+      - "16379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "devops_redis_2026", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - dev-net
+
+  # ================================
+  # OnlyOffice 文档服务 (测试环境)
+  # ================================
+  documentserver:
+    image: moqisoft/documentserver:9.3.10
+    container_name: dev-documentserver
+    environment:
+      - JWT_ENABLED=true
+      - TZ=Asia/Shanghai
+      - ALLOW_PRIVATE_IP_ADDRESS=true
+      - JWT_SECRET=53f82208d65f2995fa76ac477f10d8c80883d99b23e25ab52e80571591135263
+    volumes:
+      - /home/dev-dockerData/onlyoffice-data:/var/lib/onlyoffice
+      - /home/dev-dockerData/onlyoffice-logs:/var/log/onlyoffice
+    ports:
+      - "18443:80"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    restart: unless-stopped
+    networks:
+      - dev-net
+
+  # ================================
+  # RustFS 对象存储 (测试环境)
+  # ================================
+  rustfs:
+    image: rustfs/rustfs:latest
+    container_name: dev-rustfs
+    user: root
+    ports:
+      - "19000:9000"
+      - "19001:9001"
+    environment:
+      RUSTFS_ROOT_USER: devops-admin
+      RUSTFS_ROOT_PASSWORD: devops_rustfs_2026
+      RUSTFS_BROWSER: "on"
+    volumes:
+      - /home/dev-dockerData/rustfs:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - dev-net
+
+networks:
+  dev-net:
+    driver: bridge
