@@ -106,5 +106,10 @@ upstream/main → main → dev
 
 ### BUG收集
 ```
-1. 项目初始化之后，无法正确跳转到登录页面，需要刷新一次才可以
+
+```
+
+### 启动ClaudeCode
+```
+IS_SANDBOX=1 claude --dangerously-skip-permissions
 ```
