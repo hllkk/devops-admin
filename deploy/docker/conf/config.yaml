@@ -237,6 +237,7 @@ upload:
     chunk-size-small: 10
     chunk-size-medium: 20
     chunk-size-large: 50
+    chunk-size-huge: 100
 wecom:
     enable-work-wechat: true
     corp-id: ""
