@@ -111,5 +111,5 @@ upstream/main → main → dev
 
 ### 启动ClaudeCode
 ```
-IS_SANDBOX=1 claude --dangerously-skip-permissions
+IS_SANDBOX=1 claude -c --dangerously-skip-permissions
 ```
