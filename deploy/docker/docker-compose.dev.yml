@@ -74,6 +74,8 @@ services:
       retries: 5
       start_period: 120s
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - dev-net
 
