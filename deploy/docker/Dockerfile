@@ -35,6 +35,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tzdata \
     curl \
     xz-utils \
+    p7zip-full \
     && rm -rf /var/lib/apt/lists/*
 
 # 设置时区
