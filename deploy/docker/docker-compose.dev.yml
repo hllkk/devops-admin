@@ -1,3 +1,5 @@
+name: ops-dev
+
 # DevOps Admin 测试环境 Docker Compose
 # 端口映射避免与生产环境冲突
 # 数据存储到 /home/dev-dockerData 目录
