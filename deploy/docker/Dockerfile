@@ -70,7 +70,7 @@ RUN mkdir -p /app/storage /app/log
 EXPOSE 8888
 
 # 健康检查：每30秒检查一次，超时5秒，连续3次失败则标记为不健康
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=5 \
     CMD curl -f http://localhost:8888/api/v1/health || exit 1
 
 CMD ["./devops-admin"]

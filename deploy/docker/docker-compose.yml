@@ -15,9 +15,9 @@ services:
       - ../../frontend/dist:/usr/share/nginx/html:ro  # 前端构建产物
     depends_on:
       backend:
-        condition: service_started
+        condition: service_healthy
       onlyoffice:
-        condition: service_started
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - ops-net
