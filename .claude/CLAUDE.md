@@ -13,7 +13,7 @@
 - 前端开发: 进入 frontend/ 目录，使用前端 VibeCoding 配置
 - 后端开发: 进入 backend/ 目录，使用后端 VibeCoding 配置
 - 数据库: MySQL 8.0, 数据库采用docker部署的，数据库名称为 devops_admin
-- 跨模块任务: 在根目录协调，可使用 superpowers skills,开发完成后，需要确认前端的请求和后端的响应是否一致，包括请求参数、数据类型、响应数据、请求方法、请求地址等。
+- 跨模块任务: 在根目录协调，可使用 superpowers skills,开发完成后，需要确认前端的请求和后端的响应是否一致，包括请求参数、数据类型、响应数据、请求方法、请求地址等。**前后端类型必须一一对应，禁止冗余类型，前端禁止使用 any 替代类型。**
 - 代码规范: 请参考前端和后端的开发规范
 - 代码提交: 先调用 code-simplifier agent 对代码进行简化，如果code-simplifier agent不可用，就使用simplify skill，优化完成需要用户测试通过确认后提交。
 - 设计文档: 统一存放在 docs/ 目录下
