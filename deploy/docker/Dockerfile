@@ -21,8 +21,9 @@ RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o devops-admin .
 # ============================================
 FROM debian:bookworm-slim
 
-# 使用国内镜像加速
-RUN sed -i 's|deb.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list.d/debian.sources
+# 使用国内镜像加速 + 添加 bookworm-backports 源（7zip 24.09 支持 UDF/ISO）
+RUN sed -i 's|deb.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list.d/debian.sources \
+    && printf 'Types: deb\nURIs: https://mirrors.aliyun.com/debian\nSuites: bookworm-backports\nComponents: contrib\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n' > /etc/apt/sources.list.d/backports.sources
 
 # 安装运行时依赖：ImageMagick + exiftool + ca证书 + 时区 + PDF工具 + 中文字体
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -35,7 +36,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tzdata \
     curl \
     xz-utils \
-    p7zip-full \
+    7zip \
+    unar \
     && rm -rf /var/lib/apt/lists/*
 
 # 设置时区
