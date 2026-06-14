@@ -210,7 +210,6 @@ system:
     success-code: 0
     download-rate: 10485760
     enable-rate-limit: false
-    enable-wecom-login: false
     cookie-secure: false
     init-key: ""
 tencent-cos:
@@ -238,13 +237,6 @@ upload:
     chunk-size-medium: 20
     chunk-size-large: 50
     chunk-size-huge: 100
-wecom:
-    enable-work-wechat: true
-    corp-id: ""
-    agent-secret: ""
-    agent-id: 1000106
-    redirect-uri: https://j.chinargb.com.cn:3000/wecomCallback
-    default-role-code: ""
 zap:
     level: info
     prefix: '[DevOps-Backend]'

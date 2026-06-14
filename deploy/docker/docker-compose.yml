@@ -35,12 +35,7 @@ services:
       - DOCKER_ENV=true
       - GIN_MODE=release
       - INIT_ADMIN_PASSWORD=${INIT_ADMIN_PASSWORD:-Admin@2026}
-      # 企业微信配置（从 .env.local 读取，不提交到 git）
-      - OPS_WECOM_CORP_ID=${WECOM_CORP_ID:-}
-      - OPS_WECOM_AGENT_SECRET=${WECOM_AGENT_SECRET:-}
-      - OPS_WECOM_AGENT_ID=${WECOM_AGENT_ID:-0}
-      - OPS_WECOM_REDIRECT_URI=${WECOM_REDIRECT_URI:-}
-      - OPS_SYSTEM_ENABLE_WECOM_LOGIN=${WECOM_ENABLED:-false}
+      # 企业微信凭证现由「系统设置 → 认证 → 企业微信」页面配置（数据库存储），无需环境变量
       - OPS_SYSTEM_COOKIE_SECURE=${COOKIE_SECURE:-false}
     volumes:
       - /home/docker/app-storage:/app/storage
