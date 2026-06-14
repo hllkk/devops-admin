@@ -38,6 +38,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     xz-utils \
     7zip \
     unar \
+    && ln -sf /usr/bin/7zz /usr/local/bin/7z \
     && rm -rf /var/lib/apt/lists/*
 
 # 设置时区
