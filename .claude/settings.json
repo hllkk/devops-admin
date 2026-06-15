@@ -15,7 +15,15 @@
       "Write(*)",
       "Edit(*)",
       "Glob(*)",
-      "Grep(*)"
+      "Grep(*)",
+      "mcp__codegraph__codegraph_search",
+      "mcp__codegraph__codegraph_explore",
+      "mcp__codegraph__codegraph_callers",
+      "mcp__codegraph__codegraph_callees",
+      "mcp__codegraph__codegraph_impact",
+      "mcp__codegraph__codegraph_node",
+      "mcp__codegraph__codegraph_status",
+      "mcp__codegraph__codegraph_files"
     ],
     "deny": []
   },
@@ -26,28 +34,6 @@
           {
             "type": "command",
             "command": "node .claude/hooks/context-loader.cjs"
-          }
-        ]
-      },
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "git rev-parse --git-dir >/dev/null 2>&1 && code-review-graph status --repo \"/home/devops-admin\" || echo 'Not a git repo, skipping'",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write|Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "git rev-parse --git-dir >/dev/null 2>&1 && code-review-graph update --skip-flows --repo \"/home/devops-admin\" || true",
-            "timeout": 30
           }
         ]
       }
