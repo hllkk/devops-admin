@@ -333,4 +333,5 @@ docker logs ops-backend 2>&1 | grep -i wecom
 ### 启动ClaudeCode
 ```
 IS_SANDBOX=1 claude -c --dangerously-skip-permissions
+claude --resume 042fe9ee-d7ac-4ba0-89eb-9eccfb5f979f
 ```
