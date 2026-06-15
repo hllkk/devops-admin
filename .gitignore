@@ -19,3 +19,5 @@ claude-proxy/
 todo.md
 # Added by codegraph
 .codegraph/
+# Claude Code agent worktrees (临时工作树,不提交)
+.claude/worktrees/
