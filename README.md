@@ -334,4 +334,6 @@ docker logs ops-backend 2>&1 | grep -i wecom
 ```
 IS_SANDBOX=1 claude -c --dangerously-skip-permissions
 claude --resume 042fe9ee-d7ac-4ba0-89eb-9eccfb5f979f
+# 日志收集+AI分析 功能可行性分析会话 (2026-06-17)，详见 docs/log-ai-analysis-feasibility.md
+claude --resume 503e19b7-a390-45ff-b4fa-0d4e79c7f0f6
 ```
