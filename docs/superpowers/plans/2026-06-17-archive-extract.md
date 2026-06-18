@@ -36,7 +36,7 @@
 
 ---
 
-## Task B1: 后端 — 审计常量 + path 化请求模型 + handler 改签名
+## Task 1: 后端 — 审计常量 + path 化请求模型 + handler 改签名 (B1)
 
 **Files:**
 - Modify: `backend/model/disk/disk_file_audit.go:7-25`（新增常量）
@@ -159,7 +159,7 @@ git commit -m "feat(disk): 解压请求改为 path 化并接入审计常量(stub
 
 ---
 
-## Task B2: 后端 — 冲突重命名 + 条目规划纯函数（TDD）
+## Task 2: 后端 — 冲突重命名 + 条目规划纯函数（TDD） (B2)
 
 **Files:**
 - Modify: `backend/service/disk/disk_archive.go`（新增 `uniqueNameFor`/`plannedEntry`/`planExtraction`/`folderExistsByPath`/`computeEffectiveDest`）
@@ -491,7 +491,7 @@ git commit -m "feat(disk): 解压冲突重命名与条目规划纯函数(含测�
 
 ---
 
-## Task B3: 后端 — 重写 ExtractArchive 流水线（暂存→上传/移动→入库事务）
+## Task 3: 后端 — 重写 ExtractArchive 流水线（暂存→上传/移动→入库事务） (B3)
 
 **Files:**
 - Modify: `backend/service/disk/disk_archive.go`（替换 B1 的 stub；新增 `commitExtraction`）
@@ -832,7 +832,7 @@ git commit -m "feat(disk): 解压流水线(暂存→上传/移动→入库事务
 
 ---
 
-## Task B4: 后端 — Swagger 重新生成 + 收尾
+## Task 4: 后端 — Swagger 重新生成 + 收尾 (B4)
 
 **Files:**
 - Modify: `backend/docs/`（`swag init` 产物，已 gitignore，不提交）
@@ -858,7 +858,7 @@ git commit -m "docs(disk): 同步解压接口 Swagger 注解" --allow-empty || e
 
 ---
 
-## Task F1: 前端 — 重写 archive API + 类型
+## Task 5: 前端 — 重写 archive API + 类型 (F1)
 
 **Files:**
 - Modify: `frontend/src/service/api/disk/archive.ts`
@@ -941,7 +941,7 @@ git commit -m "feat(disk): 解压 API 改为对象参数并新增 ExtractArchive
 
 ---
 
-## Task F2: 前端 — 国际化
+## Task 6: 前端 — 国际化 (F2)
 
 **Files:**
 - Modify: `frontend/src/locales/langs/zh-cn.ts`、`frontend/src/locales/langs/en-us.ts`
@@ -993,7 +993,7 @@ git commit -m "feat(disk): 新增解压相关国际化(extract)"
 
 ---
 
-## Task F3: 前端 — 新建目标目录选择器 extract-to-dialog.vue
+## Task 7: 前端 — 新建目标目录选择器 extract-to-dialog.vue (F3)
 
 **Files:**
 - Create: `frontend/src/views/disk/modules/extract-to-dialog.vue`
@@ -1181,7 +1181,7 @@ git commit -m "feat(disk): 新建解压目标目录选择器 extract-to-dialog"
 
 ---
 
-## Task F4: 前端 — 接线 disk/index.vue（解压到当前目录 / 解压到...）
+## Task 8: 前端 — 接线 disk/index.vue（解压到当前目录 / 解压到...） (F4)
 
 **Files:**
 - Modify: `frontend/src/views/disk/index.vue`（import、处理函数、模板事件、新对话框）
