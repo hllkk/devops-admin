@@ -63,9 +63,9 @@ download:
     allowed_file_types: []
     blocked_file_types: []
 jwt:
-    # JWT 签名密钥 — 生产环境必须通过环境变量 JWT_SIGNING_KEY 注入高熵随机值（生成: openssl rand -hex 32）
-    # 此处仅为占位符；部署时在 .env 设置 JWT_SIGNING_KEY 并由 docker-compose 注入
-    signing-key: devops-admin-dev-signing-key-CHANGE-ME
+    # JWT 签名密钥 — 必须通过环境变量 JWT_SIGNING_KEY 注入高熵随机值（生成: openssl rand -hex 32）
+    # 留空时由 initialize/other.go 校验并 Fatal；docker-compose 已强制注入 JWT_SIGNING_KEY
+    signing-key: ""
     expires-time: 1h
     buffer-time: 1d
     refresh-expires-time: 8h
@@ -218,7 +218,6 @@ system:
     error-code: 4000
     success-code: 0
     download-rate: 10485760
-    enable-rate-limit: false
     cookie-secure: false
     init-key: ""
 tencent-cos:

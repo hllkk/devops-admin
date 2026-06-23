@@ -197,7 +197,7 @@ server {
 | 应用 Secret | 企微 Agent Secret（加密存储，返回时脱敏；留空保存则保留原值） |
 | 回调地址 | `https://your-domain.com:3000/wecomCallback` |
 
-> 保存后即时生效，**无需重启**。Agent Secret 使用 AES-GCM 加密入库（密钥取自 `config.yaml` 的 `jwt.signing-key`），更换 signing-key 前需在此重新录入。
+> 保存后即时生效，**无需重启**。Agent Secret 使用 AES-GCM 加密入库（密钥由 `JWT_SIGNING_KEY` 环境变量派生），更换 `JWT_SIGNING_KEY` 前需在此重新录入（轮换密钥会致旧密文无法解密）。
 
 > **可信域名校验文件**：同页面「可信域名校验」折叠区，填入企微后台下载的校验文件名（如 `WW_verify_xxx.txt`）与内容。系统通过 `/WW_verify_*.txt` 动态响应（内部 Nginx 已配置重写），**无需手动放置文件、无需重新构建前端**。
 
@@ -268,9 +268,9 @@ OnlyOffice 涉及三方通信，公网部署的核心是让「浏览器 → 文�
 |--------|--------|------|
 | 文档服务器地址（ServerUrl） | `https://your-domain.com:3000/office` | 浏览器加载 SDK，**必须公网** |
 | 回调地址（CallbackUrl） | `http://backend:8888/api/v1` | 容器访问后端，**用内网服务名 `backend`** |
-| JWT 密钥（TokenSecret） | 与 docker-compose `JWT_SECRET` 完全一致 | 容器与后端 JWT 校验需一致 |
+| JWT 密钥（TokenSecret） | 与 `ONLYOFFICE_JWT_SECRET` 环境变量完全一致 | 容器与后端 JWT 校验需一致 |
 
-> docker-compose 中 OnlyOffice 容器已设 `JWT_SECRET=53f82208...`，系统设置的 TokenSecret **必须与之完全一致**，否则文档加载报 JWT 校验失败。
+> OnlyOffice 容器的 `JWT_SECRET` 由 docker-compose 经 `ONLYOFFICE_JWT_SECRET` 环境变量注入（见 `.env.local`），系统设置的 TokenSecret **必须与之完全一致**，否则文档加载报 JWT 校验失败。轮换时需同步更新两处。
 
 #### 4.3 已知权衡：健康检查
 
@@ -282,9 +282,16 @@ OnlyOffice 涉及三方通信，公网部署的核心是让「浏览器 → 文�
 
 ### 5. 环境变量参考
 
+敏感配置项通过环境变量注入（由 `backend/initialize/other.go` 的 `applyEnvOverrides` 读取并覆盖 `config.yaml`；`config.yaml` 中对应字段留空或为开发占位值，**不含任何生产密钥**）。
+
 | 环境变量 | 对应配置 | 必填 | 说明 |
 |----------|----------|------|------|
+| `JWT_SIGNING_KEY` | `jwt.signing-key` | **必填** | JWT 签名密钥，留空则启动 Fatal。生成：`openssl rand -hex 32` |
 | `COOKIE_SECURE` | `system.cookie-secure` | HTTPS 必填 | Cookie Secure 标志（`true`） |
+| `ONLYOFFICE_JWT_SECRET` | OnlyOffice 容器 `JWT_SECRET` | **必填** | 须与系统设置→OnlyOffice→TokenSecret 一致 |
+| `MYSQL_PASSWORD` | `mysql.password` | 生产推荐 | 覆盖 config.yaml 中的开发占位密码 |
+| `REDIS_PASSWORD` | `redis.password` | 生产推荐 | 覆盖 config.yaml 中的开发占位密码 |
+| `RUSTFS_SECRET_KEY` | `rustfs.secret-access-key` | 生产推荐 | 覆盖 config.yaml 中的开发占位密码 |
 
 > 企微登录凭证（CorpID / AgentSecret / AgentID / 回调地址）与可信域名校验文件由「系统设置 → 认证 → 企业微信」页面配置（数据库存储），不再使用环境变量。
 
@@ -324,6 +331,71 @@ docker logs ops-backend 2>&1 | grep -i wecom
 - [ ] `https://your-domain.com:3000/office/web-apps/apps/api/documents/api.js` 可加载（浏览器控制台无 SDK 加载失败）
 - [ ] 系统设置 OnlyOffice：ServerUrl = 公网 `/office`、CallbackUrl = `http://backend:8888/api/v1`、TokenSecret 与 docker-compose `JWT_SECRET` 一致
 - [ ] 打开 Office 文档能正常加载、编辑、保存（保存后文件回写成功，版本历史更新）
+
+## 安全配置与密钥管理
+
+### 安全机制
+
+- **密钥脱离代码库**：`config.yaml` 不含任何生产密钥（`signing-key` 留空，DB/Redis/RustFS 密码为开发占位值），生产敏感值全部经环境变量注入（`backend/initialize/other.go` 的 `applyEnvOverrides` 读取覆盖）。
+- **JWT 强制非空**：`JWT_SIGNING_KEY` 未设置时后端启动 Fatal，杜绝弱密钥/空密钥运行。
+- **登录双维度防暴力**：用户名维度（5 次/15 分钟锁定）+ IP 维度（50 次/15 分钟锁定）并列，防针对单账号爆破与换用户名撞库。
+- **用户名枚举防护**：用户不存在时执行 dummy bcrypt 比较拉平响应时延，错误文案统一为"用户名或密码错误"。
+- **Cookie 安全**：`SameSite=Strict; HttpOnly; Secure`（`Secure` 由 `COOKIE_SECURE` 控制，HTTPS 环境必须 `true`）。
+
+### 密钥轮换流程（运维清单）
+
+轮换 `JWT_SIGNING_KEY` 会有两个副作用，需提前知会用户：
+
+1. **所有现有登录 token 立即失效**（旧 token 用旧密钥签名，新密钥验签失败）——全员需重新登录。
+2. **企微 Agent Secret 无法解密**（其加密密钥由 `JWT_SIGNING_KEY` 派生）——需在「系统设置 → 认证 → 企业微信」重新录入凭证。
+
+#### 测试环境
+
+```bash
+# 1. 生成新密钥
+openssl rand -hex 32
+
+# 2. 本地 go run 前导出环境变量（或 IDE Run Configuration 配置）
+export JWT_SIGNING_KEY=<新密钥>
+export COOKIE_SECURE=false   # 本地 HTTP 开发
+
+# 3. 测试环境后端若用 docker，写入各自的 .env.local 后重启
+# 4. 验证：旧 token 失效、重新登录正常
+```
+
+#### 生产环境
+
+```bash
+# 1. 生成新密钥（JWT + OnlyOffice 分别生成）
+openssl rand -hex 32   # → JWT_SIGNING_KEY
+openssl rand -hex 32   # → ONLYOFFICE_JWT_SECRET
+
+# 2. 写入 deploy/docker/.env.local（已被 .gitignore 忽略，不入 git）
+#    JWT_SIGNING_KEY=<新值>
+#    ONLYOFFICE_JWT_SECRET=<新值>
+#    COOKIE_SECURE=true
+
+# 3. 同步数据库：系统设置 → OnlyOffice → TokenSecret = 新 ONLYOFFICE_JWT_SECRET
+# 4. 重新录入企微凭证：系统设置 → 认证 → 企业微信
+# 5. 重建并重启后端
+cd deploy/docker
+docker compose up -d --build backend
+docker compose restart onlyoffice
+
+# 6. 验证：登录/token 刷新/登出黑名单/OnlyOffice 编辑/企微扫码 均正常
+```
+
+> DB/Redis/RustFS 密码轮换：MySQL 需 `ALTER USER 'root'@'%' IDENTIFIED BY '新密码';`（数据不丢），Redis/RustFS 改 `.env.local` 对应变量后重启容器；新密码同时写入 `MYSQL_PASSWORD`/`REDIS_PASSWORD`/`RUSTFS_SECRET_KEY` 环境变量由后端覆盖 config 占位值。
+
+### 测试与生产环境配置对照
+
+| 环境 | 后端运行方式 | 密钥注入方式 |
+|------|-------------|------------|
+| 本地开发 | `go run` 或 IDE | `export JWT_SIGNING_KEY=...` 或 IDE Run Configuration |
+| 测试环境 | 本地 `go run` / docker | 环境变量（测试专用值，与生产不同） |
+| 生产环境 | docker-compose | `deploy/docker/.env.local`（.gitignore 忽略，不入 git） |
+
+> ⚠️ `.env.local` 与 `.env` 均已被 `.gitignore` 忽略。**禁止将真实密钥提交到 git**。`.env.local.example` 是模板，复制为 `.env.local` 后填入实际值。
 
 ## BUG收集
 ```

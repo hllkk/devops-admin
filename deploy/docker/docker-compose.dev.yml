@@ -63,7 +63,7 @@ services:
       - JWT_ENABLED=true
       - TZ=Asia/Shanghai
       - ALLOW_PRIVATE_IP_ADDRESS=true
-      - JWT_SECRET=53f82208d65f2995fa76ac477f10d8c80883d99b23e25ab52e80571591135263
+      - JWT_SECRET=${ONLYOFFICE_JWT_SECRET:-53f82208d65f2995fa76ac477f10d8c80883d99b23e25ab52e80571591135263}
     volumes:
       - /home/dev-dockerData/onlyoffice-data:/var/lib/onlyoffice
       - /home/dev-dockerData/onlyoffice-logs:/var/log/onlyoffice
