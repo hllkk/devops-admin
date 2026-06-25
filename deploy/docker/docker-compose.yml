@@ -44,6 +44,10 @@ services:
       # MySQL/Redis 密码由 initialize/other.go 读取覆盖 config.yaml，无需手动同步两处
       - MYSQL_PASSWORD=${MYSQL_ROOT_PASSWORD:-devops_admin_2026}
       - REDIS_PASSWORD=${REDIS_PASSWORD:-devops_redis_2026}
+      # 数据库敏感字段加密密钥（独立于 JWT 密钥，避免不同环境密钥交叉导致解密失败）
+      # 未设置时回退到 JWT_SIGNING_KEY，但 JWT 密钥变更会使已加密的配置无法解密
+      # 生成命令: openssl rand -hex 32
+      - SECRET_ENCRYPT_KEY=${SECRET_ENCRYPT_KEY:-}
       # 企业微信凭证现由「系统设置 → 认证 → 企业微信」页面配置（数据库存储），无需环境变量
     volumes:
       - /home/docker/app-storage:/app/storage

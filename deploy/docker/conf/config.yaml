@@ -219,6 +219,7 @@ system:
     download-rate: 10485760
     cookie-secure: false
     init-key: ""
+    secret-encrypt-key: ""   # 数据库敏感字段加密密钥；空则回退到 jwt.signing-key（不同环境应独立设置）
     trusted-proxies: []
 tencent-cos:
     secret-id: ""
