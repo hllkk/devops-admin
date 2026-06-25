@@ -13,7 +13,7 @@ services:
     container_name: dev-mysql
     environment:
       MYSQL_ROOT_PASSWORD: devops_admin_2026
-      MYSQL_DATABASE: devops-admin-dev
+      MYSQL_DATABASE: devops-admin
       TZ: Asia/Shanghai
     volumes:
       - /home/dev-dockerData/mysql:/var/lib/mysql
