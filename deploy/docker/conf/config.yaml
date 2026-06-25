@@ -30,11 +30,10 @@ captcha:
     captcha-token-exp: 5
     captcha-inaccuracy: 40
 cors:
-    # 跨域模式：whitelist=仅对白名单内 Origin 返回 CORS 头（安全，不影响同源访问）
-    mode: whitelist
-    # 可信前端来源：替换为生产实际域名（含端口）；前端若经 nginx 同源反代则无需配置
+    # 跨域模式：strict-whitelist=白名单外直接拒绝403（最安全），whitelist=白名单外不返回CORS头（浏览器自然拦截）
+    mode: strict-whitelist
     whitelist:
-        - allow-origin: https://your-domain.com:3000
+        - allow-origin: https://j.chinargb.com.cn:8000
           allow-headers: Content-Type,AccessToken,X-CSRF-Token,Authorization,Token,X-Token,X-User-Id,x-request-id,isEncrypt,repeatSubmit,Clientid
           allow-methods: GET,POST,PUT,DELETE,OPTIONS
           expose-headers: Content-Length,Access-Control-Allow-Origin,Access-Control-Allow-Headers,Content-Type,New-Token,New-Expires-At,Download-Filename
