@@ -219,6 +219,7 @@ system:
     download-rate: 10485760
     cookie-secure: false
     init-key: ""
+    trusted-proxies: []
 tencent-cos:
     secret-id: ""
     secret-key: ""

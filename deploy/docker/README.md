@@ -6,7 +6,8 @@
 deploy/docker/
 ├── Dockerfile              # 后端多阶段构建
 ├── docker-compose.yml      # 容器编排
-├── .env                    # 环境变量（密码）
+├── .env.example            # 环境变量模板（提交 Git）
+├── .env                    # 实际环境变量（复制自模板，gitignore）
 ├── bin/                    # 二进制包（不提交 Git）
 │   ├── jellyfin-ffmpeg*.tar.xz
 │   └── .gitignore
@@ -46,20 +47,36 @@ cd ../..
 ls frontend/dist/index.html
 ```
 
-### 3. 修改环境变量
+### 3. 配置环境变量
+
+复制模板并填入实际值（`.env` 已被 .gitignore 忽略，不会提交）：
 
 ```bash
 cd deploy/docker
 cp .env.example .env
-# 编辑 .env 修改所有默认密码
+vim .env   # 填入实际值
 ```
 
-> **重要：修改 .env 中的密码后，必须同步修改 conf/config.yaml 中对应的值！**
+**必填项**（留空会导致 `docker compose up` 报错）：
+
+| 变量 | 说明 |
+|------|------|
+| `JWT_SIGNING_KEY` | JWT 签名密钥，生成：`openssl rand -hex 32` |
+| `ONLYOFFICE_JWT_SECRET` | OnlyOffice 密钥，须与数据库「系统设置 → OnlyOffice → tokenSecret」一致 |
+
+应用配置（按部署环境调整）：
+
+| 变量 | 说明 |
+|------|------|
+| `COOKIE_SECURE` | HTTPS 必须 `true`，HTTP 本地开发设 `false` |
+| `TRUSTED_PROXIES` | 反向代理部署必配（CIDR 逗号分隔），否则登录日志/限流 IP 全显示为代理 IP |
+
+> **MySQL/Redis 密码已通过环境变量自动注入 backend**（`initialize/other.go` 读取覆盖 config.yaml），修改 `.env` 即生效，无需手动同步 config.yaml。
+>
+> **RustFS 凭证仍需手动同步**（config.yaml 尚无 env 覆盖）：
 >
 > | .env 变量 | config.yaml 对应位置 |
 > |-----------|---------------------|
-> | MYSQL_ROOT_PASSWORD | mysql.password |
-> | REDIS_PASSWORD | redis.password, redis-list[0].password |
 > | RUSTFS_ROOT_USER | rustfs.access-key-id |
 > | RUSTFS_ROOT_PASSWORD | rustfs.secret-access-key |
 

@@ -39,6 +39,11 @@ services:
       - JWT_SIGNING_KEY=${JWT_SIGNING_KEY:?必须设置JWT签名密钥}
       # Cookie Secure 标志（HTTPS 环境必须 true）；由 initialize/other.go 读取覆盖配置
       - COOKIE_SECURE=${COOKIE_SECURE:-false}
+      # 可信反代 CIDR/IP（逗号分隔），多层反代下正确解析真实 ClientIP；由 initialize/other.go 读取
+      - TRUSTED_PROXIES=${TRUSTED_PROXIES:-}
+      # MySQL/Redis 密码由 initialize/other.go 读取覆盖 config.yaml，无需手动同步两处
+      - MYSQL_PASSWORD=${MYSQL_ROOT_PASSWORD:-devops_admin_2026}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-devops_redis_2026}
       # 企业微信凭证现由「系统设置 → 认证 → 企业微信」页面配置（数据库存储），无需环境变量
     volumes:
       - /home/docker/app-storage:/app/storage
