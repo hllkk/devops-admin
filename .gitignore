@@ -26,3 +26,4 @@ todo.md
 scripts/verify/reports/
 scripts/verify/__pycache__/
 scripts/verify/**/__pycache__/
+.mcp.json
