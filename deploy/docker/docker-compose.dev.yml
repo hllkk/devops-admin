@@ -6,26 +6,23 @@ name: ops-dev
 
 services:
   # ================================
-  # MySQL 8.4 (测试环境)
+  # PostgreSQL 17 (测试环境)
   # ================================
-  mysql:
-    image: mysql:8.4
-    container_name: dev-mysql
+  postgres:
+    image: postgres:17-alpine
+    container_name: dev-postgres
     environment:
-      MYSQL_ROOT_PASSWORD: devops_admin_2026
-      MYSQL_DATABASE: devops-admin
+      POSTGRES_USER: devops
+      POSTGRES_PASSWORD: devops_pg_2026
+      POSTGRES_DB: devops-admin
       TZ: Asia/Shanghai
     volumes:
-      - /home/dev-dockerData/mysql:/var/lib/mysql
+      - /home/dev-dockerData/postgres:/var/lib/postgresql/data
     ports:
-      - "13306:3306"
-    command: >
-      --character-set-server=utf8mb4
-      --collation-server=utf8mb4_unicode_ci
-      --max-connections=500
-      --innodb-buffer-pool-size=256M
+      - "13306:5432"
+    command: ["postgres", "-c", "timezone=Asia/Shanghai"]
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD-SHELL", "pg_isready -U devops -d devops-admin"]
       interval: 10s
       timeout: 5s
       retries: 5
