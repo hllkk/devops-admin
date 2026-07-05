@@ -122,35 +122,6 @@ services:
       - ops-net
 
   # ================================
-  # MySQL 8.4 (迁移后移除)
-  # ================================
-  mysql:
-    image: mysql:8.4
-    container_name: ops-mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-devops_admin_2026}
-      MYSQL_DATABASE: devops_admin
-      TZ: Asia/Shanghai
-    volumes:
-      - /home/docker/mysql:/var/lib/mysql
-      - ./scripts/init-mysql.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    ports:
-      - "3306:3306"
-    command: >
-      --character-set-server=utf8mb4
-      --collation-server=utf8mb4_unicode_ci
-      --max-connections=500
-      --innodb-buffer-pool-size=256M
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-    networks:
-      - ops-net
-
-  # ================================
   # Redis 8
   # ================================
   redis:
