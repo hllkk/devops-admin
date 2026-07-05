@@ -142,14 +142,14 @@ oracle:
     log-zap: false
 pgsql:
     prefix: ""
-    port: ""
-    config: ""
-    db-name: ""
-    username: ""
-    password: ""
-    path: ""
+    port: "5432"
+    config: sslmode=disable TimeZone=Asia/Shanghai
+    db-name: devops-admin
+    username: devops
+    password: "devops_pg_prod_2026"
+    path: postgres
     engine: ""
-    log-mode: ""
+    log-mode: error
     max-idle-conns: 10
     max-open-conns: 100
     singular: false
@@ -200,7 +200,7 @@ sqlite:
 # Docker: 启用 RustFS OSS 存储
 system:
     node-id: 1
-    db-type: mysql
+    db-type: pgsql
     oss-enable: true
     oss-proxy-enable: false
     oss-type: rustfs
@@ -246,6 +246,15 @@ upload:
     chunk-size-medium: 20
     chunk-size-large: 50
     chunk-size-huge: 100
+litellm:
+    url: "http://litellm:4000"
+    public-url: "http://litellm:4000"
+    master-key: "sk-prod-litellm-master-2026"
+    salt-key: "prod-litellm-salt-2026"
+    sync-interval-minutes: 5
+    usd-to-cny-rate: 7
+    log-retention-days: 0
+    timeout-seconds: 10
 zap:
     level: info
     prefix: '[DevOps-Backend]'

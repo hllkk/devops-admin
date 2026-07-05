@@ -41,8 +41,9 @@ services:
       - COOKIE_SECURE=${COOKIE_SECURE:-false}
       # 可信反代 CIDR/IP（逗号分隔），多层反代下正确解析真实 ClientIP；由 initialize/other.go 读取
       - TRUSTED_PROXIES=${TRUSTED_PROXIES:-}
-      # MySQL/Redis 密码由 initialize/other.go 读取覆盖 config.yaml，无需手动同步两处
+      # MySQL/PostgreSQL/Redis 密码由 initialize/other.go 读取覆盖 config.yaml，无需手动同步两处
       - MYSQL_PASSWORD=${MYSQL_ROOT_PASSWORD:-devops_admin_2026}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?必须设置PostgreSQL密码}
       - REDIS_PASSWORD=${REDIS_PASSWORD:-devops_redis_2026}
       # 数据库敏感字段加密密钥（独立于 JWT 密钥，避免不同环境密钥交叉导致解密失败）
       # 未设置时回退到 JWT_SIGNING_KEY，但 JWT 密钥变更会使已加密的配置无法解密
@@ -54,7 +55,7 @@ services:
       - /home/docker/app-logs:/app/log
       - ./conf/config.yaml:/app/conf/config.yaml:ro  # 覆盖配置
     depends_on:
-      mysql:
+      postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -63,7 +64,65 @@ services:
       - ops-net
 
   # ================================
-  # MySQL 8.4
+  # PostgreSQL 17 (生产环境)
+  # ================================
+  postgres:
+    image: postgres:17-alpine
+    container_name: ops-postgres
+    environment:
+      POSTGRES_USER: devops
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?必须设置PostgreSQL密码}
+      POSTGRES_DB: devops-admin
+      TZ: Asia/Shanghai
+    volumes:
+      - /home/docker/postgres:/var/lib/postgresql/data
+    ports:
+      - "15433:5432"
+    command: ["postgres", "-c", "timezone=Asia/Shanghai"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devops -d devops-admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - ops-net
+
+  # ================================
+  # litellm AI 网关数据面 (生产环境)
+  # 转发面对齐 AIHelms：客户端(含本地 go run 的 backend)直连此服务虚拟 key 转发
+  # Go backend 仅作管理面，经 litellm Admin API 管理 credentials/models/keys
+  # DATABASE_URL 指向同库 ops-postgres(litellm 表)与 gateway schema 隔离
+  # ================================
+  litellm:
+    image: ghcr.io/berriai/litellm:v1.91.0
+    container_name: ops-litellm
+    environment:
+      DATABASE_URL: postgresql://devops:${POSTGRES_PASSWORD:?必须设置PostgreSQL密码}@postgres:5432/devops-admin?schema=public
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:-sk-prod-litellm-master-2026}
+      LITELLM_SALT_KEY: ${LITELLM_SALT_KEY:-prod-litellm-salt-2026}
+      STORE_MODEL_IN_DB: "true"
+      TZ: Asia/Shanghai
+    volumes:
+      - ./litellm/litellm.yaml:/app/config.yaml:ro
+    ports:
+      - "4000:4000"
+    command: ["--config", "/app/config.yaml"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health/liveliness"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - ops-net
+
+  # ================================
+  # MySQL 8.4 (迁移后移除)
   # ================================
   mysql:
     image: mysql:8.4

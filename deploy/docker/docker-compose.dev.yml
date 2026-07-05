@@ -112,7 +112,7 @@ services:
   # 测试环境固定配置；生产待迁移 PG 后在 docker-compose.yml 同方式集成(经 .env)
   # ================================
   litellm:
-    image: ghcr.io/berriai/litellm:v1.85.1
+    image: ghcr.io/berriai/litellm:v1.91.0
     container_name: dev-litellm
     environment:
       DATABASE_URL: postgresql://devops:devops_pg_2026@postgres:5432/devops-admin?schema=public
