@@ -38,6 +38,11 @@ cors:
           allow-methods: GET,POST,PUT,DELETE,OPTIONS
           expose-headers: Content-Length,Access-Control-Allow-Origin,Access-Control-Allow-Headers,Content-Type,New-Token,New-Expires-At,Download-Filename
           allow-credentials: true
+        - allow-origin: http://172.21.10.40
+          allow-headers: Content-Type,AccessToken,X-CSRF-Token,Authorization,Token,X-Token,X-User-Id,x-request-id,isEncrypt,repeatSubmit,Clientid
+          allow-methods: GET,POST,PUT,DELETE,OPTIONS
+          expose-headers: Content-Length,Access-Control-Allow-Origin,Access-Control-Allow-Headers,Content-Type,New-Token,New-Expires-At,Download-Filename
+          allow-credentials: true
 db-list: []
 download:
     max_tokens_per_minute: 10
@@ -217,7 +222,6 @@ system:
     error-code: 4000
     success-code: 0
     download-rate: 10485760
-    cookie-secure: false
     init-key: ""
     secret-encrypt-key: ""   # 数据库敏感字段加密密钥；空则回退到 jwt.signing-key（不同环境应独立设置）
     trusted-proxies: []

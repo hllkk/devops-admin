@@ -68,7 +68,6 @@ vim .env   # 填入实际值
 
 | 变量 | 说明 |
 |------|------|
-| `COOKIE_SECURE` | HTTPS 必须 `true`，HTTP 本地开发设 `false` |
 | `TRUSTED_PROXIES` | 反向代理部署必配（CIDR 逗号分隔），否则登录日志/限流 IP 全显示为代理 IP |
 
 > **MySQL/Redis 密码已通过环境变量自动注入 backend**（`initialize/other.go` 读取覆盖 config.yaml），修改 `.env` 即生效，无需手动同步 config.yaml。
