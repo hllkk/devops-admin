@@ -91,6 +91,49 @@ cat ~/.ssh/id_ed25519.pub
 git remote set-url origin git@gitee.com:huang_lei521/devops-admin.git
 ```
 
+## 同步 SoybeanAdmin 上游框架更新
+
+前端 `web/` 基于 SoybeanAdmin，通过 `git subtree` 机制追踪上游框架更新。
+
+### 预览上游变更
+
+```bash
+bash scripts/sync-upstream.sh
+```
+
+### 执行同步
+
+```bash
+bash scripts/sync-upstream.sh --run
+```
+
+### 冲突策略
+
+Subtree `--squash` 合并时，冲突按文件所属层级自动解决：
+
+```
+web/packages/**          → 接受上游 (框架核心包)
+web/build/**             → 接受上游 (构建配置)
+web/pnpm-lock.yaml       → 接受上游 (依赖锁文件)
+web/src/views/**         → 保留本地 (业务页面)
+web/src/router/routes/** → 保留本地 (路由配置)
+web/src/service/**       → 保留本地 (API 定义)
+web/src/layouts/**       → 保留本地 (布局定制)
+web/src/store/**         → 保留本地 (状态管理)
+web/src/locales/**       → 保留本地 (国际化文本)
+web/.env*                → 保留本地 (环境变量)
+web/vite.config.ts       → 保留本地 (构建配置)
+web/package.json         → ⚠ 人工合并 (新依赖 vs 本地脚本)
+```
+
+### 同步后验证
+
+```bash
+cd web
+pnpm install         # 安装可能新增的依赖
+pnpm dev             # 验证前端启动正常
+```
+
 ## 从远程项目迁移代码时的注意事项
 
 远程项目 (172.21.10.40) 的代码可以直接复制使用，但注意：
