@@ -16,7 +16,7 @@
 
 set -euo pipefail
 
-UPSTREAM_REPO="https://github.com/soybeanjs/soybean-admin.git"
+UPSTREAM_REPO="git@github.com:soybeanjs/soybean-admin.git"
 UPSTREAM_BRANCH="main"
 PREFIX="web"
 TRACK_FILE="$PREFIX/.upstream-track"
@@ -62,10 +62,15 @@ if [[ ! -d "$PREFIX" ]]; then
 fi
 
 # ── 获取上游最新信息 ──
+# 用 --depth=100 浅拉取避免超时（大仓库完整历史可能拖慢网络）
 log "获取上游最新信息..."
-git fetch "$UPSTREAM_REPO" "$UPSTREAM_BRANCH" --quiet 2>&1 || {
-    err "无法 fetch 上游仓库 $UPSTREAM_REPO"
-    exit 1
+git fetch "$UPSTREAM_REPO" "$UPSTREAM_BRANCH" --depth=100 --no-tags --quiet 2>&1 || {
+    err "无法 fetch 上游仓库 $UPSTREAM_REPO，尝试 git@ 地址..."
+    # 兜底：尝试 https
+    git fetch "https://github.com/soybeanjs/soybean-admin.git" "$UPSTREAM_BRANCH" --depth=100 --no-tags --quiet 2>&1 || {
+        err "仍无法访问，请检查网络连接"
+        exit 1
+    }
 }
 
 UPSTREAM_HEAD=$(git rev-parse FETCH_HEAD)
