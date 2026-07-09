@@ -170,7 +170,6 @@ const routeMap: RouteMap = {
   "iframe-page": "/iframe-page/:url",
   "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat)?",
   "system": "/system",
-  "system_test": "/system/test",
   "system_user": "/system/user"
 };
 

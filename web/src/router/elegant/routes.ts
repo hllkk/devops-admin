@@ -85,15 +85,6 @@ export const generatedRoutes: GeneratedRoute[] = [
     },
     children: [
       {
-        name: 'system_test',
-        path: '/system/test',
-        component: 'view.system_test',
-        meta: {
-          title: 'system_test',
-          i18nKey: 'route.system_test'
-        }
-      },
-      {
         name: 'system_user',
         path: '/system/user',
         component: 'view.system_user',

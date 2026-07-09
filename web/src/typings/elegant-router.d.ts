@@ -24,7 +24,6 @@ declare module "@elegant-router/types" {
     "iframe-page": "/iframe-page/:url";
     "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat)?";
     "system": "/system";
-    "system_test": "/system/test";
     "system_user": "/system/user";
   };
 
@@ -81,7 +80,6 @@ declare module "@elegant-router/types" {
   export type LastLevelRouteKey = Extract<
     RouteKey,
     | "admin"
-    | "system_test"
     | "system_user"
     | "403"
     | "404"
