@@ -40,12 +40,12 @@ export const generatedRoutes: GeneratedRoute[] = [
     }
   },
   {
-    name: 'home',
-    path: '/home',
-    component: 'layout.base$view.home',
+    name: 'admin',
+    path: '/admin',
+    component: 'layout.base$view.admin',
     meta: {
-      title: 'home',
-      i18nKey: 'route.home',
+      title: 'admin',
+      i18nKey: 'route.admin',
       icon: 'mdi:monitor-dashboard',
       order: 1
     }
@@ -74,5 +74,34 @@ export const generatedRoutes: GeneratedRoute[] = [
       constant: true,
       hideInMenu: true
     }
+  },
+  {
+    name: 'system',
+    path: '/system',
+    component: 'layout.base',
+    meta: {
+      title: 'system',
+      i18nKey: 'route.system'
+    },
+    children: [
+      {
+        name: 'system_test',
+        path: '/system/test',
+        component: 'view.system_test',
+        meta: {
+          title: 'system_test',
+          i18nKey: 'route.system_test'
+        }
+      },
+      {
+        name: 'system_user',
+        path: '/system/user',
+        component: 'view.system_user',
+        meta: {
+          title: 'system_user',
+          i18nKey: 'route.system_user'
+        }
+      }
+    ]
   }
 ];

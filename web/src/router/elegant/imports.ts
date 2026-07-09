@@ -15,10 +15,12 @@ export const layouts: Record<RouteLayout, RouteComponent | (() => Promise<RouteC
 };
 
 export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<RouteComponent>)> = {
+  admin: () => import("@/views/_admin/admin/index.vue"),
+  system_test: () => import("@/views/_admin/system/test/index.vue"),
+  system_user: () => import("@/views/_admin/system/user/index.vue"),
   403: () => import("@/views/_builtin/403/index.vue"),
   404: () => import("@/views/_builtin/404/index.vue"),
   500: () => import("@/views/_builtin/500/index.vue"),
   "iframe-page": () => import("@/views/_builtin/iframe-page/[url].vue"),
   login: () => import("@/views/_builtin/login/index.vue"),
-  home: () => import("@/views/home/index.vue"),
 };

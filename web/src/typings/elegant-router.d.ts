@@ -20,9 +20,12 @@ declare module "@elegant-router/types" {
     "403": "/403";
     "404": "/404";
     "500": "/500";
-    "home": "/home";
+    "admin": "/admin";
     "iframe-page": "/iframe-page/:url";
     "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat)?";
+    "system": "/system";
+    "system_test": "/system/test";
+    "system_user": "/system/user";
   };
 
   /**
@@ -57,9 +60,10 @@ declare module "@elegant-router/types" {
     | "403"
     | "404"
     | "500"
-    | "home"
+    | "admin"
     | "iframe-page"
     | "login"
+    | "system"
   >;
 
   /**
@@ -76,12 +80,14 @@ declare module "@elegant-router/types" {
    */
   export type LastLevelRouteKey = Extract<
     RouteKey,
+    | "admin"
+    | "system_test"
+    | "system_user"
     | "403"
     | "404"
     | "500"
     | "iframe-page"
     | "login"
-    | "home"
   >;
 
   /**
