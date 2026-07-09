@@ -1,15 +1,51 @@
-# Binaries for programs and plugins
+# Dependencies
+/web/node_modules
+/server/vendor
+
+# Build output
+/web/dist
+/server/tmp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local env overrides (secrets)
+.env.local
+.env.*.local
+# Server runtime env (may contain secrets)
+/server/.env
+
+# Log files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE / Editor
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Binary files
 *.exe
-*.exe~
-*.dll
-*.so
-*.dylib
 
-# Test binary, built with `go test -c`
-*.test
+# Database files
+*.db
+*.sqlite
+*.sqlite3
 
-# Output of the go coverage tool, specifically when used with LiteIDE
-*.out
+# Claude Code
+.claude/worktrees/
+.claude/scheduled_tasks.json
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
+# Temp / local-only
+skill*
+settings.local.json
+Soy*
+worktrees/
+.codegraph/
