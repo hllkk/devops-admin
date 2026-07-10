@@ -1,0 +1,16 @@
+info:
+  contact: {}
+  description: 使用gin+vue进行极速开发的全栈开发基础平台
+  title: devops-admin Swagger API接口文档
+  version: v0.1.0
+paths: {}
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: x-token
+    type: apiKey
+swagger: "2.0"
+tags:
+- name: Base
+- description: 用户
+  name: SysUser

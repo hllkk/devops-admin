@@ -180,9 +180,9 @@ db-list:
       log-zap: false
 
 # local configuration
-# local:
-#     path: uploads/file
-#     store-path: uploads/file
+local:
+    path: uploads/file
+    store-path: uploads/file
 
 # autocode configuration
 autocode:
