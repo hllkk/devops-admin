@@ -42,8 +42,20 @@ const local: App.I18n.Schema = {
     switch: 'Switch',
     tip: 'Tip',
     trigger: 'Trigger',
+    save: 'Save',
     update: 'Update',
     updateSuccess: 'Update Success',
+    updateExisting: 'Update Existing',
+    import: 'Import',
+    importSuccess: 'Import Success',
+    importFail: 'Import Fail',
+    importTemplate: 'Import Template',
+    importTip: 'Tip: Only "xls" or "xlsx" format files are allowed',
+    importSize: 'File size cannot exceed {size}',
+    importFormat: 'The import data format is incorrect',
+    importEnd: 'Import Completed',
+    importResult: 'Successfully imported {success} items, failed {fail} items',
+    downloadTemplate: 'Download Template',
     userCenter: 'User Center',
     yesOrNo: {
       yes: 'Yes',
@@ -229,7 +241,9 @@ const local: App.I18n.Schema = {
     404: 'Page Not Found',
     500: 'Server Error',
     'iframe-page': 'Iframe',
-    admin: 'Home'
+    admin: 'Home',
+    system: 'System',
+    system_user: 'User'
   },
   page: {
     login: {
@@ -304,6 +318,46 @@ const local: App.I18n.Schema = {
         desc5: 'Soybean just wrote some of the workbench pages casually, and it was enough to see!'
       },
       creativity: 'Creativity'
+    },
+    system: {
+      user: {
+        title: 'User Management',
+        userName: 'User Name',
+        nickName: 'Nick Name',
+        sex: 'Gender',
+        roleIds: 'Role',
+        postIds: 'Post',
+        deptName: 'Department',
+        email: 'Email',
+        phonenumber: 'Phone Number',
+        status: 'Status',
+        avatar: 'Avatar',
+        remark: 'Remark',
+        createTime: 'Create Time',
+        password: 'Password',
+        confirmPassword: 'Confirm Password',
+        statusChangeSuccess: 'Status changed successfully',
+        addUser: 'Add User',
+        editUser: 'Edit User',
+        form: {
+          userName: { required: 'Please enter user name', invalid: 'User name format is incorrect' },
+          nickName: { required: 'Please enter nick name', invalid: 'Nick name format is incorrect' },
+          deptId: { required: 'Please select department', invalid: 'Please select department' },
+          phonenumber: { required: 'Please enter phone number', invalid: 'Phone number format is incorrect' },
+          status: { required: 'Please select status', invalid: 'Please select status' },
+          password: { required: 'Please enter password', invalid: 'Password format is incorrect' },
+          confirmPassword: { required: 'Please enter password again', invalid: 'The two passwords are inconsistent' },
+          sex: { required: 'Please select gender', invalid: 'Please select gender' },
+          email: { required: 'Please enter email', invalid: 'Email format is incorrect' },
+          roleIds: { required: 'Please select role', invalid: 'Please select role' },
+          postIds: { required: 'Please select post', invalid: 'Please select post' },
+          remark: { required: 'Please enter remark', invalid: 'Remark format is incorrect' }
+        }
+      },
+      dept: {
+        title: 'Department',
+        empty: 'No department data'
+      }
     }
   },
   form: {

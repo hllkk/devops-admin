@@ -3,5 +3,7 @@ export enum SetupStoreId {
   Theme = 'theme-store',
   Auth = 'auth-store',
   Route = 'route-store',
-  Tab = 'tab-store'
+  Tab = 'tab-store',
+  Notice = 'notice-store',
+  Dict = 'dict-store'
 }

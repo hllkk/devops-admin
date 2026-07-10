@@ -354,8 +354,20 @@ declare namespace App {
         switch: string;
         tip: string;
         trigger: string;
+        save: string;
         update: string;
         updateSuccess: string;
+        updateExisting: string;
+        import: string;
+        importSuccess: string;
+        importFail: string;
+        importTemplate: string;
+        importTip: string;
+        importSize: string;
+        importFormat: string;
+        importEnd: string;
+        importResult: string;
+        downloadTemplate: string;
         userCenter: string;
         yesOrNo: {
           yes: string;
@@ -553,6 +565,46 @@ declare namespace App {
             desc5: string;
           };
           creativity: string;
+        };
+        system: {
+          user: {
+            title: string;
+            userName: string;
+            nickName: string;
+            sex: string;
+            roleIds: string;
+            postIds: string;
+            deptName: string;
+            email: string;
+            phonenumber: string;
+            status: string;
+            avatar: string;
+            remark: string;
+            createTime: string;
+            password: string;
+            confirmPassword: string;
+            statusChangeSuccess: string;
+            addUser: string;
+            editUser: string;
+            form: {
+              userName: FormMsg;
+              nickName: FormMsg;
+              deptId: FormMsg;
+              phonenumber: FormMsg;
+              status: FormMsg;
+              password: FormMsg;
+              confirmPassword: FormMsg;
+              sex: FormMsg;
+              email: FormMsg;
+              roleIds: FormMsg;
+              postIds: FormMsg;
+              remark: FormMsg;
+            }
+          };
+          dept: {
+            title: string;
+            empty: string;
+          };
         };
       };
       form: {

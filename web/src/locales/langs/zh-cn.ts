@@ -42,8 +42,20 @@ const local: App.I18n.Schema = {
     switch: '切换',
     tip: '提示',
     trigger: '触发',
+    save: '保存',
     update: '更新',
     updateSuccess: '更新成功',
+    updateExisting: '更新已存在的数据',
+    import: '导入',
+    importSuccess: '导入成功',
+    importFail: '导入失败',
+    importTemplate: '导入模板',
+    importTip: '提示：仅允许导入 "xls" 或 "xlsx" 格式文件',
+    importSize: '文件大小不能超过 {size}',
+    importFormat: '导入数据格式不正确',
+    importEnd: '导入完成',
+    importResult: '成功导入 {success} 条，失败 {fail} 条',
+    downloadTemplate: '下载模板',
     userCenter: '个人中心',
     yesOrNo: {
       yes: '是',
@@ -225,7 +237,9 @@ const local: App.I18n.Schema = {
     404: '页面不存在',
     500: '服务器错误',
     'iframe-page': '外链页面',
-    admin: '首页'
+    admin: '首页',
+    system: '系统管理',
+    system_user: '用户管理'
   },
   page: {
     login: {
@@ -300,6 +314,46 @@ const local: App.I18n.Schema = {
         desc5: 'Soybean 刚才把工作台页面随便写了一些，凑合能看了！'
       },
       creativity: '创意'
+    },
+    system: {
+      user: {
+        title: '用户管理',
+        userName: '用户名称',
+        nickName: '用户昵称',
+        sex: '性别',
+        roleIds: '角色',
+        postIds: '岗位',
+        deptName: '部门',
+        email: '邮箱',
+        phonenumber: '手机号码',
+        status: '状态',
+        avatar: '头像',
+        remark: '备注',
+        createTime: '创建时间',
+        password: '密码',
+        confirmPassword: '确认密码',
+        statusChangeSuccess: '状态修改成功',
+        addUser: '新增用户',
+        editUser: '编辑用户',
+        form: {
+          userName: { required: '请输入用户名称', invalid: '用户名称格式不正确' },
+          nickName: { required: '请输入用户昵称', invalid: '用户昵称格式不正确' },
+          deptId: { required: '请选择归属部门', invalid: '请选择归属部门' },
+          phonenumber: { required: '请输入手机号码', invalid: '手机号码格式不正确' },
+          status: { required: '请选择状态', invalid: '请选择状态' },
+          password: { required: '请输入密码', invalid: '密码格式不正确' },
+          confirmPassword: { required: '请再次输入密码', invalid: '两次输入密码不一致' },
+          sex: { required: '请选择性别', invalid: '请选择性别' },
+          email: { required: '请输入邮箱', invalid: '邮箱格式不正确' },
+          roleIds: { required: '请选择角色', invalid: '请选择角色' },
+          postIds: { required: '请选择岗位', invalid: '请选择岗位' },
+          remark: { required: '请输入备注', invalid: '备注格式不正确' }
+        }
+      },
+      dept: {
+        title: '部门',
+        empty: '暂无部门数据'
+      }
     }
   },
   form: {
