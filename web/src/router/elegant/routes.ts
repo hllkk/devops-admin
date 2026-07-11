@@ -76,12 +76,23 @@ export const generatedRoutes: GeneratedRoute[] = [
     }
   },
   {
+    name: 'social-callback',
+    path: '/social-callback',
+    component: 'layout.base$view.social-callback',
+    meta: {
+      title: 'social-callback',
+      i18nKey: 'route.social-callback'
+    }
+  },
+  {
     name: 'system',
     path: '/system',
     component: 'layout.base',
     meta: {
       title: 'system',
-      i18nKey: 'route.system'
+      i18nKey: 'route.system',
+      icon: 'carbon:cloud-service-management',
+      order: 2
     },
     children: [
       {
@@ -90,9 +101,20 @@ export const generatedRoutes: GeneratedRoute[] = [
         component: 'view.system_user',
         meta: {
           title: 'system_user',
-          i18nKey: 'route.system_user'
+          i18nKey: 'route.system_user',
+          icon: 'carbon:user',
+          order: 1
         }
       }
     ]
+  },
+  {
+    name: 'user-center',
+    path: '/user-center',
+    component: 'layout.base$view.user-center',
+    meta: {
+      title: 'user-center',
+      i18nKey: 'route.user-center'
+    }
   }
 ];

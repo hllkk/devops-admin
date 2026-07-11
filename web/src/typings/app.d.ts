@@ -369,6 +369,7 @@ declare namespace App {
         importResult: string;
         downloadTemplate: string;
         userCenter: string;
+        login: string;
         yesOrNo: {
           yes: string;
           no: string;
@@ -495,6 +496,8 @@ declare namespace App {
       page: {
         login: {
           common: {
+            title: string;
+            subTitle: string;
             loginOrRegister: string;
             userNamePlaceholder: string;
             phonePlaceholder: string;
@@ -507,6 +510,7 @@ declare namespace App {
             validateSuccess: string;
             loginSuccess: string;
             welcomeBack: string;
+            register: string;
           };
           pwdLogin: {
             title: string;

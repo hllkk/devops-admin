@@ -1,6 +1,6 @@
 const local: App.I18n.Schema = {
   system: {
-    title: 'SoybeanAdmin',
+    title: 'DevOps Admin',
     updateTitle: 'System Version Update Notification',
     updateContent: 'A new version of the system has been detected. Do you want to refresh the page immediately?',
     updateConfirm: 'Refresh immediately',
@@ -57,6 +57,7 @@ const local: App.I18n.Schema = {
     importResult: 'Successfully imported {success} items, failed {fail} items',
     downloadTemplate: 'Download Template',
     userCenter: 'User Center',
+    login: 'Login',
     yesOrNo: {
       yes: 'Yes',
       no: 'No'
@@ -242,12 +243,16 @@ const local: App.I18n.Schema = {
     500: 'Server Error',
     'iframe-page': 'Iframe',
     admin: 'Home',
+    'social-callback': 'Social Callback',
+    'user-center': 'User Center',
     system: 'System',
     system_user: 'User'
   },
   page: {
     login: {
       common: {
+        title: 'Welcome',
+        subTitle: 'Please enter your account information to continue',
         loginOrRegister: 'Login / Register',
         userNamePlaceholder: 'Please enter user name',
         phonePlaceholder: 'Please enter phone number',
@@ -259,7 +264,8 @@ const local: App.I18n.Schema = {
         back: 'Back',
         validateSuccess: 'Verification passed',
         loginSuccess: 'Login successfully',
-        welcomeBack: 'Welcome back, {userName} !'
+        welcomeBack: 'Welcome back, {userName} !',
+        register: 'Register'
       },
       pwdLogin: {
         title: 'Password Login',

@@ -2,13 +2,14 @@ import { computed, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { defineStore } from 'pinia';
 import { useLoading } from '@sa/hooks';
-import { fetchGetUserInfo, fetchLogin } from '@/service/api';
+import { fetchGetUserInfo, fetchLogin, fetchLogout } from '@/service/api';
 import { useRouterPush } from '@/hooks/common/router';
 import { localStg } from '@/utils/storage';
 import { SetupStoreId } from '@/enum';
 import { $t } from '@/locales';
 import { useRouteStore } from '../route';
 import { useTabStore } from '../tab';
+import { useNoticeStore } from '../notice';
 import { clearAuthStorage, getToken } from './shared';
 
 export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
@@ -16,18 +17,17 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   const authStore = useAuthStore();
   const routeStore = useRouteStore();
   const tabStore = useTabStore();
+  const noticeStore = useNoticeStore();
   const { toLogin, redirectFromLogin } = useRouterPush(false);
   const { loading: loginLoading, startLoading, endLoading } = useLoading();
 
   const token = ref('');
 
   const userInfo: Api.Auth.UserInfo = reactive({
-    userId: '',
-    userName: '',
+    user: undefined,
     roles: [],
-    buttons: []
+    permissions: []
   });
-
   /** is super role in static route */
   const isStaticSuper = computed(() => {
     const { VITE_AUTH_ROUTE_MODE, VITE_STATIC_SUPER_ROLE } = import.meta.env;
@@ -50,18 +50,24 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
       await toLogin();
     }
 
+    noticeStore.clearNotice();
     tabStore.cacheTabs();
     routeStore.resetStore();
   }
 
+  async function logout() {
+    await fetchLogout();
+    resetStore();
+  }
+
   /** Record the user ID of the previous login session Used to compare with the current user ID on next login */
   function recordUserId() {
-    if (!userInfo.userId) {
+    if (!userInfo.user?.userId) {
       return;
     }
 
     // Store current user ID locally for next login comparison
-    localStg.set('lastLoginUserId', userInfo.userId);
+    localStg.set('lastLoginUserId', userInfo.user?.userId.toString());
   }
 
   /**
@@ -70,14 +76,14 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
    * @returns {boolean} Whether to clear all tabs
    */
   function checkTabClear(): boolean {
-    if (!userInfo.userId) {
+    if (!userInfo.user?.userId) {
       return false;
     }
 
     const lastLoginUserId = localStg.get('lastLoginUserId');
 
     // Clear all tabs if current user is different from previous user
-    if (!lastLoginUserId || lastLoginUserId !== userInfo.userId) {
+    if (!lastLoginUserId || lastLoginUserId !== userInfo.user?.userId) {
       localStg.remove('globalTabs');
       tabStore.clearTabs();
 
@@ -92,14 +98,22 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   /**
    * Login
    *
-   * @param userName User name
-   * @param password Password
    * @param [redirect=true] Whether to redirect after login. Default is `true`
    */
-  async function login(userName: string, password: string, redirect = true) {
+  async function login(loginForm: Api.Auth.PwdLoginForm | Api.Auth.SocialLoginForm, redirect = true) {
     startLoading();
 
-    const { data: loginToken, error } = await fetchLogin(userName, password);
+    const { VITE_APP_CLIENT_ID } = import.meta.env;
+
+    const loginData: Api.Auth.PwdLoginForm = {
+      ...loginForm,
+      tenantId: loginForm.tenantId ?? '000000',
+      clientId: VITE_APP_CLIENT_ID!,
+      grantType: loginForm.grantType ?? 'password'
+    };
+
+
+    const { data: loginToken, error } = await fetchLogin(loginData);
 
     if (!error) {
       const pass = await loginByToken(loginToken);
@@ -117,7 +131,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
 
         window.$notification?.success({
           title: $t('page.login.common.loginSuccess'),
-          content: $t('page.login.common.welcomeBack', { userName: userInfo.userName }),
+          content: $t('page.login.common.welcomeBack', { userName: userInfo.user?.userName || '' }),
           duration: 4500
         });
       }
@@ -179,6 +193,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     loginLoading,
     resetStore,
     login,
+    logout,
     initUserInfo
   };
 });

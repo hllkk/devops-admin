@@ -247,17 +247,17 @@ export function defaultTransform<ApiData>(
     return {
       data: [],
       pageNum: 1,
-      pageSize: 10,
+      pageSize: 0,
       total: 0
     };
   }
 
-  const { rows: records, pageNum, pageSize, total } = data;
+  const { rows: records, pageNum: current, total } = data;
 
   return {
     data: records,
-    pageNum,
-    pageSize: pageSize ?? 10,
+    pageNum: current,
+    pageSize: data.pageSize ?? 10,
     total
   };
 }

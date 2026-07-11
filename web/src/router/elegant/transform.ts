@@ -169,8 +169,10 @@ const routeMap: RouteMap = {
   "admin": "/admin",
   "iframe-page": "/iframe-page/:url",
   "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat)?",
+  "social-callback": "/social-callback",
   "system": "/system",
-  "system_user": "/system/user"
+  "system_user": "/system/user",
+  "user-center": "/user-center"
 };
 
 /**

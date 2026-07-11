@@ -1,6 +1,6 @@
 const local: App.I18n.Schema = {
   system: {
-    title: 'Soybean 管理系统',
+    title: 'DevOps 管理后台',
     updateTitle: '系统版本更新通知',
     updateContent: '检测到系统有新版本发布，是否立即刷新页面？',
     updateConfirm: '立即刷新',
@@ -57,6 +57,7 @@ const local: App.I18n.Schema = {
     importResult: '成功导入 {success} 条，失败 {fail} 条',
     downloadTemplate: '下载模板',
     userCenter: '个人中心',
+    login: '登录',
     yesOrNo: {
       yes: '是',
       no: '否'
@@ -238,12 +239,16 @@ const local: App.I18n.Schema = {
     500: '服务器错误',
     'iframe-page': '外链页面',
     admin: '首页',
+    'social-callback': '社交回调',
+    'user-center': '用户中心',
     system: '系统管理',
     system_user: '用户管理'
   },
   page: {
     login: {
       common: {
+        title: '欢迎登录',
+        subTitle: '请输入您的账户信息以继续',
         loginOrRegister: '登录 / 注册',
         userNamePlaceholder: '请输入用户名',
         phonePlaceholder: '请输入手机号',
@@ -255,7 +260,8 @@ const local: App.I18n.Schema = {
         back: '返回',
         validateSuccess: '验证成功',
         loginSuccess: '登录成功',
-        welcomeBack: '欢迎回来，{userName} ！'
+        welcomeBack: '欢迎回来，{userName} ！',
+        register: '注册'
       },
       pwdLogin: {
         title: '密码登录',

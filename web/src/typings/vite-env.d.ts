@@ -110,6 +110,22 @@ declare namespace Env {
     readonly VITE_PROXY_LOG?: CommonType.YesOrNo;
     /** The launch editor */
     readonly VITE_DEVTOOLS_LAUNCH_EDITOR?: import('vite-plugin-vue-devtools').VitePluginVueDevToolsOptions['launchEditor'];
+    /** The client id of the application */
+    readonly VITE_APP_CLIENT_ID?: string;
+    /** The remember me aes key of the application */
+    readonly VITE_REMEMBER_ME_AES_KEY?: string;
+    /** Whether to encrypt the request */
+    readonly VITE_APP_ENCRYPT?: CommonType.YesOrNo;
+    /** The header flag of the application */
+    readonly VITE_HEADER_FLAG?: string;
+    /** The rsa public key of the application */
+    readonly VITE_APP_RSA_PUBLIC_KEY?: string;
+    /** The rsa private key of the application */
+    readonly VITE_APP_RSA_PRIVATE_KEY?: string;
+    /** Whether to enable the websocket */
+    readonly VITE_APP_WEBSOCKET?: CommonType.YesOrNo;
+    /** Whether to enable the sse */
+    readonly VITE_APP_SSE?: CommonType.YesOrNo;
   }
 }
 

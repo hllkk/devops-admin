@@ -7,6 +7,11 @@ declare namespace StorageType {
     //  * the theme settings
     //  */
     // themeSettings: App.Theme.ThemeSetting;
+    sessionObj: {
+      url: string;
+      data: any;
+      time: number;
+    };
   }
 
   interface Local {
@@ -39,5 +44,9 @@ declare namespace StorageType {
     };
     /** The last login user id */
     lastLoginUserId: string;
+    /** The login form rember */
+    loginRember: string;
+    /** The tenant id */
+    tenantId: CommonType.IdType;
   }
 }
