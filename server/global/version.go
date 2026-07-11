@@ -4,7 +4,7 @@ package global
 // 目前只有Version正式使用 其余为预留
 const (
 	// Version 当前版本号
-	Version = "v0.1.0"
+	Version = "v0.2.0"
 	// AppName 应用名称
 	AppName = "devops-admin-server"
 	// Description 应用描述

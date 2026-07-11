@@ -1,38 +1,31 @@
-# 前后端边界与契约 (boundary)
+# 前后端边界说明
 
-> 前后端唯一交集。冲突时以 `AGENT.MD` 与本文件为准。
+## 归属边界
 
-## 统一响应
-`{ code, data, msg }`
-- **成功码 `code = 0`**（后端 `response.Ok*` 返回 0）
-- ⚠️ SoybeanAdmin 默认 mock 常用 `code: 200`；**前端 `isBackendSuccess` 必须改为判 `code === 0`** 以对齐后端
+- 后端负责路由、参数校验、业务逻辑和响应结构
+- 前端负责页面流程、交互体验、本地状态和展示层
+- 共同行为通过明确的 API 契约协作，不通过隐式约定耦合
 
-## 统一分页
-`{ page, pageSize, total, list }`
+## 契约规则
 
-## 时间
-ISO 8601 / RFC3339，如 `2026-07-09T10:00:00+08:00`
+- 保持统一响应结构：`{ code, data, msg }`
+- 保持统一分页结构：`{ pageNum, pageSize, total, rows }`
+- 字段名不要随意漂移
+- 前后端字段类型必须保持一致
+- 后端必须提供完整而准确的 Swagger 接口说明
+- 前端接口调用应以实际 Swagger 与后端实现为准
 
-## 鉴权
-JWT；请求头 `Authorization: Bearer <token>`（由 `@sa/axios` 的 `onRequest` 注入）
+## 变更规则
 
-## 类型一致性（关键）
-| Go | TypeScript |
-|---|---|
-| `*T` 指针 nil | `null` |
-| `int64`（大 ID） | `string`（防精度丢失） |
-| `int` / `int64`（小 ID） | `number` |
-| `bool` | `boolean` |
-| `time.Time` | ISO 8601 `string` |
-| `[]byte` | base64 `string` |
+- 涉及破坏性接口调整时，要先写清楚变更范围
+- Swagger 或其他接口说明必须与真实实现一致
+- 前端接口封装应继续放在 `web/src/service/api/` 或 `web/src/plugin/<name>/api/`
+- 可复用逻辑优先复用 `web/src/utils/` 现有能力
 
-- 前后端字段名一致（Go json tag ↔ TS 字段名）
-- 枚举值前后端统一（建议数值或全大写字符串，避免大小写漂移）
+## 完成前检查
 
-## 文件 / 上传相关（网盘模块特有）
-- 分片上传：前端切片 + hash 秒传，后端 RustFS 组装；接口约定见 `modules/business-modules.md`
-- 大文件 ID 一律 `string` 传输
-- 上传/下载走 RustFS 预签名 URL 或流式，**不**经业务 API 中转大二进制
+跨前后端改动结束前，至少确认以下几点：
 
-## 跨栈变更
-接口/字段/枚举变更时，**同步更新本文件与 `aiDoc/modules/business-modules.md`**，并通知对端。
+1. 后端响应结构仍然满足前端预期
+2. 前端仍在使用正确的字段名和数据类型
+3. 若契约发生了长期变化，对应说明已经补到 `aiDoc/`
