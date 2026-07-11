@@ -52,16 +52,16 @@ function toggleThemeScheme() {
 
 <style lang="scss" scoped>
 // 颜色变量定义
-$primary-light-7: rgb(var(--primary-50-color));
-$primary-light-8: rgb(var(--primary-100-color));
-$primary-light-9: rgb(var(--primary-200-color));
 $primary-base: rgb(var(--primary-color));
-$main-bg: rgb(var(--primary-50-color));
 
-// 混合颜色函数
-$bg-mix-light-9: color-mix(in srgb, $primary-light-9 100%, $main-bg);
-$bg-mix-light-8: color-mix(in srgb, $primary-light-8 80%, $main-bg);
-$bg-mix-light-7: color-mix(in srgb, $primary-light-7 80%, $main-bg);
+// 几何装饰色：统一基于主色 + 透明度，保证亮/暗模式下均可见且与主题色一致（与“叠加方块组”同一思路）
+$primary-light-7: rgb(from $primary-base r g b / 45%); // 点缀点
+$primary-light-8: rgb(from $primary-base r g b / 32%); // 常规填充 / 描边
+$bg-mix-light-8: rgb(from $primary-base r g b / 26%);  // 大块背景填充
+$bg-mix-light-9: rgb(from $primary-base r g b / 42%);  // 暗色模式填充
+
+// wave-bg 暗色背景专用：保留原有暗色底色观感（不参与几何元素着色）
+$primary-light-9: rgb(var(--primary-200-color));
 
 .wave-bg {
   .geometric-decorations {
@@ -270,7 +270,7 @@ $bg-mix-light-7: color-mix(in srgb, $primary-light-7 80%, $main-bg);
       width: 50px;
       height: 50px;
       cursor: pointer;
-      background: $bg-mix-light-7;
+      background: rgb(var(--primary-50-color)); // 太阳/月亮为交互按钮：必须用不透明色阶，半透明会破坏月牙剪影
       border-radius: 50%;
       transition: all 0.3s;
 
@@ -444,7 +444,7 @@ $bg-mix-light-7: color-mix(in srgb, $primary-light-7 80%, $main-bg);
   .geometric-decorations {
     // 月亮效果
     .circle-top-right {
-      background-color: $bg-mix-light-8;
+      background-color: rgb(var(--primary-100-color));
       box-shadow: 0 0 25px #333 inset;
       transition: all 0.3s ease-in-out 0.1s;
       rotate: -48deg;
@@ -456,7 +456,7 @@ $bg-mix-light-7: color-mix(in srgb, $primary-light-7 80%, $main-bg);
         width: 50px;
         height: 50px;
         content: '';
-        background-color: $bg-mix-light-9;
+        background-color: rgb(var(--primary-200-color));
         border-radius: 50%;
         transition: all 0.3s ease-in-out;
       }
@@ -476,7 +476,8 @@ $bg-mix-light-7: color-mix(in srgb, $primary-light-7 80%, $main-bg);
     }
 
     .bg-bubble {
-      background-color: $bg-mix-light-9;
+      // bg-bubble 是太阳/月亮的背板：必须与下方 ::before 挡球同色且不透明，才能把太阳剪成月牙
+      background-color: rgb(var(--primary-200-color));
     }
 
     // 其他元素颜色调整
@@ -490,7 +491,7 @@ $bg-mix-light-7: color-mix(in srgb, $primary-light-7 80%, $main-bg);
     }
 
     .square-bottom-right {
-      background-color: $primary-light-9;
+      background-color: $bg-mix-light-9;
     }
 
     .dot.dot-top-right {
