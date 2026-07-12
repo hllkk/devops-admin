@@ -46,8 +46,6 @@ declare namespace StorageType {
     lastLoginUserId: string;
     /** The login form rember */
     loginRember: string;
-    /** The tenant id */
-    tenantId: CommonType.IdType;
     /**
      * Per-module structural theme overrides.
      *
