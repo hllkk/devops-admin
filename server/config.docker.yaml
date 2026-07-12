@@ -287,3 +287,8 @@ mcp:
     version: v1.0.0
     addr: 8889
     separate: false
+
+# snowflake 主键生成配置
+snowflake:
+    node: 1                         # worker id（机器节点标识，0~1023，多实例时唯一）
+    epoch: "2024-01-01T00:00:00Z"   # 起始纪元（RFC3339）

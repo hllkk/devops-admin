@@ -1,4 +1,4 @@
-import { computed, nextTick, ref, shallowRef } from 'vue';
+import { computed, nextTick, ref, shallowRef, watch } from 'vue';
 import type { RouteRecordRaw } from 'vue-router';
 import { defineStore } from 'pinia';
 import { useBoolean } from '@sa/hooks';
@@ -23,6 +23,8 @@ import {
   transformMenuToSearchMenus,
   updateLocaleOfGlobalMenus
 } from './shared';
+import { DEFAULT_MODULE, type RouteModule } from '@/constants/module';
+import { filterRoutesByModule, resolveModuleFromRoute, tagRoutesByModule } from './module';
 
 export const useRouteStore = defineStore(SetupStoreId.Route, () => {
   const authStore = useAuthStore();
@@ -83,10 +85,38 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
   const menus = ref<App.Global.Menu[]>([]);
   const searchMenus = computed(() => transformMenuToSearchMenus(menus.value));
 
-  /** Get global menus */
+  /** Get global menus (filtered by current module — each module shows only its own) */
   function getGlobalMenus(routes: ElegantConstRoute[]) {
-    menus.value = getGlobalMenusByAuthRoutes(routes);
+    menus.value = getGlobalMenusByAuthRoutes(filterRoutesByModule(routes, currentModule.value));
   }
+
+  /** Last visited module — sticky, so global pages (user-center / notice-user) follow the source module */
+  const lastModule = ref<RouteModule>(DEFAULT_MODULE);
+
+  /** Tagged + sorted routes snapshot, reused on module switch (routes stay registered, no re-add) */
+  const sortedTaggedRoutes = shallowRef<ElegantConstRoute[]>([]);
+
+  /** Current module: derived from current route's meta.module, sticky-fallback to lastModule */
+  const currentModule = computed<RouteModule>(
+    () => resolveModuleFromRoute(router.currentRoute.value) ?? lastModule.value
+  );
+
+  // Sticky: remember module only when navigating to a module route.
+  // Global pages (no meta.module) don't update it → currentModule keeps source module → no tearing.
+  watch(
+    () => router.currentRoute.value.meta?.module,
+    m => {
+      if (m) lastModule.value = m as RouteModule;
+    },
+    { immediate: true }
+  );
+
+  // Re-filter menus on module change. Routes are already fully registered; only menus update → flicker-free.
+  watch(currentModule, () => {
+    if (sortedTaggedRoutes.value.length) {
+      menus.value = getGlobalMenusByAuthRoutes(filterRoutesByModule(sortedTaggedRoutes.value, currentModule.value));
+    }
+  });
 
   /** Update global menus by locale */
   function updateGlobalMenusByLocale() {
@@ -234,7 +264,13 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
   function handleConstantAndAuthRoutes() {
     const allRoutes = filterRoutesByDev([...constantRoutes.value, ...authRoutes.value]);
 
-    const sortRoutes = sortRoutesByOrder(allRoutes);
+    // Tag module ownership from MODULE_ROUTES (no-op in dynamic mode where backend provides meta.module)
+    const taggedRoutes = tagRoutesByModule(allRoutes);
+
+    const sortRoutes = sortRoutesByOrder(taggedRoutes);
+
+    // Snapshot for flicker-free menu re-filtering on module switch
+    sortedTaggedRoutes.value = sortRoutes;
 
     const vueRoutes = getAuthVueRoutes(sortRoutes);
 
@@ -329,6 +365,7 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
   return {
     resetStore,
     routeHome,
+    currentModule,
     menus,
     searchMenus,
     updateGlobalMenusByLocale,

@@ -40,7 +40,7 @@ declare namespace Api {
     }>;
 
     /** user */
-    type User = Common.CommonTenantRecord<{
+    type User = Common.CommonRecord<{
       /** 用户ID */
       userId: CommonType.IdType;
       /** 部门ID */
@@ -131,8 +131,6 @@ declare namespace Api {
       id: CommonType.IdType;
       /** 用户ID */
       userId: CommonType.IdType;
-      /** 租户ID */
-      tenantId: CommonType.IdType;
       /** 认证的唯一ID */
       authId: string;
       /** 用户来源 */
@@ -243,8 +241,6 @@ declare namespace Api {
     type Oss = Common.CommonRecord<{
       /** 对象存储主键 */
       ossId: CommonType.IdType;
-      /** 租户编号 */
-      tenantId: CommonType.IdType;
       /** 文件名 */
       fileName: string;
       /** 原名 */
@@ -260,6 +256,5 @@ declare namespace Api {
       /** 创建者名称 */
       createByName: string;
     }>;
-
   }
 }

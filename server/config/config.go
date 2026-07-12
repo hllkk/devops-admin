@@ -37,4 +37,7 @@ type Server struct {
 
 	// MCP配置
 	MCP MCP `mapstructure:"mcp" json:"mcp" yaml:"mcp"`
+
+	// Snowflake 雪花算法主键生成配置
+	Snowflake Snowflake `mapstructure:"snowflake" json:"snowflake" yaml:"snowflake"`
 }

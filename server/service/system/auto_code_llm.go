@@ -52,7 +52,7 @@ func (s *AutoCodeService) LLMAuto(ctx context.Context, llm common.JSONMap) (inte
 	}
 
 	if resStruct.Code != commonResp.SUCCESS {
-		return nil, fmt.Errorf("大模型服务返回业务错误: code=%d msg=%s body=%s", resStruct.Code, resStruct.Msg, bodyPreview)
+		return nil, fmt.Errorf("大模型服务返回业务错误: code=%s msg=%s body=%s", resStruct.Code, resStruct.Msg, bodyPreview)
 	}
 
 	return resStruct.Data, nil

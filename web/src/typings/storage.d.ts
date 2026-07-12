@@ -46,7 +46,13 @@ declare namespace StorageType {
     lastLoginUserId: string;
     /** The login form rember */
     loginRember: string;
-    /** The tenant id */
-    tenantId: CommonType.IdType;
+    /**
+     * Per-module structural theme overrides.
+     *
+     * Key format: `themeSettings__<module>` (e.g. `themeSettings__disk`).
+     * Stores only structural fields (layout / tab / sider / footer / header / page / fixedHeaderAndTab);
+     * appearance stays global under `themeSettings`.
+     */
+    [key: `themeSettings__${string}`]: Partial<App.Theme.ThemeSetting>;
   }
 }

@@ -35,7 +35,7 @@ declare namespace Api {
     /** online user list */
     type OnlineUserList = Api.Common.PaginatingQueryRecord<OnlineUser>;
 
-     /** online user search params */
+    /** online user search params */
     type OnlineUserSearchParams = CommonType.RecordNullable<
       Pick<Api.Monitor.OnlineUser, 'userName' | 'ipaddr'> & Api.Common.CommonSearchParams
     >;

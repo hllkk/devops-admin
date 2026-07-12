@@ -246,7 +246,11 @@ const local: App.I18n.Schema = {
     'social-callback': 'Social Callback',
     'user-center': 'User Center',
     system: 'System',
-    system_user: 'User'
+    system_user: 'User',
+    disk: 'Disk',
+    server: 'Server',
+    gateway: 'AI Gateway',
+    init: 'System Init'
   },
   page: {
     login: {
@@ -297,6 +301,41 @@ const local: App.I18n.Schema = {
       bindWeChat: {
         title: 'Bind WeChat'
       }
+    },
+    init: {
+      title: 'System Initialization',
+      subTitle: 'Complete the database initialization before first use',
+      noticeTitle: 'Before You Start',
+      noticeDesc:
+        'Initialization will create the database, auto-migrate tables and seed base data (roles, menus, admin account). Ensure the database service is reachable; use innoDB for MySQL.',
+      confirm: 'I understand, start configuration',
+      back: 'Back to login',
+      form: {
+        adminPassword: 'Admin Password',
+        adminPasswordPlaceholder: 'Initial admin password (at least 6 characters)',
+        dbType: 'Database Type',
+        host: 'Host',
+        hostPlaceholder: 'Enter database host',
+        port: 'Port',
+        portPlaceholder: 'Enter database port',
+        userName: 'Username',
+        userNamePlaceholder: 'Enter database username',
+        password: 'Password',
+        passwordPlaceholder: 'Enter database password',
+        dbName: 'Database Name',
+        dbNamePlaceholder: 'Enter database name',
+        dbPath: 'Database File Path',
+        dbPathPlaceholder: 'Enter sqlite file path',
+        template: 'PG Template',
+        templatePlaceholder: 'Enter postgresql template'
+      },
+      rule: {
+        adminPasswordLength: 'Admin password must be at least 6 characters'
+      },
+      submit: 'Initialize Now',
+      submitting: 'Initializing database, please wait…',
+      successTitle: 'Initialization Completed',
+      toLogin: 'Go to Login'
     },
     home: {
       greeting: 'Good morning, {userName}, today is another day full of vitality!',

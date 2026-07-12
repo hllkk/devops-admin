@@ -27,6 +27,7 @@ func Reload() error {
 
 	// 重新建立数据库连接
 	global.OPS_DB = Gorm()
+	RegisterCallbacks(global.OPS_DB)
 
 	// 重新初始化其他配置
 	OtherInit()

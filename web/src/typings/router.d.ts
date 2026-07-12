@@ -75,5 +75,13 @@ declare module 'vue-router' {
      * "dynamic"
      */
     isDev?: boolean;
+    /**
+     * Route module, used for module isolation.
+     *
+     * Undefined = global route (visible in all modules, e.g. 404 / login / user-center).
+     * In static mode it is set by `tagRoutesByModule` from `MODULE_ROUTES`;
+     * in dynamic mode it is provided by the backend menu payload.
+     */
+    module?: import('@/constants/module').RouteModule | null;
   }
 }

@@ -19,6 +19,8 @@ import (
 // @Tag.Name        Base
 // @Tag.Name        SysUser
 // @Tag.Description 用户
+// @Tag.Name        SysInit
+// @Tag.Description 初始化
 
 // @title                       devops-admin Swagger API接口文档
 // @version                     v0.1.0
@@ -42,7 +44,8 @@ func initializeSystem() {
 	initialize.OtherInit()
 	global.OPS_LOG = core.Zap() // 初始化zap日志库
 	zap.ReplaceGlobals(global.OPS_LOG)
-	global.OPS_DB = initialize.Gorm() // gorm连接数据库
+	global.OPS_DB = initialize.Gorm()            // gorm连接数据库
+	initialize.RegisterCallbacks(global.OPS_DB) // 注册雪花主键回调
 	initialize.Timer()
 	initialize.DBList()
 	initialize.SetupHandlers() // 注册全局函数

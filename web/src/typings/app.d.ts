@@ -543,6 +543,40 @@ declare namespace App {
             title: string;
           };
         };
+        init: {
+          title: string;
+          subTitle: string;
+          noticeTitle: string;
+          noticeDesc: string;
+          confirm: string;
+          back: string;
+          form: {
+            adminPassword: string;
+            adminPasswordPlaceholder: string;
+            dbType: string;
+            host: string;
+            hostPlaceholder: string;
+            port: string;
+            portPlaceholder: string;
+            userName: string;
+            userNamePlaceholder: string;
+            password: string;
+            passwordPlaceholder: string;
+            dbName: string;
+            dbNamePlaceholder: string;
+            dbPath: string;
+            dbPathPlaceholder: string;
+            template: string;
+            templatePlaceholder: string;
+          };
+          rule: {
+            adminPasswordLength: string;
+          };
+          submit: string;
+          submitting: string;
+          successTitle: string;
+          toLogin: string;
+        };
         home: {
           greeting: string;
           weatherDesc: string;
@@ -603,7 +637,7 @@ declare namespace App {
               roleIds: FormMsg;
               postIds: FormMsg;
               remark: FormMsg;
-            }
+            };
           };
           dept: {
             title: string;

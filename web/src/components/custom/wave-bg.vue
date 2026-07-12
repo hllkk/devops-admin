@@ -57,8 +57,8 @@ $primary-base: rgb(var(--primary-color));
 // 几何装饰色：统一基于主色 + 透明度，保证亮/暗模式下均可见且与主题色一致（与“叠加方块组”同一思路）
 $primary-light-7: rgb(from $primary-base r g b / 45%); // 点缀点
 $primary-light-8: rgb(from $primary-base r g b / 32%); // 常规填充 / 描边
-$bg-mix-light-8: rgb(from $primary-base r g b / 26%);  // 大块背景填充
-$bg-mix-light-9: rgb(from $primary-base r g b / 42%);  // 暗色模式填充
+$bg-mix-light-8: rgb(from $primary-base r g b / 26%); // 大块背景填充
+$bg-mix-light-9: rgb(from $primary-base r g b / 42%); // 暗色模式填充
 
 // wave-bg 暗色背景专用：保留原有暗色底色观感（不参与几何元素着色）
 $primary-light-9: rgb(var(--primary-200-color));

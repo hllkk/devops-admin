@@ -51,6 +51,24 @@ export const generatedRoutes: GeneratedRoute[] = [
     }
   },
   {
+    name: 'disk',
+    path: '/disk',
+    component: 'layout.base$view.disk',
+    meta: {
+      title: 'disk',
+      i18nKey: 'route.disk'
+    }
+  },
+  {
+    name: 'gateway',
+    path: '/gateway',
+    component: 'layout.base$view.gateway',
+    meta: {
+      title: 'gateway',
+      i18nKey: 'route.gateway'
+    }
+  },
+  {
     name: 'iframe-page',
     path: '/iframe-page/:url',
     component: 'layout.base$view.iframe-page',
@@ -64,6 +82,17 @@ export const generatedRoutes: GeneratedRoute[] = [
     }
   },
   {
+    name: 'init',
+    path: '/init',
+    component: 'layout.blank$view.init',
+    meta: {
+      title: 'init',
+      i18nKey: 'route.init',
+      constant: true,
+      hideInMenu: true
+    }
+  },
+  {
     name: 'login',
     path: '/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat)?',
     component: 'layout.blank$view.login',
@@ -73,6 +102,15 @@ export const generatedRoutes: GeneratedRoute[] = [
       i18nKey: 'route.login',
       constant: true,
       hideInMenu: true
+    }
+  },
+  {
+    name: 'server',
+    path: '/server',
+    component: 'layout.base$view.server',
+    meta: {
+      title: 'server',
+      i18nKey: 'route.server'
     }
   },
   {

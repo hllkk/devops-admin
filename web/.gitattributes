@@ -11,3 +11,14 @@
 "*.md"     eol=lf
 "*.yaml"   eol=lf
 "*.yml"    eol=lf
+
+# merge=ours: keep local version on merge — protects multi-module customizations in
+# Soybean core files from being overwritten when syncing upstream Soybean.
+# Requires `git config merge.ours.driver true` (already set in this repo).
+# Note: only effective for `git merge`-style syncs; verify it matches your upstream-sync workflow.
+src/store/modules/route/index.ts             merge=ours
+src/store/modules/theme/index.ts             merge=ours
+src/store/modules/theme/shared.ts            merge=ours
+src/layouts/modules/global-header/index.vue  merge=ours
+src/typings/router.d.ts                      merge=ours
+src/typings/storage.d.ts                     merge=ours

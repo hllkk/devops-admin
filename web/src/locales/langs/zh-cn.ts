@@ -242,7 +242,11 @@ const local: App.I18n.Schema = {
     'social-callback': '社交回调',
     'user-center': '用户中心',
     system: '系统管理',
-    system_user: '用户管理'
+    system_user: '用户管理',
+    disk: '网盘',
+    server: '服务器管理',
+    gateway: 'AI 网关',
+    init: '系统初始化'
   },
   page: {
     login: {
@@ -293,6 +297,41 @@ const local: App.I18n.Schema = {
       bindWeChat: {
         title: '绑定微信'
       }
+    },
+    init: {
+      title: '系统初始化',
+      subTitle: '首次使用前，请完成数据库初始化配置',
+      noticeTitle: '初始化须知',
+      noticeDesc:
+        '初始化将创建数据库、自动建表并写入基础数据（角色、菜单、管理员账号等）。请确保数据库服务可用；MySQL 请使用 innoDB 引擎。',
+      confirm: '我已确认，开始配置',
+      back: '返回登录',
+      form: {
+        adminPassword: '管理员密码',
+        adminPasswordPlaceholder: '初始 admin 账号密码（不少于 6 位）',
+        dbType: '数据库类型',
+        host: '数据库地址',
+        hostPlaceholder: '请输入数据库地址',
+        port: '数据库端口',
+        portPlaceholder: '请输入数据库端口',
+        userName: '用户名',
+        userNamePlaceholder: '请输入数据库用户名',
+        password: '密码',
+        passwordPlaceholder: '请输入数据库密码',
+        dbName: '数据库名',
+        dbNamePlaceholder: '请输入数据库名',
+        dbPath: '数据库文件路径',
+        dbPathPlaceholder: '请输入 sqlite 文件存放路径',
+        template: 'PG 模板',
+        templatePlaceholder: '请输入 postgresql 模板'
+      },
+      rule: {
+        adminPasswordLength: '管理员密码长度不能小于 6 位'
+      },
+      submit: '立即初始化',
+      submitting: '正在初始化数据库，请稍候…',
+      successTitle: '初始化完成',
+      toLogin: '前往登录'
     },
     home: {
       greeting: '早安，{userName}, 今天又是充满活力的一天!',
