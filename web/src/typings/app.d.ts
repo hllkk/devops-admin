@@ -370,6 +370,7 @@ declare namespace App {
         downloadTemplate: string;
         userCenter: string;
         login: string;
+        noChange: string;
         yesOrNo: {
           yes: string;
           no: string;
@@ -636,6 +637,32 @@ declare namespace App {
               email: FormMsg;
               roleIds: FormMsg;
               postIds: FormMsg;
+              remark: FormMsg;
+            };
+          };
+          role: {
+            title: string;
+            listTitle: string;
+            roleName: string;
+            roleKey: string;
+            roleKeyShort: string;
+            roleSort: string;
+            status: string;
+            remark: string;
+            createTime: string;
+            menuPermission: string;
+            addRole: string;
+            editRole: string;
+            assignUser: string;
+            assignUserTitle: string;
+            statusChangeSuccess: string;
+            roleKeyTip: string;
+            form: {
+              roleId: FormMsg;
+              roleName: FormMsg;
+              roleKey: FormMsg;
+              roleSort: FormMsg;
+              status: FormMsg;
               remark: FormMsg;
             };
           };

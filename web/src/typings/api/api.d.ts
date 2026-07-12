@@ -37,6 +37,14 @@ declare namespace Api {
     type EnableStatus = '0' | '1';
 
     /**
+     * 显示状态
+     *
+     * - "0": 显示
+     * - "1": 隐藏
+     */
+    type VisibleStatus = '0' | '1';
+
+    /**
      * 是否状态
      *
      * - "Y": 是

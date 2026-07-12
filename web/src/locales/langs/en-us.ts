@@ -33,6 +33,7 @@ const local: App.I18n.Schema = {
     lookForward: 'Coming soon',
     modify: 'Modify',
     modifySuccess: 'Modify Success',
+    noChange: 'No changes',
     noData: 'No Data',
     operate: 'Operate',
     pleaseCheckValue: 'Please check whether the value is valid',
@@ -247,6 +248,7 @@ const local: App.I18n.Schema = {
     'user-center': 'User Center',
     system: 'System',
     system_user: 'User',
+    system_role: 'Role',
     disk: 'Disk',
     server: 'Server',
     gateway: 'AI Gateway',
@@ -397,6 +399,32 @@ const local: App.I18n.Schema = {
           roleIds: { required: 'Please select role', invalid: 'Please select role' },
           postIds: { required: 'Please select post', invalid: 'Please select post' },
           remark: { required: 'Please enter remark', invalid: 'Remark format is incorrect' }
+        }
+      },
+      role: {
+        title: 'Role Management',
+        listTitle: 'Role List',
+        roleName: 'Role Name',
+        roleKey: 'Role Permission String',
+        roleKeyShort: 'Permission Key',
+        roleSort: 'Display Order',
+        status: 'Role Status',
+        remark: 'Remark',
+        createTime: 'Create Time',
+        menuPermission: 'Menu Permission',
+        addRole: 'Add Role',
+        editRole: 'Edit Role',
+        assignUser: 'Assign User',
+        assignUserTitle: 'Assign User Permission',
+        statusChangeSuccess: 'Status changed successfully',
+        roleKeyTip: "Permission key defined in the controller, e.g.: @SaCheckRole('admin')",
+        form: {
+          roleId: { required: 'Role ID cannot be empty', invalid: 'Role ID cannot be empty' },
+          roleName: { required: 'Please enter the role name', invalid: 'Role name format is incorrect' },
+          roleKey: { required: 'Please enter the permission key', invalid: 'Permission key format is incorrect' },
+          roleSort: { required: 'Please enter the display order', invalid: 'Display order format is incorrect' },
+          status: { required: 'Please select the role status', invalid: 'Please select the role status' },
+          remark: { required: 'Please enter a remark', invalid: 'Remark format is incorrect' }
         }
       },
       dept: {

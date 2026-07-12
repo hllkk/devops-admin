@@ -33,6 +33,7 @@ const local: App.I18n.Schema = {
     lookForward: '敬请期待',
     modify: '修改',
     modifySuccess: '修改成功',
+    noChange: '数据未发生变化',
     noData: '无数据',
     operate: '操作',
     pleaseCheckValue: '请检查输入的值是否合法',
@@ -243,6 +244,7 @@ const local: App.I18n.Schema = {
     'user-center': '用户中心',
     system: '系统管理',
     system_user: '用户管理',
+    system_role: '角色管理',
     disk: '网盘',
     server: '服务器管理',
     gateway: 'AI 网关',
@@ -392,6 +394,32 @@ const local: App.I18n.Schema = {
           email: { required: '请输入邮箱', invalid: '邮箱格式不正确' },
           roleIds: { required: '请选择角色', invalid: '请选择角色' },
           postIds: { required: '请选择岗位', invalid: '请选择岗位' },
+          remark: { required: '请输入备注', invalid: '备注格式不正确' }
+        }
+      },
+      role: {
+        title: '角色管理',
+        listTitle: '角色列表',
+        roleName: '角色名称',
+        roleKey: '角色权限字符串',
+        roleKeyShort: '权限字符',
+        roleSort: '显示顺序',
+        status: '角色状态',
+        remark: '备注',
+        createTime: '创建时间',
+        menuPermission: '菜单权限',
+        addRole: '新增角色',
+        editRole: '编辑角色',
+        assignUser: '分配用户',
+        assignUserTitle: '分配用户权限',
+        statusChangeSuccess: '状态修改成功',
+        roleKeyTip: "控制器中定义的权限字符，如：@SaCheckRole('admin')",
+        form: {
+          roleId: { required: '角色ID不能为空', invalid: '角色ID不能为空' },
+          roleName: { required: '请输入角色名称', invalid: '角色名称格式不正确' },
+          roleKey: { required: '请输入权限字符', invalid: '权限字符格式不正确' },
+          roleSort: { required: '请输入显示顺序', invalid: '显示顺序格式不正确' },
+          status: { required: '请选择角色状态', invalid: '请选择角色状态' },
           remark: { required: '请输入备注', invalid: '备注格式不正确' }
         }
       },
