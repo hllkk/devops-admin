@@ -42,6 +42,10 @@ func RegisterTables() {
 	db := global.OPS_DB
 	err := db.AutoMigrate(
 		system.SysError{},
+		system.SysUser{},
+		system.SysRole{},
+		system.SysUserRole{},
+		system.SysRoleMenu{},
 	)
 	if err != nil {
 		global.OPS_LOG.Error("register table failed", zap.Error(err))
