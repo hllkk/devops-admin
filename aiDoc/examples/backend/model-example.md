@@ -18,7 +18,7 @@ package disk
 import "devops-admin/server/global"
 
 type File struct {
-	global.GVA_MODEL
+	global.OPS_MODEL
 	Name      string `json:"name" gorm:"comment:文件名"`
 	Size      int64  `json:"size" gorm:"comment:文件大小(字节)"`
 	Status    int    `json:"status" gorm:"default:1;comment:文件状态"`
@@ -28,7 +28,7 @@ type File struct {
 
 ## 为什么这样写
 
-- 继承 `global.GVA_MODEL`，保持主键和时间字段风格一致
+- 继承 `global.OPS_MODEL`，保持主键和时间字段风格一致
 - `json` 标签用于接口输出
 - `gorm` 标签用于约束字段类型、默认值和注释
 - 字段命名尽量清晰、稳定，便于前后端保持一致

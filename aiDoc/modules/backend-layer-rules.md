@@ -10,7 +10,7 @@
 
 ## Model 层
 
-- 数据模型优先继承 `global.GVA_MODEL`
+- 数据模型优先继承 `global.OPS_MODEL`
 - 字段应补全清晰的 `json` 与 `gorm` 标签
 - `ID`、`CreatedAt`、`UpdatedAt` 这些基础字段沿用项目现有约定（json 内不驼峰）
 - 请求模型放在 `model/request/`
