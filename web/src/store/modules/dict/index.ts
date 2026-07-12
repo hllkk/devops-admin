@@ -37,6 +37,6 @@ export const useDictStore = defineStore(SetupStoreId.Dict, () => {
     removeDict,
     cleanDict
   };
-})
+});
 
 export default useDictStore;

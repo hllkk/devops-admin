@@ -19,6 +19,8 @@ import (
 // @Tag.Name        Base
 // @Tag.Name        SysUser
 // @Tag.Description 用户
+// @Tag.Name        SysInit
+// @Tag.Description 初始化
 
 // @title                       devops-admin Swagger API接口文档
 // @version                     v0.1.0

@@ -1,3 +1,11 @@
 package system
 
-type RouterGroup struct{}
+import api "github.com/hllkk/devops-admin/server/api/v1"
+
+type RouterGroup struct {
+	InitRouter
+}
+
+var (
+	dbApi = api.ApiGroupApp.SystemApiGroup.DBApi
+)

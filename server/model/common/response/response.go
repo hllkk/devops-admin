@@ -7,17 +7,17 @@ import (
 )
 
 type Response struct {
-	Code int         `json:"code"`
+	Code string      `json:"code"`
 	Data interface{} `json:"data"`
 	Msg  string      `json:"msg"`
 }
 
 const (
-	ERROR   = 7
-	SUCCESS = 0
+	ERROR   = "0001"
+	SUCCESS = "0000"
 )
 
-func Result(code int, data interface{}, msg string, c *gin.Context) {
+func Result(code string, data interface{}, msg string, c *gin.Context) {
 	c.JSON(http.StatusOK, Response{
 		code,
 		data,
@@ -51,7 +51,7 @@ func FailWithMessage(message string, c *gin.Context) {
 
 func NoAuth(message string, c *gin.Context) {
 	c.JSON(http.StatusUnauthorized, Response{
-		7,
+		ERROR,
 		nil,
 		message,
 	})

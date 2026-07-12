@@ -11,6 +11,7 @@ import (
 	"github.com/hllkk/devops-admin/server/docs"
 	"github.com/hllkk/devops-admin/server/global"
 	"github.com/hllkk/devops-admin/server/middleware"
+	"github.com/hllkk/devops-admin/server/router"
 )
 
 type justFilesFilesystem struct {
@@ -41,7 +42,7 @@ func Routers() *gin.Engine {
 		Router.Use(gin.Logger())
 	}
 
-	// systemRouter := router.RouterGroupApp.System
+	systemRouter := router.RouterGroupApp.System
 	// 如果想要不使用nginx代理前端网页，可以修改 web/.env.production 下的
 	// VUE_APP_BASE_API = /
 	// VUE_APP_BASE_PATH = http://localhost
@@ -74,7 +75,7 @@ func Routers() *gin.Engine {
 	}
 	{
 		// systemRouter.InitBaseRouter(PublicGroup) // 注册基础功能路由 不做鉴权
-		// systemRouter.InitInitRouter(PublicGroup) // 自动初始化相关
+		systemRouter.InitInitRouter(PublicGroup) // 自动初始化相关
 	}
 
 	{

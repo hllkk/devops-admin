@@ -260,6 +260,5 @@ declare namespace Api {
       /** 创建者名称 */
       createByName: string;
     }>;
-
   }
 }

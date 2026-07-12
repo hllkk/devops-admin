@@ -6,13 +6,19 @@ import { getPaletteColorByNumber } from '@sa/color';
 import { localStg } from '@/utils/storage';
 import { SetupStoreId } from '@/enum';
 import { useAuthStore } from '../auth';
+import { useRouteStore } from '../route';
+import { DEFAULT_MODULE } from '@/constants/module';
 import {
   addThemeVarsToGlobal,
+  applyStructural,
   createThemeToken,
   getNaiveTheme,
   initThemeSettings,
+  loadModuleOverrides,
+  pickStructural,
   toggleAuxiliaryColorModes,
-  toggleCssDarkMode
+  toggleCssDarkMode,
+  type StructuralThemeSetting
 } from './shared';
 
 /** Theme store */
@@ -23,6 +29,47 @@ export const useThemeStore = defineStore(SetupStoreId.Theme, () => {
 
   /** Theme settings */
   const settings: Ref<App.Theme.ThemeSetting> = ref(initThemeSettings());
+
+  const routeStore = useRouteStore();
+
+  /**
+   * Global (admin / default module) structural snapshot — the base every module inherits.
+   * Appearance lives directly in `settings` and is always global; only structure is per-module.
+   */
+  const globalStructural = ref<StructuralThemeSetting>(pickStructural(settings.value));
+
+  /** Per-module structural overrides (non-default modules), persisted to `themeSettings__<module>` */
+  const moduleOverrides = ref<Record<string, StructuralThemeSetting>>(loadModuleOverrides());
+
+  // Module switch: save the outgoing module's current structure, apply the incoming module's structure.
+  // Appearance fields are never touched here → appearance stays global across modules (no tearing).
+  watch(
+    () => routeStore.currentModule,
+    (newM, oldM) => {
+      if (oldM === DEFAULT_MODULE) {
+        globalStructural.value = pickStructural(settings.value);
+      } else {
+        moduleOverrides.value[oldM] = pickStructural(settings.value);
+      }
+      const incoming =
+        newM === DEFAULT_MODULE ? globalStructural.value : (moduleOverrides.value[newM] ?? globalStructural.value);
+      applyStructural(settings.value, incoming);
+    }
+  );
+
+  // Persist structural edits back to the active scope: global if on default module, else current module override.
+  watch(
+    () => pickStructural(settings.value),
+    structural => {
+      const m = routeStore.currentModule;
+      if (m === DEFAULT_MODULE) {
+        globalStructural.value = structural;
+      } else {
+        moduleOverrides.value[m] = structural;
+      }
+    },
+    { deep: true }
+  );
 
   /** Optional NaiveUI theme overrides from preset */
   const naiveThemeOverrides: Ref<App.Theme.NaiveUIThemeOverride | undefined> = ref(undefined);
@@ -222,13 +269,21 @@ export const useThemeStore = defineStore(SetupStoreId.Theme, () => {
     }
   }
 
-  /** Cache theme settings */
+  /** Cache theme settings (global = appearance + admin structural; plus per-module structural overrides) */
   function cacheThemeSettings() {
     const isProd = import.meta.env.PROD;
 
     if (!isProd) return;
 
-    localStg.set('themeSettings', settings.value);
+    // Global: appearance (always global, taken from current settings) + admin/default structural.
+    // Using globalStructural (not current settings' structure) avoids polluting global when the user
+    // is on a non-default module at unload time.
+    localStg.set('themeSettings', { ...settings.value, ...globalStructural.value });
+
+    // Per-module structural overrides
+    Object.entries(moduleOverrides.value).forEach(([m, structural]) => {
+      localStg.set(`themeSettings__${m}`, structural);
+    });
   }
 
   // cache theme settings when page is closed or refreshed

@@ -1,0 +1,54 @@
+# ============================================================================
+# Dev 环境依赖服务：PostgreSQL + Redis
+#
+# 用法：
+#   docker compose -f deploy/docker-dev/docker-compose.yml up -d       # 启动
+#   docker compose -f deploy/docker-dev/docker-compose.yml down        # 停止（保留数据）
+#   docker compose -f deploy/docker-dev/docker-compose.yml restart     # 改完配置后重载
+#
+# 版本 / 端口 / 凭据 / 数据路径均可用环境变量覆盖，例如：
+#   PG_PORT=5433 PG_VERSION=17 docker compose -f deploy/docker-dev/docker-compose.yml up -d
+#
+# 也可在本目录新建 .env 文件持久化覆盖（compose 会自动读取同目录 .env）。
+# ============================================================================
+
+services:
+  pgsql:
+    image: postgres:${PG_VERSION:-18}-alpine
+    container_name: devops-pgsql-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${PG_USER:-postgres}
+      POSTGRES_PASSWORD: ${PG_PASSWORD:-postgres}
+      # 不设 POSTGRES_DB：镜像默认建一个与用户同名的 postgres 库，业务库交给 server 初始化向导
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+      TZ: Asia/Shanghai
+    ports:
+      - "${PG_PORT:-5432}:5432"
+    volumes:
+      # PG 18+ 镜像默认 PGDATA=/var/lib/postgresql/18/docker（版本子目录布局），
+      # 数据卷需挂到父目录 /var/lib/postgresql，数据最终落在宿主机 .../pgsql/18/docker/
+      - ${PG_DATA_PATH:-/home/docker/docker-dev/pgsql}:/var/lib/postgresql
+      - ./config/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:${REDIS_VERSION:-8}-alpine
+    container_name: devops-redis-dev
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - ${REDIS_DATA_PATH:-/home/docker/docker-dev/redis}:/data
+      - ./config/redis.conf:/etc/redis/redis.conf:ro
+    command: ["redis-server", "/etc/redis/redis.conf"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5

@@ -112,7 +112,6 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
       grantType: loginForm.grantType ?? 'password'
     };
 
-
     const { data: loginToken, error } = await fetchLogin(loginData);
 
     if (!error) {

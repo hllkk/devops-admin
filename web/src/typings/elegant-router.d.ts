@@ -21,8 +21,12 @@ declare module "@elegant-router/types" {
     "404": "/404";
     "500": "/500";
     "admin": "/admin";
+    "disk": "/disk";
+    "gateway": "/gateway";
     "iframe-page": "/iframe-page/:url";
+    "init": "/init";
     "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat)?";
+    "server": "/server";
     "social-callback": "/social-callback";
     "system": "/system";
     "system_user": "/system/user";
@@ -62,8 +66,12 @@ declare module "@elegant-router/types" {
     | "404"
     | "500"
     | "admin"
+    | "disk"
+    | "gateway"
     | "iframe-page"
+    | "init"
     | "login"
+    | "server"
     | "social-callback"
     | "system"
     | "user-center"
@@ -89,9 +97,13 @@ declare module "@elegant-router/types" {
     | "404"
     | "500"
     | "iframe-page"
+    | "init"
     | "login"
     | "social-callback"
     | "user-center"
+    | "disk"
+    | "gateway"
+    | "server"
   >;
 
   /**

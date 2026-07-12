@@ -207,13 +207,6 @@ async function handleSocialLogin(type: Api.System.SocialSource) {
         <span class="ml-6px">GitHub</span>
       </NButton>
     </div>
-
-    <div class="mt-24px w-full text-center text-18px text-#858585">
-      您还没有账户？
-      <NA type="primary" class="text-18px" @click="toggleLoginModule('register')">
-        {{ $t('page.login.common.register') }}
-      </NA>
-    </div>
   </div>
 </template>
 

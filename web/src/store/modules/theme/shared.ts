@@ -4,6 +4,7 @@ import { addColorAlpha, getColorPalette, getPaletteColorByNumber, getRgb } from 
 import { DARK_CLASS } from '@/constants/app';
 import { toggleHtmlClass } from '@/utils/common';
 import { localStg } from '@/utils/storage';
+import { ALL_MODULES, DEFAULT_MODULE } from '@/constants/module';
 import { overrideThemeSettings, themeSettings } from '@/theme/settings';
 import { themeVars } from '@/theme/vars';
 
@@ -263,4 +264,54 @@ export function getNaiveTheme(
   // If there are overrides, merge them with priority
   // overrides has higher priority than auto-generated theme
   return overrides ? defu(overrides, theme) : theme;
+}
+
+/**
+ * Structural theme keys — overridable per module.
+ *
+ * Split rationale: structure (layout shell) differs by module (admin = tabbed console, disk = workbench),
+ * while appearance (color / radius / watermark / tokens) stays global for brand consistency.
+ */
+export const STRUCTURAL_KEYS = ['layout', 'page', 'header', 'tab', 'fixedHeaderAndTab', 'sider', 'footer'] as const;
+
+type StructuralKey = (typeof STRUCTURAL_KEYS)[number];
+
+export type StructuralThemeSetting = Pick<App.Theme.ThemeSetting, StructuralKey>;
+
+/** Deep-clone helper for plain structural objects */
+const cloneStructural = <T>(v: T): T => JSON.parse(JSON.stringify(v));
+
+/** Deep-copy the structural subset of a theme setting */
+export function pickStructural(settings: App.Theme.ThemeSetting): StructuralThemeSetting {
+  return {
+    layout: cloneStructural(settings.layout),
+    page: cloneStructural(settings.page),
+    header: cloneStructural(settings.header),
+    tab: cloneStructural(settings.tab),
+    fixedHeaderAndTab: settings.fixedHeaderAndTab,
+    sider: cloneStructural(settings.sider),
+    footer: cloneStructural(settings.footer)
+  };
+}
+
+/** Apply structural fields onto a theme setting (mutates structural fields only; appearance untouched) */
+export function applyStructural(settings: App.Theme.ThemeSetting, structural: Partial<StructuralThemeSetting>) {
+  if (structural.layout) settings.layout = cloneStructural(structural.layout);
+  if (structural.page) settings.page = cloneStructural(structural.page);
+  if (structural.header) settings.header = cloneStructural(structural.header);
+  if (structural.tab) settings.tab = cloneStructural(structural.tab);
+  if (structural.fixedHeaderAndTab !== undefined) settings.fixedHeaderAndTab = structural.fixedHeaderAndTab;
+  if (structural.sider) settings.sider = cloneStructural(structural.sider);
+  if (structural.footer) settings.footer = cloneStructural(structural.footer);
+}
+
+/** Load per-module structural overrides from storage (excludes the default/global module) */
+export function loadModuleOverrides(): Record<string, StructuralThemeSetting> {
+  const out: Record<string, StructuralThemeSetting> = {};
+  ALL_MODULES.forEach(m => {
+    if (m === DEFAULT_MODULE) return;
+    const v = localStg.get(`themeSettings__${m}`);
+    if (v) out[m] = v as StructuralThemeSetting;
+  });
+  return out;
 }

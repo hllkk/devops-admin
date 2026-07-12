@@ -4,6 +4,34 @@ import { useAuthStore } from '@/store/modules/auth';
 import { useRouteStore } from '@/store/modules/route';
 import { localStg } from '@/utils/storage';
 import { getRouteName } from '@/router/elegant/transform';
+import { fetchCheckDB } from '@/service/api';
+
+/**
+ * 系统是否需要初始化的会话级缓存
+ *
+ * - null：本次会话尚未探测
+ * - 探测仅请求一次 /init/checkdb，结果在会话内复用，避免每次导航都打接口
+ */
+let needInitChecked: boolean | null = null;
+
+async function ensureInitChecked(): Promise<boolean> {
+  if (needInitChecked === null) {
+    const { error, data } = await fetchCheckDB();
+    // 探测失败（如后端未启动）时降级为“已初始化”，避免把用户卡死在初始化页
+    needInitChecked = !error && data?.needInit === true;
+  }
+  return needInitChecked;
+}
+
+/**
+ * 初始化完成后重置检测缓存
+ *
+ * 初始化成功后 OPS_DB 已就绪，无需再次探测；置为 false 放行后续导航，
+ * 否则守卫仍按缓存把用户拦回 /init，无法到达登录页。
+ */
+export function resetSystemInitCheck() {
+  needInitChecked = false;
+}
 
 /**
  * create route guard
@@ -82,6 +110,19 @@ async function initRoute(to: RouteLocationNormalized): Promise<RouteLocationRaw 
     };
 
     return location;
+  }
+
+  // 系统初始化检测：constant 路由已就绪，init 为合法跳转目标
+  const initName: RouteKey = 'init';
+  const rootName: RouteKey = 'root';
+  const needInit = await ensureInitChecked();
+  if (needInit) {
+    // 未初始化 → 强制停留在 /init
+    return to.name === initName ? null : { name: initName };
+  }
+  if (to.name === initName) {
+    // 已初始化 → 不要停在 /init
+    return { name: rootName };
   }
 
   const isLogin = Boolean(localStg.get('token'));
