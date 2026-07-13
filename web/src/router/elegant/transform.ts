@@ -181,6 +181,7 @@ const routeMap: RouteMap = {
   "system_notice": "/system/notice",
   "system_post": "/system/post",
   "system_role": "/system/role",
+  "system_setting": "/system/setting",
   "system_user": "/system/user",
   "user-center": "/user-center"
 };

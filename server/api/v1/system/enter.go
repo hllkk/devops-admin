@@ -4,6 +4,7 @@ import "github.com/hllkk/devops-admin/server/service"
 
 type ApiGroup struct {
 	DBApi
+	BaseApi
 }
 
 var (

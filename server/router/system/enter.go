@@ -7,5 +7,6 @@ type RouterGroup struct {
 }
 
 var (
-	dbApi = api.ApiGroupApp.SystemApiGroup.DBApi
+	dbApi   = api.ApiGroupApp.SystemApiGroup.DBApi
+	baseApi = api.ApiGroupApp.SystemApiGroup.BaseApi
 )

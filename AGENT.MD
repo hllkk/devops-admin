@@ -6,6 +6,11 @@
 
 `.claude/`（以及未来可能的 `.codex/`、`.cursor/`、`.trae/`）下的规则文件仅作为兼容适配层，**不能再次演变成各自独立维护的 project rule 副本**。
 
+## 交互语言
+
+- 所有 AI 协作过程（思考、回答、解释、代码注释、提交信息、文档、错误说明、计划）统一使用**中文**
+- 代码标识符、命令、字段名、配置项、第三方库名等保持原文，不翻译
+
 ## 读取顺序
 
 按下面顺序加载项目上下文：
@@ -107,3 +112,8 @@
 - `aiDoc/memory/README.md`
 - `aiDoc/memory/project-memory.md`
 - `aiDoc/memory/demand-index.md`
+
+
+claude --resume f19e1e1b-cb0d-474f-a33c-baad3c7bb248
+
+claude --resume e6aae33c-d084-43fd-8f85-69a5645bd2e2

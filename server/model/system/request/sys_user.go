@@ -4,6 +4,14 @@ import (
 	"github.com/hllkk/devops-admin/server/model/common/request"
 )
 
+// Login User login structure
+type Login struct {
+	Username  string `json:"username"`  // 用户名
+	Password  string `json:"password"`  // 密码
+	Captcha   string `json:"captcha"`   // 验证码
+	CaptchaId string `json:"captchaId"` // 验证码ID
+}
+
 // SysUserSearch 用户列表查询，对齐前端 Api.System.UserSearchParams。
 // 注意：嵌入的 request.PageInfo 的 json tag 是 "page"（非 pageNum），
 // 但列表接口走 GET query，按 form:"pageNum" 绑定，不受影响。
