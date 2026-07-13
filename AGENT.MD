@@ -49,6 +49,13 @@
 - 优先复用 `web/` 的 `@sa/*` 包与 `src/{service,utils,hooks}`，**禁止重复造轮子**
 - 涉及跨栈边界变更时，**同步更新 `aiDoc/frontend-backend/`**
 
+### 前端上游同步
+
+- 同步 soybean-admin 上游用 `scripts/sync-upstream.sh`：`--preview` 预览、`--run` 执行
+- `web/` 是**直接复制导入**、未经 `git subtree add`，与上游无合并基点；脚本默认走 **apply 模式**：`git diff <track sha> <上游HEAD> | git apply --directory=web`，仅当检测到合并基点时才回退 `git subtree pull`
+- 上游增量小且改动文件本地未动 → 0 冲突自动应用并提交；存在冲突则逐文件报告、**不改动工作区**，人工解决后重跑
+- 细则与冲突处理见 `aiDoc/relations/development-workflow.md`
+
 ### 插件与模块
 
 - 后端插件放 `server/plugin/<name>/`
