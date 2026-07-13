@@ -6,11 +6,14 @@ import (
 
 type BaseRouter struct{}
 
-func (s *BaseRouter) InitBaseRouter(Router *gin.RouterGroup) (R gin.IRoutes) {
-	baseRouter := Router.Group("base")
+// InitBaseRouter 注册 auth 路由：public 组挂 login/code（对齐前端 /auth/login、/auth/code），
+// private 组挂 getUserInfo（对齐前端 /auth/getUserInfo，需鉴权）。
+func (s *BaseRouter) InitBaseRouter(public, private *gin.RouterGroup) {
+	pub := public.Group("auth")
 	{
-		baseRouter.POST("login", baseApi.Login)
-		baseRouter.POST("captcha", baseApi.Captcha)
+		pub.POST("login", baseApi.Login)
+		pub.POST("code", baseApi.Captcha)
 	}
-	return baseRouter
+	// private 组的 /auth/getUserInfo 在 BaseApi.GetUserInfo 实现后挂载（见权限基座闭环 Step 5）
+	_ = private
 }
