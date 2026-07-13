@@ -44,6 +44,7 @@ func RegisterTables() {
 		system.SysError{},
 		system.SysUser{},
 		system.SysRole{},
+		system.SysMenu{},
 		system.SysUserRole{},
 		system.SysRoleMenu{},
 	)

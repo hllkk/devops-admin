@@ -8,3 +8,4 @@
 | 2026-07-11 | 后端引入雪花算法作为统一主键策略（自实现 + 字符串传输 + GORM Callback 集成） | business/snowflake-id-generator.md | 已实现 |
 | 2026-07-12 | 清理基座多租户残留代码（前端 12 文件：类型/service/store/hook/登录与社交登录页面；后端无多租户代码） | business/remove-multi-tenant.md | 已实现 |
 | 2026-07-12 | 后端 User/Role 模型建模（贴合前端 RuoYi 契约：SysUser/SysRole + sys_user_role/sys_role_menu + request DTO + AutoMigrate，方案 A；审计基座 OPS_AUDIT_MODEL 上移 global，OPS_MODEL 去 ID） | business/system-user-role-models.md | Model 已落地 |
+| 2026-07-12 | 菜单管理：后端 SysMenu 模型 + request DTO + AutoMigrate 注册（对齐前端 Api.System.Menu：树形 parentId、目录/菜单/按钮、isFrame/isCache/visible/status、瞬态 Children/ParentName），并补齐 page.system.menu 全量中/英 i18n（53 key） | business/menu-management.md | Model+i18n 已落地 |
