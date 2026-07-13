@@ -98,11 +98,11 @@ func GetUserAuthorityId(c *gin.Context) uint {
 		if cl, err := GetClaims(c); err != nil {
 			return 0
 		} else {
-			return cl.AuthorityId
+			return cl.RoleId
 		}
 	} else {
 		waitUse := claims.(*systemReq.CustomClaims)
-		return waitUse.AuthorityId
+		return waitUse.RoleId
 	}
 }
 
@@ -137,11 +137,11 @@ func GetUserName(c *gin.Context) string {
 func LoginToken(user system.Login) (token string, claims systemReq.CustomClaims, err error) {
 	j := NewJWT()
 	claims = j.CreateClaims(systemReq.BaseClaims{
-		UUID:        user.GetUUID(),
-		ID:          user.GetUserId(),
-		NickName:    user.GetNickname(),
-		Username:    user.GetUsername(),
-		AuthorityId: user.GetAuthorityId(),
+		UUID:     user.GetUUID(),
+		ID:       user.GetUserId(),
+		NickName: user.GetNickname(),
+		Username: user.GetUsername(),
+		RoleId:   user.GetRoleId(),
 	})
 	token, err = j.CreateToken(claims)
 	return

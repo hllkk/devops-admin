@@ -96,15 +96,23 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 log "上游变更统计 (相对于本地记录版本)"
 
-# 如果有 subtree 历史，对比当前目录和上游
-LOCAL_HASH=$(git log -1 --format='%H' -- "$PREFIX" 2>/dev/null || echo "")
-if [[ -n "$LOCAL_HASH" ]]; then
+# 用 subtree split 把本地 web/ 内容映射到根命名空间，再和上游 HEAD 对比。
+# 上游文件在仓库根、本地在 web/ 下，直接 `git diff .. -- web/` 会让本地所有文件
+# 被误判为“上游删除”。先 split 到同命名空间才能得到真实的变更面。
+if SPLIT_HASH=$(git subtree split --prefix="$PREFIX" 2>/dev/null); then
     echo ""
-    log "新增提交数: $(git rev-list --count "${LOCAL_HASH}..${UPSTREAM_HEAD}" 2>/dev/null || echo "?")"
+    log "新增上游提交数: $(git rev-list --count "${LOCAL_TRACKED:-${SPLIT_HASH}}..${UPSTREAM_HEAD}" 2>/dev/null || echo "?")"
     echo ""
-    log "变更文件列表 (前 60 行):"
-    git diff --stat "${LOCAL_HASH}..${UPSTREAM_HEAD}" -- "$PREFIX" 2>/dev/null | head -60 || true
+    log "变更文件列表 (本地 $PREFIX ↔ 上游，前 60 行):"
+    git diff --stat "${SPLIT_HASH}..${UPSTREAM_HEAD}" 2>/dev/null | head -60 || true
     echo ""
+else
+    # 兜底：git-subtree 不可用时退回上游提交日志，避免输出误导性的文件 diff
+    echo ""
+    log "上游新增提交 (最近 60 条):"
+    git log --oneline "${UPSTREAM_HEAD}" 2>/dev/null | head -60 || true
+    echo ""
+    warn "git-subtree 不可用，仅展示提交日志；安装后可见文件级变更: dnf install git-subtree"
 fi
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

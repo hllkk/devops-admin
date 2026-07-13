@@ -14,7 +14,7 @@ type Login interface {
 	GetNickname() string
 	GetUUID() uuid.UUID
 	GetUserId() uint
-	GetAuthorityId() uint
+	GetRoleId() uint
 	GetUserInfo() any
 }
 
