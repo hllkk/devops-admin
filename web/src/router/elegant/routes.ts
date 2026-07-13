@@ -134,12 +134,69 @@ export const generatedRoutes: GeneratedRoute[] = [
     },
     children: [
       {
+        name: 'system_dept',
+        path: '/system/dept',
+        component: 'view.system_dept',
+        meta: {
+          title: 'system_dept',
+          i18nKey: 'route.system_dept',
+          localIcon: 'menu-department',
+          order: 4
+        }
+      },
+      {
+        name: 'system_dict',
+        path: '/system/dict',
+        component: 'view.system_dict',
+        meta: {
+          title: 'system_dict',
+          i18nKey: 'route.system_dict',
+          localIcon: 'menu-dict',
+          order: 6
+        }
+      },
+      {
+        name: 'system_menu',
+        path: '/system/menu',
+        component: 'view.system_menu',
+        meta: {
+          title: 'system_menu',
+          i18nKey: 'route.system_menu',
+          icon: 'mingcute:list-ordered-line',
+          order: 3
+        }
+      },
+      {
+        name: 'system_notice',
+        path: '/system/notice',
+        component: 'view.system_notice',
+        meta: {
+          title: 'system_notice',
+          i18nKey: 'route.system_notice',
+          icon: 'carbon:notification',
+          order: 7
+        }
+      },
+      {
+        name: 'system_post',
+        path: '/system/post',
+        component: 'view.system_post',
+        meta: {
+          title: 'system_post',
+          i18nKey: 'route.system_post',
+          localIcon: 'menu-post',
+          order: 5
+        }
+      },
+      {
         name: 'system_role',
         path: '/system/role',
         component: 'view.system_role',
         meta: {
           title: 'system_role',
-          i18nKey: 'route.system_role'
+          i18nKey: 'route.system_role',
+          icon: 'carbon-user-role',
+          order: 2
         }
       },
       {

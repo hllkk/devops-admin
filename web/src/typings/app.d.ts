@@ -369,6 +369,12 @@ declare namespace App {
         importResult: string;
         downloadTemplate: string;
         userCenter: string;
+        selected: string;
+        anyRecords: string;
+        clear: string;
+        noSelectRecord: string;
+        copySuccess: string;
+        copyNotSupported: string;
         login: string;
         noChange: string;
         yesOrNo: {
@@ -725,7 +731,106 @@ declare namespace App {
           };
           dept: {
             title: string;
+            parentId: string;
+            deptName: string;
+            deptCategory: string;
+            leader: string;
+            phone: string;
+            email: string;
+            sort: string;
+            status: string;
+            createTime: string;
+            orderNum: string;
+            expandAll: string;
+            collapseAll: string;
             empty: string;
+            addDept: string;
+            editDept: string;
+            placeholder: {
+              defaultLeaderPlaceHolder: string;
+              addDataLeaderPlaceHolder: string;
+              deptUserIsEmptyLeaderPlaceHolder: string;
+            };
+            error: {
+              getDeptDataFail: string;
+              getDeptUserDataFail: string;
+            };
+            form: {
+              deptId: FormMsg;
+              parentId: FormMsg;
+              orderNum: FormMsg;
+              deptName: FormMsg;
+              deptCategory: FormMsg;
+              status: FormMsg;
+              phone: FormMsg;
+              email: FormMsg;
+            };
+          };
+          post: {
+            title: string;
+            listTitle: string;
+            deptTreeTitle: string;
+            emptyDept: string;
+            exportFileName: string;
+            belongDept: string;
+            postCode: string;
+            postCategory: string;
+            postName: string;
+            postSort: string;
+            status: string;
+            remark: string;
+            createTime: string;
+            addPost: string;
+            editPost: string;
+            form: {
+              postId: FormMsg;
+              deptId: FormMsg;
+              postCode: FormMsg;
+              postCategory: FormMsg;
+              postName: FormMsg;
+              postSort: FormMsg;
+              status: FormMsg;
+              remark: FormMsg;
+            };
+          };
+          dict: {
+            title: string;
+            dictName: string;
+            dictTypeTitle: string;
+            dictType: string;
+            dictData: string;
+            addDictType: string;
+            addDictData: string;
+            exportDictType: string;
+            editDictData: string;
+            editDictType: string;
+            refreshDictType: string;
+            dictTypeIsEmpty: string;
+            refreshCache: string;
+            confirmDeleteDictType: string;
+            refreshCacheSuccess: string;
+            remark: string;
+            data: {
+              label: string;
+              value: string;
+              dictSort: string;
+              listClass: string;
+              cssClass: string;
+              remark: string;
+              createTime: string;
+              isDefault: string;
+            };
+            form: {
+              dictName: FormMsg;
+              dictCode: FormMsg;
+              dictLabel: FormMsg;
+              dictValue: FormMsg;
+              dictType: FormMsg;
+              listClass: FormMsg;
+              cssClass: FormMsg;
+              dictSort: FormMsg;
+              remark: FormMsg;
+            }
           };
         };
       };

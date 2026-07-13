@@ -29,6 +29,11 @@ declare module "@elegant-router/types" {
     "server": "/server";
     "social-callback": "/social-callback";
     "system": "/system";
+    "system_dept": "/system/dept";
+    "system_dict": "/system/dict";
+    "system_menu": "/system/menu";
+    "system_notice": "/system/notice";
+    "system_post": "/system/post";
     "system_role": "/system/role";
     "system_user": "/system/user";
     "user-center": "/user-center";
@@ -93,6 +98,11 @@ declare module "@elegant-router/types" {
   export type LastLevelRouteKey = Extract<
     RouteKey,
     | "admin"
+    | "system_dept"
+    | "system_dict"
+    | "system_menu"
+    | "system_notice"
+    | "system_post"
     | "system_role"
     | "system_user"
     | "403"

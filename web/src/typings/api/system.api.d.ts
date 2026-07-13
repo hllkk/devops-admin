@@ -307,6 +307,16 @@ declare namespace Api {
       remark: string;
     }>;
 
+    /** dict type search params */
+    type DictTypeSearchParams = CommonType.RecordNullable<
+      Pick<Api.System.DictType, 'dictName' | 'dictType'> & Api.Common.CommonSearchParams
+    >;
+
+    /** dict type operate params */
+    type DictTypeOperateParams = CommonType.RecordNullable<
+      Pick<Api.System.DictType, 'dictId' | 'dictName' | 'dictType' | 'remark'>
+    >;
+
     /** dict type list */
     type DictTypeList = Api.Common.PaginatingQueryRecord<DictType>;
 
@@ -336,6 +346,30 @@ declare namespace Api {
       i18nKey: App.I18n.I18nKey;
     }>;
 
+    /** dict data search params */
+    type DictDataSearchParams = CommonType.RecordNullable<
+      Pick<Api.System.DictData, 'dictLabel' | 'dictType'> & Api.Common.CommonSearchParams
+    >;
+
+    /** dict data operate params */
+    type DictDataOperateParams = CommonType.RecordNullable<
+      Pick<
+        Api.System.DictData,
+        | 'dictCode'
+        | 'dictSort'
+        | 'dictLabel'
+        | 'dictValue'
+        | 'dictType'
+        | 'cssClass'
+        | 'listClass'
+        | 'isDefault'
+        | 'remark'
+      >
+    >;
+
+    /** dict data list */
+    type DictDataList = Api.Common.PaginatingQueryRecord<DictData>;
+
     /** dept */
     type Dept = Api.Common.CommonRecord<{
       /** 部门id */
@@ -363,6 +397,98 @@ declare namespace Api {
       /** 子部门 */
       children: Dept[];
     }>;
+
+    /** dept search params */
+    type DeptSearchParams = CommonType.RecordNullable<
+      Pick<Api.System.Dept, 'deptName' | 'status'> & Api.Common.CommonSearchParams
+    >;
+
+    /** dept operate params */
+    type DeptOperateParams = CommonType.RecordNullable<
+      Pick<
+        Api.System.Dept,
+        'deptId' | 'parentId' | 'deptName' | 'deptCategory' | 'orderNum' | 'leader' | 'phone' | 'email' | 'status'
+      >
+    >;
+
+    /** dept list */
+    type DeptList = Api.Common.PaginatingQueryRecord<Dept>;
+
+    /** post */
+    type Post = Common.CommonRecord<{
+      /** 岗位ID */
+      postId: CommonType.IdType;
+      /** 租户编号 */
+      tenantId: CommonType.IdType;
+      /** 部门id */
+      deptId: CommonType.IdType;
+      /** 岗位编码 */
+      postCode: string;
+      /** 类别编码 */
+      postCategory: string;
+      /** 岗位名称 */
+      postName: string;
+      /** 显示顺序 */
+      postSort: number;
+      /** 状态（0正常 1停用） */
+      status: Common.EnableStatus;
+      /** 备注 */
+      remark: string;
+    }>;
+
+    /** post search params */
+    type PostSearchParams = CommonType.RecordNullable<
+      Pick<Api.System.Post, 'deptId' | 'postCode' | 'postName' | 'status'> & {
+        belongDeptId: CommonType.IdType;
+      } & Api.Common.CommonSearchParams
+    >;
+
+    /** post operate params */
+    type PostOperateParams = CommonType.RecordNullable<
+      Pick<
+        Api.System.Post,
+        'postId' | 'deptId' | 'postCode' | 'postCategory' | 'postName' | 'postSort' | 'status' | 'remark'
+      >
+    >;
+
+    /** post list */
+    type PostList = Api.Common.PaginatingQueryRecord<Post>;
+
+    /** 通知公告类型 */
+    type NoticeType = '1' | '2';
+
+    /** notice */
+    type Notice = Common.CommonRecord<{
+      /** 公告ID */
+      noticeId: CommonType.IdType;
+      /** 租户编号 */
+      tenantId: CommonType.IdType;
+      /** 公告标题 */
+      noticeTitle: string;
+      /** 公告类型 */
+      noticeType: System.NoticeType;
+      /** 公告内容 */
+      noticeContent: string;
+      /** 公告状态 */
+      status: Common.EnableStatus;
+      /** 创建者 */
+      createByName: string;
+      /** 备注 */
+      remark: string;
+    }>;
+
+    /** notice search params */
+    type NoticeSearchParams = CommonType.RecordNullable<
+      Pick<Api.System.Notice, 'noticeTitle' | 'noticeType'> & Api.Common.CommonSearchParams
+    >;
+
+    /** notice operate params */
+    type NoticeOperateParams = CommonType.RecordNullable<
+      Pick<Api.System.Notice, 'noticeId' | 'noticeTitle' | 'noticeType' | 'noticeContent' | 'status'>
+    >;
+
+    /** notice list */
+    type NoticeList = Api.Common.PaginatingQueryRecord<Notice>;
 
     /** 设备类型 */
     type DeviceType = 'pc' | 'android' | 'ios' | 'xcx';

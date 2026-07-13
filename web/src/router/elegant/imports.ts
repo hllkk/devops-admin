@@ -16,6 +16,11 @@ export const layouts: Record<RouteLayout, RouteComponent | (() => Promise<RouteC
 
 export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<RouteComponent>)> = {
   admin: () => import("@/views/_admin/admin/index.vue"),
+  system_dept: () => import("@/views/_admin/system/dept/index.vue"),
+  system_dict: () => import("@/views/_admin/system/dict/index.vue"),
+  system_menu: () => import("@/views/_admin/system/menu/index.vue"),
+  system_notice: () => import("@/views/_admin/system/notice/index.vue"),
+  system_post: () => import("@/views/_admin/system/post/index.vue"),
   system_role: () => import("@/views/_admin/system/role/index.vue"),
   system_user: () => import("@/views/_admin/system/user/index.vue"),
   403: () => import("@/views/_builtin/403/index.vue"),

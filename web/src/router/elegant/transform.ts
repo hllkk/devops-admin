@@ -175,6 +175,11 @@ const routeMap: RouteMap = {
   "server": "/server",
   "social-callback": "/social-callback",
   "system": "/system",
+  "system_dept": "/system/dept",
+  "system_dict": "/system/dict",
+  "system_menu": "/system/menu",
+  "system_notice": "/system/notice",
+  "system_post": "/system/post",
   "system_role": "/system/role",
   "system_user": "/system/user",
   "user-center": "/user-center"
