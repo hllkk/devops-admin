@@ -4,4 +4,5 @@ type ServiceGroup struct {
 	SysErrorService
 	InitDBService
 	CasbinService
+	UserService
 }

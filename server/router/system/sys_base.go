@@ -14,6 +14,9 @@ func (s *BaseRouter) InitBaseRouter(public, private *gin.RouterGroup) {
 		pub.POST("login", baseApi.Login)
 		pub.POST("code", baseApi.Captcha)
 	}
-	// private 组的 /auth/getUserInfo 在 BaseApi.GetUserInfo 实现后挂载（见权限基座闭环 Step 5）
-	_ = private
+	// private 组的 /auth/getUserInfo（见权限基座闭环 Step 5）
+	pri := private.Group("auth")
+	{
+		pri.GET("getUserInfo", baseApi.GetUserInfo)
+	}
 }

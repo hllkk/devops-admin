@@ -9,4 +9,5 @@ type ApiGroup struct {
 
 var (
 	initDBService = service.ServiceGroupApp.SystemServiceGroup.InitDBService
+	userService   = service.ServiceGroupApp.SystemServiceGroup.UserService
 )
