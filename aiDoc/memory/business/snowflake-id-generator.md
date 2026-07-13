@@ -3,6 +3,7 @@
 - 日期：2026-07-11
 - 状态：已实现（后端 + 配置 + 契约文档），编译/vet/单测/集成测试全绿
 - 关联分支：feat/multi-module-isolation
+- **后续演进（2026-07-12）**：`global.OPS_MODEL` 已移除 `ID` 字段，主键改由各业务模型自定义（对外 `userId`/`roleId`、内部 `id`）。雪花回调改为按 `PrioritizedPrimaryField` 填充任意整型主键，**不再依赖基座是否含 `ID`**。下文「`OPS_MODEL.ID`」相关描述为引入时的历史状态。见 [[system-user-role-models]]。
 
 ## 背景
 

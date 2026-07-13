@@ -17,9 +17,9 @@
 
 ## 主键 ID 契约
 
-所有继承 `OPS_MODEL` 的表主键统一使用**雪花算法**生成的 `int64` ID（后端 `utils/snowflake` 自实现，GORM `BeforeCreate` 回调在主键为 0 时自动填充，三处 `OPS_DB` 赋值点均已注册）。
+所有业务表的整型主键统一使用**雪花算法**生成的 `int64` ID（后端 `utils/snowflake` 自实现，GORM `BeforeCreate` 回调 `ops:snowflake_id` 在主键为 0 时按 `PrioritizedPrimaryField` 自动填充，三处 `OPS_DB` 赋值点均已注册）。主键不放在全局基座里，由各业务模型自定义列名/JSON 名（对外实体用业务命名 `userId`/`roleId`，内部表用 `id`）。
 
-- **传输格式**：JSON 中 ID 以**字符串**传输（Go 端 `json:"ID,string"`），规避 JS `Number` 仅能安全表示到 2^53 的精度丢失（雪花 ID 通常 18~19 位十进制）。
+- **传输格式**：JSON 中 ID 一律以**字符串**传输（Go 端 `json:"...,string"`，如 `json:"userId,string"` / `json:"id,string"`），规避 JS `Number` 仅能安全表示到 2^53 的精度丢失（雪花 ID 通常 18~19 位十进制）。
 - **前端约束**：所有 ID 字段一律按 `string` 收发，**禁止当 number 做数值运算或比较**；需要排序/比较时转 BigInt。
 - **显式 ID 不被覆盖**：创建时若已指定主键，回调不会覆盖。
 

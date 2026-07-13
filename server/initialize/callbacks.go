@@ -15,7 +15,7 @@ import (
 const snowflakeCallbackName = "ops:snowflake_id"
 
 // RegisterCallbacks 在给定 DB 上注册雪花主键生成回调：创建记录时若整型主键为 0，
-// 则自动生成雪花 ID（覆盖 OPS_MODEL.ID）。幂等——已注册则跳过，热重载等重复调用安全。
+// 则自动生成雪花 ID（填充业务模型自定义的整型主键）。幂等——已注册则跳过，热重载等重复调用安全。
 func RegisterCallbacks(db *gorm.DB) {
 	if db == nil {
 		return
@@ -40,7 +40,7 @@ func assignSnowflakeID(tx *gorm.DB) {
 	if pf == nil {
 		return
 	}
-	// 仅处理整型主键（OPS_MODEL.ID 为 int64）
+	// 仅处理整型主键（业务模型自定义的 int64 主键，回调不依赖具体基座）
 	if pf.DataType != schema.Int && pf.DataType != schema.Uint {
 		return
 	}

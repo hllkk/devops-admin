@@ -1,5 +1,7 @@
 package system
 
+import "github.com/hllkk/devops-admin/server/global"
+
 // SysRole 系统角色，对齐前端 Api.System.Role。
 // 超管角色由初始化流程以显式 RoleId=1 种子（雪花回调只在主键为 0 时填，不覆盖）。
 type SysRole struct {
@@ -12,7 +14,7 @@ type SysRole struct {
 	SuperAdmin        bool   `gorm:"column:super_admin;default:false" json:"superAdmin"`
 	Remark            string `gorm:"column:remark;size:500;default:''" json:"remark"`
 	Flag              bool   `gorm:"-" json:"flag"` // 瞬态：当前用户是否拥有此角色，不入库
-	AuditModel
+	global.OPS_AUDIT_MODEL
 }
 
 // TableName 自定义表名 sys_role

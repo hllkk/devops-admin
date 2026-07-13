@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/hllkk/devops-admin/server/global"
 )
 
 // Login 认证链路抽象（GVA 基座遗留）。ID 仍是 uint，待登录实现时统一改 int64/string
@@ -18,7 +19,7 @@ type Login interface {
 }
 
 // SysUser 系统用户，对齐前端 Api.System.User。
-// 主键 UserId 由雪花回调 ops:snowflake_id 自动填充（不内嵌 global.OPS_MODEL）。
+// 主键 UserId 由雪花回调 ops:snowflake_id 自动填充；审计字段走 global.OPS_AUDIT_MODEL。
 type SysUser struct {
 	UserId      int64      `gorm:"column:user_id;primaryKey;autoIncrement:false" json:"userId,string"`
 	DeptId      int64      `gorm:"column:dept_id;default:0" json:"deptId,string"`
@@ -35,7 +36,7 @@ type SysUser struct {
 	LoginIp     string     `gorm:"column:login_ip;size:128;default:''" json:"loginIp"`
 	LoginDate   *time.Time `gorm:"column:login_date" json:"loginDate"`
 	Remark      string     `gorm:"column:remark;size:500;default:''" json:"remark"`
-	AuditModel
+	global.OPS_AUDIT_MODEL
 }
 
 // TableName 自定义表名 sys_user

@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 	"time"
+
+	"github.com/hllkk/devops-admin/server/global"
 )
 
 func TestSysUserJSONContract(t *testing.T) {
@@ -13,11 +15,13 @@ func TestSysUserJSONContract(t *testing.T) {
 		UserName: "alice",
 		Password: "secret",
 		Status:   StatusEnable,
-		AuditModel: AuditModel{
-			CreateBy:   "admin",
-			CreateTime: now,
-			UpdateBy:   "admin",
-			UpdateTime: now,
+		OPS_AUDIT_MODEL: global.OPS_AUDIT_MODEL{
+			OPS_MODEL: global.OPS_MODEL{
+				CreateTime: now,
+				UpdateTime: now,
+			},
+			CreateBy: "admin",
+			UpdateBy: "admin",
 		},
 	}
 	out, err := json.Marshal(u)

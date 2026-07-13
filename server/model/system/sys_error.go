@@ -4,6 +4,7 @@ import "github.com/hllkk/devops-admin/server/global"
 
 // 错误日志 结构体  SysError
 type SysError struct {
+	ID int64 `gorm:"primaryKey;autoIncrement:false" json:"id,string"`
 	global.OPS_MODEL
 	Form     *string `json:"form" form:"form" gorm:"comment:错误来源;column:form;type:text;" binding:"required"` //错误来源
 	Info     *string `json:"info" form:"info" gorm:"comment:错误内容;column:info;type:text;"`                    //错误内容
