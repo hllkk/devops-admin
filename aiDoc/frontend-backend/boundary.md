@@ -8,8 +8,8 @@
 
 ## 契约规则
 
-- 保持统一响应结构：`{ code, data, msg }`
-- 保持统一分页结构：`{ pageNum, pageSize, total, rows }`
+- 保持统一响应结构：`{ code, data, msg }`，`code` 为**字符串**（成功 `"0000"`、失败 `"0001"`，GVA 范式）。前端请求适配器 `isBackendSuccess` 判 `String(code) === VITE_SERVICE_SUCCESS_CODE`（默认 `"0000"`，见 `web/.env`），**不是判 `code === 0`**；`onBackendFail` 按 `.env` 的 `VITE_SERVICE_LOGOUT_CODES`(8888/8889) / `MODAL_LOGOUT_CODES`(7777/7778) / `EXPIRED_TOKEN_CODES`(9999/9998/3333) 分流登出与刷新 token
+- 保持统一分页结构：响应 `{ pageNum, pageSize, total, rows }`；请求分页入参的页码字段为 `page`（后端 `request.PageInfo.PageNum` 的 json tag 为 `page`，`pageSize` 同名），即**请求 `page` / 响应 `pageNum`** 字段名不对称，前后端各自遵守
 - 字段名不要随意漂移
 - 前后端字段类型必须保持一致
 - 后端必须提供完整而准确的 Swagger 接口说明

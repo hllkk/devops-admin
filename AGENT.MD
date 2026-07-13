@@ -43,8 +43,8 @@
 ### 前后端协作
 
 - 明确请求与响应契约
-- 保持统一响应结构：{ code, data, msg }
-- 保持统一分页结构：{ page, pageSize, total, list }
+- 保持统一响应结构：`{ code, data, msg }`（`code` 为**字符串**：成功 `"0000"`、失败 `"0001"`，GVA 范式；前端经 `VITE_SERVICE_SUCCESS_CODE` 适配，详见 `aiDoc/frontend-backend/boundary.md`）
+- 保持统一分页结构：响应 `{ pageNum, pageSize, total, rows }`；请求分页入参页码字段为 `page`（后端 `request.PageInfo`，`pageSize` 同名），即**请求 `page` / 响应 `pageNum`** 字段名不对称
 - 前后端字段名与数据类型保持一致；Go 指针 nil ↔ TS `null`
 - 优先复用 `web/` 的 `@sa/*` 包与 `src/{service,utils,hooks}`，**禁止重复造轮子**
 - 涉及跨栈边界变更时，**同步更新 `aiDoc/frontend-backend/`**

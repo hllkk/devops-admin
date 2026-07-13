@@ -16,7 +16,7 @@
 2. **Service** → **API**（带 Swagger）→ **Router** 逐层实现
 3. **Initialize**：注册路由 + `AutoMigrate`
 4. 交付：完整代码 + 相对路径说明（如 `server/service/file/file_service.go`）
-- 新增某层文件前，先读 `aiDoc/examples/backend/`（待补）对应示例
+- 新增某层文件前，先读 `aiDoc/examples/backend/` 对应示例（model/request/service/api/router/enter.go/plugin.go 已齐）
 
 ## 前端开发工作流
 1. 接口封装：`src/service/api/` + 类型 `src/typings/api/`

@@ -25,6 +25,6 @@
 
 ## 当前实况（会变化，按需校准）
 
-- `server/`：目录骨架已建，**尚无业务代码**（仅 `main.go` + `config.yaml`）
-- `web/`：**尚未 scaffold**；`frontend-rules.md` 为 SoybeanAdmin 2.x 前瞻性规范
+- `server/`：分层骨架完整（api/router/service/model/initialize/global/middleware/utils）。业务模型已建 `SysUser/SysRole/SysMenu/SysDept/SysPost` + 关联表 `SysUserRole/SysRoleMenu` + 对应 request DTO（`model/system/`、`model/system/request/`）；统一响应 `model/common/response`、雪花主键 `utils/snowflake`。**业务 Service/API/Router 仍待补**（目前 `api/v1/system`、`router/system`、`service/system` 仅有 `sys_init` 与 auto_code 基座）。
+- `web/`：**已 scaffold**（SoybeanAdmin 2.x + RuoYi 约定混合体）。系统模块页面齐备：`src/views/_admin/system/{user,role,menu,dept,post,dict,notice}`，接口封装 `src/service/api/system/*`，类型 `src/typings/api/system.api.d.ts`。前端先行、后端按 `Api.System.*` 反推实现是当前常态。
 - go module = `devops-admin`

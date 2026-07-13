@@ -1,7 +1,7 @@
 # 前端规范 (frontend-rules)
 
-> 适用范围：仅 `web/`。基座 = SoybeanAdmin 2.x（Vue3 + Vite + TS + NaiveUI + UnoCSS + Elegant Router + `@sa/axios` + vue-i18n，pnpm monorepo）。
-> ⚠️ `web/` 尚未 scaffold，本文件为 SoybeanAdmin 2.x **前瞻性规范**，脚手架生成后据实校准。
+> 适用范围：仅 `web/`。基座 = SoybeanAdmin 2.x（Vue3 + Vite + TS + NaiveUI + UnoCSS + Elegant Router + `@sa/axios` + vue-i18n，pnpm monorepo）+ **RuoYi 约定混合体**（`CommonRecord`/`PaginatingQueryRecord`/`EnableStatus` 审计与状态类型、`system:模块:动作` 权限码、字典体系、`/system/<m>/*` REST 约定）。
+> `web/` **已 scaffold** 并有真实模块（`_admin/system/{user,role,menu,dept,post,dict,notice}`）。本文件为实况规范，新增模块前以 `dept` 模块为参照（见 §9）。
 
 ## 1. 路由（Elegant Router，最易错）
 - 基于**文件**：`src/views/*` 文件 → 自动生成 `src/router/elegant/{routes,imports,transform}.ts` 与 `typings/elegant-router.d.ts`（`RouteKey` 联合类型）
@@ -11,7 +11,7 @@
 
 ## 2. 请求（@sa/axios）
 - 用 `@sa/axios` 的 `createRequest`（抛错式）或 `createFlatRequest`（返回 `{ data, error, response }`，推荐）
-- 钩子：`onRequest`（注 token）、`isBackendSuccess`（**判 `code === 0`**）、`onBackendFail`、`onError`、`transform`
+- 钩子：`onRequest`（注 token）、`isBackendSuccess`（**判 `String(code) === VITE_SERVICE_SUCCESS_CODE`，默认 `"0000"`，GVA 字符串码——不是 `code === 0`**）、`onBackendFail`（按 `web/.env` 的 logout/modal/expired code 分流登出与刷 token）、`onError`、`transform`
 - 实例配在 `src/service/request/`，API 函数放 `src/service/api/`，类型放 `src/typings/api/`
 - 自带 `REQUEST_ID_KEY` 头、`AbortController` 取消、`axios-retry`
 - **禁止裸用 axios**；**禁止重复封装** HTTP
@@ -60,9 +60,58 @@
 - 组件分层：`src/components/{advanced,common,custom}`
 
 ## 9. 组件与页面
-- 可复用 UI 必须抽组件，单一职责，完整 props/emit 定义
-- 页面放 `src/views/`，按业务模块组织
-- 优先 NaiveUI 组件 + UnoCSS 类名；**禁内联样式**
+
+新增系统模块**以 `dept` / `post` / `menu` 为参照**，遵守下列强约定。
+
+### 9.1 页面模块结构（三件套）
+```
+src/views/_admin/system/<m>/
+  index.vue                            # 列表页 <script setup lang="tsx">（列 render 用 TSX）
+  modules/<m>-operate-drawer.vue       # 新增/编辑抽屉（同表单复用）
+  modules/<m>-search.vue               # 顶部搜索条件栏
+src/service/api/system/<m>.ts          # CRUD：fetchGetXxx / fetchCreate / fetchUpdate / fetchBatchDelete
+src/typings/api/system.api.d.ts        # Api.System.<Entity> + <Entity>SearchParams + <Entity>OperateParams + <Entity>List
+```
+- 树形模块（menu/dept）：`index.vue` 用 `useNaiveTreeTable`，列表返回扁平数组，前端 `handleTree` 构树。
+- 分页模块（post/role/user）：`index.vue` 用 `useNaivePaginatedTable`，列表返回 `{ pageNum, pageSize, total, rows }`。
+
+### 9.2 列表页 hook 体系（`src/hooks/common/table.ts`，禁止手搓表格）
+- `useNaiveTable` / `useNaivePaginatedTable` / `useNaiveTreeTable`：产出 `columns/columnChecks/data/rows/getData/loading/scrollX`（树表再加 `expandedRowKeys/expandAll/collapseAll`）。
+- `useTableOperate(rows, idKey, getData)` / `useTreeTableOperate`：产出 `drawerVisible/operateType/editingData/handleAdd/handleEdit/onDeleted/onBatchDeleted`，抽屉与表格增删改的标准联动。
+- `defaultTransform` / `treeTransform`：响应 → 表格数据的标准转换。
+- 详见 `frontend-utils.md`。
+
+### 9.3 字典体系（RuoYi 风格）
+- 取字典：`const { options } = useDict('sys_normal_disable')`（自动进 `useDictStore` 缓存）。
+- 表单控件：`<DictSelect dict-code="..." />` / `DictRadio` / `DictCheckbox`。
+- 列表回显：`<DictTag :value="row.status" dict-code="sys_normal_disable" />`。
+
+### 9.4 权限控制（RuoYi 三段式权限码）
+- 码格式：`<模块>:<资源>:<动作>`，如 `system:dept:add` / `system:dept:edit` / `system:dept:remove` / `system:post:export`。
+- 判断：`const { hasAuth } = useAuth(); hasAuth('system:dept:add')`，用于按钮显隐与表格操作列渲染。
+
+### 9.5 数据类型范式
+- 实体：`type Dept = Common.CommonRecord<{ deptId: CommonType.IdType; … }>`。
+- 搜索参数：`type DeptSearchParams = CommonType.RecordNullable<Pick<Dept, …> & Api.Common.CommonSearchParams>`。
+- 操作参数：`type DeptOperateParams = CommonType.RecordNullable<Pick<Dept, …>>`（多对多附带 `menuIds/roleIds/postIds: CommonType.IdType[]`）。
+- ID 一律 `CommonType.IdType`（字符串），禁当 number。详见 `frontend-utils.md` 类型范式。
+
+### 9.6 REST 接口约定（`/system/<m>/*`）
+- 列表 `GET /system/<m>/list`；排除树/下拉等子资源 `GET /system/<m>/list/exclude/{id}`、`/optionselect`。
+- 新增 `POST /system/<m>`；修改 `PUT /system/<m>`（同 path，按 body 是否带 id 区分）。
+- 批量删除 `DELETE /system/<m>/{ids}`（路径逗号分隔，前端 `ids.join(',')`）。
+- 接口封装统一 `request<T>(...)`（flat 模式，返回 `{ data, error }`）。
+
+### 9.7 i18n key 约定
+- 字段/文案：`page.system.<m>.<field>`；通用：`common.*`（`operate/add/edit/delete/confirmDelete`…）；路由：`route.system_<m>`。
+- 表单：`form.<m>.<field>.required`（占位提示）、`form.<m>.<field>.invalid`（校验失败文案）。
+- 新增路由必须同步补 `route.system_<m>` 中英文案，否则 `Record<I18nRouteKey, string>` 类型不闭合。
+
+### 9.8 通用组件分层
+- `src/components/advanced/`：表格相关复合件（`table-sider-layout`/`table-header-operation`/`table-column-setting`/`table-row-check-alert`）。
+- `src/components/common/`：基座通用件（布局/主题/语言/全屏等）。
+- `src/components/custom/`：业务通用件（`button-icon`/`dict-*`/`status-switch`/`dept-tree`/`menu-tree`/`file-upload`…）。
+- 可复用 UI 必须抽组件，单一职责，完整 props/emit；优先 NaiveUI + UnoCSS 类名，**禁内联样式**。完整清单见 `frontend-utils.md`。
 
 ## 10. 工具复用
 - 先查 `@sa/*` workspace 包、`src/service/`、`src/utils/`、`src/hooks/`，**禁止重复造轮子**
