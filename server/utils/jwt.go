@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"context"
 	"errors"
 	"time"
 
@@ -149,40 +148,3 @@ func IsBlacklisted(token string) bool {
 	return ok
 }
 
-// 以下旧方法供 Task 3 重写 middleware 前过渡编译，Task 4 末尾统一删除。
-
-// CreateClaims 已废弃（原滑动续期），Task 4 删除。
-func (j *JWT) CreateClaims(baseClaims request.BaseClaims) request.CustomClaims {
-	bf, _ := ParseDuration(global.OPS_CONFIG.JWT.BufferTime)
-	ep, _ := ParseDuration(global.OPS_CONFIG.JWT.ExpiresTime)
-	claims := request.CustomClaims{
-		BaseClaims: baseClaims,
-		BufferTime: int64(bf / time.Second),
-		RegisteredClaims: jwt.RegisteredClaims{
-			Audience:  jwt.ClaimStrings{"GVA"},
-			NotBefore: jwt.NewNumericDate(time.Now().Add(-1000)),
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(ep)),
-			Issuer:    global.OPS_CONFIG.JWT.Issuer,
-		},
-	}
-	return claims
-}
-
-// CreateTokenByOldToken 已废弃（原滑动续期），Task 4 删除。
-func (j *JWT) CreateTokenByOldToken(oldToken string, claims request.CustomClaims) (string, error) {
-	v, err, _ := global.OPS_Concurrency_Control.Do("JWT:"+oldToken, func() (interface{}, error) {
-		return j.CreateToken(claims)
-	})
-	return v.(string), err
-}
-
-// SetRedisJWT 已废弃（多点登录），Task 4 删除。
-func SetRedisJWT(jwt string, userName string) (err error) {
-	dr, err := ParseDuration(global.OPS_CONFIG.JWT.ExpiresTime)
-	if err != nil {
-		return err
-	}
-	timer := dr
-	err = global.OPS_REDIS.Set(context.Background(), userName, jwt, timer).Err()
-	return err
-}

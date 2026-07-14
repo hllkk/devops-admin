@@ -13,13 +13,8 @@ import (
 // 适配当前项目：角色用 sys_role（含 super_admin），返回结构对齐 SoybeanAdmin 前端契约。
 type UserService struct{}
 
-// Login 校验用户名密码，签发 token，返回 token + refreshToken + 用户实体。
-// 对照 GVA service/system/sys_user.go Login + utils.LoginToken，适配：
-//   - SoybeanAdmin 要 LoginToken{token, refreshToken}（本期 refreshToken 复用同一 JWT，
-//     /auth/refreshToken 接口后续子项目）
-//   - claims.SuperAdmin 由任一超管角色置 true；因 system.Login 接口无 GetSuperAdmin，
-//     这里直接用 NewJWT().CreateClaims 填充（偏离 GVA 的 utils.LoginToken 封装）
-func (s *UserService) Login(username, password string) (token, refreshToken string, user system.SysUser, err error) {
+// Login 校验用户名密码，签发 access + refresh 双 token（httpOnly cookie 由 API 层写入）。
+func (s *UserService) Login(username, password string) (accessToken, refreshToken string, user system.SysUser, err error) {
 	if err = global.OPS_DB.Where("user_name = ?", username).First(&user).Error; err != nil {
 		return "", "", system.SysUser{}, errors.New("用户不存在或密码错误")
 	}
@@ -29,7 +24,7 @@ func (s *UserService) Login(username, password string) (token, refreshToken stri
 	if !utils.BcryptCheck(password, user.Password) {
 		return "", "", system.SysUser{}, errors.New("用户不存在或密码错误")
 	}
-	roleIds, isSuper, firstRoleId := s.getUserRoleIds(int64(user.UserId))
+	_, isSuper, firstRoleId := s.getUserRoleIds(int64(user.UserId))
 	bc := request.BaseClaims{
 		ID:         uint(user.UserId),
 		Username:   user.UserName,
@@ -38,12 +33,13 @@ func (s *UserService) Login(username, password string) (token, refreshToken stri
 		SuperAdmin: isSuper,
 	}
 	j := utils.NewJWT()
-	if token, err = j.CreateToken(j.CreateClaims(bc)); err != nil {
+	if accessToken, err = j.CreateAccessToken(bc); err != nil {
 		return "", "", system.SysUser{}, err
 	}
-	refreshToken = token // 本期复用同一 JWT
-	_ = roleIds
-	return token, refreshToken, user, nil
+	if refreshToken, err = j.CreateRefreshToken(bc); err != nil {
+		return "", "", system.SysUser{}, err
+	}
+	return accessToken, refreshToken, user, nil
 }
 
 // getUserRoleIds 返回用户角色 id 列表、是否超管、首个角色 id（uint，供 BaseClaims.RoleId）。
