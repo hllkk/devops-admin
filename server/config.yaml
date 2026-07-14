@@ -22,11 +22,11 @@ captcha:
             fail-threshold: 1         # 阈值模式：账号/IP 在 fail-window 内连续失败 N 次后必须验证码
             fail-window: 600          # 失败计数窗口（秒）
         slide:
-            tolerance: 5              # 拖动容差（像素）
+            tolerance: 8              # 拖动容差（像素）
         click:
-            padding: 5                # 点选容差（像素）
+            padding: 8                # 点选容差（像素）
         rotate:
-            tolerance: 5              # 旋转容差（角度）
+            tolerance: 8              # 旋转容差（角度）
 cors:
     mode: strict-whitelist
     whitelist:
