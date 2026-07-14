@@ -139,6 +139,10 @@ func (initDBService *InitDBService) InitDB(conf request.InitDB) (err error) {
 		return err
 	}
 
+	// 把 Redis 配置落到运行时 OPS_CONFIG：各 per-DB handler 的 WriteConfig 会全量 StructToMap 回写，
+	// 故 Redis 段与 system.use-redis 随本次落盘，4 个 handler 无需改动。
+	applyRedisConfig(conf)
+
 	if err = initHandler.WriteConfig(ctx); err != nil {
 		return err
 	}
@@ -151,6 +155,14 @@ func (initDBService *InitDBService) InitDB(conf request.InitDB) (err error) {
 	}
 
 	return nil
+}
+
+// applyRedisConfig 把 Redis 配置落到运行时 OPS_CONFIG。
+// 在编排器 WriteConfig 前调用：各 per-DB handler 的 WriteConfig 会全量 StructToMap 回写，
+// 故 Redis 段与 system.use-redis 随本次落盘，4 个 handler 无需改动。
+func applyRedisConfig(conf request.InitDB) {
+	global.OPS_CONFIG.Redis = conf.ToRedisConfig()
+	global.OPS_CONFIG.System.UseRedis = true
 }
 
 // createDatabase 创建数据库（ EnsureDB() 中调用 ）
