@@ -77,23 +77,3 @@ func (initDBService *InitDBService) PingRedis(conf sysReq.PingRedis) error {
 	}
 	return nil
 }
-
-// TestConnect 统一测试数据库或 Redis 连接：根据 connectType 分发到 PingDB 或 PingRedis。
-func (initDBService *InitDBService) TestConnect(req sysReq.TestConnectRequest) error {
-	switch req.ConnectType {
-	case "db":
-		dbConf := sysReq.DBConnTest{
-			DBType: req.DBType, Host: req.Host, Port: req.Port,
-			UserName: req.UserName, Password: req.Password,
-			DBName: req.DBName, DBPath: req.DBPath, Template: req.Template,
-		}
-		return initDBService.PingDB(dbConf)
-	case "redis":
-		redisConf := sysReq.PingRedis{
-			Addr: req.RedisAddr, Password: req.RedisPassword, DB: req.RedisDB,
-		}
-		return initDBService.PingRedis(redisConf)
-	default:
-		return fmt.Errorf("不支持的连接类型: %q（请使用 db 或 redis）", req.ConnectType)
-	}
-}

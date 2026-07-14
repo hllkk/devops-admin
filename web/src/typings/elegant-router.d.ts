@@ -25,6 +25,8 @@ declare module "@elegant-router/types" {
     "gateway": "/gateway";
     "iframe-page": "/iframe-page/:url";
     "init": "/init";
+    "log": "/log";
+    "log_loginlog": "/log/loginlog";
     "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat)?";
     "server": "/server";
     "social-callback": "/social-callback";
@@ -77,6 +79,7 @@ declare module "@elegant-router/types" {
     | "gateway"
     | "iframe-page"
     | "init"
+    | "log"
     | "login"
     | "server"
     | "social-callback"
@@ -99,6 +102,7 @@ declare module "@elegant-router/types" {
   export type LastLevelRouteKey = Extract<
     RouteKey,
     | "admin"
+    | "log_loginlog"
     | "system_dept"
     | "system_dict"
     | "system_menu"

@@ -138,32 +138,3 @@ func (i *DBApi) PingRedis(c *gin.Context) {
 	}
 	response.OkWithMessage("Redis 连接成功", c)
 }
-
-// TestConnect 统一测试数据库或 Redis 连接（仅在系统未初始化时可用；不建库、不落盘）
-// @Tags     SysInit
-// @Summary  测试数据库或 Redis 连接
-// @Produce  application/json
-// @Param    data  body      request.TestConnectRequest       true  "连接测试参数"
-// @Success  200   {object}  response.Response{data=string}  "连接成功"
-// @Router   /init/testConnect [post]
-func (i *DBApi) TestConnect(c *gin.Context) {
-	if global.OPS_DB != nil {
-		var count int64
-		global.OPS_DB.Model(&system.SysUser{}).Count(&count)
-		if count > 0 {
-			response.FailWithMessage("系统已初始化，无需测试连接", c)
-			return
-		}
-	}
-	var req request.TestConnectRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.FailWithMessage("参数校验不通过", c)
-		return
-	}
-	if err := initDBService.TestConnect(req); err != nil {
-		global.OPS_LOG.Warn("连接测试失败", zap.String("connectType", req.ConnectType), zap.Error(err))
-		response.FailWithMessage("连接失败："+err.Error(), c)
-		return
-	}
-	response.OkWithMessage("连接成功", c)
-}

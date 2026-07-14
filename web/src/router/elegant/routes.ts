@@ -93,6 +93,26 @@ export const generatedRoutes: GeneratedRoute[] = [
     }
   },
   {
+    name: 'log',
+    path: '/log',
+    component: 'layout.base',
+    meta: {
+      title: 'log',
+      i18nKey: 'route.log'
+    },
+    children: [
+      {
+        name: 'log_loginlog',
+        path: '/log/loginlog',
+        component: 'view.log_loginlog',
+        meta: {
+          title: 'log_loginlog',
+          i18nKey: 'route.log_loginlog'
+        }
+      }
+    ]
+  },
+  {
     name: 'login',
     path: '/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat)?',
     component: 'layout.blank$view.login',

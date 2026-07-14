@@ -158,21 +158,3 @@ type PingRedis struct {
 	Password string `json:"password"`
 	DB       int    `json:"db"`
 }
-
-// TestConnectRequest 统一连接测试请求体（合并 DB 和 Redis 测试）
-type TestConnectRequest struct {
-	ConnectType string `json:"connectType" binding:"required"` // "db" 或 "redis"
-	// DB 字段（connectType="db" 时使用）
-	DBType   string `json:"dbType"`
-	Host     string `json:"host"`
-	Port     string `json:"port"`
-	UserName string `json:"userName"`
-	Password string `json:"password"`
-	DBName   string `json:"dbName"`
-	DBPath   string `json:"dbPath"`
-	Template string `json:"template"`
-	// Redis 字段（connectType="redis" 时使用）
-	RedisAddr     string `json:"redisAddr"`
-	RedisPassword string `json:"redisPassword"`
-	RedisDB       int    `json:"redisDB"`
-}

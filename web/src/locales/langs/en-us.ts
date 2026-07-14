@@ -261,6 +261,8 @@ const local: App.I18n.Schema = {
     system_dict: 'Dictionary',
     system_notice: 'Notice',
     system_setting: 'System Setting',
+    log: 'Log',
+    log_loginlog: 'Login Log',
     disk: 'Disk',
     server: 'Server',
     gateway: 'AI Gateway',

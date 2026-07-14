@@ -257,6 +257,8 @@ const local: App.I18n.Schema = {
     system_dict: '字典管理',
     system_notice: '通知公告',
     system_setting: '系统设置',
+    log: '日志中心',
+    log_loginlog: '登录日志',
     disk: '网盘',
     server: '服务器管理',
     gateway: 'AI 网关',

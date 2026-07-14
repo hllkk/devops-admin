@@ -338,48 +338,6 @@
                     }
                 }
             }
-        },
-        "/init/testConnect": {
-            "post": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "SysInit"
-                ],
-                "summary": "测试数据库或 Redis 连接",
-                "parameters": [
-                    {
-                        "description": "连接测试参数",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/request.TestConnectRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "连接成功",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/response.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "string"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
         }
     },
     "definitions": {
@@ -501,53 +459,6 @@
                     "type": "integer"
                 },
                 "password": {
-                    "type": "string"
-                }
-            }
-        },
-        "request.TestConnectRequest": {
-            "type": "object",
-            "required": [
-                "connectType"
-            ],
-            "properties": {
-                "connectType": {
-                    "description": "\"db\" 或 \"redis\"",
-                    "type": "string"
-                },
-                "dbName": {
-                    "type": "string"
-                },
-                "dbPath": {
-                    "type": "string"
-                },
-                "dbType": {
-                    "description": "DB 字段（connectType=\"db\" 时使用）",
-                    "type": "string"
-                },
-                "host": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                },
-                "port": {
-                    "type": "string"
-                },
-                "redisAddr": {
-                    "description": "Redis 字段（connectType=\"redis\" 时使用）",
-                    "type": "string"
-                },
-                "redisDB": {
-                    "type": "integer"
-                },
-                "redisPassword": {
-                    "type": "string"
-                },
-                "template": {
-                    "type": "string"
-                },
-                "userName": {
                     "type": "string"
                 }
             }
