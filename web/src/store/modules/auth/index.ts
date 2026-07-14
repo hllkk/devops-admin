@@ -11,6 +11,14 @@ import { useRouteStore } from '../route';
 import { useTabStore } from '../tab';
 import { useNoticeStore } from '../notice';
 import { clearAuthStorage, getToken } from './shared';
+import { clearProactiveRefreshTimer, scheduleProactiveRefresh } from '@/service/request/shared';
+
+function storeTokenExpiry(expiresAt: number | undefined) {
+  if (expiresAt) {
+    localStg.set('tokenExpiresAt', expiresAt);
+    scheduleProactiveRefresh(expiresAt);
+  }
+}
 
 export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   const route = useRoute();
@@ -42,8 +50,16 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   async function resetStore() {
     recordUserId();
 
-    clearAuthStorage();
+    clearProactiveRefreshTimer();
+    localStg.remove('tokenExpiresAt');
 
+    try {
+      await fetchLogout();
+    } catch {
+      // token 可能已失效，忽略登出接口错误
+    }
+
+    clearAuthStorage();
     authStore.$reset();
 
     if (!route.meta.constant) {
@@ -56,7 +72,6 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   }
 
   async function logout() {
-    await fetchLogout();
     resetStore();
   }
 
@@ -96,33 +111,27 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   }
 
   /**
-   * Login
+   * Login（httpOnly cookie 模式：仅取 username/password，社交登录保留联合类型以免编译断裂）
    *
    * @param [redirect=true] Whether to redirect after login. Default is `true`
    */
   async function login(loginForm: Api.Auth.PwdLoginForm | Api.Auth.SocialLoginForm, redirect = true) {
     startLoading();
 
-    const { VITE_APP_CLIENT_ID } = import.meta.env;
+    // 仅取 username/password
+    const { username, password } = loginForm as Api.Auth.PwdLoginForm;
+    const { data, error } = await fetchLogin({ username, password });
 
-    const loginData: Api.Auth.PwdLoginForm = {
-      ...loginForm,
-      clientId: VITE_APP_CLIENT_ID!,
-      grantType: loginForm.grantType ?? 'password'
-    };
+    if (!error && data) {
+      localStg.set('isAuthenticated', true);
+      token.value = 'authenticated';
+      storeTokenExpiry(data.expiresAt);
 
-    const { data: loginToken, error } = await fetchLogin(loginData);
-
-    if (!error) {
-      const pass = await loginByToken(loginToken);
-
+      const pass = await getUserInfo();
       if (pass) {
-        // Check if the tab needs to be cleared
         const isClear = checkTabClear();
         let needRedirect = redirect;
-
         if (isClear) {
-          // If the tab needs to be cleared,it means we don't need to redirect.
           needRedirect = false;
         }
         await redirectFromLogin(needRedirect);
@@ -132,29 +141,14 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
           content: $t('page.login.common.welcomeBack', { userName: userInfo.user?.userName || '' }),
           duration: 4500
         });
+      } else {
+        resetStore();
       }
     } else {
       resetStore();
     }
 
     endLoading();
-  }
-
-  async function loginByToken(loginToken: Api.Auth.LoginToken) {
-    // 1. stored in the localStorage, the later requests need it in headers
-    localStg.set('token', loginToken.token);
-    localStg.set('refreshToken', loginToken.refreshToken);
-
-    // 2. get user info
-    const pass = await getUserInfo();
-
-    if (pass) {
-      token.value = loginToken.token;
-
-      return true;
-    }
-
-    return false;
   }
 
   async function getUserInfo() {

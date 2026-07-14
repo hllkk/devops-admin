@@ -46,6 +46,10 @@ declare namespace StorageType {
     lastLoginUserId: string;
     /** The login form rember */
     loginRember: string;
+    /** httpOnly cookie 模式登录态信号：true 表示已登录（token 本体仅存 cookie） */
+    isAuthenticated: boolean;
+    /** access token 过期毫秒时间戳（供主动刷新定时器使用） */
+    tokenExpiresAt: number;
     /**
      * Per-module structural theme overrides.
      *

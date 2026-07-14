@@ -13,6 +13,7 @@ const { baseURL, otherBaseURL } = getServiceBaseURL(import.meta.env, isHttpProxy
 export const request = createFlatRequest(
   {
     baseURL,
+    withCredentials: true,
     headers: {
       apifoxToken: 'XL299LiMEDZ0H5h3A29PxwQXdMJqWyY2'
     }
@@ -27,8 +28,10 @@ export const request = createFlatRequest(
     },
     async onRequest(config) {
       const Authorization = getAuthorization();
-      Object.assign(config.headers, { Authorization });
-
+      // Cookie 鉴权模式下 Authorization 为 null，不设置 Header（否则 axios 可能发送字面量 "null"）
+      if (Authorization) {
+        Object.assign(config.headers, { Authorization });
+      }
       return config;
     },
     isBackendSuccess(response) {
@@ -90,8 +93,9 @@ export const request = createFlatRequest(
         const success = await handleExpiredRequest(request.state);
         if (success) {
           const Authorization = getAuthorization();
-          Object.assign(response.config.headers, { Authorization });
-
+          if (Authorization) {
+            Object.assign(response.config.headers, { Authorization });
+          }
           return instance.request(response.config) as Promise<AxiosResponse>;
         }
       }

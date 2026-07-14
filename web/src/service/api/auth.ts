@@ -9,43 +9,14 @@ export function fetchCaptchaCode() {
 }
 
 /**
- * Login
+ * Login（httpOnly cookie 模式：access/refresh 由后端写入 cookie，响应只回 expiresAt）
  *
- * @param username User name
- * @param password Password
+ * @param data 用户名 + 密码
  */
 export function fetchLogin(data: Api.Auth.PwdLoginForm) {
   return request<Api.Auth.LoginToken>({
     url: '/auth/login',
     method: 'post',
-    headers: {
-      isToken: false,
-      isEncrypt: true,
-      repeatSubmit: false
-    },
-    data
-  });
-}
-
-/** social login callback */
-export function fetchSocialLoginCallback(data: Api.Auth.SocialLoginForm) {
-  return request({
-    url: '/auth/social/callback',
-    method: 'post',
-    data
-  });
-}
-
-/** Register */
-export function fetchRegister(data: Api.Auth.RegisterForm) {
-  return request<Api.Auth.LoginToken>({
-    url: '/auth/register',
-    method: 'post',
-    headers: {
-      isToken: false,
-      isEncrypt: true,
-      repeatSubmit: false
-    },
     data
   });
 }
@@ -56,40 +27,43 @@ export function fetchGetUserInfo() {
 }
 
 /**
- * Refresh token
- *
- * @param refreshToken Refresh token
+ * Refresh token —— refresh token 由浏览器经 httpOnly cookie 自动携带，无需传参。
  */
-export function fetchRefreshToken(refreshToken: string) {
+export function fetchRefreshToken() {
   return request<Api.Auth.LoginToken>({
     url: '/auth/refreshToken',
     method: 'post',
-    data: {
-      refreshToken
-    }
+    data: {}
   });
 }
 
-/**
- * return custom backend error
- *
- * @param code error code
- * @param msg error message
- */
-export function fetchCustomBackendError(code: string, msg: string) {
-  return request({ url: '/auth/error', params: { code, msg } });
-}
-
-/** Logout */
+/** Logout - invalidate tokens on server side */
 export function fetchLogout() {
-  if (import.meta.env.VITE_APP_SSE === 'Y') {
-    request({
-      url: '/resource/sse/close',
-      method: 'get'
-    });
-  }
   return request({
     url: '/auth/logout',
     method: 'post'
   });
+}
+
+/** Register (Soybean 示例保留，后端无端点) */
+export function fetchRegister(data: Api.Auth.RegisterForm) {
+  return request<Api.Auth.LoginToken>({
+    url: '/auth/register',
+    method: 'post',
+    data
+  });
+}
+
+/** social login callback (Soybean 示例保留，后端无端点) */
+export function fetchSocialLoginCallback(data: Api.Auth.SocialLoginForm) {
+  return request({
+    url: '/auth/social/callback',
+    method: 'post',
+    data
+  });
+}
+
+/** return custom backend error (Soybean 示例保留) */
+export function fetchCustomBackendError(code: string, msg: string) {
+  return request({ url: '/auth/error', params: { code, msg } });
 }
