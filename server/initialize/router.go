@@ -36,14 +36,25 @@ func (fs justFilesFilesystem) Open(name string) (http.File, error) {
 
 func Routers() *gin.Engine {
 	Router := gin.New()
+
+	// 信任代理：空则不信任任何代理（ClientIP=RemoteAddr，防 X-Forwarded-For 伪造绕过 IP 锁定/限流）；
+	// 非空则仅信任指定 CIDR/IP，多层反代下正确解析真实客户端 IP
+	if tp := global.OPS_CONFIG.System.TrustedProxies; len(tp) > 0 {
+		if err := Router.SetTrustedProxies(tp); err != nil {
+			global.OPS_LOG.Error("SetTrustedProxies 失败，回退为不信任任何代理: " + err.Error())
+			_ = Router.SetTrustedProxies(nil)
+		}
+	} else {
+		_ = Router.SetTrustedProxies(nil)
+	}
+
 	// 使用自定义的 Recovery 中间件，记录 panic 并入库
 	Router.Use(middleware.GinRecovery(true))
 	if gin.Mode() == gin.DebugMode {
 		Router.Use(gin.Logger())
 	}
-	Router.Use(middleware.Cors()) // 跨域带 cookie（credentials），httpOnly cookie 认证必需
+	Router.Use(middleware.CorsByRules()) // 跨域：按 cors 白名单规则放行；strict-whitelist 模式拒绝未匹配 Origin
 
-	systemRouter := router.RouterGroupApp.System
 	// 如果想要不使用nginx代理前端网页，可以修改 web/.env.production 下的
 	// VUE_APP_BASE_API = /
 	// VUE_APP_BASE_PATH = http://localhost
@@ -53,57 +64,36 @@ func Routers() *gin.Engine {
 	// Router.StaticFile("/", "./dist/index.html") // 前端网页入口页面
 
 	Router.StaticFS(global.OPS_CONFIG.Local.StorePath, justFilesFilesystem{http.Dir(global.OPS_CONFIG.Local.StorePath)})
-	// Router.Use(middleware.LoadTls())  // 如果需要使用https 请打开此中间件 然后前往 core/server.go 将启动模式 更变为 Router.RunTLS("端口","你的cre/pem文件","你的key文件")
-	// 跨域，如需跨域可以打开下面的注释
-	// Router.Use(middleware.Cors()) // 直接放行全部跨域请求
-	// Router.Use(middleware.CorsByRules()) // 按照配置的规则放行跨域请求
-	// global.GVA_LOG.Info("use middleware cors")
+	// 跨域配置已由上方 CorsByRules() 处理，allow-all 模式等同原 middleware.Cors()
 	docs.SwaggerInfo.BasePath = global.OPS_CONFIG.System.RouterPrefix
 	Router.GET(global.OPS_CONFIG.System.RouterPrefix+"/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	global.OPS_LOG.Info("register swagger handler")
-	// 方便统一添加路由组前缀 多服务器上线使用
 
+	// 路由组：按认证级别分为三级
 	PublicGroup := Router.Group(global.OPS_CONFIG.System.RouterPrefix)
 	PrivateGroup := Router.Group(global.OPS_CONFIG.System.RouterPrefix)
-
-	// PrivateGroup.Use(middleware.JWTAuth()).Use(middleware.CasbinHandler())
 	PrivateGroup.Use(middleware.JWTAuth())
+	// 管理组：JWT 认证之上叠加 RequireAdmin（角色码白名单），保护纯管理类路由
+	adminGroup := PrivateGroup.Group("")
+	adminGroup.Use(middleware.RequireAdmin())
 
-	{
-		// 健康监测
-		PublicGroup.GET("/health", func(c *gin.Context) {
-			c.JSON(http.StatusOK, "ok")
-		})
-	}
-	{
-		systemRouter.InitBaseRouter(PublicGroup, PrivateGroup) // auth 登录/验证码(public) + getUserInfo(private)
-		systemRouter.InitInitRouter(PublicGroup)               // 自动初始化相关
-	}
+	// 健康监测
+	PublicGroup.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, "ok")
+	})
 
-	{
-		// systemRouter.InitApiRouter(PrivateGroup, PublicGroup)               // 注册功能api路由
-		// systemRouter.InitJwtRouter(PrivateGroup)                            // jwt相关路由
-		// systemRouter.InitUserRouter(PrivateGroup)                           // 注册用户路由
-		// systemRouter.InitMenuRouter(PrivateGroup)                           // 注册menu路由
-		// systemRouter.InitSystemRouter(PrivateGroup)                         // system相关路由
-		// systemRouter.InitSysVersionRouter(PrivateGroup)                     // 发版相关路由
-		// systemRouter.InitCasbinRouter(PrivateGroup)                         // 权限相关路由
-		// systemRouter.InitAuthorityRouter(PrivateGroup)                      // 注册角色路由
-		// systemRouter.InitSysDictionaryRouter(PrivateGroup)                  // 字典管理
-		// systemRouter.InitSysOperationRecordRouter(PrivateGroup)             // 操作记录
-		// systemRouter.InitSysDictionaryDetailRouter(PrivateGroup)            // 字典详情管理
-		// systemRouter.InitAuthorityBtnRouterRouter(PrivateGroup)             // 按钮权限管理
-		// systemRouter.InitSysExportTemplateRouter(PrivateGroup, PublicGroup) // 导出模板
-		// systemRouter.InitSysParamsRouter(PrivateGroup, PublicGroup)         // 参数管理
-		// systemRouter.InitSysErrorRouter(PrivateGroup, PublicGroup)          // 错误日志
-		// systemRouter.InitLoginLogRouter(PrivateGroup)                       // 登录日志
-		// systemRouter.InitApiTokenRouter(PrivateGroup)                       // apiToken签发
+	// 模块自注册 — 每个模块实现 router.ModuleRouter 接口
+	// 新增模块时：1) 实现三个方法  2) 加入此列表
+	modules := []router.ModuleRouter{
+		&router.RouterGroupApp.System,
+	}
+	for _, m := range modules {
+		m.RegisterPublic(PublicGroup)
+		m.RegisterPrivate(PrivateGroup)
+		m.RegisterAdmin(adminGroup)
 	}
 
-	//插件路由安装
-	// InstallPlugin(PrivateGroup, PublicGroup, Router)
-
-	// 注册业务路由
+	// 注册业务路由（尚未实现 ModuleRouter 的旧模块）
 	initBizRouter(PrivateGroup, PublicGroup)
 
 	global.OPS_ROUTERS = Router.Routes()

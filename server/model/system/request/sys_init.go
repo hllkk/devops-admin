@@ -17,6 +17,7 @@ type InitDB struct {
 	DBName        string `json:"dbName" binding:"required"` // 数据库名
 	DBPath        string `json:"dbPath"`                    // sqlite数据库文件路径
 	Template      string `json:"template"`                  // postgresql指定template
+	InitKey       string `json:"initKey"`                   // 系统初始化密钥（配置 init-key 非空时必须匹配）
 	// Redis 配置（向导第 2 步采集，随 initdb 一次性提交）
 	RedisAddr     string `json:"redisAddr"`
 	RedisPassword string `json:"redisPassword"`
@@ -156,4 +157,22 @@ type PingRedis struct {
 	Addr     string `json:"addr"`
 	Password string `json:"password"`
 	DB       int    `json:"db"`
+}
+
+// TestConnectRequest 统一连接测试请求体（合并 DB 和 Redis 测试）
+type TestConnectRequest struct {
+	ConnectType string `json:"connectType" binding:"required"` // "db" 或 "redis"
+	// DB 字段（connectType="db" 时使用）
+	DBType   string `json:"dbType"`
+	Host     string `json:"host"`
+	Port     string `json:"port"`
+	UserName string `json:"userName"`
+	Password string `json:"password"`
+	DBName   string `json:"dbName"`
+	DBPath   string `json:"dbPath"`
+	Template string `json:"template"`
+	// Redis 字段（connectType="redis" 时使用）
+	RedisAddr     string `json:"redisAddr"`
+	RedisPassword string `json:"redisPassword"`
+	RedisDB       int    `json:"redisDB"`
 }

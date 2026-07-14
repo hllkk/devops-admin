@@ -13,10 +13,11 @@ type CustomClaims struct {
 }
 
 type BaseClaims struct {
-	UUID       uuid.UUID
-	ID         uint
-	Username   string
-	NickName   string
-	RoleId     uint
-	SuperAdmin bool // 超管标记：登录时由 sys_role.super_admin 写入，casbin 中间件据此豁免
+	UUID        uuid.UUID
+	ID          uint
+	Username    string
+	NickName    string
+	RoleId      uint
+	RoleCode    string // 角色码（如 SUPER/ADMIN/USER），RequireAdmin 中间件据此做角色白名单
+	SuperAdmin  bool   // 超管标记：登录时由 sys_role.super_admin 写入，casbin 中间件据此豁免
 }

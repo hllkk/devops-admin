@@ -2,11 +2,11 @@ package system
 
 import (
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
-
 	"github.com/hllkk/devops-admin/server/global"
 	"github.com/hllkk/devops-admin/server/model/common/response"
+	"github.com/hllkk/devops-admin/server/model/system"
 	"github.com/hllkk/devops-admin/server/model/system/request"
+	"go.uber.org/zap"
 )
 
 type DBApi struct{}
@@ -19,17 +19,34 @@ type DBApi struct{}
 // @Success  200   {object}  response.Response{data=string}  "初始化用户数据库"
 // @Router   /init/initdb [post]
 func (i *DBApi) InitDB(c *gin.Context) {
+	// 查表判断：SysUser 有数据则系统已初始化，拒绝重复初始化（比 OPS_DB!=nil 更可靠，重启后仍有效）
 	if global.OPS_DB != nil {
-		global.OPS_LOG.Error("已存在数据库配置!")
-		response.FailWithMessage("已存在数据库配置", c)
-		return
+		var count int64
+		global.OPS_DB.Model(&system.SysUser{}).Count(&count)
+		if count > 0 {
+			global.OPS_LOG.Error("已存在数据库配置，无需初始化")
+			response.FailWithMessage("已存在数据库配置，无需初始化", c)
+			return
+		}
 	}
+
 	var dbInfo request.InitDB
 	if err := c.ShouldBindJSON(&dbInfo); err != nil {
 		global.OPS_LOG.Error("参数校验不通过!", zap.Error(err))
 		response.FailWithMessage("参数校验不通过", c)
 		return
 	}
+
+	// 密钥验证：如果配置了初始化密钥，则必须提供正确的密钥
+	configInitKey := global.OPS_CONFIG.System.InitKey
+	if configInitKey != "" {
+		if dbInfo.InitKey != configInitKey {
+			global.OPS_LOG.Warn("初始化密钥验证失败", zap.String("clientIP", c.ClientIP()))
+			response.FailWithMessage("初始化密钥错误或未提供", c)
+			return
+		}
+	}
+
 	if err := initDBService.InitDB(dbInfo); err != nil {
 		global.OPS_LOG.Error("自动创建数据库失败!", zap.Error(err))
 		response.FailWithMessage("自动创建数据库失败，请查看后台日志，检查后在进行初始化", c)
@@ -50,10 +67,16 @@ func (i *DBApi) CheckDB(c *gin.Context) {
 		needInit = true
 	)
 
+	// 查表判断：SysUser 有数据则系统已初始化（比 OPS_DB!=nil 更可靠，重启后仍有效）
 	if global.OPS_DB != nil {
-		message = "数据库无需初始化"
-		needInit = false
+		var count int64
+		global.OPS_DB.Model(&system.SysUser{}).Count(&count)
+		if count > 0 {
+			message = "数据库无需初始化"
+			needInit = false
+		}
 	}
+
 	global.OPS_LOG.Info(message)
 	response.OkWithDetailed(gin.H{"needInit": needInit}, message, c)
 }
@@ -67,8 +90,12 @@ func (i *DBApi) CheckDB(c *gin.Context) {
 // @Router   /init/db/ping [post]
 func (i *DBApi) PingDB(c *gin.Context) {
 	if global.OPS_DB != nil {
-		response.FailWithMessage("系统已初始化，无需测试连接", c)
-		return
+		var count int64
+		global.OPS_DB.Model(&system.SysUser{}).Count(&count)
+		if count > 0 {
+			response.FailWithMessage("系统已初始化，无需测试连接", c)
+			return
+		}
 	}
 	var conf request.DBConnTest
 	if err := c.ShouldBindJSON(&conf); err != nil {
@@ -92,8 +119,12 @@ func (i *DBApi) PingDB(c *gin.Context) {
 // @Router   /init/redis/ping [post]
 func (i *DBApi) PingRedis(c *gin.Context) {
 	if global.OPS_DB != nil {
-		response.FailWithMessage("系统已初始化，无需测试连接", c)
-		return
+		var count int64
+		global.OPS_DB.Model(&system.SysUser{}).Count(&count)
+		if count > 0 {
+			response.FailWithMessage("系统已初始化，无需测试连接", c)
+			return
+		}
 	}
 	var conf request.PingRedis
 	if err := c.ShouldBindJSON(&conf); err != nil {
@@ -106,4 +137,33 @@ func (i *DBApi) PingRedis(c *gin.Context) {
 		return
 	}
 	response.OkWithMessage("Redis 连接成功", c)
+}
+
+// TestConnect 统一测试数据库或 Redis 连接（仅在系统未初始化时可用；不建库、不落盘）
+// @Tags     SysInit
+// @Summary  测试数据库或 Redis 连接
+// @Produce  application/json
+// @Param    data  body      request.TestConnectRequest       true  "连接测试参数"
+// @Success  200   {object}  response.Response{data=string}  "连接成功"
+// @Router   /init/testConnect [post]
+func (i *DBApi) TestConnect(c *gin.Context) {
+	if global.OPS_DB != nil {
+		var count int64
+		global.OPS_DB.Model(&system.SysUser{}).Count(&count)
+		if count > 0 {
+			response.FailWithMessage("系统已初始化，无需测试连接", c)
+			return
+		}
+	}
+	var req request.TestConnectRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.FailWithMessage("参数校验不通过", c)
+		return
+	}
+	if err := initDBService.TestConnect(req); err != nil {
+		global.OPS_LOG.Warn("连接测试失败", zap.String("connectType", req.ConnectType), zap.Error(err))
+		response.FailWithMessage("连接失败："+err.Error(), c)
+		return
+	}
+	response.OkWithMessage("连接成功", c)
 }

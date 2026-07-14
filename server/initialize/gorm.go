@@ -41,6 +41,7 @@ func RegisterTables() {
 
 	db := global.OPS_DB
 	err := db.AutoMigrate(
+		system.JwtBlacklist{},
 		system.SysError{},
 		system.SysUser{},
 		system.SysRole{},

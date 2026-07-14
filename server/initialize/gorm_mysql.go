@@ -2,13 +2,15 @@ package initialize
 
 import (
 	"time"
+
+	"github.com/hllkk/devops-admin/server/config"
+	"github.com/hllkk/devops-admin/server/global"
+	"github.com/hllkk/devops-admin/server/initialize/internal"
+
 	_ "github.com/go-sql-driver/mysql"
+	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-
-	"github.com/hllkk/devops-admin/server/global"
-	"github.com/hllkk/devops-admin/server/config"
-	"github.com/hllkk/devops-admin/server/initialize/internal"
 )
 
 // GormMysql 初始化Mysql数据库
@@ -35,14 +37,15 @@ func initMysqlDatabase(m config.Mysql) *gorm.DB {
 	}
 	// 数据库配置
 	general := m.GeneralDB
-	if db, err := gorm.Open(mysql.New(mysqlConfig), internal.Gorm.Config(general)); err != nil {
-		panic(err)
-	} else {
-		db.InstanceSet("gorm:table_options", "ENGINE="+m.Engine)
-		sqlDB, _ := db.DB()
-		sqlDB.SetMaxIdleConns(m.MaxIdleConns)
-		sqlDB.SetMaxOpenConns(m.MaxOpenConns)
-		sqlDB.SetConnMaxLifetime(time.Duration(m.ConnMaxLifetime) * time.Second)
-		return db
+	db, err := gorm.Open(mysql.New(mysqlConfig), internal.Gorm.Config(general))
+	if err != nil {
+		zap.L().Fatal("MySQL 初始化失败", zap.Error(err))
+		return nil // Fatal 会 os.Exit，此处仅为编译器满意度
 	}
+	db.InstanceSet("gorm:table_options", "ENGINE="+m.Engine)
+	sqlDB, _ := db.DB()
+	sqlDB.SetMaxIdleConns(m.MaxIdleConns)
+	sqlDB.SetMaxOpenConns(m.MaxOpenConns)
+	sqlDB.SetConnMaxLifetime(time.Duration(m.ConnMaxLifetime) * time.Second)
+	return db
 }

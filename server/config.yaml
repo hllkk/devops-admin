@@ -13,15 +13,15 @@ captcha:
 cors:
     mode: strict-whitelist
     whitelist:
-        - allow-origin: example1.com
-          allow-methods: POST, GET
-          allow-headers: Content-Type,AccessToken,X-CSRF-Token, Authorization, Token,X-Token,X-User-Id
-          expose-headers: Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Content-Type
+        - allow-origin: http://localhost:8080
+          allow-methods: POST,GET,PUT,DELETE,OPTIONS
+          allow-headers: Content-Type,AccessToken,X-CSRF-Token,Authorization,Token,X-Token,X-User-Id,x-request-id,apifoxtoken
+          expose-headers: Content-Length,Access-Control-Allow-Origin,Access-Control-Allow-Headers,Content-Type,New-Token,New-Expires-At,Download-Filename
           allow-credentials: true
-        - allow-origin: example2.com
-          allow-methods: GET, POST
-          allow-headers: content-type
-          expose-headers: Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Content-Type
+        - allow-origin: http://127.0.0.1:8080
+          allow-methods: POST,GET,PUT,DELETE,OPTIONS
+          allow-headers: Content-Type,AccessToken,X-CSRF-Token,Authorization,Token,X-Token,X-User-Id,x-request-id,apifoxtoken
+          expose-headers: Content-Length,Access-Control-Allow-Origin,Access-Control-Allow-Headers,Content-Type,New-Token,New-Expires-At,Download-Filename
           allow-credentials: true
 db-list:
     - type: ""
@@ -53,7 +53,7 @@ email:
 excel:
     dir: ./resource/excel/
 jwt:
-    signing-key: 2aa81975-ecfd-44bd-817b-809152efaafb
+    signing-key: ecaef614-3316-4359-baf7-e53cdeb4af4f
     expires-time: 7d
     refresh-ex-time: 168h
     buffer-time: 1d
@@ -196,6 +196,10 @@ system:
     use-mongo: false
     use-strict-auth: false
     disable-auto-migrate: false
+    init-key: ""
+    secret-encrypt-key: ""
+    trusted-proxies: []
+    strict-device-binding: false
 zap:
     level: info
     prefix: '[github.com/flipped-aurora/gin-vue-admin/server]'

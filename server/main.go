@@ -4,6 +4,7 @@ import (
 	"github.com/hllkk/devops-admin/server/core"
 	"github.com/hllkk/devops-admin/server/global"
 	"github.com/hllkk/devops-admin/server/initialize"
+	"github.com/hllkk/devops-admin/server/service/system"
 
 	"go.uber.org/zap"
 )
@@ -51,5 +52,7 @@ func initializeSystem() {
 	initialize.SetupHandlers() // 注册全局函数
 	if global.OPS_DB != nil {
 		initialize.RegisterTables() // 初始化表
+		// 启动 JWT 黑名单过期记录定时清理（依赖 DB 与表已就绪）
+		system.StartBlacklistCleaner()
 	}
 }
