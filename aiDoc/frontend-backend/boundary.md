@@ -32,6 +32,14 @@
 - 前端接口封装应继续放在 `web/src/service/api/` 或 `web/src/plugin/<name>/api/`
 - 可复用逻辑优先复用 `web/src/utils/` 现有能力
 
+## 初始化向导（/init/*）
+
+- `POST /init/checkdb`：返回 `{needInit}`，路由守卫用，语义 = `OPS_DB==nil`。
+- `POST /init/db/ping`：请求 `DBConnTest{dbType,host,port,userName,password,dbName,dbPath,template}`，ephemeral 连接测试（**只 ping 不建库、不落盘**）；`OPS_DB!=nil`（已初始化）时拒绝。
+- `POST /init/redis/ping`：请求 `PingRedis{addr,password,db}`，ephemeral 连接测试（不落盘）；`OPS_DB!=nil` 时拒绝。
+- `POST /init/initdb`：请求 `InitDB`（含 `adminPassword` + DB 字段 + `redisAddr/redisPassword/redisDB`），原子完成建库+建表+种子+回写 config（含 Redis 段、`system.use-redis:true`）+ 即时连接 `OPS_REDIS`。
+- 统一响应 `{code:"0000"|"0001", data, msg}`；ping 成功 `data` 为空串，前端 flat request 只看 `error`。
+
 ## 完成前检查
 
 跨前后端改动结束前，至少确认以下几点：
