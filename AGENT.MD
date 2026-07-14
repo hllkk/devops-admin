@@ -96,6 +96,14 @@
 - 了解第三方库行为时，优先看项目源码中的调用方式、锁文件、配置、官方文档或包的公开类型/说明，而不是进 `node_modules/` 逐文件读实现
 - 后端同理：优先看 `go.mod` 与项目内调用，不深挖 vendor 实现
 
+### 工作流与 superpowers
+
+- **不要自动套用 superpowers 重流程**（brainstorming / writing-plans / subagent-driven-development / requesting-code-review 等）。superpowers 通过 SessionStart 注入的 `using-superpowers` skill 会强烈倾向自动调用，本规则覆盖该倾向
+- **进入规划/计划类任务前**（新功能设计、跨端改动、有设计不确定性的重构、多步骤实现），先用 `AskUserQuestion` 让用户选择：启用 superpowers 重流程，还是走项目自身轻量流程
+- **简单改动**（bug 修复、单点调整、已有明确设计的实现）不问，直接按本文件与 `aiDoc/` 规范实现
+- 用户指令优先级高于 skill：用户明确要求轻量或指定流程时，以用户为准
+- 仅当用户同意后，才调用对应的 superpowers skill
+
 ## AI 文档索引
 
 - `aiDoc/README.md`
@@ -112,8 +120,3 @@
 - `aiDoc/memory/README.md`
 - `aiDoc/memory/project-memory.md`
 - `aiDoc/memory/demand-index.md`
-
-
-claude --resume f19e1e1b-cb0d-474f-a33c-baad3c7bb248
-
-claude --resume e6aae33c-d084-43fd-8f85-69a5645bd2e2
