@@ -40,6 +40,21 @@
 - `POST /init/initdb`：请求 `InitDB`（含 `adminPassword` + DB 字段 + `redisAddr/redisPassword/redisDB`），原子完成建库+建表+种子+回写 config（含 Redis 段、`system.use-redis:true`）+ 即时连接 `OPS_REDIS`。
 - 统一响应 `{code:"0000"|"0001", data, msg}`；ping 成功 `data` 为空串，前端 flat request 只看 `error`。
 
+## 认证（httpOnly cookie）
+
+- 认证载体：access + refresh 双 **httpOnly cookie**，token 不进 JS。
+  - cookie 名：`token`（access）、`refresh-token`（refresh）
+  - 属性：`HttpOnly=true`、`SameSite=Strict`、`Secure=RequestIsSecure(X-Forwarded-Proto→TLS)`、`Path=/`、`Domain=""`
+- 取 token：后端 `utils.GetToken` 优先 `Authorization: Bearer` 头，其次 `token` cookie；**禁止从 query 取 token**。
+- 鉴权失败契约：统一 **HTTP 200 + 业务 code**（不再 401）：
+  - `9999`（`VITE_SERVICE_EXPIRED_TOKEN_CODES`）：access 失效，前端调 `/auth/refreshToken` 刷新并重试
+  - `8888`（`VITE_SERVICE_LOGOUT_CODES`）：refresh 也失效（仅 `/auth/refreshToken` 返回），前端登出
+  - `/auth/refreshToken` **禁止返回 9999**，防前端死循环刷新
+- 登录响应体只回 `{ expiresAt }`（毫秒），**不回 token**。
+- 端点：`POST /auth/login`、`POST /auth/refreshToken`、`POST /auth/logout`（public）；`GET /auth/getUserInfo`（private）。
+- 前端：所有请求 `withCredentials: true`；`getAuthorization()` 返回 `null`；登录态信号 `isAuthenticated`+`tokenExpiresAt`（localStorage，可读非敏感）。
+- CORS：`middleware.Cors()` 回显 Origin + `Allow-Credentials: true`。
+
 ## 完成前检查
 
 跨前后端改动结束前，至少确认以下几点：
