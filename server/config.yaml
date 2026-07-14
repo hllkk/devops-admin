@@ -53,8 +53,9 @@ email:
 excel:
     dir: ./resource/excel/
 jwt:
-    signing-key: bf218dfe-6c1e-46f7-aa36-f637b1986a6b
+    signing-key: 2aa81975-ecfd-44bd-817b-809152efaafb
     expires-time: 7d
+    refresh-ex-time: 168h
     buffer-time: 1d
     issuer: qmPlus
 local:
@@ -135,12 +136,12 @@ oracle:
     log-zap: false
 pgsql:
     prefix: ""
-    port: ""
-    config: 
-    db-name: 
-    username: 
-    password: 
-    path: 
+    port: "5432"
+    config: sslmode=disable TimeZone=Asia/Shanghai
+    db-name: devops_admin
+    username: postgres
+    password: Tricolor_123
+    path: 127.0.0.1
     engine: ""
     log-mode: error
     max-idle-conns: 10
@@ -150,14 +151,14 @@ pgsql:
     log-zap: false
 redis:
     name: default
-    addr: 
+    addr: 127.0.0.1:6379
     password: ""
     db: 0
     useCluster: false
     clusterAddrs: []
 redis-list:
     - name: cache
-      addr: 
+      addr: ""
       password: ""
       db: 0
       useCluster: false
@@ -191,7 +192,7 @@ system:
     iplimit-count: 15000
     iplimit-time: 3600
     use-multipoint: false
-    use-redis: false
+    use-redis: true
     use-mongo: false
     use-strict-auth: false
     disable-auto-migrate: false
