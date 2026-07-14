@@ -162,16 +162,21 @@ global.OPS_CONFIG.System.UseRedis = true
 ```
 > 原理：每个 per-DB handler 的 `WriteConfig` 都执行 `StructToMap(global.OPS_CONFIG)` 全量 `viper.Set` + `WriteConfig()`，故 Redis 段与 `use-redis` 会随本次回写自动落盘，**4 个 handler 一行不改**。
 
-`WriteConfig` 之后，给当前进程连接 Redis（免 reload 即可用，对齐编排器里 `global.OPS_DB = db` 的即时注入范式）：
+`WriteConfig` 之后，给当前进程即时连接 Redis（免 reload 即可用）。**关键**：`service/system` 不能反向 import `initialize`（`initialize/init.go` 已 import `service/system`，反向会循环），故即时连接复用现有的 `dbReadyCallback` 注入点——在 `server/initialize/init.go` 的 `SetupHandlers` 里，把回调扩展为「雪花回调之后再 guarded 连 Redis」：
 ```go
-// 复用抽出的 DialRedis；ping 已在向导测过，此处失败仅记日志不 panic
-if client, err := initialize.DialRedis(global.OPS_CONFIG.Redis); err == nil {
-    global.OPS_REDIS = client
-} else {
-    global.OPS_LOG.Warn("init 后即时连接 Redis 失败，重启后将自动重试", zap.Error(err))
-}
+// initialize/init.go 的 SetupHandlers 内
+system.SetDBReadyCallback(func() {
+    RegisterCallbacks(global.OPS_DB)
+    if global.OPS_CONFIG.System.UseRedis && global.OPS_REDIS == nil {
+        if client, err := DialRedis(global.OPS_CONFIG.Redis); err != nil {
+            global.OPS_LOG.Warn("init 后即时连接 Redis 失败，重启后将自动重试", zap.Error(err))
+        } else {
+            global.OPS_REDIS = client
+        }
+    }
+})
 ```
-> 不直接调 `initialize.Redis()`：它在 ping 失败时 `panic`，向导流程里不应因 Redis 抖动而崩；改为 guarded 注入，重启后由 `RunServer` 兜底。
+> 不直接调 `initialize.Redis()`：它在 ping 失败时 `panic`，向导流程不应因 Redis 抖动而崩；改为 guarded 注入，重启后由 `RunServer` 兜底。`DialRedis` 由 §4.6 从 `initRedisClient` 抽出（不写 global、不 panic），此处与 `Redis()` 共用。
 
 ### 4.6 `server/initialize/redis.go` —— 抽公共 dial
 新增导出函数：
@@ -287,7 +292,7 @@ export function fetchPingRedis(data: Api.Init.PingRedisForm) {
 ## 10. 关键文件清单
 
 **后端**
-- 改：`server/model/system/request/sys_init.go`、`server/api/v1/system/sys_init.go`、`server/router/system/sys_init.go`、`server/service/system/sys_init.go`、`server/initialize/redis.go`
+- 改：`server/model/system/request/sys_init.go`、`server/api/v1/system/sys_init.go`、`server/router/system/sys_init.go`、`server/service/system/sys_init.go`、`server/initialize/redis.go`、`server/initialize/init.go`
 - 新：`server/service/system/sys_init_conn.go`、`server/service/system/sys_init_conn_test.go`
 
 **前端**
