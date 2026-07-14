@@ -1,4 +1,4 @@
- <script setup lang="tsx">
+<script setup lang="tsx">
 import { computed, ref } from 'vue';
 import type { DataTableColumns, TreeInst, TreeOption } from 'naive-ui';
 import { NButton, NDivider, NIcon, NInput, NPopconfirm } from 'naive-ui';

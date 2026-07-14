@@ -252,7 +252,12 @@ function handleResetSearch() {
     </template>
     <div class="h-full flex-col-stretch gap-12px overflow-hidden lt-sm:overflow-auto">
       <PostSearch v-model:model="searchParams" @reset="handleResetSearch" @search="getDataByPage" />
-      <NCard :title="$t('page.system.post.listTitle')" :bordered="false" size="small" class="card-wrapper sm:flex-1-hidden">
+      <NCard
+        :title="$t('page.system.post.listTitle')"
+        :bordered="false"
+        size="small"
+        class="card-wrapper sm:flex-1-hidden"
+      >
         <template #header-extra>
           <TableHeaderOperation
             v-model:columns="columnChecks"

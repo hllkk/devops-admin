@@ -54,7 +54,7 @@ const activeModule = computed(() => moduleMap[props.module || 'pwd-login']);
       </div>
       <WaveBg />
     </div>
-    <div class="relative h-full flex-1 xl:m-auto sm:!w-full">
+    <div class="relative h-full flex-1 flex flex-col xl:m-auto sm:!w-full">
       <header class="flex-y-center justify-between px-30px pt-30px xl:justify-end">
         <div class="relative z-100 flex items-center xl:hidden">
           <SystemLogo class="fill-primary size-32px" />
@@ -78,7 +78,7 @@ const activeModule = computed(() => moduleMap[props.module || 'pwd-login']);
         </div>
       </header>
       <main
-        class="m-auto mt-10% h-630px max-w-450px w-full rounded-5px bg-cover px-24px xl:absolute xl:inset-0 lg:mt-15% xl:mt-auto"
+        class="m-auto h-630px max-w-450px w-full rounded-5px bg-cover px-24px xl:absolute xl:inset-0"
       >
         <Transition :name="themeStore.page.animateMode" mode="out-in" appear>
           <component :is="activeModule.component" />

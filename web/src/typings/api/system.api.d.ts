@@ -41,13 +41,7 @@ declare namespace Api {
     type RoleOperateParams = CommonType.RecordNullable<
       Pick<
         Api.System.Role,
-        | 'roleId'
-        | 'roleName'
-        | 'roleKey'
-        | 'roleSort'
-        | 'menuCheckStrictly'
-        | 'status'
-        | 'remark'
+        'roleId' | 'roleName' | 'roleKey' | 'roleSort' | 'menuCheckStrictly' | 'status' | 'remark'
       > & { menuIds: CommonType.IdType[] }
     >;
 

@@ -183,7 +183,12 @@ watch(visible, () => {
           />
         </NFormItem>
         <NFormItem :label="$t('page.system.role.remark')" path="remark">
-          <NInput v-model:value="model.remark" :rows="3" type="textarea" :placeholder="$t('page.system.role.form.remark.required')" />
+          <NInput
+            v-model:value="model.remark"
+            :rows="3"
+            type="textarea"
+            :placeholder="$t('page.system.role.form.remark.required')"
+          />
         </NFormItem>
       </NForm>
       <template #footer>

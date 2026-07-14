@@ -52,7 +52,6 @@ export function fetchGetRoleMenuTreeSelect(roleId: CommonType.IdType) {
   });
 }
 
-
 /** 级联删除菜单 */
 export function fetchCascadeDeleteMenu(menuIds: CommonType.IdType[]) {
   return request<boolean>({

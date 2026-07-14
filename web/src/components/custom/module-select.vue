@@ -4,7 +4,6 @@ import type { SelectOption } from 'naive-ui';
 import { useLoading } from '@sa/hooks';
 import { useAuthStore } from '@/store/modules/auth';
 
-
 defineOptions({ name: 'ModuleSelect' });
 
 interface Props {
@@ -26,11 +25,7 @@ const handleChangeModule = (val: CommonType.IdType) => {
   moduleId.value = val;
 };
 
-const handleClearModule = () => {
-
-};
-
-
+const handleClearModule = () => {};
 
 const showModuleSelect = computed<boolean>(() => {
   return userInfo.user?.userId === 1 && enabled.value;
