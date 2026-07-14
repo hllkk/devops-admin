@@ -1,11 +1,26 @@
 package system
 
 import (
+	"context"
+	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/redis/go-redis/v9"
+
 	sysReq "github.com/hllkk/devops-admin/server/model/system/request"
 )
+
+// noopLogger 屏蔽 go-redis 内部 logger 的噪声（如 pool dial 重试日志），
+// 仅作用于本包测试，不污染生产代码（PingRedis 内不调用 redis.SetLogger）。
+type noopLogger struct{}
+
+func (noopLogger) Printf(context.Context, string, ...interface{}) {}
+
+func TestMain(m *testing.M) {
+	redis.SetLogger(noopLogger{})
+	os.Exit(m.Run())
+}
 
 func TestPingRedis_WrongAddr(t *testing.T) {
 	svc := &InitDBService{}
@@ -41,5 +56,21 @@ func TestPingDB_Mysql_WrongAddr(t *testing.T) {
 	err := svc.PingDB(sysReq.DBConnTest{DBType: "mysql", Host: "127.0.0.1", Port: "33999", UserName: "x", Password: "x", DBName: "x"})
 	if err == nil {
 		t.Fatal("错误 mysql 地址应失败")
+	}
+}
+
+func TestPingDB_Pgsql_WrongAddr(t *testing.T) {
+	svc := &InitDBService{}
+	err := svc.PingDB(sysReq.DBConnTest{DBType: "pgsql", Host: "127.0.0.1", Port: "33999", UserName: "x", Password: "x", DBName: "x"})
+	if err == nil {
+		t.Fatal("错误 pgsql 地址应失败")
+	}
+}
+
+func TestPingDB_Mssql_WrongAddr(t *testing.T) {
+	svc := &InitDBService{}
+	err := svc.PingDB(sysReq.DBConnTest{DBType: "mssql", Host: "127.0.0.1", Port: "33999", UserName: "x", Password: "x", DBName: "x"})
+	if err == nil {
+		t.Fatal("错误 mssql 地址应失败")
 	}
 }

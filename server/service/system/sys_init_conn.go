@@ -32,7 +32,7 @@ func (initDBService *InitDBService) PingDB(conf sysReq.DBConnTest) error {
 	case "mssql":
 		return pingSQL("sqlserver", ic.MssqlEmptyDsn())
 	default:
-		return fmt.Errorf("不支持的数据库类型: %s", conf.DBType)
+		return fmt.Errorf("不支持的数据库类型: %q", conf.DBType)
 	}
 }
 
@@ -40,10 +40,13 @@ func (initDBService *InitDBService) PingDB(conf sysReq.DBConnTest) error {
 func pingSQL(driver, dsn string) error {
 	db, err := sql.Open(driver, dsn)
 	if err != nil {
-		return err
+		return fmt.Errorf("连接失败: %w", err)
 	}
 	defer db.Close()
-	return db.Ping()
+	if err := db.Ping(); err != nil {
+		return fmt.Errorf("连接失败: %w", err)
+	}
+	return nil
 }
 
 // pingSqliteDir 无副作用校验父目录可写（不创建 .db 文件）。
@@ -55,9 +58,8 @@ func pingSqliteDir(dbPath string) error {
 	if err != nil {
 		return fmt.Errorf("sqlite 路径不可写: %w", err)
 	}
-	if err = f.Close(); err != nil {
-		return err
-	}
+	// 空文件 Close 失败无诊断价值，忽略以保证后续 Remove 清理临时文件。
+	_ = f.Close()
 	return os.Remove(f.Name())
 }
 
