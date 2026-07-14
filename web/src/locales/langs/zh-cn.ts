@@ -256,6 +256,7 @@ const local: App.I18n.Schema = {
     system_post: '岗位管理',
     system_dict: '字典管理',
     system_notice: '通知公告',
+    system_setting: '系统设置',
     disk: '网盘',
     server: '服务器管理',
     gateway: 'AI 网关',
@@ -336,11 +337,30 @@ const local: App.I18n.Schema = {
         dbPath: '数据库文件路径',
         dbPathPlaceholder: '请输入 sqlite 文件存放路径',
         template: 'PG 模板',
-        templatePlaceholder: '请输入 postgresql 模板'
+        templatePlaceholder: '请输入 postgresql 模板',
+        redisAddr: 'Redis 地址',
+        redisAddrPlaceholder: '请输入 Redis 地址，如 127.0.0.1:6379',
+        redisPassword: 'Redis 密码',
+        redisPasswordPlaceholder: '无密码可留空',
+        redisDB: 'Redis 库号',
+        redisDBPlaceholder: '请输入库号，如 0'
+      },
+      step: {
+        db: '数据库',
+        redis: 'Redis',
+        admin: '管理员密码'
       },
       rule: {
-        adminPasswordLength: '管理员密码长度不能小于 6 位'
+        adminPasswordLength: '管理员密码长度不能小于 6 位',
+        redisAddrRequired: '请输入 Redis 地址'
       },
+      testConnection: '测试连接',
+      testing: '测试中…',
+      testConnectionSuccess: '连接成功',
+      testConnectionFailed: '连接失败',
+      next: '下一步',
+      prev: '上一步',
+      finish: '完成',
       submit: '立即初始化',
       submitting: '正在初始化数据库，请稍候…',
       successTitle: '初始化完成',

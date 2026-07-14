@@ -260,6 +260,7 @@ const local: App.I18n.Schema = {
     system_post: 'Post',
     system_dict: 'Dictionary',
     system_notice: 'Notice',
+    system_setting: 'System Setting',
     disk: 'Disk',
     server: 'Server',
     gateway: 'AI Gateway',
@@ -340,11 +341,30 @@ const local: App.I18n.Schema = {
         dbPath: 'Database File Path',
         dbPathPlaceholder: 'Enter sqlite file path',
         template: 'PG Template',
-        templatePlaceholder: 'Enter postgresql template'
+        templatePlaceholder: 'Enter postgresql template',
+        redisAddr: 'Redis Address',
+        redisAddrPlaceholder: 'e.g. 127.0.0.1:6379',
+        redisPassword: 'Redis Password',
+        redisPasswordPlaceholder: 'Leave empty if none',
+        redisDB: 'Redis DB',
+        redisDBPlaceholder: 'e.g. 0'
+      },
+      step: {
+        db: 'Database',
+        redis: 'Redis',
+        admin: 'Admin Password'
       },
       rule: {
-        adminPasswordLength: 'Admin password must be at least 6 characters'
+        adminPasswordLength: 'Admin password must be at least 6 characters',
+        redisAddrRequired: 'Redis address is required'
       },
+      testConnection: 'Test Connection',
+      testing: 'Testing…',
+      testConnectionSuccess: 'Connected',
+      testConnectionFailed: 'Connection failed',
+      next: 'Next',
+      prev: 'Previous',
+      finish: 'Finish',
       submit: 'Initialize Now',
       submitting: 'Initializing database, please wait…',
       successTitle: 'Initialization Completed',

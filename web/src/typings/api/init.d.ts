@@ -40,6 +40,31 @@ declare namespace Api {
       dbPath?: string;
       /** postgresql 模板（仅 pgsql） */
       template?: string;
+      /** Redis 地址 host:port（必填） */
+      redisAddr: string;
+      /** Redis 密码（可空） */
+      redisPassword: string;
+      /** Redis 库号（默认 0） */
+      redisDB: number;
+    }
+
+    /** /init/db/ping 请求体（数据库连接测试，不建库不落盘） */
+    interface PingDBForm {
+      dbType: DBType;
+      host?: string;
+      port?: string;
+      userName?: string;
+      password?: string;
+      dbName: string;
+      dbPath?: string;
+      template?: string;
+    }
+
+    /** /init/redis/ping 请求体（Redis 连接测试） */
+    interface PingRedisForm {
+      addr: string;
+      password?: string;
+      db: number;
     }
   }
 }

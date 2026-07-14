@@ -575,10 +575,29 @@ declare namespace App {
             dbPathPlaceholder: string;
             template: string;
             templatePlaceholder: string;
+            redisAddr: string;
+            redisAddrPlaceholder: string;
+            redisPassword: string;
+            redisPasswordPlaceholder: string;
+            redisDB: string;
+            redisDBPlaceholder: string;
+          };
+          step: {
+            db: string;
+            redis: string;
+            admin: string;
           };
           rule: {
             adminPasswordLength: string;
+            redisAddrRequired: string;
           };
+          testConnection: string;
+          testing: string;
+          testConnectionSuccess: string;
+          testConnectionFailed: string;
+          next: string;
+          prev: string;
+          finish: string;
           submit: string;
           submitting: string;
           successTitle: string;
@@ -830,7 +849,7 @@ declare namespace App {
               cssClass: FormMsg;
               dictSort: FormMsg;
               remark: FormMsg;
-            }
+            };
           };
         };
       };
