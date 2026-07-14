@@ -66,7 +66,8 @@ func Routers() *gin.Engine {
 	PublicGroup := Router.Group(global.OPS_CONFIG.System.RouterPrefix)
 	PrivateGroup := Router.Group(global.OPS_CONFIG.System.RouterPrefix)
 
-	PrivateGroup.Use(middleware.JWTAuth()).Use(middleware.CasbinHandler())
+	// PrivateGroup.Use(middleware.JWTAuth()).Use(middleware.CasbinHandler())
+	PrivateGroup.Use(middleware.JWTAuth())
 
 	{
 		// 健康监测

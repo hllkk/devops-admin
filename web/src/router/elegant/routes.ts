@@ -119,7 +119,8 @@ export const generatedRoutes: GeneratedRoute[] = [
     component: 'layout.base$view.social-callback',
     meta: {
       title: 'social-callback',
-      i18nKey: 'route.social-callback'
+      i18nKey: 'route.social-callback',
+      hideInMenu: true
     }
   },
   {
@@ -205,7 +206,9 @@ export const generatedRoutes: GeneratedRoute[] = [
         component: 'view.system_setting',
         meta: {
           title: 'system_setting',
-          i18nKey: 'route.system_setting'
+          i18nKey: 'route.system_setting',
+          icon: 'carbon:settings',
+          order: 8
         }
       },
       {
@@ -227,7 +230,8 @@ export const generatedRoutes: GeneratedRoute[] = [
     component: 'layout.base$view.user-center',
     meta: {
       title: 'user-center',
-      i18nKey: 'route.user-center'
+      i18nKey: 'route.user-center',
+      hideInMenu: true
     }
   }
 ];
