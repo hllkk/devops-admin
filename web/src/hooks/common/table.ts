@@ -247,7 +247,6 @@ export function defaultTransform<ApiData>(
     return {
       data: [],
       pageNum: 1,
-      pageSize: 0,
       total: 0
     };
   }
@@ -257,7 +256,6 @@ export function defaultTransform<ApiData>(
   return {
     data: records,
     pageNum: current,
-    pageSize: data.pageSize ?? 10,
     total
   };
 }

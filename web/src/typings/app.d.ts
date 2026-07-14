@@ -942,6 +942,10 @@ declare namespace App {
       msg: string;
       /** The backend service response data */
       data: T;
+      /** The backend service response rows */
+      rows?: any[];
+      /** The backend service response total */
+      total?: number;
     };
 
     /** The demo backend service response data */
