@@ -10,16 +10,16 @@ import (
 	"github.com/hllkk/devops-admin/server/global"
 )
 
-func initRedisClient(redisCfg config.Redis) (redis.UniversalClient, error) {
+// DialRedis 按 cfg 建客户端并 Ping；不写 global，失败返回 error（不 panic）。
+// Redis()（启动）与 dbReadyCallback（首初始化后即时连接）共用此函数。
+func DialRedis(redisCfg config.Redis) (redis.UniversalClient, error) {
 	var client redis.UniversalClient
-	// 使用集群模式
 	if redisCfg.UseCluster {
 		client = redis.NewClusterClient(&redis.ClusterOptions{
 			Addrs:    redisCfg.ClusterAddrs,
 			Password: redisCfg.Password,
 		})
 	} else {
-		// 使用单例模式
 		client = redis.NewClient(&redis.Options{
 			Addr:     redisCfg.Addr,
 			Password: redisCfg.Password,
@@ -28,16 +28,14 @@ func initRedisClient(redisCfg config.Redis) (redis.UniversalClient, error) {
 	}
 	pong, err := client.Ping(context.Background()).Result()
 	if err != nil {
-		global.OPS_LOG.Error("redis connect ping failed, err:", zap.String("name", redisCfg.Name), zap.Error(err))
 		return nil, err
 	}
-
 	global.OPS_LOG.Info("redis connect ping response:", zap.String("name", redisCfg.Name), zap.String("pong", pong))
 	return client, nil
 }
 
 func Redis() {
-	redisClient, err := initRedisClient(global.OPS_CONFIG.Redis)
+	redisClient, err := DialRedis(global.OPS_CONFIG.Redis)
 	if err != nil {
 		panic(err)
 	}
@@ -46,14 +44,12 @@ func Redis() {
 
 func RedisList() {
 	redisMap := make(map[string]redis.UniversalClient)
-
 	for _, redisCfg := range global.OPS_CONFIG.RedisList {
-		client, err := initRedisClient(redisCfg)
+		client, err := DialRedis(redisCfg)
 		if err != nil {
 			panic(err)
 		}
 		redisMap[redisCfg.Name] = client
 	}
-
 	global.OPS_REDISList = redisMap
 }
