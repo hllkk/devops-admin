@@ -14,12 +14,6 @@ import (
 func CasbinHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		waitUse, _ := utils.GetClaims(c)
-		// 缺失 claims（未登录 / token 非法）直接拒绝
-		if waitUse == nil {
-			response.NoAuth("未登录或登录态失效", c)
-			c.Abort()
-			return
-		}
 		// 超管豁免：claims.SuperAdmin 由登录时 sys_role.super_admin 写入
 		if waitUse.SuperAdmin {
 			c.Next()

@@ -29,9 +29,6 @@ func Cors() gin.HandlerFunc {
 }
 
 // CorsByRules 按照配置处理跨域请求
-// 支持 allow-all（放行全部）和 strict-whitelist（白名单匹配，不匹配则 403 拒绝）
-// 开发模式（gin.DebugMode）下 strict-whitelist 自动降级为 allow-all，避免 localhost/127.0.0.1/::1
-// 等 Origin 不匹配导致前端被 403 拒绝；生产模式才强制白名单。
 func CorsByRules() gin.HandlerFunc {
 	// 配置为 allow-all，或开发模式下 strict-whitelist 自动降级为 allow-all
 	if global.OPS_CONFIG.Cors.Mode == "allow-all" ||
@@ -65,7 +62,7 @@ func CorsByRules() gin.HandlerFunc {
 				c.AbortWithStatus(http.StatusNoContent)
 			}
 		}
-
+		// 处理请求
 		c.Next()
 	}
 }
@@ -80,8 +77,7 @@ func checkCors(currentOrigin string) *config.CORSWhitelist {
 	return nil
 }
 
-// isSameOriginRequest 判断请求是否同源（Origin 的 host:port 与 Host 头一致）
-// 同源请求不在 CORS 规范管辖范围内，无需白名单匹配
+// isSameOriginRequest 判断请求是否同源
 func isSameOriginRequest(origin, host string) bool {
 	if origin == "" || host == "" {
 		return false

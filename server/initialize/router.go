@@ -72,10 +72,8 @@ func Routers() *gin.Engine {
 	// 路由组：按认证级别分为三级
 	PublicGroup := Router.Group(global.OPS_CONFIG.System.RouterPrefix)
 	PrivateGroup := Router.Group(global.OPS_CONFIG.System.RouterPrefix)
+
 	PrivateGroup.Use(middleware.JWTAuth())
-	// 管理组：JWT 认证之上叠加 RequireAdmin（角色码白名单），保护纯管理类路由
-	adminGroup := PrivateGroup.Group("")
-	adminGroup.Use(middleware.RequireAdmin())
 
 	// 健康监测
 	PublicGroup.GET("/health", func(c *gin.Context) {
@@ -90,7 +88,6 @@ func Routers() *gin.Engine {
 	for _, m := range modules {
 		m.RegisterPublic(PublicGroup)
 		m.RegisterPrivate(PrivateGroup)
-		m.RegisterAdmin(adminGroup)
 	}
 
 	// 注册业务路由（尚未实现 ModuleRouter 的旧模块）
