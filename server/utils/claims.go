@@ -1,37 +1,118 @@
 package utils
 
 import (
+	"errors"
+	"fmt"
 	"net"
-	"time"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/hllkk/devops-admin/server/global"
-	"github.com/hllkk/devops-admin/server/model/system"
 	systemReq "github.com/hllkk/devops-admin/server/model/system/request"
 )
 
-func ClearToken(c *gin.Context) {
-	// 增加cookie x-token 向来源的web添加
-	host, _, err := net.SplitHostPort(c.Request.Host)
-	if err != nil {
-		host = c.Request.Host
+// GetToken 取 access token：Authorization: Bearer 头优先 → token httpOnly cookie。
+// 禁止从 URL 查询参数取 token，避免 JWT 进入 URL（Nginx 日志/浏览器历史/Referer 泄漏）。
+func GetToken(c *gin.Context) (string, error) {
+	if authorization := c.Request.Header.Get("Authorization"); authorization != "" {
+		if !strings.HasPrefix(strings.ToLower(authorization), "bearer ") {
+			return "", fmt.Errorf("invalid authorization header format, expected 'Bearer <token>', got: %q", authorization)
+		}
+		return authorization[7:], nil
 	}
-
-	if net.ParseIP(host) != nil {
-		c.SetCookie("x-token", "", -1, "/", "", false, false)
-	} else {
-		c.SetCookie("x-token", "", -1, "/", host, false, false)
+	if token, err := c.Cookie("token"); err == nil && token != "" {
+		return token, nil
 	}
+	return "", errors.New("token not found in header or cookie")
 }
 
+// RequestIsSecure 判断请求是否经 HTTPS 传输，用于动态决定 cookie 的 Secure 标志。
+// 优先 X-Forwarded-Proto（多层反代反映浏览器真实协议），回退 c.Request.TLS。
+func RequestIsSecure(c *gin.Context) bool {
+	if proto := c.GetHeader("X-Forwarded-Proto"); proto != "" {
+		return strings.EqualFold(proto, "https")
+	}
+	return c.Request.TLS != nil
+}
+
+// GetClaims 取 access token 并解析为 claims（业务接口强制 access，拒绝 refresh token）。
+func GetClaims(c *gin.Context) (*systemReq.CustomClaims, error) {
+	token, err := GetToken(c)
+	if err != nil {
+		return nil, err
+	}
+	j := NewJWT()
+	claims, err := j.ParseAccessToken(token) // 业务接口强制 access token，拒绝 refresh token
+	if err != nil {
+		global.OPS_LOG.Error("从请求中解析 access token 失败，请检查 Authorization 头或 token cookie")
+		return nil, err
+	}
+	return claims, nil
+}
+
+// GetUserID 从 Context 中获取 jwt 用户ID。
+func GetUserID(c *gin.Context) uint {
+	if claims, exists := c.Get("claims"); exists {
+		return claims.(*systemReq.CustomClaims).BaseClaims.ID
+	}
+	if cl, err := GetClaims(c); err == nil {
+		return cl.BaseClaims.ID
+	}
+	return 0
+}
+
+// GetUserUuid 从 Context 中获取 jwt 用户UUID。
+func GetUserUuid(c *gin.Context) uuid.UUID {
+	if claims, exists := c.Get("claims"); exists {
+		return claims.(*systemReq.CustomClaims).UUID
+	}
+	if cl, err := GetClaims(c); err == nil {
+		return cl.UUID
+	}
+	return uuid.UUID{}
+}
+
+// GetUserAuthorityId 从 Context 中获取 jwt 角色ID。
+func GetUserAuthorityId(c *gin.Context) uint {
+	if claims, exists := c.Get("claims"); exists {
+		return claims.(*systemReq.CustomClaims).RoleId
+	}
+	if cl, err := GetClaims(c); err == nil {
+		return cl.RoleId
+	}
+	return 0
+}
+
+// GetUserInfo 从 Context 中获取完整 claims。
+func GetUserInfo(c *gin.Context) *systemReq.CustomClaims {
+	if claims, exists := c.Get("claims"); exists {
+		return claims.(*systemReq.CustomClaims)
+	}
+	if cl, err := GetClaims(c); err == nil {
+		return cl
+	}
+	return nil
+}
+
+// GetUserName 从 Context 中获取用户名。
+func GetUserName(c *gin.Context) string {
+	if claims, exists := c.Get("claims"); exists {
+		return claims.(*systemReq.CustomClaims).Username
+	}
+	if cl, err := GetClaims(c); err == nil {
+		return cl.Username
+	}
+	return ""
+}
+
+// SetToken 已废弃（旧 x-token cookie 半成品）。仅临时保留供 middleware 过渡期编译，
+// Task 3 重写 middleware 后会删除。新代码用 SetLoginCookies。
 func SetToken(c *gin.Context, token string, maxAge int) {
-	// 增加cookie x-token 向来源的web添加
 	host, _, err := net.SplitHostPort(c.Request.Host)
 	if err != nil {
 		host = c.Request.Host
 	}
-
 	if net.ParseIP(host) != nil {
 		c.SetCookie("x-token", token, maxAge, "/", "", false, false)
 	} else {
@@ -39,110 +120,15 @@ func SetToken(c *gin.Context, token string, maxAge int) {
 	}
 }
 
-func GetToken(c *gin.Context) string {
-	token := c.Request.Header.Get("x-token")
-	if token == "" {
-		j := NewJWT()
-		token, _ = c.Cookie("x-token")
-		claims, err := j.ParseToken(token)
-		if err != nil {
-			global.OPS_LOG.Error("重新写入cookie token失败,未能成功解析token,请检查请求头是否存在x-token且claims是否为规定结构")
-			return token
-		}
-		SetToken(c, token, int(claims.ExpiresAt.Unix()-time.Now().Unix()))
-	}
-	return token
-}
-
-func GetClaims(c *gin.Context) (*systemReq.CustomClaims, error) {
-	token := GetToken(c)
-	j := NewJWT()
-	claims, err := j.ParseToken(token)
+// ClearToken 已废弃（同 SetToken）。Task 3 删除。
+func ClearToken(c *gin.Context) {
+	host, _, err := net.SplitHostPort(c.Request.Host)
 	if err != nil {
-		global.OPS_LOG.Error("从Gin的Context中获取从jwt解析信息失败, 请检查请求头是否存在x-token且claims是否为规定结构")
+		host = c.Request.Host
 	}
-	return claims, err
-}
-
-// GetUserID 从Gin的Context中获取从jwt解析出来的用户ID
-func GetUserID(c *gin.Context) uint {
-	if claims, exists := c.Get("claims"); !exists {
-		if cl, err := GetClaims(c); err != nil {
-			return 0
-		} else {
-			return cl.BaseClaims.ID
-		}
+	if net.ParseIP(host) != nil {
+		c.SetCookie("x-token", "", -1, "/", "", false, false)
 	} else {
-		waitUse := claims.(*systemReq.CustomClaims)
-		return waitUse.BaseClaims.ID
+		c.SetCookie("x-token", "", -1, "/", host, false, false)
 	}
-}
-
-// GetUserUuid 从Gin的Context中获取从jwt解析出来的用户UUID
-func GetUserUuid(c *gin.Context) uuid.UUID {
-	if claims, exists := c.Get("claims"); !exists {
-		if cl, err := GetClaims(c); err != nil {
-			return uuid.UUID{}
-		} else {
-			return cl.UUID
-		}
-	} else {
-		waitUse := claims.(*systemReq.CustomClaims)
-		return waitUse.UUID
-	}
-}
-
-// GetUserAuthorityId 从Gin的Context中获取从jwt解析出来的用户角色id
-func GetUserAuthorityId(c *gin.Context) uint {
-	if claims, exists := c.Get("claims"); !exists {
-		if cl, err := GetClaims(c); err != nil {
-			return 0
-		} else {
-			return cl.RoleId
-		}
-	} else {
-		waitUse := claims.(*systemReq.CustomClaims)
-		return waitUse.RoleId
-	}
-}
-
-// GetUserInfo 从Gin的Context中获取从jwt解析出来的用户角色id
-func GetUserInfo(c *gin.Context) *systemReq.CustomClaims {
-	if claims, exists := c.Get("claims"); !exists {
-		if cl, err := GetClaims(c); err != nil {
-			return nil
-		} else {
-			return cl
-		}
-	} else {
-		waitUse := claims.(*systemReq.CustomClaims)
-		return waitUse
-	}
-}
-
-// GetUserName 从Gin的Context中获取从jwt解析出来的用户名
-func GetUserName(c *gin.Context) string {
-	if claims, exists := c.Get("claims"); !exists {
-		if cl, err := GetClaims(c); err != nil {
-			return ""
-		} else {
-			return cl.Username
-		}
-	} else {
-		waitUse := claims.(*systemReq.CustomClaims)
-		return waitUse.Username
-	}
-}
-
-func LoginToken(user system.Login) (token string, claims systemReq.CustomClaims, err error) {
-	j := NewJWT()
-	claims = j.CreateClaims(systemReq.BaseClaims{
-		UUID:     user.GetUUID(),
-		ID:       user.GetUserId(),
-		NickName: user.GetNickname(),
-		Username: user.GetUsername(),
-		RoleId:   user.GetRoleId(),
-	})
-	token, err = j.CreateToken(claims)
-	return
 }
