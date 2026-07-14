@@ -41,6 +41,7 @@ func Routers() *gin.Engine {
 	if gin.Mode() == gin.DebugMode {
 		Router.Use(gin.Logger())
 	}
+	Router.Use(middleware.Cors()) // 跨域带 cookie（credentials），httpOnly cookie 认证必需
 
 	systemRouter := router.RouterGroupApp.System
 	// 如果想要不使用nginx代理前端网页，可以修改 web/.env.production 下的

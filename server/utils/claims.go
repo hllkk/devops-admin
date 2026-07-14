@@ -3,7 +3,6 @@ package utils
 import (
 	"errors"
 	"fmt"
-	"net"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -106,29 +105,3 @@ func GetUserName(c *gin.Context) string {
 	return ""
 }
 
-// SetToken 已废弃（旧 x-token cookie 半成品）。仅临时保留供 middleware 过渡期编译，
-// Task 3 重写 middleware 后会删除。新代码用 SetLoginCookies。
-func SetToken(c *gin.Context, token string, maxAge int) {
-	host, _, err := net.SplitHostPort(c.Request.Host)
-	if err != nil {
-		host = c.Request.Host
-	}
-	if net.ParseIP(host) != nil {
-		c.SetCookie("x-token", token, maxAge, "/", "", false, false)
-	} else {
-		c.SetCookie("x-token", token, maxAge, "/", host, false, false)
-	}
-}
-
-// ClearToken 已废弃（同 SetToken）。Task 3 删除。
-func ClearToken(c *gin.Context) {
-	host, _, err := net.SplitHostPort(c.Request.Host)
-	if err != nil {
-		host = c.Request.Host
-	}
-	if net.ParseIP(host) != nil {
-		c.SetCookie("x-token", "", -1, "/", "", false, false)
-	} else {
-		c.SetCookie("x-token", "", -1, "/", host, false, false)
-	}
-}

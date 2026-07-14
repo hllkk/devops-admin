@@ -57,6 +57,12 @@ func NoAuth(message string, c *gin.Context) {
 	})
 }
 
+// NoAuthWithCode 鉴权失败：HTTP 200 + 业务 code（不用 401，以便前端按 code 分流刷新/登出）。
+// code "9999"=EXPIRED_TOKEN_CODES（前端刷新）；"8888"=LOGOUT_CODES（前端登出）。
+func NoAuthWithCode(code, message string, c *gin.Context) {
+	Result(code, nil, message, c)
+}
+
 func FailWithDetailed(data interface{}, message string, c *gin.Context) {
 	Result(ERROR, data, message, c)
 }

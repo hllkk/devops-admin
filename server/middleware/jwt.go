@@ -1,77 +1,37 @@
 package middleware
 
 import (
-	"errors"
-	"strconv"
-	"time"
-
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/hllkk/devops-admin/server/global"
 	"github.com/hllkk/devops-admin/server/model/common/response"
 	"github.com/hllkk/devops-admin/server/utils"
 )
 
+// expiredTokenCode 命中前端 VITE_SERVICE_EXPIRED_TOKEN_CODES，触发刷新；刷新失败由 refresh 端点返回 8888 登出。
+const expiredTokenCode = "9999"
+
+// JWTAuth 校验 access token：从 Authorization 头或 token cookie 取值，强制 audience=access，校验黑名单。
+// 失败统一 HTTP 200 + code "9999"（前端据此刷新或登出）。不再下发 new-token 头（改由 refresh 端点轮换）。
 func JWTAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 我们这里jwt鉴权取头部信息 x-token 登录时回返回token信息 这里前端需要把token存储到cookie或者本地localStorage中 不过需要跟后端协商过期时间 可以约定刷新令牌或者重新登录
-		token, _ := utils.GetToken(c) // 临时适配新签名(string,error)，Task3 整文件重写
-		if token == "" {
-			response.NoAuth("未登录或非法访问，请登录", c)
+		token, err := utils.GetToken(c)
+		if err != nil || token == "" {
+			response.NoAuthWithCode(expiredTokenCode, "未登录或令牌失效，请登录", c)
 			c.Abort()
 			return
 		}
-		if isBlacklist(token) {
-			response.NoAuth("您的帐户异地登陆或令牌失效", c)
-			utils.ClearToken(c)
+		if utils.IsBlacklisted(token) {
+			response.NoAuthWithCode(expiredTokenCode, "令牌已失效，请重新登录", c)
 			c.Abort()
 			return
 		}
 		j := utils.NewJWT()
-		// parseToken 解析token包含的信息
-		claims, err := j.ParseToken(token)
+		claims, err := j.ParseAccessToken(token)
 		if err != nil {
-			if errors.Is(err, utils.TokenExpired) {
-				response.NoAuth("登录已过期，请重新登录", c)
-				utils.ClearToken(c)
-				c.Abort()
-				return
-			}
-			response.NoAuth(err.Error(), c)
-			utils.ClearToken(c)
+			response.NoAuthWithCode(expiredTokenCode, "登录已过期，请重新登录", c)
 			c.Abort()
 			return
 		}
-
-		// 已登录用户被管理员禁用 需要使该用户的jwt失效 此处比较消耗性能 如果需要 请自行打开
-		// 用户被删除的逻辑 需要优化 此处比较消耗性能 如果需要 请自行打开
 		c.Set("claims", claims)
-		if claims.ExpiresAt.Unix()-time.Now().Unix() < claims.BufferTime {
-			dr, _ := utils.ParseDuration(global.OPS_CONFIG.JWT.ExpiresTime)
-			claims.ExpiresAt = jwt.NewNumericDate(time.Now().Add(dr))
-			newToken, _ := j.CreateTokenByOldToken(token, *claims)
-			newClaims, _ := j.ParseToken(newToken)
-			c.Header("new-token", newToken)
-			c.Header("new-expires-at", strconv.FormatInt(newClaims.ExpiresAt.Unix(), 10))
-			utils.SetToken(c, newToken, int(dr.Seconds()))
-			if global.OPS_CONFIG.System.UseMultipoint {
-				// 记录新的活跃jwt
-				_ = utils.SetRedisJWT(newToken, newClaims.Username)
-			}
-		}
 		c.Next()
-
-		if newToken, exists := c.Get("new-token"); exists {
-			c.Header("new-token", newToken.(string))
-		}
-		if newExpiresAt, exists := c.Get("new-expires-at"); exists {
-			c.Header("new-expires-at", newExpiresAt.(string))
-		}
 	}
-}
-
-// IsBlacklist 判断JWT是否在黑名单内部
-func isBlacklist(jwt string) bool {
-	_, ok := global.BlackCache.Get(jwt)
-	return ok
 }
