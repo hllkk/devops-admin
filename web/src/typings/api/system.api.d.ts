@@ -368,8 +368,6 @@ declare namespace Api {
     type Dept = Api.Common.CommonRecord<{
       /** 部门id */
       deptId: CommonType.IdType;
-      /** 租户编号 */
-      tenantId: CommonType.IdType;
       /** 父部门id */
       parentId: CommonType.IdType;
       /** 祖级列表 */
@@ -412,8 +410,6 @@ declare namespace Api {
     type Post = Common.CommonRecord<{
       /** 岗位ID */
       postId: CommonType.IdType;
-      /** 租户编号 */
-      tenantId: CommonType.IdType;
       /** 部门id */
       deptId: CommonType.IdType;
       /** 岗位编码 */
@@ -455,8 +451,6 @@ declare namespace Api {
     type Notice = Common.CommonRecord<{
       /** 公告ID */
       noticeId: CommonType.IdType;
-      /** 租户编号 */
-      tenantId: CommonType.IdType;
       /** 公告标题 */
       noticeTitle: string;
       /** 公告类型 */
