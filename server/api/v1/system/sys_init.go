@@ -57,3 +57,53 @@ func (i *DBApi) CheckDB(c *gin.Context) {
 	global.OPS_LOG.Info(message)
 	response.OkWithDetailed(gin.H{"needInit": needInit}, message, c)
 }
+
+// PingDB 测试数据库连接（仅在系统未初始化时可用；不建库、不落盘）
+// @Tags     SysInit
+// @Summary  测试数据库连接
+// @Produce  application/json
+// @Param    data  body      request.DBConnTest               true  "数据库连接参数"
+// @Success  200   {object}  response.Response{data=string}  "连接成功"
+// @Router   /init/db/ping [post]
+func (i *DBApi) PingDB(c *gin.Context) {
+	if global.OPS_DB != nil {
+		response.FailWithMessage("系统已初始化，无需测试连接", c)
+		return
+	}
+	var conf request.DBConnTest
+	if err := c.ShouldBindJSON(&conf); err != nil {
+		response.FailWithMessage("参数校验不通过", c)
+		return
+	}
+	if err := initDBService.PingDB(conf); err != nil {
+		global.OPS_LOG.Error("数据库连接测试失败!", zap.Error(err))
+		response.FailWithMessage("数据库连接失败："+err.Error(), c)
+		return
+	}
+	response.OkWithMessage("数据库连接成功", c)
+}
+
+// PingRedis 测试 Redis 连接（仅在系统未初始化时可用；不落盘）
+// @Tags     SysInit
+// @Summary  测试 Redis 连接
+// @Produce  application/json
+// @Param    data  body      request.PingRedis                true  "Redis 连接参数"
+// @Success  200   {object}  response.Response{data=string}  "连接成功"
+// @Router   /init/redis/ping [post]
+func (i *DBApi) PingRedis(c *gin.Context) {
+	if global.OPS_DB != nil {
+		response.FailWithMessage("系统已初始化，无需测试连接", c)
+		return
+	}
+	var conf request.PingRedis
+	if err := c.ShouldBindJSON(&conf); err != nil {
+		response.FailWithMessage("参数校验不通过", c)
+		return
+	}
+	if err := initDBService.PingRedis(conf); err != nil {
+		global.OPS_LOG.Error("Redis 连接测试失败!", zap.Error(err))
+		response.FailWithMessage("Redis 连接失败："+err.Error(), c)
+		return
+	}
+	response.OkWithMessage("Redis 连接成功", c)
+}
