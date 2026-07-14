@@ -118,9 +118,9 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   async function login(loginForm: Api.Auth.PwdLoginForm | Api.Auth.SocialLoginForm, redirect = true) {
     startLoading();
 
-    // 仅取 username/password
-    const { username, password } = loginForm as Api.Auth.PwdLoginForm;
-    const { data, error } = await fetchLogin({ username, password });
+    // 取 username/password/captchaId/captcha（验证码由登录页在提交前完成并写入 loginForm）
+    const { username, password, captchaId, captcha } = loginForm as Api.Auth.PwdLoginForm;
+    const { data, error } = await fetchLogin({ username, password, captchaId, captcha });
 
     if (!error && data) {
       localStg.set('isAuthenticated', true);
@@ -149,6 +149,11 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     }
 
     endLoading();
+
+    // 失败时抛错，让调用方（如登录页 doLogin）能捕获并刷新验证码/重置验证态
+    if (error || !data) {
+      throw error || new Error('登录失败');
+    }
   }
 
   async function getUserInfo() {

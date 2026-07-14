@@ -312,6 +312,13 @@ const local: App.I18n.Schema = {
       },
       bindWeChat: {
         title: '绑定微信'
+      },
+      captcha: {
+        title: '安全验证',
+        clickTitle: '请按顺序点击图中文字',
+        slideTitle: '请拖动滑块完成拼图',
+        rotateTitle: '请旋转图片至正确方向',
+        loginWithCaptcha: '验证并登录'
       }
     },
     init: {

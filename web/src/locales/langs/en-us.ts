@@ -316,6 +316,13 @@ const local: App.I18n.Schema = {
       },
       bindWeChat: {
         title: 'Bind WeChat'
+      },
+      captcha: {
+        title: 'Security Verification',
+        clickTitle: 'Click the text in order',
+        slideTitle: 'Drag the slider to complete the puzzle',
+        rotateTitle: 'Rotate the image to the correct direction',
+        loginWithCaptcha: 'Verify and Login'
       }
     },
     init: {

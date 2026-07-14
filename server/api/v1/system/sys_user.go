@@ -30,12 +30,23 @@ func (b *BaseApi) Login(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
+	// 验证码先于密码校验（防绕过暴力破解）；按触发策略决定是否必须
+	ip := c.ClientIP()
+	if captchaService.NeedCaptcha(l.Username, ip) {
+		if err := captchaService.VerifyCaptcha(l.CaptchaId, l.Captcha); err != nil {
+			captchaService.RecordLoginResult(l.Username, ip, false)
+			response.FailWithMessage(err.Error(), c)
+			return
+		}
+	}
 	access, refresh, _, err := userService.Login(l.Username, l.Password)
 	if err != nil {
+		captchaService.RecordLoginResult(l.Username, ip, false)
 		global.OPS_LOG.Warn("登录失败", zap.String("user", l.Username), zap.Error(err))
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
+	captchaService.RecordLoginResult(l.Username, ip, true)
 	utils.SetLoginCookies(c, access, refresh)
 	j := utils.NewJWT()
 	claims, _ := j.ParseAccessToken(access)

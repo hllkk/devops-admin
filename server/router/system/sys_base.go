@@ -6,7 +6,7 @@ import (
 
 type BaseRouter struct{}
 
-// InitBaseRouter 注册 auth 路由：public 组挂 login/code/refreshToken/logout，
+// InitBaseRouter 注册 auth 路由：public 组挂 login/captcha/refreshToken/logout，
 // private 组挂 getUserInfo（需鉴权）。
 // public 或 private 为 nil 时跳过对应组的注册（ModuleRouter 分组调用时使用）。
 func (s *BaseRouter) InitBaseRouter(public, private *gin.RouterGroup) {
@@ -14,7 +14,7 @@ func (s *BaseRouter) InitBaseRouter(public, private *gin.RouterGroup) {
 		pub := public.Group("auth")
 		{
 			pub.POST("login", baseApi.Login)
-			pub.POST("code", baseApi.Captcha)
+			pub.GET("captcha", baseApi.Captcha)
 			pub.POST("refreshToken", baseApi.RefreshToken)
 			pub.POST("logout", baseApi.Logout)
 		}

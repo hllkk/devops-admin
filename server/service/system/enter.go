@@ -5,4 +5,5 @@ type ServiceGroup struct {
 	InitDBService
 	CasbinService
 	UserService
+	CaptchaService
 }

@@ -17,16 +17,16 @@ declare namespace Api {
       uuid?: string;
     }
 
-    /** password login form（httpOnly cookie 模式：仅用户名密码，captcha 可选兼容） */
+    /** password login form（httpOnly cookie 模式：用户名密码 + go-captcha 验证码） */
     interface PwdLoginForm {
       /** 用户名 */
       username?: string;
       /** 密码 */
       password?: string;
-      /** 验证码 */
-      code?: string;
-      /** 验证码唯一标识 */
-      uuid?: string;
+      /** go-captcha 验证码会话 ID */
+      captchaId?: string;
+      /** go-captcha 用户答案（JSON 字符串：click 为点坐标数组、slide 为 {x,y}、rotate 为 {angle}） */
+      captcha?: string;
     }
 
     /** register form (Soybean 示例保留，后端无端点) */
@@ -69,13 +69,32 @@ declare namespace Api {
       permissions: string[];
     }
 
-    interface CaptchaCode {
-      /** 是否开启验证码 */
+    /** go-captcha 行为验证码生成结果 */
+    interface CaptchaResult {
+      /** 当前是否要求验证码（false 时其余字段为空） */
       captchaEnabled: boolean;
-      /** 唯一标识 */
-      uuid?: string;
-      /** 验证码图片 */
-      img?: string;
+      /** 验证码类型：click | slide | rotate */
+      type?: string;
+      /** 验证码会话 ID */
+      captchaId?: string;
+      /** 主图 base64 */
+      masterImage?: string;
+      /** 拼图块 base64（slide） */
+      tileImage?: string;
+      /** 提示缩略图 base64（click/rotate） */
+      thumbImage?: string;
+      /** slide 拼图块初始 X */
+      thumbX?: number;
+      /** slide 拼图块初始 Y */
+      thumbY?: number;
+      /** slide 拼图块宽度 */
+      thumbWidth?: number;
+      /** slide 拼图块高度 */
+      thumbHeight?: number;
+      /** rotate 缩略图初始角度 */
+      angle?: number;
+      /** rotate 缩略图尺寸 */
+      thumbSize?: number;
     }
   }
 }

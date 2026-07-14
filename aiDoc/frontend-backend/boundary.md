@@ -51,7 +51,8 @@
   - `8888`（`VITE_SERVICE_LOGOUT_CODES`）：refresh 也失效（仅 `/auth/refreshToken` 返回），前端登出
   - `/auth/refreshToken` **禁止返回 9999**，防前端死循环刷新
 - 登录响应体只回 `{ expiresAt }`（毫秒），**不回 token**。
-- 端点：`POST /auth/login`、`POST /auth/refreshToken`、`POST /auth/logout`（public）；`GET /auth/getUserInfo`（private）。
+- 端点：`GET /auth/captcha`、`POST /auth/login`、`POST /auth/refreshToken`、`POST /auth/logout`（public）；`GET /auth/getUserInfo`（private）。
+- 行为验证码（go-captcha，配置 `captcha.go-captcha`）：登录按触发策略（`threshold` 阈值 / `always` / `off`）决定是否要求。`GET /auth/captcha?username=` 返回 `{captchaEnabled,type,captchaId,masterImage,tileImage,thumbImage,thumbX,thumbY,thumbWidth,thumbHeight,angle,thumbSize}`；`captchaEnabled=false` 表示当前无需验证码。`POST /auth/login` 请求体携带 `captchaId` + `captcha`（用户答案 JSON：click `[{x,y}]` / slide `{x,y}` / rotate `{angle}`），后端**先于密码校验**并一次性消费（校验即删、TTL 过期）。答案存 Redis（`gocaptcha:` 前缀），不可用降级进程内 `local_cache`。
 - 前端：所有请求 `withCredentials: true`；`getAuthorization()` 返回 `null`；登录态信号 `isAuthenticated`+`tokenExpiresAt`（localStorage，可读非敏感）。
 - CORS：`middleware.Cors()` 回显 Origin + `Allow-Credentials: true`。
 

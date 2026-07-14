@@ -1,5 +1,3 @@
-# github.com/flipped-aurora/gin-vue-admin/server Global Configuration
-
 # jwt configuration
 jwt:
     signing-key: qmPlus
@@ -97,6 +95,23 @@ captcha:
     img-height: 80
     open-captcha: 0 # 0代表一直开启，大于0代表限制次数
     open-captcha-timeout: 3600 # open-captcha大于0时才生效
+    # go-captcha 行为验证码（click 点选 / slide 滑动 / rotate 旋转）
+    go-captcha:
+        enabled: true                 # 总开关；false 时登录不要求验证码
+        type: slide                   # 当前类型：click | slide | rotate
+        store: redis                  # 答案存储：redis（不可用自动降级 memory）| memory
+        key-prefix: "gocaptcha:"      # redis key 前缀
+        expire-seconds: 120           # 验证码有效期（秒）
+        trigger:
+            mode: threshold           # threshold(失败达阈值触发) | always(始终要求) | off(关闭)
+            fail-threshold: 3         # 阈值模式：账号/IP 在 fail-window 内连续失败 N 次后必须验证码
+            fail-window: 600          # 失败计数窗口（秒）
+        slide:
+            tolerance: 5              # 拖动容差（像素）
+        click:
+            padding: 5                # 点选容差（像素）
+        rotate:
+            tolerance: 5              # 旋转容差（角度）
 
 # mysql connect configuration
 # 未初始化之前请勿手动修改数据库信息！！！如果一定要手动初始化请看（https://gin-vue-admin.com/docs/first_master）

@@ -549,6 +549,13 @@ declare namespace App {
           bindWeChat: {
             title: string;
           };
+          captcha: {
+            title: string;
+            clickTitle: string;
+            slideTitle: string;
+            rotateTitle: string;
+            loginWithCaptcha: string;
+          };
         };
         init: {
           title: string;

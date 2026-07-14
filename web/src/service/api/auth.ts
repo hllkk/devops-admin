@@ -1,10 +1,11 @@
 import { request } from '../request';
 
-/** Get image code */
-export function fetchCaptchaCode() {
-  return request<Api.Auth.CaptchaCode>({
-    url: '/auth/code',
-    method: 'get'
+/** 获取行为验证码（go-captcha），按后端触发策略决定是否返回；username 用于阈值判断 */
+export function fetchCaptcha(username?: string) {
+  return request<Api.Auth.CaptchaResult>({
+    url: '/auth/captcha',
+    method: 'get',
+    params: username ? { username } : {}
   });
 }
 

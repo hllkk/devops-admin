@@ -2,7 +2,9 @@
 import { computed, reactive, ref } from 'vue';
 import { useLoading } from '@sa/hooks';
 import CryptoJS from 'crypto-js';
-import { fetchCaptchaCode } from '@/service/api';
+import { Click as GoCaptchaClick, Rotate as GoCaptchaRotate, Slide as GoCaptchaSlide } from 'go-captcha-vue';
+import 'go-captcha-vue/dist/style.css';
+import { fetchCaptcha } from '@/service/api';
 import { fetchSocialAuthBinding } from '@/service/api/system';
 import { useAuthStore } from '@/store/modules/auth';
 import { useRouterPush } from '@/hooks/common/router';
@@ -20,10 +22,8 @@ defineOptions({
 const authStore = useAuthStore();
 const { toggleLoginModule } = useRouterPush();
 const { formRef, validate } = useNaiveForm();
-const { loading: codeLoading, startLoading: startCodeLoading, endLoading: endCodeLoading } = useLoading();
+const { loading: captchaLoading, startLoading: startCaptchaLoading, endLoading: endCaptchaLoading } = useLoading();
 
-const codeUrl = ref<string>();
-const captchaEnabled = ref<boolean>(false);
 const registerEnabled = ref<boolean>(false);
 const remberMe = ref<boolean>(false);
 
@@ -32,52 +32,114 @@ const model: Api.Auth.PwdLoginForm = reactive({
   password: 'admin123'
 });
 
-type RuleKey = Extract<keyof Api.Auth.PwdLoginForm, 'username' | 'password' | 'code'>;
+// ===== go-captcha 行为验证码状态 =====
+const captchaEnabled = ref<boolean>(false); // 当前是否要求验证码（后端触发策略决定）
+const captchaType = ref<string>(''); // click | slide | rotate
+const captchaData = ref<Api.Auth.CaptchaResult>({ captchaEnabled: false });
+const captchaVerified = ref<boolean>(false); // 用户是否已通过本次验证码
+const showCaptcha = ref<boolean>(false); // 验证码弹窗
+// 当前验证码的用户答案（confirm 回调写入，提交登录时读取），无需响应式
+let captchaAnswer = '';
+
+type RuleKey = Extract<keyof Api.Auth.PwdLoginForm, 'username' | 'password'>;
 
 const rules = computed<Record<RuleKey, App.Global.FormRule[]>>(() => {
-  // inside computed to make locale reactive, if not apply i18n, you can define it without computed
   const { createRequiredRule } = useFormRules();
-
-  const loginRules: Record<RuleKey, App.Global.FormRule[]> = {
+  return {
     username: [createRequiredRule($t('form.userName.required'))],
-    password: [createRequiredRule($t('form.pwd.required'))],
-    code: captchaEnabled.value ? [createRequiredRule($t('form.code.required'))] : []
+    password: [createRequiredRule($t('form.pwd.required'))]
   };
-
-  return loginRules;
 });
+
+const captchaTitle = computed(() => {
+  switch (captchaType.value) {
+    case 'click':
+      return $t('page.login.captcha.clickTitle');
+    case 'slide':
+      return $t('page.login.captcha.slideTitle');
+    case 'rotate':
+      return $t('page.login.captcha.rotateTitle');
+    default:
+      return $t('page.login.captcha.title');
+  }
+});
+
+/** 拉取验证码：后端按触发策略返回，captchaEnabled=false 时无需验证 */
+async function getCaptcha(username?: string) {
+  startCaptchaLoading();
+  const { data } = await fetchCaptcha(username);
+  endCaptchaLoading();
+  captchaEnabled.value = data?.captchaEnabled ?? false;
+  captchaVerified.value = false;
+  captchaAnswer = '';
+  if (captchaEnabled.value && data) {
+    captchaType.value = data.type ?? '';
+    captchaData.value = data;
+  }
+}
+
+/** 提交登录，携带验证码会话 ID 与用户答案 */
+async function doLogin() {
+  model.captchaId = captchaData.value.captchaId;
+  model.captcha = captchaVerified.value ? captchaAnswer : '';
+  try {
+    await authStore.login(model);
+  } catch {
+    // 登录失败：重置验证态并刷新（连续失败可能触发验证码）
+    captchaVerified.value = false;
+    captchaAnswer = '';
+    await getCaptcha(model.username);
+  }
+}
 
 async function handleSubmit() {
   await validate();
-  // 勾选了需要记住密码设置在 localStorage 中设置记住用户名和密码
+  // 记住密码
   if (remberMe.value) {
     const { username, password } = model;
     localStg.set('loginRember', encryptWithAes(JSON.stringify({ username, password }), aesKey));
   } else {
-    // 否则移除
     localStg.remove('loginRember');
   }
-  try {
-    await authStore.login(model);
-  } catch {
-    handleFetchCaptchaCode();
+  // 未验证时刷新验证码状态（带 username，确保阈值判断准确）
+  if (!captchaVerified.value) {
+    await getCaptcha(model.username);
   }
+  if (captchaEnabled.value && !captchaVerified.value) {
+    showCaptcha.value = true;
+    return;
+  }
+  await doLogin();
 }
 
-async function handleFetchCaptchaCode() {
-  startCodeLoading();
-  const { data, error } = await fetchCaptchaCode();
-  if (!error) {
-    captchaEnabled.value = data.captchaEnabled;
-    if (data.captchaEnabled) {
-      model.uuid = data.uuid;
-      codeUrl.value = `data:image/gif;base64,${data.img}`;
-    }
-  }
-  endCodeLoading();
+// ===== go-captcha 组件回调 =====
+// confirm 序列化用户答案，标记已验证，关闭弹窗并触发登录
+function onConfirmClick(dots: { x: number; y: number }[]) {
+  captchaAnswer = JSON.stringify(dots.map(d => ({ x: d.x, y: d.y })));
+  finishCaptcha();
+  return true;
+}
+function onConfirmSlide(point: { x: number; y: number }) {
+  captchaAnswer = JSON.stringify({ x: point.x, y: point.y });
+  finishCaptcha();
+  return true;
+}
+function onConfirmRotate(angle: number) {
+  captchaAnswer = JSON.stringify({ angle });
+  finishCaptcha();
+  return true;
+}
+function finishCaptcha() {
+  captchaVerified.value = true;
+  showCaptcha.value = false;
+  doLogin();
+}
+async function onCaptchaRefresh() {
+  await getCaptcha(model.username);
 }
 
-handleFetchCaptchaCode();
+// 初始探测验证码状态（仅按 IP 判断，用户名待提交时再带上）
+getCaptcha();
 
 function handleLoginRember() {
   const loginRember = localStg.get('loginRember');
@@ -87,16 +149,7 @@ function handleLoginRember() {
     Object.assign(model, JSON.parse(decryptWithAes(loginRember, aesKey)));
   } catch {}
 }
-
 handleLoginRember();
-
-// async function handleRegister() {
-//   const { data, error } = await fetchGetConfigDetail('sys.account.registerUser');
-//   if (error) return;
-//   registerEnabled.value = data.configValue === 'true';
-// }
-
-// handleRegister();
 
 async function handleSocialLogin(type: Api.System.SocialSource) {
   const { data, error } = await fetchSocialAuthBinding(type);
@@ -128,17 +181,6 @@ async function handleSocialLogin(type: Api.System.SocialSource) {
           :placeholder="$t('page.login.common.passwordPlaceholder')"
         />
       </NFormItem>
-      <NFormItem v-if="captchaEnabled" path="code">
-        <div class="w-full flex-y-center gap-16px">
-          <NInput v-model:value="model.code" :placeholder="$t('page.login.common.codePlaceholder')" />
-          <NSpin :show="codeLoading" :size="28" class="h-42px">
-            <NButton :focusable="false" class="login-code h-42px w-114px" @click="handleFetchCaptchaCode">
-              <img v-if="codeUrl" :src="codeUrl" />
-              <NEmpty v-else :show-icon="false" description="暂无验证码" />
-            </NButton>
-          </NSpin>
-        </div>
-      </NFormItem>
       <NSpace vertical :size="12" class="mb-8px">
         <div class="mx-6px mb-8px flex-y-center justify-between">
           <NCheckbox v-model:checked="remberMe" size="large">{{ $t('page.login.pwdLogin.rememberMe') }}</NCheckbox>
@@ -147,7 +189,7 @@ async function handleSocialLogin(type: Api.System.SocialSource) {
           </NA>
         </div>
         <NButton type="primary" size="large" block :loading="authStore.loginLoading" @click="handleSubmit">
-          {{ $t('common.login') }}
+          {{ captchaEnabled && !captchaVerified ? $t('page.login.captcha.loginWithCaptcha') : $t('common.login') }}
         </NButton>
         <NButton v-if="registerEnabled" size="large" block @click="toggleLoginModule('register')">
           {{ $t('page.login.common.register') }}
@@ -173,21 +215,48 @@ async function handleSocialLogin(type: Api.System.SocialSource) {
         <span class="ml-6px">GitHub</span>
       </NButton>
     </div>
+
+    <!-- 行为验证码弹窗（按 config.type 动态渲染） -->
+    <NModal v-model:show="showCaptcha" :mask-closable="false" :close-on-esc="false">
+      <NCard :title="captchaTitle" style="width: 400px" :bordered="false" role="dialog">
+        <NSpin :show="captchaLoading">
+          <GoCaptchaClick
+            v-if="captchaType === 'click'"
+            :config="{ title: $t('page.login.captcha.clickTitle') }"
+            :data="{ image: captchaData.masterImage ?? '', thumb: captchaData.thumbImage ?? '' }"
+            :events="{ confirm: onConfirmClick, refresh: onCaptchaRefresh }"
+          />
+          <GoCaptchaSlide
+            v-else-if="captchaType === 'slide'"
+            :config="{ title: $t('page.login.captcha.slideTitle') }"
+            :data="{
+              image: captchaData.masterImage ?? '',
+              thumb: captchaData.tileImage ?? '',
+              thumbX: captchaData.thumbX ?? 0,
+              thumbY: captchaData.thumbY ?? 0,
+              thumbWidth: captchaData.thumbWidth ?? 0,
+              thumbHeight: captchaData.thumbHeight ?? 0
+            }"
+            :events="{ confirm: onConfirmSlide, refresh: onCaptchaRefresh }"
+          />
+          <GoCaptchaRotate
+            v-else-if="captchaType === 'rotate'"
+            :config="{ title: $t('page.login.captcha.rotateTitle') }"
+            :data="{
+              image: captchaData.masterImage ?? '',
+              thumb: captchaData.thumbImage ?? '',
+              angle: captchaData.angle ?? 0,
+              thumbSize: captchaData.thumbSize ?? 0
+            }"
+            :events="{ confirm: onConfirmRotate, refresh: onCaptchaRefresh }"
+          />
+        </NSpin>
+      </NCard>
+    </NModal>
   </div>
 </template>
 
 <style scoped>
-.login-code {
-  &.n-button {
-    --n-padding: 0 !important;
-  }
-
-  img {
-    height: 42px;
-    border-radius: 8px;
-  }
-}
-
 :deep(.n-base-selection),
 :deep(.n-input) {
   --n-height: 42px !important;

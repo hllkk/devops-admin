@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive } from 'vue';
 import { useLoading } from '@sa/hooks';
-import { fetchCaptchaCode, fetchRegister } from '@/service/api';
+import { fetchRegister } from '@/service/api';
 import { useRouterPush } from '@/hooks/common/router';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
 import { $t } from '@/locales';
@@ -12,21 +12,16 @@ defineOptions({
 
 const { toggleLoginModule } = useRouterPush();
 const { formRef, validate } = useNaiveForm();
-const { loading: codeLoading, startLoading: startCodeLoading, endLoading: endCodeLoading } = useLoading();
 const { loading: registerLoading, startLoading: startRegisterLoading, endLoading: endRegisterLoading } = useLoading();
-
-const codeUrl = ref<string>();
-const captchaEnabled = ref<boolean>(false);
 
 const model: Api.Auth.RegisterForm = reactive({
   username: '',
-  code: '',
   password: '',
   confirmPassword: '',
   userType: 'sys_user'
 });
 
-type RuleKey = Extract<keyof Api.Auth.RegisterForm, 'username' | 'password' | 'confirmPassword' | 'code'>;
+type RuleKey = Extract<keyof Api.Auth.RegisterForm, 'username' | 'password' | 'confirmPassword'>;
 
 const rules = computed<Record<RuleKey, App.Global.FormRule[]>>(() => {
   const { createConfirmPwdRule, createRequiredRule } = useFormRules();
@@ -34,8 +29,7 @@ const rules = computed<Record<RuleKey, App.Global.FormRule[]>>(() => {
   return {
     username: [createRequiredRule($t('form.userName.required'))],
     password: [createRequiredRule($t('form.pwd.required'))],
-    confirmPassword: createConfirmPwdRule(model.password!),
-    code: captchaEnabled.value ? [createRequiredRule($t('form.code.required'))] : []
+    confirmPassword: createConfirmPwdRule(model.password!)
   };
 });
 
@@ -46,40 +40,20 @@ async function handleSubmit() {
     const { error } = await fetchRegister({
       username: model.username,
       password: model.password,
-      code: model.code,
-      uuid: model.uuid,
       grantType: 'password',
       userType: model.userType,
       clientId: import.meta.env.VITE_APP_CLIENT_ID
     });
     if (error) {
-      handleFetchCaptchaCode();
       return;
     }
     window.$message?.success('注册成功');
     // 注册成功后跳转到登录页
     toggleLoginModule('pwd-login');
-  } catch {
-    handleFetchCaptchaCode();
   } finally {
     endRegisterLoading();
   }
 }
-
-async function handleFetchCaptchaCode() {
-  startCodeLoading();
-  const { data, error } = await fetchCaptchaCode();
-  if (!error) {
-    captchaEnabled.value = data.captchaEnabled;
-    if (data.captchaEnabled) {
-      model.uuid = data.uuid;
-      codeUrl.value = `data:image/gif;base64,${data.img}`;
-    }
-  }
-  endCodeLoading();
-}
-
-handleFetchCaptchaCode();
 </script>
 
 <template>
@@ -113,17 +87,6 @@ handleFetchCaptchaCode();
           :placeholder="$t('page.login.common.confirmPasswordPlaceholder')"
         />
       </NFormItem>
-      <NFormItem v-if="captchaEnabled" path="code">
-        <div class="w-full flex-y-center gap-16px">
-          <NInput v-model:value="model.code" :placeholder="$t('page.login.common.codePlaceholder')" />
-          <NSpin :show="codeLoading" :size="28" class="h-52px">
-            <NButton :focusable="false" class="login-code h-52px w-136px" @click="handleFetchCaptchaCode">
-              <img v-if="codeUrl" :src="codeUrl" />
-              <NEmpty v-else :show-icon="false" description="暂无验证码" />
-            </NButton>
-          </NSpin>
-        </div>
-      </NFormItem>
       <NSpace vertical :size="18" class="w-full">
         <NButton type="primary" size="large" block :loading="registerLoading" @click="handleSubmit">
           {{ $t('page.login.common.register') }}
@@ -141,17 +104,6 @@ handleFetchCaptchaCode();
 </template>
 
 <style scoped lang="scss">
-.login-code {
-  &.n-button {
-    --n-padding: 0 8px !important;
-    background-color: #c0c0c0;
-  }
-
-  img {
-    height: 40px;
-  }
-}
-
 :deep(.n-base-selection),
 :deep(.n-input) {
   --n-height: 42px !important;

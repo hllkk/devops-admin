@@ -8,6 +8,7 @@ type ApiGroup struct {
 }
 
 var (
-	initDBService = service.ServiceGroupApp.SystemServiceGroup.InitDBService
-	userService   = service.ServiceGroupApp.SystemServiceGroup.UserService
+	initDBService  = service.ServiceGroupApp.SystemServiceGroup.InitDBService
+	userService    = service.ServiceGroupApp.SystemServiceGroup.UserService
+	captchaService = service.ServiceGroupApp.SystemServiceGroup.CaptchaService
 )
