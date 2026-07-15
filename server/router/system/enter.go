@@ -22,8 +22,8 @@ var (
 // RegisterPublic 实现 router.ModuleRouter —— 注册公开路由（无需认证）
 func (rg *RouterGroup) RegisterPublic(r *gin.RouterGroup) {
 	rg.InitRouter.InitInitRouter(r)
-	rg.BaseRouter.InitBaseRouter(r, nil)               // 只注册 public 部分
-	rg.SettingRouter.InitSettingPublicRouter(r)        // 系统设置公开接口（登录页读取展示配置）
+	rg.BaseRouter.InitBaseRouter(r, nil)        // 只注册 public 部分
+	rg.SettingRouter.InitSettingPublicRouter(r) // 系统设置公开接口（登录页读取展示配置）
 }
 
 // RegisterPrivate 实现 router.ModuleRouter —— 注册需认证路由（JWT）

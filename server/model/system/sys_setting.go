@@ -5,7 +5,7 @@ import "github.com/hllkk/devops-admin/server/global"
 // SysSetting 系统设置存储模型：按分类（name）保存一段 JSON 配置（value）。
 // 属于内部系统记录，主键用雪花 id；name 建唯一索引，供 upsert 按 name 合并。
 type SysSetting struct {
-	Id    int64 `gorm:"column:id;primaryKey;autoIncrement:false" json:"id,string"`
+	Id int64 `gorm:"column:id;primaryKey;autoIncrement:false" json:"id,string"`
 	global.OPS_MODEL
 	Name  string `gorm:"column:name;size:64;uniqueIndex:idx_setting_name;comment:配置分类" json:"name"`
 	Value string `gorm:"column:value;type:text;comment:配置JSON" json:"value"`
@@ -29,58 +29,58 @@ type SystemSettings struct {
 
 // PublicSystemSettings 公开系统设置（登录页使用，仅暴露展示与开关字段，不含敏感信息）。
 type PublicSystemSettings struct {
-	SystemName        string `json:"systemName"`
-	SystemDescription string `json:"systemDescription"`
-	LogoUrl           string `json:"logoUrl"`
-	FaviconUrl        string `json:"faviconUrl"`
-	EnableVerifyCode  bool   `json:"enableVerifyCode"`
-	VerifyCodeType    string `json:"verifyCodeType,omitempty"`
-	VerifyCodeLen     int    `json:"verifyCodeLen,omitempty"`
-	VerifyCodeExp     int    `json:"verifyCodeExp,omitempty"`
-	VerifyCodeTokenExp int   `json:"verifyCodeTokenExp,omitempty"`
-	VerifyInaccuracy   int   `json:"verifyInaccuracy,omitempty"`
-	EnableWecom  bool `json:"enableWecom,omitempty"`
-	EnableWechat bool `json:"enableWechat,omitempty"`
-	EnableGitee  bool `json:"enableGitee,omitempty"`
-	EnableGithub bool `json:"enableGithub,omitempty"`
+	SystemName         string `json:"systemName"`
+	SystemDescription  string `json:"systemDescription"`
+	LogoUrl            string `json:"logoUrl"`
+	FaviconUrl         string `json:"faviconUrl"`
+	EnableVerifyCode   bool   `json:"enableVerifyCode"`
+	VerifyCodeType     string `json:"verifyCodeType,omitempty"`
+	VerifyCodeLen      int    `json:"verifyCodeLen,omitempty"`
+	VerifyCodeExp      int    `json:"verifyCodeExp,omitempty"`
+	VerifyCodeTokenExp int    `json:"verifyCodeTokenExp,omitempty"`
+	VerifyInaccuracy   int    `json:"verifyInaccuracy,omitempty"`
+	EnableWecom        bool   `json:"enableWecom,omitempty"`
+	EnableWechat       bool   `json:"enableWechat,omitempty"`
+	EnableGitee        bool   `json:"enableGitee,omitempty"`
+	EnableGithub       bool   `json:"enableGithub,omitempty"`
 }
 
 // GeneralSettings 通用配置：站点信息、默认用户、验证码、日志保留。
 type GeneralSettings struct {
-	SystemName        string  `json:"systemName"`
-	SystemDescription string  `json:"systemDescription"`
-	LogoUrl           string  `json:"logoUrl"`
-	FaviconUrl        string  `json:"faviconUrl"`
-	UserDefaultPassword string  `json:"userDefaultPassword"`
-	UserDefaultRole     *string `json:"userDefaultRole"`
-	EnableVerifyCode   bool   `json:"enableVerifyCode"`
-	VerifyCodeType     string `json:"verifyCodeType"`     // click / slide / dragdrop / rotate
-	VerifyCodeLen      int    `json:"verifyCodeLen"`      // 验证码长度
-	VerifyCodeExp      int    `json:"verifyCodeExp"`      // 过期时间(分钟)
-	VerifyCodeTokenExp int    `json:"verifyCodeTokenExp"` // Token 过期时间(分钟)
-	VerifyInaccuracy   int    `json:"verifyInaccuracy"`   // 误差范围(像素)
-	LoginLogRetentionDays     int `json:"loginLogRetentionDays"`     // 登录日志保留天数
-	OperationLogRetentionDays int `json:"operationLogRetentionDays"` // 操作日志保留天数
-	Watermark        bool `json:"watermark"`
-	WatermarkContent int  `json:"watermarkContent"`
-	WatermarkSize    int  `json:"watermarkSize"`
-	EnableWechat     bool `json:"enableWechat"`
-	EnableGitee      bool `json:"enableGitee"`
+	SystemName                string  `json:"systemName"`
+	SystemDescription         string  `json:"systemDescription"`
+	LogoUrl                   string  `json:"logoUrl"`
+	FaviconUrl                string  `json:"faviconUrl"`
+	UserDefaultPassword       string  `json:"userDefaultPassword"`
+	UserDefaultRole           *string `json:"userDefaultRole"`
+	EnableVerifyCode          bool    `json:"enableVerifyCode"`
+	VerifyCodeType            string  `json:"verifyCodeType"`            // click / slide / dragdrop / rotate
+	VerifyCodeLen             int     `json:"verifyCodeLen"`             // 验证码长度
+	VerifyCodeExp             int     `json:"verifyCodeExp"`             // 过期时间(分钟)
+	VerifyCodeTokenExp        int     `json:"verifyCodeTokenExp"`        // Token 过期时间(分钟)
+	VerifyInaccuracy          int     `json:"verifyInaccuracy"`          // 误差范围(像素)
+	LoginLogRetentionDays     int     `json:"loginLogRetentionDays"`     // 登录日志保留天数
+	OperationLogRetentionDays int     `json:"operationLogRetentionDays"` // 操作日志保留天数
+	Watermark                 bool    `json:"watermark"`
+	WatermarkContent          int     `json:"watermarkContent"`
+	WatermarkSize             int     `json:"watermarkSize"`
+	EnableWechat              bool    `json:"enableWechat"`
+	EnableGitee               bool    `json:"enableGitee"`
 }
 
 // SecuritySettings 安全配置：密码策略、登录锁定、IP 黑白名单。
 type SecuritySettings struct {
-	PasswordMinLength        int  `json:"passwordMinLength"`
-	PasswordRequireUppercase bool `json:"passwordRequireUppercase"`
-	PasswordRequireLowercase bool `json:"passwordRequireLowercase"`
-	PasswordRequireDigit     bool `json:"passwordRequireDigit"`
-	PasswordRequireSpecial   bool `json:"passwordRequireSpecial"`
-	LoginFailLockCount int `json:"loginFailLockCount"`
-	LoginFailLockTime  int `json:"loginFailLockTime"`
-	IpValidationEnabled bool   `json:"ipValidationEnabled"`
-	IpValidationMode    string `json:"ipValidationMode"` // blacklist / whitelist
-	IpBlacklist         string `json:"ipBlacklist"`
-	IpWhitelist         string `json:"ipWhitelist"`
+	PasswordMinLength        int    `json:"passwordMinLength"`
+	PasswordRequireUppercase bool   `json:"passwordRequireUppercase"`
+	PasswordRequireLowercase bool   `json:"passwordRequireLowercase"`
+	PasswordRequireDigit     bool   `json:"passwordRequireDigit"`
+	PasswordRequireSpecial   bool   `json:"passwordRequireSpecial"`
+	LoginFailLockCount       int    `json:"loginFailLockCount"`
+	LoginFailLockTime        int    `json:"loginFailLockTime"`
+	IpValidationEnabled      bool   `json:"ipValidationEnabled"`
+	IpValidationMode         string `json:"ipValidationMode"` // blacklist / whitelist
+	IpBlacklist              string `json:"ipBlacklist"`
+	IpWhitelist              string `json:"ipWhitelist"`
 }
 
 // AuthenticationSettings 第三方登录配置（阶段二启用，密钥类字段返回时需脱敏）。
@@ -115,17 +115,17 @@ type GithubSettings struct {
 
 // LdapSettings LDAP 配置：扁平 camelCase，与前端 type 对齐。
 type LdapSettings struct {
-	Enabled           bool   `json:"enabled,omitempty"`
-	Server            string `json:"server,omitempty"`           // 如 ldap://host:389
-	BindUser          string `json:"bindUser,omitempty"`         // 绑定用户 DN
-	BindPassword      string `json:"bindPassword,omitempty"`     // 绑定密码
-	BaseOu            string `json:"baseOu,omitempty"`
-	SearchPageSize    int    `json:"searchPageSize,omitempty"`
-	FieldMapping      string `json:"fieldMapping,omitempty"`     // 字段映射 JSON
-	SyncEnabled       bool   `json:"syncEnabled,omitempty"`
-	SyncDefaultEnabled bool  `json:"syncDefaultEnabled,omitempty"`
-	SyncStrategy      string `json:"syncStrategy,omitempty"`     // incremental / full
-	ConflictStrategy  string `json:"conflictStrategy,omitempty"` // skip / overwrite / merge
+	Enabled            bool   `json:"enabled,omitempty"`
+	Server             string `json:"server,omitempty"`       // 如 ldap://host:389
+	BindUser           string `json:"bindUser,omitempty"`     // 绑定用户 DN
+	BindPassword       string `json:"bindPassword,omitempty"` // 绑定密码
+	BaseOu             string `json:"baseOu,omitempty"`
+	SearchPageSize     int    `json:"searchPageSize,omitempty"`
+	FieldMapping       string `json:"fieldMapping,omitempty"` // 字段映射 JSON
+	SyncEnabled        bool   `json:"syncEnabled,omitempty"`
+	SyncDefaultEnabled bool   `json:"syncDefaultEnabled,omitempty"`
+	SyncStrategy       string `json:"syncStrategy,omitempty"`     // incremental / full
+	ConflictStrategy   string `json:"conflictStrategy,omitempty"` // skip / overwrite / merge
 }
 
 // NotifySettings 通知渠道配置（阶段二启用）。
@@ -135,36 +135,36 @@ type NotifySettings struct {
 
 // EmailSettings 邮件配置：字段统一 camelCase（修复 main 的 MAIL_* 全大写）。
 type EmailSettings struct {
-	SmtpHost     string `json:"smtpHost,omitempty"`
-	SmtpPort     int    `json:"smtpPort,omitempty"`
-	SmtpServer   string `json:"smtpServer,omitempty"`
-	SmtpUser     string `json:"smtpUser,omitempty"`
-	SmtpPassword string `json:"smtpPassword,omitempty"`
-	SmtpSslTls   bool   `json:"smtpSslTls,omitempty"`
-	SmtpStarttls bool   `json:"smtpStarttls,omitempty"`
-	MailFrom     string `json:"mailFrom,omitempty"`
-	MailFromName string `json:"mailFromName,omitempty"`
-	ValidateCerts bool  `json:"validateCerts,omitempty"`
-	UseCredentials bool `json:"useCredentials,omitempty"`
+	SmtpHost       string `json:"smtpHost,omitempty"`
+	SmtpPort       int    `json:"smtpPort,omitempty"`
+	SmtpServer     string `json:"smtpServer,omitempty"`
+	SmtpUser       string `json:"smtpUser,omitempty"`
+	SmtpPassword   string `json:"smtpPassword,omitempty"`
+	SmtpSslTls     bool   `json:"smtpSslTls,omitempty"`
+	SmtpStarttls   bool   `json:"smtpStarttls,omitempty"`
+	MailFrom       string `json:"mailFrom,omitempty"`
+	MailFromName   string `json:"mailFromName,omitempty"`
+	ValidateCerts  bool   `json:"validateCerts,omitempty"`
+	UseCredentials bool   `json:"useCredentials,omitempty"`
 }
 
 // DiskSettings 网盘配置（网盘模块落地后消费）。
 type DiskSettings struct {
-	DiskName           string   `json:"diskName"`
-	DiskLogo           string   `json:"diskLogo,omitempty"`
-	MaxUploadSize      int      `json:"maxUploadSize,omitempty"`
-	AllowedExtensions  []string `json:"allowedExtensions,omitempty"`
-	BlockedExtensions  []string `json:"blockedExtensions,omitempty"`
-	TrashRetentionDays int      `json:"trashRetentionDays,omitempty"`
-	StorageQuota       int      `json:"storageQuota,omitempty"`
-	SyncEnabled        bool     `json:"syncEnabled,omitempty"`
-	ShareLinkPasswordRequired  bool `json:"shareLinkPasswordRequired,omitempty"`
-	ShareLinkPasswordMinLength int  `json:"shareLinkPasswordMinLength,omitempty"`
-	UploadLinkPasswordRequired  bool `json:"uploadLinkPasswordRequired,omitempty"`
-	UploadLinkPasswordMinLength int  `json:"uploadLinkPasswordMinLength,omitempty"`
-	OnlyOffice     *OnlyOfficeSettings     `json:"onlyOffice,omitempty"`
-	VideoTranscode *VideoTranscodeSettings `json:"videoTranscode,omitempty"`
-	Archive        *ArchiveSettings        `json:"archive,omitempty"`
+	DiskName                    string                  `json:"diskName"`
+	DiskLogo                    string                  `json:"diskLogo,omitempty"`
+	MaxUploadSize               int                     `json:"maxUploadSize,omitempty"`
+	AllowedExtensions           []string                `json:"allowedExtensions,omitempty"`
+	BlockedExtensions           []string                `json:"blockedExtensions,omitempty"`
+	TrashRetentionDays          int                     `json:"trashRetentionDays,omitempty"`
+	StorageQuota                int                     `json:"storageQuota,omitempty"`
+	SyncEnabled                 bool                    `json:"syncEnabled,omitempty"`
+	ShareLinkPasswordRequired   bool                    `json:"shareLinkPasswordRequired,omitempty"`
+	ShareLinkPasswordMinLength  int                     `json:"shareLinkPasswordMinLength,omitempty"`
+	UploadLinkPasswordRequired  bool                    `json:"uploadLinkPasswordRequired,omitempty"`
+	UploadLinkPasswordMinLength int                     `json:"uploadLinkPasswordMinLength,omitempty"`
+	OnlyOffice                  *OnlyOfficeSettings     `json:"onlyOffice,omitempty"`
+	VideoTranscode              *VideoTranscodeSettings `json:"videoTranscode,omitempty"`
+	Archive                     *ArchiveSettings        `json:"archive,omitempty"`
 }
 
 type OnlyOfficeSettings struct {

@@ -520,5 +520,63 @@ declare namespace Api {
       /** 创建者名称 */
       createByName: string;
     }>;
+
+    /** 系统设置：聚合配置（GET/PUT /system/setting 的请求与响应体） */
+    type Setting = {
+      general?: GeneralSettingConfig;
+      security?: SecuritySettingConfig;
+      // 阶段二扩展：authentication / ldap / notify / disk
+    };
+
+    /** 公开系统设置（登录页使用，脱敏） */
+    type PublicSetting = {
+      systemName: string;
+      systemDescription: string;
+      logoUrl: string;
+      faviconUrl: string;
+      enableVerifyCode: boolean;
+      verifyCodeType?: string;
+      verifyCodeLen?: number;
+      verifyCodeExp?: number;
+      verifyCodeTokenExp?: number;
+      verifyInaccuracy?: number;
+      enableWecom?: boolean;
+      enableWechat?: boolean;
+      enableGitee?: boolean;
+      enableGithub?: boolean;
+    };
+
+    /** 通用配置 */
+    type GeneralSettingConfig = {
+      systemName: string;
+      systemDescription: string;
+      logoUrl: string;
+      faviconUrl: string;
+      userDefaultPassword: string;
+      userDefaultRole: string | null;
+      enableVerifyCode: boolean;
+      verifyCodeType: string;
+      verifyCodeLen: number;
+      verifyCodeExp: number;
+      verifyCodeTokenExp: number;
+      verifyInaccuracy: number;
+      loginLogRetentionDays: number;
+      operationLogRetentionDays: number;
+    };
+
+    /** 安全配置 */
+    type SecuritySettingConfig = {
+      passwordMinLength: number;
+      passwordRequireUppercase: boolean;
+      passwordRequireLowercase: boolean;
+      passwordRequireDigit: boolean;
+      passwordRequireSpecial: boolean;
+      loginFailLockCount: number;
+      loginFailLockTime: number;
+      ipValidationEnabled: boolean;
+      ipValidationMode: string;
+      ipBlacklist: string;
+      ipWhitelist: string;
+    };
   }
 }

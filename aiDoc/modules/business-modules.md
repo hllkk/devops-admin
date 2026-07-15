@@ -45,3 +45,28 @@
 
 ### 公共资料库
 - 一键覆盖全员可见可下载，管理员不必逐人共享
+
+## 系统设置
+
+全局配置中心：键值对表 `sys_setting`（`name`=分类 + `value`=JSON 文本），按分类聚合读写，不随业务表扩张。登录页用公开接口读展示配置，管理员用 admin 接口读写完整配置。源实现搬运自 `main` 子模块（backend/frontend），已按项目规则重构。
+
+### 存储与接口
+- 表 `sys_setting`：雪花主键 + `OPS_MODEL` + `name`(唯一索引) + `value`(text) + `desc`，一个分类一行。
+- 聚合 DTO `SystemSettings`：`general` / `security` / `authentication` / `ldap` / `notify` / `disk` 六类指针，未配置返回 nil。
+- 接口（单数路径 `/system/setting/*`）：`GET /system/setting/public`（公开，脱敏子集）、`GET /system/setting`（admin 完整）、`PUT /system/setting`（admin 整体保存，事务内按分类 upsert）。统一 `{code,data,msg}`，code 字符串 `0000`/`0001`。
+- 鉴权分层：public 组（无需登录，登录页用）/ admin 组（JWT + RequireAdmin）。
+- 菜单与权限 seed：`source/system/sys_menu.go`（菜单 `system:setting:list` + 按钮 `system:setting:save` + 关联 Apis）；默认配置 seed：`source/system/sys_setting.go`（general + security），初始化向导写入。
+
+### 配置分类
+- **general** 通用：站点名称/描述/Logo/Favicon、默认用户密码/角色、验证码（类型/长度/过期/误差）、登录与操作日志保留天数。
+- **security** 安全：密码策略（最小长度/大小写/数字/特殊字符）、登录失败锁定（次数/时长）、IP 黑白名单。
+- **authentication** 认证（阶段二）：企业微信/微信/Gitee/GitHub 第三方登录；密钥类字段返回时脱敏。
+- **ldap**（阶段二）：扁平结构——服务器/绑定账号/基础 OU/同步策略；master 暂无 LDAP 后端。
+- **notify** 通知（阶段二）：邮件（SMTP），预留短信/飞书/Webhook。
+- **disk** 网盘（阶段二）：上传限制/配额/分享密码/OnlyOffice/转码/解压缩——**网盘存储总量上限配置在此**（见网盘模块·配额），网盘模块落地后消费。
+
+### 前端
+- 页面 `_admin/system/setting/index.vue`：左侧分类菜单 + 右侧表单，整体加载、整体保存（用 `??` 兜底，保留合法的 0/false）。
+- 当前进度：general + security 两个 Tab；auth/disk/ldap/notify 随对应模块落地再补（后端存储已就绪，只需加 module）。
+- logo/favicon 当前为 URL 输入，上传组件待阶段二。
+
