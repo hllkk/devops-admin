@@ -106,4 +106,9 @@ const isCollapse = breakpoints.smaller('lg');
 :deep(.n-layout-sider) {
   background-color: transparent;
 }
+
+:deep(.sider-layout-card-content) {
+  overflow: hidden;
+  min-height: 0;
+}
 </style>
