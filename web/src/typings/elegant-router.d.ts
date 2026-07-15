@@ -27,6 +27,7 @@ declare module "@elegant-router/types" {
     "init": "/init";
     "log": "/log";
     "log_loginlog": "/log/loginlog";
+    "log_operlog": "/log/operlog";
     "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat)?";
     "server": "/server";
     "social-callback": "/social-callback";
@@ -103,6 +104,7 @@ declare module "@elegant-router/types" {
     RouteKey,
     | "admin"
     | "log_loginlog"
+    | "log_operlog"
     | "system_dept"
     | "system_dict"
     | "system_menu"

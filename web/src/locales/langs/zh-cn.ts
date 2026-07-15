@@ -259,6 +259,7 @@ const local: App.I18n.Schema = {
     system_setting: '系统设置',
     log: '日志中心',
     log_loginlog: '登录日志',
+    log_operlog: '操作日志',
     disk: '网盘',
     server: '服务器管理',
     gateway: 'AI 网关',
@@ -566,6 +567,29 @@ const local: App.I18n.Schema = {
           component: { required: '请输入组件路径', invalid: '组件路径格式不正确' }
         }
       },
+      notice: {
+        title: '通知公告',
+        listTitle: '通知公告列表',
+        noticeTitle: '公告标题',
+        noticeType: '公告类型',
+        noticeContent: '公告内容',
+        status: '公告状态',
+        createByName: '创建者',
+        createTime: '创建时间',
+        addNotice: '新增通知公告',
+        editNotice: '编辑通知公告',
+        placeholder: {
+          noticeTitle: '请输入公告标题',
+          noticeType: '请选择公告类型'
+        },
+        form: {
+          noticeId: { required: '公告ID不能为空', invalid: '公告ID不能为空' },
+          noticeTitle: { required: '公告标题不能为空', invalid: '公告标题格式不正确' },
+          noticeType: { required: '公告类型不能为空', invalid: '公告类型不能为空' },
+          noticeContent: { required: '公告内容不能为空', invalid: '公告内容格式不正确' },
+          status: { required: '公告状态不能为空', invalid: '公告状态不能为空' }
+        }
+      },
       dept: {
         title: '部门',
         parentId: '父部门',
@@ -667,6 +691,71 @@ const local: App.I18n.Schema = {
           cssClass: { required: '请输入 CSS 类', invalid: 'CSS 类格式不正确' },
           dictSort: { required: '请输入字典排序', invalid: '字典排序不能为空' },
           remark: { required: '请输入备注', invalid: '备注格式不正确' }
+        }
+      }
+    },
+    log: {
+      loginlog: {
+        title: '登录日志',
+        listTitle: '登录日志列表',
+        detail: '登录信息详情',
+        userName: '用户账号',
+        ipaddr: '登录IP地址',
+        loginLocation: '登录地点',
+        deviceType: '设备类型',
+        browser: '浏览器类型',
+        os: '操作系统',
+        status: '登录状态',
+        loginTime: '登录时间',
+        accountInfo: '账号信息',
+        client: '客户端',
+        msg: '提示消息',
+        view: '详情',
+        unlock: '解锁',
+        confirmUnlock: '确认解锁用户 {userName} 吗？',
+        clean: '清空',
+        confirmClean: '是否确认清空所有登录日志数据项？',
+        confirmCleanButton: '确认清空',
+        cleanSuccess: '清空成功',
+        unlockSuccess: '解锁成功',
+        exportFileName: '登录日志记录',
+        placeholder: {
+          ipaddr: '请输入登录IP地址',
+          userName: '请输入用户账号',
+          status: '请选择登录状态'
+        }
+      },
+      operlog: {
+        title: '系统模块',
+        listTitle: '操作日志列表',
+        detail: '操作日志详情',
+        businessType: '操作类型',
+        operName: '操作人员',
+        operIp: '操作IP',
+        operLocation: '操作地点',
+        operId: '日志编号',
+        status: '操作状态',
+        operTime: '操作时间',
+        costTime: '消耗时间',
+        operInfo: '操作信息',
+        requestInfo: '请求信息',
+        operParam: '请求参数',
+        jsonResult: '返回参数',
+        errorMsg: '错误消息',
+        module: '模块',
+        request: '请求',
+        exportFileName: '操作日志',
+        view: '详情',
+        clean: '清空',
+        confirmClean: '是否确认清空所有操作日志数据项？',
+        confirmCleanButton: '确认清空',
+        cleanSuccess: '清空成功',
+        placeholder: {
+          title: '请输入系统模块',
+          businessType: '请选择操作类型',
+          operName: '请输入操作人员',
+          operIp: '请输入操作IP',
+          status: '请选择操作状态'
         }
       }
     }

@@ -801,6 +801,29 @@ declare namespace App {
               component: FormMsg;
             };
           };
+          notice: {
+            title: string;
+            listTitle: string;
+            noticeTitle: string;
+            noticeType: string;
+            noticeContent: string;
+            status: string;
+            createByName: string;
+            createTime: string;
+            addNotice: string;
+            editNotice: string;
+            placeholder: {
+              noticeTitle: string;
+              noticeType: string;
+            };
+            form: {
+              noticeId: FormMsg;
+              noticeTitle: FormMsg;
+              noticeType: FormMsg;
+              noticeContent: FormMsg;
+              status: FormMsg;
+            };
+          };
           dept: {
             title: string;
             parentId: string;
@@ -902,6 +925,71 @@ declare namespace App {
               cssClass: FormMsg;
               dictSort: FormMsg;
               remark: FormMsg;
+            };
+          };
+        };
+        log: {
+          loginlog: {
+            title: string;
+            listTitle: string;
+            detail: string;
+            userName: string;
+            ipaddr: string;
+            loginLocation: string;
+            deviceType: string;
+            browser: string;
+            os: string;
+            status: string;
+            loginTime: string;
+            accountInfo: string;
+            client: string;
+            msg: string;
+            view: string;
+            unlock: string;
+            confirmUnlock: string;
+            clean: string;
+            confirmClean: string;
+            confirmCleanButton: string;
+            cleanSuccess: string;
+            unlockSuccess: string;
+            exportFileName: string;
+            placeholder: {
+              ipaddr: string;
+              userName: string;
+              status: string;
+            };
+          };
+          operlog: {
+            title: string;
+            listTitle: string;
+            detail: string;
+            businessType: string;
+            operName: string;
+            operIp: string;
+            operLocation: string;
+            operId: string;
+            status: string;
+            operTime: string;
+            costTime: string;
+            operInfo: string;
+            requestInfo: string;
+            operParam: string;
+            jsonResult: string;
+            errorMsg: string;
+            module: string;
+            request: string;
+            exportFileName: string;
+            view: string;
+            clean: string;
+            confirmClean: string;
+            confirmCleanButton: string;
+            cleanSuccess: string;
+            placeholder: {
+              title: string;
+              businessType: string;
+              operName: string;
+              operIp: string;
+              status: string;
             };
           };
         };

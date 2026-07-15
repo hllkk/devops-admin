@@ -263,6 +263,7 @@ const local: App.I18n.Schema = {
     system_setting: 'System Setting',
     log: 'Log',
     log_loginlog: 'Login Log',
+    log_operlog: 'Operation Log',
     disk: 'Disk',
     server: 'Server',
     gateway: 'AI Gateway',
@@ -570,6 +571,29 @@ const local: App.I18n.Schema = {
           component: { required: 'Please enter the component path', invalid: 'Component path format is incorrect' }
         }
       },
+      notice: {
+        title: 'Notice',
+        listTitle: 'Notice List',
+        noticeTitle: 'Notice Title',
+        noticeType: 'Notice Type',
+        noticeContent: 'Notice Content',
+        status: 'Notice Status',
+        createByName: 'Creator',
+        createTime: 'Create Time',
+        addNotice: 'Add Notice',
+        editNotice: 'Edit Notice',
+        placeholder: {
+          noticeTitle: 'Please enter notice title',
+          noticeType: 'Please select notice type'
+        },
+        form: {
+          noticeId: { required: 'Notice ID cannot be empty', invalid: 'Notice ID cannot be empty' },
+          noticeTitle: { required: 'Notice title cannot be empty', invalid: 'Notice title format is incorrect' },
+          noticeType: { required: 'Notice type cannot be empty', invalid: 'Notice type cannot be empty' },
+          noticeContent: { required: 'Notice content cannot be empty', invalid: 'Notice content format is incorrect' },
+          status: { required: 'Notice status cannot be empty', invalid: 'Notice status cannot be empty' }
+        }
+      },
       dept: {
         title: 'Department',
         parentId: 'Parent Dept',
@@ -671,6 +695,71 @@ const local: App.I18n.Schema = {
           cssClass: { required: 'Please enter CSS class', invalid: 'Invalid CSS class' },
           dictSort: { required: 'Please enter dict sort', invalid: 'Dict sort cannot be empty' },
           remark: { required: 'Please enter remark', invalid: 'Invalid remark' }
+        }
+      }
+    },
+    log: {
+      loginlog: {
+        title: 'Login Log',
+        listTitle: 'Login Log List',
+        detail: 'Login Information Detail',
+        userName: 'User Account',
+        ipaddr: 'Login IP Address',
+        loginLocation: 'Login Location',
+        deviceType: 'Device Type',
+        browser: 'Browser Type',
+        os: 'Operating System',
+        status: 'Login Status',
+        loginTime: 'Login Time',
+        accountInfo: 'Account Info',
+        client: 'Client',
+        msg: 'Message',
+        view: 'View',
+        unlock: 'Unlock',
+        confirmUnlock: 'Confirm to unlock user {userName}?',
+        clean: 'Clear',
+        confirmClean: 'Are you sure you want to clear all login log entries?',
+        confirmCleanButton: 'Confirm Clear',
+        cleanSuccess: 'Cleared successfully',
+        unlockSuccess: 'Unlocked successfully',
+        exportFileName: 'Login_Log',
+        placeholder: {
+          ipaddr: 'Please enter login IP address',
+          userName: 'Please enter user account',
+          status: 'Please select login status'
+        }
+      },
+      operlog: {
+        title: 'System Module',
+        listTitle: 'Operation Log List',
+        detail: 'Operation Log Detail',
+        businessType: 'Operation Type',
+        operName: 'Operator',
+        operIp: 'Operation IP',
+        operLocation: 'Operation Location',
+        operId: 'Log ID',
+        status: 'Operation Status',
+        operTime: 'Operation Time',
+        costTime: 'Cost Time',
+        operInfo: 'Operation Info',
+        requestInfo: 'Request Info',
+        operParam: 'Request Params',
+        jsonResult: 'Response Result',
+        errorMsg: 'Error Message',
+        module: 'Module',
+        request: 'Request',
+        exportFileName: 'Operation_Log',
+        view: 'View',
+        clean: 'Clear',
+        confirmClean: 'Are you sure you want to clear all operation log entries?',
+        confirmCleanButton: 'Confirm Clear',
+        cleanSuccess: 'Cleared successfully',
+        placeholder: {
+          title: 'Please enter system module',
+          businessType: 'Please select operation type',
+          operName: 'Please enter operator name',
+          operIp: 'Please enter operation IP',
+          status: 'Please select operation status'
         }
       }
     }

@@ -5,7 +5,7 @@ import { useNaiveForm } from '@/hooks/common/form';
 import { $t } from '@/locales';
 
 defineOptions({
-  name: 'LoginLogSearch'
+  name: 'OperLogSearch'
 });
 
 interface Emits {
@@ -16,13 +16,13 @@ const emit = defineEmits<Emits>();
 
 const { formRef, validate, restoreValidation } = useNaiveForm();
 
-const model = defineModel<Api.Log.LoginLogSearchParams>('model', { required: true });
+const model = defineModel<Api.Log.OperLogSearchParams>('model', { required: true });
 
 const defaultModel = jsonClone(toRaw(model.value));
 
-const dateRangeLoginTime = ref<[string, string] | null>(null);
+const dateRangeOperTime = ref<[string, string] | null>(null);
 
-function onDateRangeLoginTimeUpdate(value: [string, string] | null) {
+function onDateRangeOperTimeUpdate(value: [string, string] | null) {
   model.value.params = {
     ...model.value.params,
     beginTime: value?.[0],
@@ -31,7 +31,7 @@ function onDateRangeLoginTimeUpdate(value: [string, string] | null) {
 }
 
 function resetModel() {
-  dateRangeLoginTime.value = null;
+  dateRangeOperTime.value = null;
   Object.assign(model.value, defaultModel);
 }
 
@@ -53,31 +53,42 @@ async function search() {
       <NCollapseItem :title="$t('common.search')" name="user-search">
         <NForm ref="formRef" :model="model" label-placement="left" :label-width="80">
           <NGrid responsive="screen" item-responsive>
-            <NFormItemGi span="24 s:12 m:6" :label="$t('page.log.loginlog.ipaddr')" path="ipaddr" class="pr-24px">
-              <NInput v-model:value="model.ipaddr" :placeholder="$t('page.log.loginlog.placeholder.ipaddr')" />
+            <NFormItemGi span="24 s:12 m:6" :label="$t('page.log.operlog.title')" path="title" class="pr-24px">
+              <NInput v-model:value="model.title" :placeholder="$t('page.log.operlog.placeholder.title')" />
             </NFormItemGi>
-            <NFormItemGi span="24 s:12 m:6" :label="$t('page.log.loginlog.userName')" path="userName" class="pr-24px">
-              <NInput v-model:value="model.userName" :placeholder="$t('page.log.loginlog.placeholder.userName')" />
+            <NFormItemGi span="24 s:12 m:6" :label="$t('page.log.operlog.businessType')" path="businessType" class="pr-24px">
+              <DictSelect
+                v-model:value="model.businessType"
+                :placeholder="$t('page.log.operlog.placeholder.businessType')"
+                dict-code="sys_oper_type"
+                clearable
+              />
             </NFormItemGi>
-            <NFormItemGi span="24 s:12 m:6" :label="$t('page.log.loginlog.status')" path="status" class="pr-24px">
+            <NFormItemGi span="24 s:12 m:6" :label="$t('page.log.operlog.operName')" path="operName" class="pr-24px">
+              <NInput v-model:value="model.operName" :placeholder="$t('page.log.operlog.placeholder.operName')" />
+            </NFormItemGi>
+            <NFormItemGi span="24 s:12 m:6" :label="$t('page.log.operlog.operIp')" path="operIp" class="pr-24px">
+              <NInput v-model:value="model.operIp" :placeholder="$t('page.log.operlog.placeholder.operIp')" />
+            </NFormItemGi>
+            <NFormItemGi span="24 s:12 m:8" :label="$t('page.log.operlog.status')" path="status" class="pr-24px">
               <DictSelect
                 v-model:value="model.status"
-                :placeholder="$t('page.log.loginlog.placeholder.status')"
+                :placeholder="$t('page.log.operlog.placeholder.status')"
                 dict-code="sys_common_status"
                 clearable
               />
             </NFormItemGi>
-            <NFormItemGi span="24 s:12 m:6" :label="$t('page.log.loginlog.loginTime')" path="loginTime" class="pr-24px">
+            <NFormItemGi span="24 s:12 m:8" :label="$t('page.log.operlog.operTime')" path="operTime" class="pr-24px">
               <NDatePicker
-                v-model:formatted-value="dateRangeLoginTime"
+                v-model:formatted-value="dateRangeOperTime"
                 type="datetimerange"
                 value-format="yyyy-MM-dd HH:mm:ss"
                 clearable
                 :default-time="['00:00:00', '23:59:59']"
-                @update:formatted-value="onDateRangeLoginTimeUpdate"
+                @update:formatted-value="onDateRangeOperTimeUpdate"
               />
             </NFormItemGi>
-            <NFormItemGi span="24" class="pr-24px">
+            <NFormItemGi span="24 s:12 m:8" class="pr-24px">
               <NSpace class="w-full" justify="end">
                 <NButton @click="reset">
                   <template #icon>

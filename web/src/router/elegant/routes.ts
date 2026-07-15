@@ -113,6 +113,17 @@ export const generatedRoutes: GeneratedRoute[] = [
           localIcon: 'menu-login_log',
           order: 1
         }
+      },
+      {
+        name: 'log_operlog',
+        path: '/log/operlog',
+        component: 'view.log_operlog',
+        meta: {
+          title: 'log_operlog',
+          i18nKey: 'route.log_operlog',
+          localIcon: 'menu-operate_log',
+          order: 2
+        }
       }
     ]
   },

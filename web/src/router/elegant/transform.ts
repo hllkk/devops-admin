@@ -173,6 +173,7 @@ const routeMap: RouteMap = {
   "init": "/init",
   "log": "/log",
   "log_loginlog": "/log/loginlog",
+  "log_operlog": "/log/operlog",
   "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat)?",
   "server": "/server",
   "social-callback": "/social-callback",

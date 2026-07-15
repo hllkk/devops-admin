@@ -63,13 +63,13 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       },
       {
         key: 'userName',
-        title: '用户账号',
+        title: $t('page.log.loginlog.userName'),
         align: 'center',
         minWidth: 120
       },
       {
         key: 'deviceType',
-        title: '设备类型',
+        title: $t('page.log.loginlog.deviceType'),
         align: 'center',
         minWidth: 120,
         render: row => {
@@ -78,19 +78,19 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       },
       {
         key: 'ipaddr',
-        title: '登录IP地址',
+        title: $t('page.log.loginlog.ipaddr'),
         align: 'center',
         minWidth: 120
       },
       {
         key: 'loginLocation',
-        title: '登录地点',
+        title: $t('page.log.loginlog.loginLocation'),
         align: 'center',
         minWidth: 120
       },
       {
         key: 'browser',
-        title: '浏览器类型',
+        title: $t('page.log.loginlog.browser'),
         align: 'center',
         minWidth: 120,
         render: row => {
@@ -104,7 +104,7 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       },
       {
         key: 'os',
-        title: '操作系统',
+        title: $t('page.log.loginlog.os'),
         align: 'center',
         ellipsis: {
           tooltip: true
@@ -122,7 +122,7 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       },
       {
         key: 'status',
-        title: '登录状态',
+        title: $t('page.log.loginlog.status'),
         align: 'center',
         minWidth: 120,
         render: row => {
@@ -131,7 +131,7 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       },
       {
         key: 'loginTime',
-        title: '访问时间',
+        title: $t('page.log.loginlog.loginTime'),
         align: 'center',
         ellipsis: {
           tooltip: true
@@ -150,7 +150,7 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
                 type="primary"
                 text
                 icon="material-symbols:visibility-outline"
-                tooltipContent="详情"
+                tooltipContent={$t('page.log.loginlog.view')}
                 onClick={() => view(row.infoId!)}
               />
             );
@@ -164,8 +164,8 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
                   type="primary"
                   text
                   icon="material-symbols:lock-open-outline"
-                  tooltipContent="解锁"
-                  popconfirmContent={`确认解锁用户 ${row.userName} 吗？`}
+                  tooltipContent={$t('page.log.loginlog.unlock')}
+                  popconfirmContent={$t('page.log.loginlog.confirmUnlock', { userName: row.userName })}
                   onPositiveClick={() => handleUnlockLoginLog(row.userName!)}
                 />
               </>
@@ -200,19 +200,19 @@ async function view(infoId: CommonType.IdType) {
 }
 
 async function handleExport() {
-  download('/monitor/loginlog/export', searchParams.value, `登录日志记录_${new Date().getTime()}.xlsx`);
+  download('/monitor/loginlog/export', searchParams.value, `${$t('page.log.loginlog.exportFileName')}_${new Date().getTime()}.xlsx`);
 }
 
 async function handleCleanLoginLog() {
   window.$dialog?.error({
-    title: '提示',
-    content: '是否确认清空所有登录日志数据项?',
-    positiveText: '确认清空',
-    negativeText: '取消',
+    title: $t('common.tip'),
+    content: $t('page.log.loginlog.confirmClean'),
+    positiveText: $t('page.log.loginlog.confirmCleanButton'),
+    negativeText: $t('common.cancel'),
     onPositiveClick: async () => {
       const { error } = await fetchCleanLoginLog();
       if (error) return;
-      window.$message?.success('清空成功');
+      window.$message?.success($t('page.log.loginlog.cleanSuccess'));
       await getData();
     }
   });
@@ -221,7 +221,7 @@ async function handleCleanLoginLog() {
 async function handleUnlockLoginLog(username: string) {
   const { error } = await fetchUnlockLoginLog(username);
   if (error) return;
-  window.$message?.success('解锁成功');
+  window.$message?.success($t('page.log.loginlog.unlockSuccess'));
   await getDataByPage();
 }
 </script>
@@ -229,7 +229,7 @@ async function handleUnlockLoginLog(username: string) {
 <template>
   <div class="min-h-500px flex-col-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
     <LoginLogSearch v-model:model="searchParams" @search="getDataByPage" />
-    <NCard title="登录日志列表" :bordered="false" size="small" class="card-wrapper sm:flex-1-hidden">
+    <NCard :title="$t('page.log.loginlog.listTitle')" :bordered="false" size="small" class="card-wrapper sm:flex-1-hidden">
       <template #header-extra>
         <TableHeaderOperation
           v-model:columns="columnChecks"
@@ -253,7 +253,7 @@ async function handleUnlockLoginLog(username: string) {
               <template #icon>
                 <icon-material-symbols-warning-outline-rounded />
               </template>
-              清空
+              {{ $t('page.log.loginlog.clean') }}
             </NButton>
           </template>
         </TableHeaderOperation>
