@@ -11,15 +11,15 @@ import (
 	"github.com/hllkk/devops-admin/server/utils"
 	"github.com/hllkk/devops-admin/server/utils/snowflake"
 
+	"github.com/joho/godotenv"
 	"github.com/songzhibin97/gkit/cache/local_cache"
 	"go.uber.org/zap"
 )
 
-// insecureDefaultJWTKey 为 conf/config.yaml 中的开发默认密钥（可能随仓库公开，生产环境禁止使用）。
-// 启动校验会拒绝生产环境继续使用该密钥，强制通过环境变量 JWT_SIGNING_KEY 注入。
-const insecureDefaultJWTKey = "2aa81975-ecfd-44bd-817b-809152efaafb"
-
 func OtherInit() {
+	// 载入 .env（仓库不跟踪，本地/部署专用）到进程环境变量；文件缺失不阻断、不覆盖已存在的系统环境变量
+	loadEnvFile()
+
 	// 应用环境变量覆盖（JWT/MySQL/Redis 等敏感项）
 	// viper.AutomaticEnv 对 Unmarshal 不可靠，故在此手写覆盖，确保生产环境经环境变量注入的真实值生效
 	applyEnvOverrides()
@@ -69,18 +69,18 @@ func requireDuration(field, value string) {
 }
 
 // validateProductionSecurity 生产环境（GIN_MODE=release）强制安全配置：
-//   - JWT 密钥不得为已泄露的开发默认值或短于 32 字符；
+//   - JWT 密钥长度不足 32 字符时拒绝启动（真实密钥应通过 .env / 环境变量注入）；
 //   - 加密密钥应独立于 JWT 密钥；
 //   - 未配置 TrustedProxies 时提醒。
 func validateProductionSecurity() {
 	isRelease := os.Getenv("GIN_MODE") == "release"
 
-	// JWT 密钥校验
-	if key := global.OPS_CONFIG.JWT.SigningKey; key == insecureDefaultJWTKey || len(key) < 32 {
+	// JWT 密钥强度校验：短于 32 字符视为弱密钥（config.yaml 的占位符亦在此列）
+	if len(global.OPS_CONFIG.JWT.SigningKey) < 32 {
 		if isRelease {
-			zap.L().Fatal("生产环境必须设置环境变量 JWT_SIGNING_KEY（至少 32 字符，禁止使用配置文件默认密钥）")
+			zap.L().Fatal("生产环境必须通过 .env 或环境变量 JWT_SIGNING_KEY 注入至少 32 字符的随机密钥")
 		}
-		zap.L().Warn("正在使用配置文件默认/弱密钥，生产环境请设置环境变量 JWT_SIGNING_KEY")
+		zap.L().Warn("JWT 密钥短于 32 字符（疑似未配置），请通过 .env 或环境变量 JWT_SIGNING_KEY 注入随机密钥")
 	}
 
 	// 加密密钥校验 — 生产环境应独立设置 SECRET_ENCRYPT_KEY
@@ -101,6 +101,17 @@ func validateProductionSecurity() {
 	if isRelease && len(global.OPS_CONFIG.System.TrustedProxies) == 0 {
 		zap.L().Warn("生产环境未配置 TRUSTED_PROXIES，ClientIP 将取直连 RemoteAddr；反向代理部署时请配置内网网段以正确解析真实客户端 IP")
 	}
+}
+
+// loadEnvFile 载入工作目录下的 .env 到进程环境变量。
+// 文件缺失不阻断启动（生产可由系统环境变量注入，开发可不使用 .env）；
+// 不覆盖已存在的系统环境变量（系统级配置优先于 .env 文件）。
+func loadEnvFile() {
+	if err := godotenv.Load(); err != nil {
+		fmt.Println("[env] .env 未找到或读取失败，回退到 config.yaml + 系统环境变量")
+		return
+	}
+	fmt.Println("[env] 已从 .env 加载环境变量（不覆盖已存在的系统环境变量）")
 }
 
 // applyEnvOverrides 用环境变量覆盖敏感配置项（仅当对应 env 非空时覆盖，保留配置文件回退）。
@@ -146,7 +157,7 @@ func applyEnvOverrides() {
 	// 可信反代列表（逗号分隔 CIDR/IP）
 	if v := os.Getenv("TRUSTED_PROXIES"); v != "" {
 		tp := make([]string, 0, 4)
-		for _, p := range strings.Split(v, ",") {
+		for p := range strings.SplitSeq(v, ",") {
 			if s := strings.TrimSpace(p); s != "" {
 				tp = append(tp, s)
 			}

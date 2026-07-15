@@ -98,7 +98,9 @@ export const generatedRoutes: GeneratedRoute[] = [
     component: 'layout.base',
     meta: {
       title: 'log',
-      i18nKey: 'route.log'
+      i18nKey: 'route.log',
+      localIcon: 'menu-log',
+      order: 3
     },
     children: [
       {
@@ -107,7 +109,9 @@ export const generatedRoutes: GeneratedRoute[] = [
         component: 'view.log_loginlog',
         meta: {
           title: 'log_loginlog',
-          i18nKey: 'route.log_loginlog'
+          i18nKey: 'route.log_loginlog',
+          localIcon: 'menu-login_log',
+          order: 1
         }
       }
     ]

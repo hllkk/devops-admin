@@ -27,9 +27,10 @@ const { loading: captchaLoading, startLoading: startCaptchaLoading, endLoading: 
 const registerEnabled = ref<boolean>(false);
 const remberMe = ref<boolean>(false);
 
+// 仅开发模式预填初始账号便于联调；生产构建（import.meta.env.DEV=false）经死代码消除后为空，避免登录页预填弱口令
 const model: Api.Auth.PwdLoginForm = reactive({
-  username: 'admin',
-  password: 'admin123'
+  username: import.meta.env.DEV ? 'admin' : '',
+  password: import.meta.env.DEV ? 'admin123' : ''
 });
 
 // ===== go-captcha 行为验证码状态 =====
@@ -159,7 +160,7 @@ async function handleSocialLogin(type: Api.System.SocialSource) {
 </script>
 
 <template>
-  <div>
+  <div class="mt-25">
     <div class="mb-5px text-32px text-black font-600 dark:text-white">登录到您的账户</div>
     <div class="pb-18px text-16px text-#858585">欢迎回来！请输入您的账户信息</div>
     <NForm

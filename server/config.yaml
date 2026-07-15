@@ -70,8 +70,8 @@ email:
 excel:
     dir: ./resource/excel/
 jwt:
-    signing-key: ecaef614-3316-4359-baf7-e53cdeb4af4f
-    expires-time: 7d
+    signing-key: change-me-in-.env # 开发占位符（<32 字符会触发弱密钥提示）；正式密钥请通过 .env / 环境变量 JWT_SIGNING_KEY 注入
+    expires-time: 2h
     refresh-ex-time: 168h
     buffer-time: 1d
     issuer: qmPlus

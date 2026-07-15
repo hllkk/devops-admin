@@ -15,6 +15,7 @@ require (
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/google/uuid v1.6.0
 	github.com/gookit/color v1.6.1
+	github.com/joho/godotenv v1.5.1
 	github.com/mark3labs/mcp-go v0.56.0
 	github.com/pkg/errors v0.9.1
 	github.com/qiniu/qmgo v1.1.10
