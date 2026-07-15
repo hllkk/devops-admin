@@ -117,50 +117,48 @@ onMounted(() => {
 </script>
 
 <template>
-  <div>
-    <div class="h-full overflow-hidden">
-      <!-- Mobile layout -->
-      <template v-if="isMobile">
-        <NCard :bordered="false" class="card-wrapper h-full">
-          <NCollapse>
-            <NCollapseItem name="menu" title="配置选项">
-              <SettingMenu v-model:active-key="activeKey" :menu-items="menuItems" />
-            </NCollapseItem>
-          </NCollapse>
-          <NDivider class="my-12px" />
-          <div class="flex justify-between items-center mb-16px">
-            <div class="text-16px font-600">{{ currentTitle }}</div>
-            <NButton v-if="hasAuth('system:setting:save')" type="primary" :loading="loading" class="dark:text-white" @click="handleSave">保存</NButton>
-          </div>
-          <div class="overflow-auto setting-mobile-content">
+  <div class="h-full overflow-hidden">
+    <!-- Mobile layout -->
+    <template v-if="isMobile">
+      <NCard :bordered="false" class="card-wrapper h-full">
+        <NCollapse>
+          <NCollapseItem name="menu" title="配置选项">
+            <SettingMenu v-model:active-key="activeKey" :menu-items="menuItems" />
+          </NCollapseItem>
+        </NCollapse>
+        <NDivider class="my-12px" />
+        <div class="flex justify-between items-center mb-16px">
+          <div class="text-16px font-600">{{ currentTitle }}</div>
+          <NButton v-if="hasAuth('system:setting:save')" type="primary" :loading="loading" class="dark:text-white" @click="handleSave">保存</NButton>
+        </div>
+        <div class="overflow-auto setting-mobile-content">
+          <GeneralSetting v-if="activeKey === 'general'" v-model:config="config.general" />
+          <SecuritySetting v-else-if="activeKey === 'security'" v-model:config="config.security" />
+        </div>
+      </NCard>
+    </template>
+    <!-- Desktop layout -->
+    <template v-else>
+      <div class="h-full flex flex-row">
+        <div class="h-full w-1/5 flex-none min-h-0 overflow-y-auto">
+          <SettingMenu v-model:active-key="activeKey" :menu-items="menuItems" />
+        </div>
+        <NCard :bordered="false" class="card-wrapper ml-4 h-full flex-1 flex flex-col min-h-0" content-scrollable>
+          <template #header>
+            <div class="flex items-center justify-between">
+              <span class="text-16px font-600">{{ currentTitle }}</span>
+              <NButton v-if="hasAuth('system:setting:save')" type="primary" :loading="loading" @click="handleSave">
+                {{ $t('page.system.setting.save') }}
+              </NButton>
+            </div>
+          </template>
+          <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1">
             <GeneralSetting v-if="activeKey === 'general'" v-model:config="config.general" />
             <SecuritySetting v-else-if="activeKey === 'security'" v-model:config="config.security" />
           </div>
         </NCard>
-      </template>
-      <!-- Desktop layout -->
-      <template v-else>
-        <div class="h-full flex flex-row">
-          <div class="h-full w-1/5 flex-none">
-            <SettingMenu v-model:active-key="activeKey" :menu-items="menuItems" />
-          </div>
-          <NCard :bordered="false" class="card-wrapper ml-4 h-full flex-1 flex flex-col" :content-style="{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }">
-            <template #header>
-              <div class="flex items-center justify-between">
-                <span class="text-16px font-600">{{ currentTitle }}</span>
-                <NButton v-if="hasAuth('system:setting:save')" type="primary" :loading="loading" @click="handleSave">
-                  {{ $t('page.system.setting.save') }}
-                </NButton>
-              </div>
-            </template>
-            <div class="setting-content flex-1 overflow-y-auto overflow-x-hidden pr-1">
-              <GeneralSetting v-if="activeKey === 'general'" v-model:config="config.general" />
-              <SecuritySetting v-else-if="activeKey === 'security'" v-model:config="config.security" />
-            </div>
-          </NCard>
-        </div>
-      </template>
-    </div>
+      </div>
+    </template>
   </div>
 </template>
 
