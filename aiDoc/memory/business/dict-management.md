@@ -1,6 +1,6 @@
 # 字典管理（Dict Management）
 
-> 类型：业务模块需求 · 状态：前端已就绪，后端整体缺失（用户于 2026-07-13 决定后端延后单独规划）
+> 类型：业务模块需求 · 状态：前端已就绪，后端 Model 已落地（service/api/router/seed 待补）
 
 ## 需求
 
@@ -16,13 +16,16 @@
 - 复用组件：`TableSiderLayout`、`TableRowCheckAlert`、`TableHeaderOperation`、`DictTag`、`DictRadio`、`ButtonIcon`；hooks `useDict`、`useDownload`、`useAuth`；util `handleCopy`。
 - i18n：`page.system.dict` 全量（zh/en + `app.d.ts` 声明）齐全。权限码 `system:dict:add/edit/remove/export`（list 隐含）。
 
-## 后端（缺失，延后）
+## 后端（Model 已落地，接口待补）
 
-> 用户决定：后端先跳过，后续再单独规划补齐。
-
-- 目前后端**无任何字典代码**：无 `SysDictType/SysDictData` 模型、无 service/api/router。`/system/dict/type/*`、`/system/dict/data/*` 接口均未实现。
-- 菜单/权限种子亦未做：`server/source/` 为空，`RegisterInit` 从未被调用，`sys_menu` 无 `system:dict:*` 记录。
-- 用户原话「后端的菜单模型定义」经澄清 = 延后；后续可参照 [[menu-management]] 文档里 `menu.go 初始化种子：默认菜单与权限` 的规划，补字典模块的菜单+按钮权限种子。
+- **2026-07-15 model 落地**：新增 `SysDictType`（`sys_dict_type`）、`SysDictData`（`sys_dict_data`）两个模型，对齐前端 `Api.System.DictType/DictData`，已注册进 `initialize/gorm.go` 的 `RegisterTables`（AutoMigrate），`go build ./...` 通过。
+- 字段决策（严格对齐前端类型）：
+  - 两表**均无 status**——前端 `DictType/DictData` 及 operate/search params 均未含（区别于 RuoYi 标准）。
+  - `dict_type`：类型表 `uniqueIndex:uk_dict_type`（`/data/type/{dictType}` 查询键），数据表普通 `index:idx_dict_data_type`。
+  - `isDefault`→`string`(Y/N)；`listClass`→`string`(ThemeColor)；`isI18n`→`bool` 预留；`createDept` 不建（前端 CommonRecord 残留，同 SysPost 不建 tenantId）。
+  - 基座 `OPS_AUDIT_MODEL`，主键 `dictId/dictCode` 雪花 `int64` + `json:",string"`。
+- 仍未实现：service/api/router（`/system/dict/type/*`、`/system/dict/data/*`）、菜单/权限种子（`server/source/` 无 `system:dict:*`）。
+- 后续可参照 [[menu-management]] 文档里 `menu.go 初始化种子：默认菜单与权限` 的规划，补字典模块的菜单+按钮权限种子。
 
 ## 本次（2026-07-13）前端补齐
 
@@ -39,4 +42,5 @@
 ## 相关文件
 
 - 前端：`web/src/views/_admin/system/dict/`、`web/src/service/api/system/{dict,dict-data}.ts`、`web/src/typings/api/system.api.d.ts`、`web/src/locales/langs/{zh-cn,en-us}.ts`、`web/src/typings/app.d.ts`
+- 后端 model：`server/model/system/sys_dict_type.go`、`server/model/system/sys_dict_data.go`、`server/initialize/gorm.go`（RegisterTables）
 - 关联：[[menu-management]]（菜单+权限种子规划参考）

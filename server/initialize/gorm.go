@@ -52,6 +52,8 @@ func RegisterTables() {
 		system.SysRoleMenu{},
 		system.SysLoginLog{},
 		system.SysSetting{},
+		system.SysDictType{},
+		system.SysDictData{},
 	)
 	if err != nil {
 		global.OPS_LOG.Error("register table failed", zap.Error(err))
