@@ -6,6 +6,7 @@ import GeneralSetting from './modules/general-setting.vue';
 import SecuritySetting from './modules/security-setting.vue';
 import { useAuth } from '@/hooks/business/auth';
 import { fetchGetSetting, fetchUpdateSetting } from '@/service/api/system/setting';
+import { useAppStore } from '@/store/modules/app/index.js';
 
 defineOptions({ name: 'SystemSetting' });
 
@@ -21,6 +22,7 @@ interface SettingForm {
 
 const loading = ref(false);
 const activeKey = ref<SettingKey>('general');
+const isMobile = computed(() => useAppStore().isMobile);
 
 const config = ref<SettingForm>({
   general: {
@@ -124,34 +126,57 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col gap-12px lg:flex-row">
-    <!-- 左侧菜单 -->
-    <div class="h-full flex-none lg:w-220px">
-      <NCard :bordered="false" class="h-full card-wrapper">
-        <SettingMenu v-model:active-key="activeKey" />
-      </NCard>
-    </div>
+  <div>
+    <div class="h-full overflow-hidden">
+      <!-- Mobile layout -->
+      <template v-if="isMobile">
+        <NCard :bordered="false" class="card-wrapper h-full">
+          <NCollapse>
+            <NCollapseItem name="menu" title="配置选项">
+              <SettingMenu v-model:active-key="activeKey" />
+            </NCollapseItem>
+          </NCollapse>
 
-    <!-- 右侧内容 -->
-    <NCard :bordered="false" class="h-full flex-1 card-wrapper">
-      <template #header>
-        <div class="flex items-center justify-between">
-          <span class="text-16px font-600">{{ currentTitle }}</span>
-          <NButton v-if="hasAuth('system:setting:save')" type="primary" :loading="loading" @click="handleSave">
-            {{ $t('page.system.setting.save') }}
-          </NButton>
+          <NDivider style="margin: 12px 0" />
+          <div class="flex justify-between items-center mb-16px">
+            <div class="text-16px font-600">{{ currentTitle }}</div>
+            <NButton v-if="hasAuth('system:setting:save')" type="primary" :loading="loading" class="dark:text-white" @click="handleSave">保存</NButton>
+          </div>
+
+          <div class="overflow-auto" style="height: calc(100% - 180px)">
+            <GeneralSetting v-if="activeKey === 'general'" v-model:config="config.general" />
+            <SecuritySetting v-else-if="activeKey === 'security'" v-model:config="config.security" />
+          </div>
+        </NCard>
+      </template>
+      <!-- Desktop layout -->
+      <template v-else>
+        <div class="h-full flex flex-row">
+          <!-- 左侧菜单 -->
+          <div class="h-full w-1/5 flex-none">
+            <SettingMenu v-model:active-key="activeKey" />
+          </div>
+          <!-- 右侧内容 -->
+          <NCard :bordered="false" class="card-wrapper ml-4 h-full flex-1 flex flex-col" :content-style="{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }">
+            <template #header>
+              <div class="flex items-center justify-between">
+                <span class="text-16px font-600">{{ currentTitle }}</span>
+                <NButton v-if="hasAuth('system:setting:save')" type="primary" :loading="loading" @click="handleSave">
+                  {{ $t('page.system.setting.save') }}
+                </NButton>
+              </div>
+            </template>
+            <div class="setting-content flex-1 overflow-y-auto overflow-x-hidden pr-1">
+              <GeneralSetting v-if="activeKey === 'general'" v-model:config="config.general" />
+              <SecuritySetting v-else-if="activeKey === 'security'" v-model:config="config.security" />
+            </div>
+          </NCard>
         </div>
       </template>
-      <div class="overflow-auto pr-8px">
-        <GeneralSetting v-if="activeKey === 'general'" v-model:config="config.general" />
-        <SecuritySetting v-else-if="activeKey === 'security'" v-model:config="config.security" />
-      </div>
-    </NCard>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.card-wrapper {
-  border-radius: 8px;
-}
+
 </style>

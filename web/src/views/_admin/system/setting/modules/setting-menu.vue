@@ -38,12 +38,20 @@ function handleSelect(key: string) {
 </script>
 
 <template>
-  <div class="h-full flex flex-col gap-8px">
+  <DarkModeContainer class="h-full flex flex-col rounded-md gap-2 p-2">
     <div
       v-for="item in menuItems"
       :key="item.key"
-      class="flex cursor-pointer items-center gap-12px rounded-6px p-12px transition-all"
-      :class="props.activeKey === item.key ? 'bg-primary-100 dark:bg-primary-500/20' : 'hover:bg-layout'"
+      class="ml-0 flex flex-none flex-row cursor-pointer items-center justify-start rounded-md bg-container p-4 transition-all duration-200 ease-in-out space-x-2 active:bg-primary-100 hover:bg-primary-50 dark:active:bg-primary-800/30 dark:hover:bg-primary-900/20"
+      :class="[
+        props.activeKey === item.key
+          ? [
+            'border-solid border-0 rounded-r-none border-r-3 border-primary-600',
+            'bg-gradient-to-r from-primary-200/80 to-primary-100/60',
+            'dark:border-primary-400 dark:from-primary-800/60 dark:to-primary-900/40',
+            'shadow-sm']
+          : 'border-transparent'
+      ]"
       @click="handleSelect(item.key)"
     >
       <SvgIcon
@@ -51,15 +59,15 @@ function handleSelect(key: string) {
         class="text-28px"
         :class="props.activeKey === item.key ? 'text-primary' : 'text-icon'"
       />
-      <div class="flex flex-1 flex-col gap-2px">
+      <div class="flex flex-col flex-1 space-y-1">
         <span
-          class="text-14px font-500"
-          :class="props.activeKey === item.key ? 'text-primary' : 'text-primary-text'"
+          class="select-none font-semibold transition-colors"
+          :class="props.activeKey === item.key ? 'text-primary-800 dark:text-primary-200' : 'text-base-text'"
         >
           {{ item.label }}
         </span>
-        <span class="text-12px text-secondary-text">{{ item.desc }}</span>
+        <span class="select-none text-xs transition-colors" :class="[props.activeKey === item.key ? 'text-primary-700/80 dark:text-primary-300/80' : 'text-base-text/70 opacity-75']">{{ item.desc }}</span>
       </div>
     </div>
-  </div>
+  </DarkModeContainer>
 </template>
