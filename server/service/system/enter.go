@@ -7,4 +7,5 @@ type ServiceGroup struct {
 	UserService
 	CaptchaService
 	LoginLogService
+	SettingService
 }

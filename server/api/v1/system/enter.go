@@ -6,6 +6,7 @@ type ApiGroup struct {
 	DBApi
 	BaseApi
 	LoginLogApi
+	SettingApi
 }
 
 var (
@@ -13,4 +14,5 @@ var (
 	userService     = service.ServiceGroupApp.SystemServiceGroup.UserService
 	captchaService  = service.ServiceGroupApp.SystemServiceGroup.CaptchaService
 	loginLogService = service.ServiceGroupApp.SystemServiceGroup.LoginLogService
+	settingService  = service.ServiceGroupApp.SystemServiceGroup.SettingService
 )

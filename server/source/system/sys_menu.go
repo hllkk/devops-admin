@@ -88,6 +88,10 @@ func (i *initMenu) InitializeData(ctx context.Context) (context.Context, error) 
 		{MenuId: 1502, ParentId: 1500, MenuName: "修改", MenuType: "F", Perms: "system:post:edit", OrderNum: 2, Status: "0"},
 		{MenuId: 1503, ParentId: 1500, MenuName: "删除", MenuType: "F", Perms: "system:post:remove", OrderNum: 3, Status: "0"},
 		{MenuId: 1504, ParentId: 1500, MenuName: "导出", MenuType: "F", Perms: "system:post:export", OrderNum: 4, Status: "0"},
+		// C 系统设置 + 1 F
+		{MenuId: 1600, ParentId: 100, MenuName: "系统设置", MenuType: "C", Path: "setting", Component: "_admin/system/setting/index", Perms: "system:setting:list", OrderNum: 6, Visible: "0", Status: "0",
+			Apis: apis([2]string{"/system/setting", "GET"}, [2]string{"/system/setting/public", "GET"}, [2]string{"/system/setting", "PUT"})},
+		{MenuId: 1601, ParentId: 1600, MenuName: "保存", MenuType: "F", Perms: "system:setting:save", OrderNum: 1, Status: "0"},
 	}
 	if err := db.Create(&entities).Error; err != nil {
 		return ctx, fmt.Errorf("%s 表数据初始化失败: %w", i.InitializerName(), err)
