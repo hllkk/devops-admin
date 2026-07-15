@@ -27,10 +27,13 @@ func GetToken(c *gin.Context) (string, error) {
 }
 
 // RequestIsSecure 判断请求是否经 HTTPS 传输，用于动态决定 cookie 的 Secure 标志。
-// 优先 X-Forwarded-Proto（多层反代反映浏览器真实协议），回退 c.Request.TLS。
+// 仅在配置可信代理（trusted-proxies）时信任 X-Forwarded-Proto，与 ClientIP 的代理信任策略保持一致；
+// 未配置时回退 c.Request.TLS，避免伪造该头绕过判断。
 func RequestIsSecure(c *gin.Context) bool {
-	if proto := c.GetHeader("X-Forwarded-Proto"); proto != "" {
-		return strings.EqualFold(proto, "https")
+	if len(global.OPS_CONFIG.System.TrustedProxies) > 0 {
+		if proto := c.GetHeader("X-Forwarded-Proto"); proto != "" {
+			return strings.EqualFold(proto, "https")
+		}
 	}
 	return c.Request.TLS != nil
 }
@@ -104,4 +107,3 @@ func GetUserName(c *gin.Context) string {
 	}
 	return ""
 }
-

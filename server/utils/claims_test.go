@@ -6,6 +6,9 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/hllkk/devops-admin/server/config"
+	"github.com/hllkk/devops-admin/server/global"
 )
 
 func newContext(req *http.Request) *gin.Context {
@@ -53,14 +56,26 @@ func TestGetTokenMissing(t *testing.T) {
 }
 
 func TestRequestIsSecure(t *testing.T) {
+	// 保存并恢复全局配置，避免污染同包其他测试
+	orig := global.OPS_CONFIG
+	defer func() { global.OPS_CONFIG = orig }()
+
+	// 未配置可信代理：不信任 X-Forwarded-Proto，回退 c.Request.TLS（此处无 TLS → false）
+	global.OPS_CONFIG = config.Server{}
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	req.Header.Set("X-Forwarded-Proto", "https")
+	if RequestIsSecure(newContext(req)) {
+		t.Fatal("未配置可信代理时不应信任 X-Forwarded-Proto")
+	}
+
+	// 配置可信代理：信任 X-Forwarded-Proto
+	global.OPS_CONFIG.System.TrustedProxies = []string{"127.0.0.1"}
 	if !RequestIsSecure(newContext(req)) {
-		t.Fatal("X-Forwarded-Proto=https 应判定 secure")
+		t.Fatal("配置可信代理后 X-Forwarded-Proto=https 应判定 secure")
 	}
 	req2 := httptest.NewRequest(http.MethodGet, "/", nil)
 	req2.Header.Set("X-Forwarded-Proto", "http")
 	if RequestIsSecure(newContext(req2)) {
-		t.Fatal("X-Forwarded-Proto=http 应判定非 secure")
+		t.Fatal("配置可信代理时 X-Forwarded-Proto=http 应判定非 secure")
 	}
 }

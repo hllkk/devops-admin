@@ -3,6 +3,7 @@ package initialize
 import (
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -43,9 +44,12 @@ func Routers() *gin.Engine {
 		if err := Router.SetTrustedProxies(tp); err != nil {
 			global.OPS_LOG.Error("SetTrustedProxies 失败，回退为不信任任何代理: " + err.Error())
 			_ = Router.SetTrustedProxies(nil)
+		} else {
+			global.OPS_LOG.Info("已配置可信代理，ClientIP 将从可信链路解析: " + strings.Join(tp, ","))
 		}
 	} else {
 		_ = Router.SetTrustedProxies(nil)
+		global.OPS_LOG.Info("未配置可信代理（trusted-proxies 为空），ClientIP=直连 RemoteAddr；反代部署请配置内网网段以正确解析真实客户端 IP")
 	}
 
 	// 使用自定义的 Recovery 中间件，记录 panic 并入库
