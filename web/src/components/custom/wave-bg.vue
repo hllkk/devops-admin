@@ -17,51 +17,66 @@ function toggleThemeScheme() {
 
 <template>
   <div class="wave-bg">
-    <!-- 几何装饰元素 -->
-    <div class="geometric-decorations">
+    <!--
+      装饰色体系：通过 CSS 自定义属性统一管理，亮色基于 --primary 色板，
+      暗黑模式使用显式色值，避免色板翻转导致对比度不足。
+    -->
+    <div
+      class="geometric-decorations"
+      :style="{
+        '--wv-fill': 'rgb(var(--primary-300-color) / 0.30)',
+        '--wv-fill-strong': 'rgb(var(--primary-300-color) / 0.50)',
+        '--wv-border': 'rgb(var(--primary-300-color) / 0.50)',
+        '--wv-dot': 'rgb(var(--primary-300-color) / 0.45)',
+        '--wv-sky': 'rgb(var(--primary-300-color) / 0.25)',
+        '--wv-sun': '#fbbf24',
+        '--wv-moon': '#e8d5b0',
+        '--wv-fill-dark': 'rgb(var(--primary-600-color) / 0.25)',
+        '--wv-fill-strong-dark': 'rgb(var(--primary-500-color) / 0.30)',
+        '--wv-border-dark': 'rgb(var(--primary-500-color) / 0.30)',
+        '--wv-dot-dark': 'rgb(var(--primary-500-color) / 0.35)',
+        '--wv-sky-dark': '#1a1725',
+        '--wv-square-blue': 'rgb(var(--primary-color) / 0.30)',
+        '--wv-square-blue-dark': 'rgb(var(--primary-color) / 0.18)',
+        '--wv-square-pink': 'rgb(var(--primary-color) / 0.15)',
+        '--wv-square-pink-dark': 'rgb(var(--primary-color) / 0.10)',
+        '--wv-square-purple': 'rgb(var(--primary-color) / 0.45)',
+        '--wv-square-purple-dark': 'rgb(var(--primary-color) / 0.20)',
+      }"
+    >
       <!-- 基础几何形状 -->
-      <div class="geo-element circle-outline animate-fade-in-up animate-delay-0s"></div>
-      <div class="geo-element square-rotated animate-fade-in-left animate-delay-0s"></div>
-      <div class="geo-element circle-small animate-fade-in-up animate-delay-0.3s"></div>
+      <div class="geo-element circle-outline animate-fade-in-up animate-delay-0s" />
+      <div class="geo-element square-rotated animate-fade-in-left animate-delay-0s" />
+      <div class="geo-element circle-small animate-fade-in-up animate-delay-0.3s" />
 
-      <div class="geo-element square-bottom-right animate-fade-in-right animate-delay-0s"></div>
+      <div class="geo-element square-bottom-right animate-fade-in-right animate-delay-0s" />
 
-      <!-- 背景泡泡 -->
-      <div class="geo-element bg-bubble animate-scale-in animate-delay-0.5s"></div>
+      <!-- 背景泡泡（太阳/月亮的"夜空"背板） -->
+      <div class="geo-element bg-bubble animate-scale-in animate-delay-0.5s" />
 
-      <!-- 太阳/月亮 -->
+      <!-- 太阳 / 月亮（点击切换亮暗主题） -->
       <div
         class="geo-element circle-top-right animate-fade-in-down animate-delay-0.5s"
         @click="toggleThemeScheme"
-      ></div>
+      />
 
       <!-- 装饰点 -->
-      <div class="geo-element dot dot-top-left animate-bounce-in animate-delay-0s"></div>
-      <div class="geo-element dot dot-top-right animate-bounce-in animate-delay-0s"></div>
-      <div class="geo-element dot dot-center-right animate-bounce-in animate-delay-0s"></div>
+      <div class="geo-element dot dot-top-left animate-bounce-in animate-delay-0s" />
+      <div class="geo-element dot dot-top-right animate-bounce-in animate-delay-0s" />
+      <div class="geo-element dot dot-center-right animate-bounce-in animate-delay-0s" />
 
       <!-- 叠加方块组 -->
       <div class="squares-group">
-        <i class="geo-element square square-blue animate-fade-in-left-rotated-blue animate-delay-0.2s"></i>
-        <i class="geo-element square square-pink animate-fade-in-left-rotated-pink animate-delay-0.4s"></i>
-        <i class="geo-element square square-purple animate-fade-in-left-no-rotation animate-delay-0.6s"></i>
+        <i class="geo-element square square-blue animate-fade-in-left-rotated-blue animate-delay-0.2s" />
+        <i class="geo-element square square-pink animate-fade-in-left-rotated-pink animate-delay-0.4s" />
+        <i class="geo-element square square-purple animate-fade-in-left-no-rotation animate-delay-0.6s" />
       </div>
     </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
-// 颜色变量定义
-$primary-base: rgb(var(--primary-color));
-
-// 几何装饰色：统一基于主色 + 透明度，保证亮/暗模式下均可见且与主题色一致（与“叠加方块组”同一思路）
-$primary-light-7: rgb(from $primary-base r g b / 45%); // 点缀点
-$primary-light-8: rgb(from $primary-base r g b / 32%); // 常规填充 / 描边
-$bg-mix-light-8: rgb(from $primary-base r g b / 26%); // 大块背景填充
-$bg-mix-light-9: rgb(from $primary-base r g b / 42%); // 暗色模式填充
-
-// wave-bg 暗色背景专用：保留原有暗色底色观感（不参与几何元素着色）
-$primary-light-9: rgb(var(--primary-200-color));
+// ===================== 动画 + 定位（纯几何，不涉及颜色） =====================
 
 .wave-bg {
   .geometric-decorations {
@@ -73,7 +88,7 @@ $primary-light-9: rgb(var(--primary-200-color));
       animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
 
-    // 动画 mixin
+    // ---------- 动画 mixin ----------
     @mixin fadeAnimation($direction: '', $rotation: 0deg) {
       from {
         opacity: 0;
@@ -100,144 +115,53 @@ $primary-light-9: rgb(var(--primary-200-color));
       }
     }
 
-    // 动画定义
-    @keyframes fadeInUp {
-      @include fadeAnimation('up');
-    }
-
-    @keyframes fadeInDown {
-      @include fadeAnimation('down');
-    }
-
-    @keyframes fadeInLeft {
-      @include fadeAnimation('left');
-    }
-
-    @keyframes fadeInLeftRotated {
-      @include fadeAnimation('left', -25deg);
-    }
-
-    @keyframes fadeInRight {
-      @include fadeAnimation('right');
-    }
-
-    @keyframes fadeInRightRotated {
-      @include fadeAnimation('right', 45deg);
-    }
-
-    @keyframes fadeInLeftRotatedBlue {
-      @include fadeAnimation('left', -10deg);
-    }
-
-    @keyframes fadeInLeftRotatedPink {
-      @include fadeAnimation('left', 10deg);
-    }
-
-    @keyframes fadeInLeftNoRotation {
-      @include fadeAnimation('left');
-    }
+    // ---------- 动画定义 ----------
+    @keyframes fadeInUp { @include fadeAnimation('up'); }
+    @keyframes fadeInDown { @include fadeAnimation('down'); }
+    @keyframes fadeInLeft { @include fadeAnimation('left'); }
+    @keyframes fadeInLeftRotated { @include fadeAnimation('left', -25deg); }
+    @keyframes fadeInRight { @include fadeAnimation('right'); }
+    @keyframes fadeInRightRotated { @include fadeAnimation('right', 45deg); }
+    @keyframes fadeInLeftRotatedBlue { @include fadeAnimation('left', -10deg); }
+    @keyframes fadeInLeftRotatedPink { @include fadeAnimation('left', 10deg); }
+    @keyframes fadeInLeftNoRotation { @include fadeAnimation('left'); }
 
     @keyframes scaleIn {
-      from {
-        opacity: 0;
-        transform: scale(0.8);
-      }
-
-      to {
-        opacity: 1;
-        transform: scale(1);
-      }
+      from { opacity: 0; transform: scale(0.8); }
+      to { opacity: 1; transform: scale(1); }
     }
 
     @keyframes bounceIn {
-      0% {
-        opacity: 0;
-        transform: scale(0.3);
-      }
-
-      50% {
-        opacity: 1;
-        transform: scale(1.05);
-      }
-
-      70% {
-        transform: scale(0.9);
-      }
-
-      100% {
-        opacity: 1;
-        transform: scale(1);
-      }
+      0% { opacity: 0; transform: scale(0.3); }
+      50% { opacity: 1; transform: scale(1.05); }
+      70% { transform: scale(0.9); }
+      100% { opacity: 1; transform: scale(1); }
     }
 
     @keyframes lineGrow {
-      from {
-        opacity: 0;
-      }
-
-      to {
-        opacity: 1;
-      }
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
 
-    @keyframes slideInLeft {
-      from {
-        opacity: 0;
-        transform: translateX(-30px);
-      }
+    // ---------- 动画类 ----------
+    .animate-fade-in-up { animation-name: fadeInUp; }
+    .animate-fade-in-down { animation-name: fadeInDown; }
+    .animate-fade-in-left { animation-name: fadeInLeft; }
+    .animate-fade-in-right { animation-name: fadeInRight; }
+    .animate-scale-in { animation-name: scaleIn; animation-duration: 1.2s; }
+    .animate-bounce-in { animation-name: bounceIn; animation-duration: 0.6s; }
+    .animate-fade-in-left-rotated-blue { animation-name: fadeInLeftRotatedBlue; }
+    .animate-fade-in-left-rotated-pink { animation-name: fadeInLeftRotatedPink; }
+    .animate-fade-in-left-no-rotation { animation-name: fadeInLeftNoRotation; }
 
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
-    }
+    // ---------- 定位 & 形状（颜色来自 CSS 变量 / UnoCSS） ----------
 
-    // 动画类
-    .animate-fade-in-up {
-      animation-name: fadeInUp;
-    }
-
-    .animate-fade-in-down {
-      animation-name: fadeInDown;
-    }
-
-    .animate-fade-in-left {
-      animation-name: fadeInLeft;
-    }
-
-    .animate-fade-in-right {
-      animation-name: fadeInRight;
-    }
-
-    .animate-scale-in {
-      animation-name: scaleIn;
-      animation-duration: 1.2s;
-    }
-
-    .animate-bounce-in {
-      animation-name: bounceIn;
-      animation-duration: 0.6s;
-    }
-
-    .animate-fade-in-left-rotated-blue {
-      animation-name: fadeInLeftRotatedBlue;
-    }
-
-    .animate-fade-in-left-rotated-pink {
-      animation-name: fadeInLeftRotatedPink;
-    }
-
-    .animate-fade-in-left-no-rotation {
-      animation-name: fadeInLeftNoRotation;
-    }
-
-    // 基础几何形状
     .circle-outline {
       top: 10%;
       left: 25%;
       width: 42px;
       height: 42px;
-      border: 2px solid $primary-light-8;
+      border: 2px solid var(--wv-border);
       border-radius: 50%;
     }
 
@@ -246,7 +170,7 @@ $primary-light-9: rgb(var(--primary-200-color));
       left: 16%;
       width: 60px;
       height: 60px;
-      background-color: $bg-mix-light-8;
+      background-color: var(--wv-fill);
 
       &.animate-fade-in-left {
         animation-name: fadeInLeftRotated;
@@ -258,11 +182,23 @@ $primary-light-9: rgb(var(--primary-200-color));
       left: 30%;
       width: 18px;
       height: 18px;
-      background-color: $primary-light-8;
+      background-color: var(--wv-fill-strong);
       border-radius: 50%;
     }
 
-    // 太阳/月亮效果
+    .square-bottom-right {
+      right: 10%;
+      bottom: 10%;
+      width: 50px;
+      height: 50px;
+      background-color: var(--wv-fill-strong);
+
+      &.animate-fade-in-right {
+        animation-name: fadeInRightRotated;
+      }
+    }
+
+    // ===================== 太阳 / 月亮 =====================
     .circle-top-right {
       top: 3%;
       right: 3%;
@@ -270,10 +206,11 @@ $primary-light-9: rgb(var(--primary-200-color));
       width: 50px;
       height: 50px;
       cursor: pointer;
-      background: rgb(var(--primary-50-color)); // 太阳/月亮为交互按钮：必须用不透明色阶，半透明会破坏月牙剪影
+      background-color: var(--wv-sun);
       border-radius: 50%;
       transition: all 0.3s;
 
+      // hover 发光（亮色模式）
       &::after {
         position: absolute;
         top: 50%;
@@ -297,33 +234,53 @@ $primary-light-9: rgb(var(--primary-200-color));
       }
     }
 
-    .square-bottom-right {
-      right: 10%;
-      bottom: 10%;
-      width: 50px;
-      height: 50px;
-      background-color: $primary-light-8;
+    // ---------- 暗黑模式：月亮 ----------
+    .dark & .circle-top-right {
+      background-color: var(--wv-moon);
+      box-shadow: none;
+      rotate: -48deg;
 
-      &.animate-fade-in-right {
-        animation-name: fadeInRightRotated;
+      // 月牙"裁剪"球：与夜空同色，覆盖月亮右侧形成弯月
+      &::before {
+        position: absolute;
+        top: 0;
+        left: 15px;
+        width: 50px;
+        height: 50px;
+        content: '';
+        background-color: var(--wv-sky-dark);
+        border-radius: 50%;
+        transition: all 0.3s ease-in-out;
+      }
+
+      &:hover {
+        box-shadow: 0 0 18px rgba(255, 255, 255, 0.12) inset;
+
+        &::before {
+          left: 18px;
+        }
+
+        &::after {
+          opacity: 0;
+        }
       }
     }
 
-    // 背景泡泡
+    // ===================== 背景泡泡 =====================
     .bg-bubble {
       top: -120px;
       right: -120px;
       width: 360px;
       height: 360px;
-      background-color: $bg-mix-light-8;
+      background-color: var(--wv-sky);
       border-radius: 50%;
     }
 
-    // 装饰点
+    // ---------- 装饰点 ----------
     .dot {
       width: 14px;
       height: 14px;
-      background-color: $primary-light-7;
+      background-color: var(--wv-dot);
       border-radius: 50%;
 
       &.dot-top-left {
@@ -339,11 +296,11 @@ $primary-light-9: rgb(var(--primary-200-color));
       &.dot-center-right {
         top: 46%;
         right: 22%;
-        background-color: $primary-light-8;
+        background-color: var(--wv-fill-strong);
       }
     }
 
-    // 叠加方块组
+    // ---------- 叠加方块组 ----------
     .squares-group {
       position: absolute;
       bottom: 18px;
@@ -364,7 +321,7 @@ $primary-light-9: rgb(var(--primary-200-color));
           z-index: 2;
           width: 50px;
           height: 50px;
-          background-color: rgb(from $primary-base r g b / 30%);
+          background-color: var(--wv-square-blue);
         }
 
         &.square-pink {
@@ -373,7 +330,7 @@ $primary-light-9: rgb(var(--primary-200-color));
           z-index: 1;
           width: 70px;
           height: 70px;
-          background-color: rgb(from $primary-base r g b / 15%);
+          background-color: var(--wv-square-pink);
         }
 
         &.square-purple {
@@ -382,7 +339,7 @@ $primary-light-9: rgb(var(--primary-200-color));
           z-index: 3;
           width: 32px;
           height: 32px;
-          background-color: rgb(from $primary-base r g b / 45%);
+          background-color: var(--wv-square-purple);
         }
       }
 
@@ -403,122 +360,87 @@ $primary-light-9: rgb(var(--primary-200-color));
     }
   }
 
+  // ===================== 响应式 =====================
   @media only screen and (max-width: 1600px) {
     width: 60vw;
-
-    .text-wrap {
-      bottom: 40px;
-    }
   }
 
   @media only screen and (max-width: 1280px) {
     width: auto;
     height: auto;
     padding: 0;
-    // 隐藏背景和其他内容，只保留 logo
     background: transparent;
 
-    .left-img,
-    .text-wrap,
     .geometric-decorations {
       display: none;
-    }
-
-    .logo {
-      position: fixed;
-      top: 15px;
-      left: 25px;
-      z-index: 1000;
     }
   }
 }
 
-// 暗色主题
+// ===================== 暗黑模式全局覆写 =====================
 .dark .wave-bg {
-  background-color: color-mix(in srgb, $primary-light-9 60%, #070707);
+  // 暗色底色（保持与原有观感一致）
+  background-color: color-mix(in srgb, rgb(var(--primary-200-color)) 60%, #070707);
 
   @media only screen and (max-width: 1280px) {
     background: transparent;
   }
 
   .geometric-decorations {
-    // 月亮效果
-    .circle-top-right {
-      background-color: rgb(var(--primary-100-color));
-      box-shadow: 0 0 25px #333 inset;
-      transition: all 0.3s ease-in-out 0.1s;
-      rotate: -48deg;
-
-      &::before {
-        position: absolute;
-        top: 0;
-        left: 15px;
-        width: 50px;
-        height: 50px;
-        content: '';
-        background-color: rgb(var(--primary-200-color));
-        border-radius: 50%;
-        transition: all 0.3s ease-in-out;
-      }
-
-      &:hover {
-        background-color: transparent;
-        box-shadow: 0 40px 25px #ddd inset;
-
-        &::before {
-          left: 18px;
-        }
-
-        &::after {
-          opacity: 0;
-        }
-      }
+    // 几何装饰 → 暗色色值
+    .circle-outline {
+      border-color: var(--wv-border-dark);
     }
 
-    .bg-bubble {
-      // bg-bubble 是太阳/月亮的背板：必须与下方 ::before 挡球同色且不透明，才能把太阳剪成月牙
-      background-color: rgb(var(--primary-200-color));
-    }
-
-    // 其他元素颜色调整
     .square-rotated {
-      background-color: $bg-mix-light-9;
+      background-color: var(--wv-fill-dark);
     }
 
-    .circle-small,
-    .dot {
-      background-color: $primary-light-8;
+    .circle-small {
+      background-color: var(--wv-fill-strong-dark);
     }
 
     .square-bottom-right {
-      background-color: $bg-mix-light-9;
+      background-color: var(--wv-fill-strong-dark);
     }
 
-    .dot.dot-top-right {
-      background-color: $primary-light-8;
+    .bg-bubble {
+      background-color: var(--wv-sky-dark);
     }
-  }
 
-  // 方块组暗色调整
-  .squares-group {
-    .square {
-      box-shadow: none;
+    .dot {
+      background-color: var(--wv-dot-dark);
 
-      &.square-blue {
-        background-color: rgb(from $primary-base r g b / 18%);
+      &.dot-center-right {
+        background-color: var(--wv-fill-strong-dark);
       }
 
-      &.square-pink {
-        background-color: rgb(from $primary-base r g b / 10%);
-      }
-
-      &.square-purple {
-        background-color: rgb(from $primary-base r g b / 20%);
+      &.dot-top-right {
+        background-color: var(--wv-dot-dark);
       }
     }
 
-    &::after {
-      background: linear-gradient(90deg, $primary-light-8, transparent);
+    // 方块组暗色
+    .squares-group {
+      .square {
+        box-shadow: none;
+
+        &.square-blue {
+          background-color: var(--wv-square-blue-dark);
+        }
+
+        &.square-pink {
+          background-color: var(--wv-square-pink-dark);
+        }
+
+        &.square-purple {
+          background-color: var(--wv-square-purple-dark);
+        }
+      }
+
+      &::after {
+        background: linear-gradient(90deg, var(--wv-fill-strong), transparent);
+      }
     }
   }
 }
