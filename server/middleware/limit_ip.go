@@ -61,6 +61,45 @@ func DefaultLimit() gin.HandlerFunc {
 	}.LimitWithTime()
 }
 
+// LoginLimit 登录端点 IP 限流：按 ClientIP 限制时间窗口内的登录尝试次数，
+// 超限返回失败（code "0001"）；Redis 不可用或命令异常时降级放行，避免限流组件故障锁死登录。
+// 阈值取 system.login-limit-count / login-limit-window（<=0 走默认 10 次 / 60 秒）。
+// 与验证码触发互补：验证码挡“需要人机校验的重复尝试”，IP 限流挡“无视验证码的高频请求/资源消耗”。
+func LoginLimit() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		expire := global.OPS_CONFIG.System.LoginLimitWindow
+		if expire <= 0 {
+			expire = 60
+		}
+		limit := global.OPS_CONFIG.System.LoginLimitCount
+		if limit <= 0 {
+			limit = 10
+		}
+		if global.OPS_REDIS == nil {
+			c.Next()
+			return
+		}
+		ctx := context.Background()
+		key := "login_limit:" + c.ClientIP()
+		// INCR 原子自增；仅首次（结果为 1）时设置过期，构成固定时间窗口
+		times, err := global.OPS_REDIS.Incr(ctx, key).Result()
+		if err != nil {
+			// Redis 命令异常：降级放行，不因限流组件故障锁死登录
+			c.Next()
+			return
+		}
+		if times == 1 {
+			global.OPS_REDIS.Expire(ctx, key, time.Duration(expire)*time.Second)
+		}
+		if times > int64(limit) {
+			response.FailWithMessage("登录尝试过于频繁，请稍后再试", c)
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
 // SetLimitWithTime 设置访问次数
 func SetLimitWithTime(key string, limit int, expiration time.Duration) error {
 	count, err := global.OPS_REDIS.Exists(context.Background(), key).Result()

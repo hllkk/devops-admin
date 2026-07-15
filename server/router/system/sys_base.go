@@ -2,6 +2,8 @@ package system
 
 import (
 	"github.com/gin-gonic/gin"
+
+	"github.com/hllkk/devops-admin/server/middleware"
 )
 
 type BaseRouter struct{}
@@ -13,7 +15,7 @@ func (s *BaseRouter) InitBaseRouter(public, private *gin.RouterGroup) {
 	if public != nil {
 		pub := public.Group("auth")
 		{
-			pub.POST("login", baseApi.Login)
+			pub.POST("login", middleware.LoginLimit(), baseApi.Login)
 			pub.GET("captcha", baseApi.Captcha)
 			pub.POST("refreshToken", baseApi.RefreshToken)
 			pub.POST("logout", baseApi.Logout)

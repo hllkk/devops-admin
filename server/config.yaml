@@ -217,6 +217,8 @@ system:
     secret-encrypt-key: ""
     trusted-proxies: []
     strict-device-binding: false
+    login-limit-count: 10  # 登录端点单 IP 限流：窗口内最大尝试次数（防爆破，与验证码触发互补）
+    login-limit-window: 60 # 登录限流窗口（秒）
 zap:
     level: info
     prefix: '[github.com/flipped-aurora/gin-vue-admin/server]'
