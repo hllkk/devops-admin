@@ -1,12 +1,18 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useI18n } from 'vue-i18n';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 
 defineOptions({ name: 'SettingMenu' });
 
+interface MenuItem {
+  key: string;
+  label: string;
+  desc: string;
+  icon: string;
+}
+
 interface Props {
   activeKey: string;
+  menuItems: MenuItem[];
 }
 
 interface Emits {
@@ -15,22 +21,6 @@ interface Emits {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
-const { t } = useI18n();
-
-const menuItems = computed(() => [
-  {
-    key: 'general',
-    label: t('page.system.setting.general'),
-    desc: t('page.system.setting.generalDesc'),
-    icon: 'mdi:cog-outline'
-  },
-  {
-    key: 'security',
-    label: t('page.system.setting.security'),
-    desc: t('page.system.setting.securityDesc'),
-    icon: 'mdi:shield-check-outline'
-  }
-]);
 
 function handleSelect(key: string) {
   emit('update:activeKey', key);

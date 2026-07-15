@@ -17,7 +17,7 @@ const captchaTypeOptions = computed(() => [
 </script>
 
 <template>
-  <NForm :model="config" label-placement="left" :label-width="140">
+  <NForm :model="config" label-placement="left" :label-width="160">
     <NFormItem :label="$t('page.system.setting.systemName')" path="systemName">
       <NInput v-model:value="config.systemName" :placeholder="$t('page.system.setting.systemName')" class="max-w-400px" />
     </NFormItem>

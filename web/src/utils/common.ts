@@ -199,6 +199,25 @@ export function transformToURLSearchParams(obj: Record<string, any>, excludeKeys
   return searchParams;
 }
 
+/**
+ * 合并远程配置到默认配置，null/undefined 字段回退到默认值
+ *
+ * @param defaults 默认配置（完整字段）
+ * @param remote   远程返回的部分配置
+ * @returns 合并后的完整配置
+ */
+export function mergeConfig<T extends Record<string, unknown>>(defaults: T, remote?: Partial<T> | null): T {
+  if (!remote) return { ...defaults };
+  const result = { ...defaults };
+  for (const key of Object.keys(defaults)) {
+    const val = remote[key as keyof T];
+    if (val !== null && val !== undefined) {
+      (result as Record<string, unknown>)[key] = val;
+    }
+  }
+  return result;
+}
+
 /** 判断两个数组是否相等 */
 export function arraysEqualSet(arr1: Array<any>, arr2: Array<any>) {
   return (
