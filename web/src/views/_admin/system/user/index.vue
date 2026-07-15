@@ -420,7 +420,8 @@ function handleResetSearch() {
 
 :deep(.n-data-table-wrapper),
 :deep(.n-data-table-base-table),
-:deep(.n-data-table-base-table-body) {
+:deep(.n-data-table-base-table-body),
+:deep(.n-data-table-empty) {
   height: 100%;
 }
 

@@ -9,6 +9,17 @@ body,
   text-autospace: normal;
 }
 
+/* NDataTable flex-height 模式空数据居中 */
+.n-data-table--flex-height .n-data-table-base-table-body {
+  flex: 1 !important;
+  min-height: 0 !important;
+}
+.n-data-table--flex-height .n-scrollbar-content {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 100% !important;
+}
+
 html {
   overflow-x: hidden;
   color: rgb(var(--base-text-color));
