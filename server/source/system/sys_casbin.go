@@ -2,24 +2,26 @@ package system
 
 import (
 	"context"
-	"fmt"
 
 	adapter "github.com/casbin/gorm-adapter/v3"
-	"github.com/hllkk/devops-admin/server/model/system"
-	sysSvc "github.com/hllkk/devops-admin/server/service/system"
+	"github.com/hllkk/devops-admin/server/service/system"
+	"github.com/pkg/errors"
 	"gorm.io/gorm"
 )
 
-const initOrderCasbin = sysSvc.InitOrderSystem + 7
+const initOrderCasbin = system.InitOrderSystem + 1
 
 type initCasbin struct{}
 
-func init() { sysSvc.RegisterInit(initOrderCasbin, &initCasbin{}) }
+// auto run
+func init() {
+	system.RegisterInit(initOrderCasbin, &initCasbin{})
+}
 
 func (i *initCasbin) MigrateTable(ctx context.Context) (context.Context, error) {
 	db, ok := ctx.Value("db").(*gorm.DB)
 	if !ok {
-		return ctx, sysSvc.ErrMissingDBContext
+		return ctx, system.ErrMissingDBContext
 	}
 	return ctx, db.AutoMigrate(&adapter.CasbinRule{})
 }
@@ -32,28 +34,34 @@ func (i *initCasbin) TableCreated(ctx context.Context) bool {
 	return db.Migrator().HasTable(&adapter.CasbinRule{})
 }
 
-func (i *initCasbin) InitializerName() string { return "casbin_rule" }
+func (i *initCasbin) InitializerName() string {
+	var entity adapter.CasbinRule
+	return entity.TableName()
+}
 
-// InitializeData 遍历所有角色，按其 C 菜单 apis 重算 casbin 策略。
-// 偏离 GVA source/system/casbin.go（GVA 硬编码 CasbinRule 列表），改用动态生成：
-// 方式 B 下策略源是 sys_menu(C).apis，由 CasbinService.UpdateCasbin 推导。
 func (i *initCasbin) InitializeData(ctx context.Context) (context.Context, error) {
 	db, ok := ctx.Value("db").(*gorm.DB)
 	if !ok {
-		return ctx, sysSvc.ErrMissingDBContext
+		return ctx, system.ErrMissingDBContext
 	}
-	var roleIds []int64
-	if err := db.Model(&system.SysRole{}).Pluck("role_id", &roleIds).Error; err != nil {
-		return ctx, fmt.Errorf("casbin seed 查询角色失败: %w", err)
+	entities := []adapter.CasbinRule{
+		//初始化数据
 	}
-	svc := sysSvc.CasbinService{}
-	for _, rid := range roleIds {
-		if err := svc.UpdateCasbin(rid); err != nil {
-			return ctx, fmt.Errorf("casbin role %d 策略生成失败: %w", rid, err)
-		}
+	if err := db.Create(&entities).Error; err != nil {
+		return ctx, errors.Wrap(err, "Casbin 表 ("+i.InitializerName()+") 数据初始化失败!")
 	}
-	return ctx, nil
+	next := context.WithValue(ctx, i.InitializerName(), entities)
+	return next, nil
 }
 
-// DataInserted 总返回 false：UpdateCasbin 幂等（清旧+重写），每次 initdb 都重算以保持一致。
-func (i *initCasbin) DataInserted(ctx context.Context) bool { return false }
+func (i *initCasbin) DataInserted(ctx context.Context) bool {
+	db, ok := ctx.Value("db").(*gorm.DB)
+	if !ok {
+		return false
+	}
+	if errors.Is(db.Where(adapter.CasbinRule{Ptype: "p", V0: "9528", V1: "/user/getUserInfo", V2: "GET"}).
+		First(&adapter.CasbinRule{}).Error, gorm.ErrRecordNotFound) { // 判断是否存在数据
+		return false
+	}
+	return true
+}
