@@ -6,4 +6,5 @@ type ServiceGroup struct {
 	CasbinService
 	UserService
 	CaptchaService
+	LoginLogService
 }

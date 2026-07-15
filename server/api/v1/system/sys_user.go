@@ -32,6 +32,7 @@ func (b *BaseApi) Login(c *gin.Context) {
 	}
 	// 验证码先于密码校验（防绕过暴力破解）；按触发策略决定是否必须
 	ip := c.ClientIP()
+	ua := c.GetHeader("User-Agent")
 	if captchaService.NeedCaptcha(l.Username, ip) {
 		if err := captchaService.VerifyCaptcha(l.CaptchaId, l.Captcha); err != nil {
 			captchaService.RecordLoginResult(l.Username, ip, false)
@@ -42,11 +43,13 @@ func (b *BaseApi) Login(c *gin.Context) {
 	access, refresh, _, err := userService.Login(l.Username, l.Password)
 	if err != nil {
 		captchaService.RecordLoginResult(l.Username, ip, false)
+		loginLogService.RecordLogin(l.Username, ip, ua, "1", err.Error())
 		global.OPS_LOG.Warn("登录失败", zap.String("user", l.Username), zap.Error(err))
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
 	captchaService.RecordLoginResult(l.Username, ip, true)
+	loginLogService.RecordLogin(l.Username, ip, ua, "0", "登录成功")
 	utils.SetLoginCookies(c, access, refresh)
 	j := utils.NewJWT()
 	claims, _ := j.ParseAccessToken(access)

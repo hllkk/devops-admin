@@ -36,6 +36,7 @@ const (
 	defaultFailWindow    = 600
 	defaultExpireSeconds = 120
 	defaultTolerance     = 5
+	maxVerifyAttempts    = 3 // 单个验证码允许的最大校验失败次数，超出即作废，防暴力试答案
 )
 
 // CaptchaService go-captcha 行为验证码服务。
@@ -209,10 +210,17 @@ func (s CaptchaService) VerifyCaptcha(captchaId, userAnswer string) error {
 		return err
 	}
 	if !p.Verify(stored, userAnswer, s.toleranceFor(cfg.Type)) {
+		// 失败累计尝试次数；达上限即作废该验证码，防止同一 captchaId 在有效期内暴力试答案
+		if s.incrCaptchaAttempt(captchaId) >= maxVerifyAttempts {
+			s.deleteAnswer(captchaId)
+			s.delCaptchaAttempt(captchaId)
+			return fmt.Errorf("验证码错误次数过多，请刷新重试")
+		}
 		return fmt.Errorf("验证码校验未通过")
 	}
-	// 校验通过才删除，保证一次性防重放；失败保留以便用户重试
+	// 校验通过删除答案，保证一次性防重放
 	s.deleteAnswer(captchaId)
+	s.delCaptchaAttempt(captchaId)
 	return nil
 }
 
@@ -266,6 +274,14 @@ func (s CaptchaService) RecordLoginResult(username, ip string, success bool) {
 	if ip != "" {
 		s.incrFailCount("ip:"+ip, window)
 	}
+}
+
+// UnlockUser 清除该账号的登录失败计数（取消强制验证码触发），供登录日志“解锁”调用。
+func (s CaptchaService) UnlockUser(username string) {
+	if username == "" {
+		return
+	}
+	s.delFailCount(username)
 }
 
 func (s CaptchaService) providerFor(t string) (provider, error) {
@@ -523,6 +539,46 @@ func (s CaptchaService) loadAnswer(captchaId string) (string, bool) {
 
 func (s CaptchaService) deleteAnswer(captchaId string) {
 	key := s.answerKey(captchaId)
+	if s.redisAvailable() {
+		global.OPS_REDIS.Del(context.Background(), key)
+		return
+	}
+	s.ensureMemCache().Delete(key)
+}
+
+// attemptKey 单个验证码的失败尝试计数键。
+func (s CaptchaService) attemptKey(captchaId string) string {
+	return global.OPS_CONFIG.Captcha.GoCaptcha.KeyPrefix + "attempt:" + captchaId
+}
+
+// incrCaptchaAttempt 累计该验证码的失败尝试次数，返回当前累计值（与答案同 TTL，随验证码过期而清零）。
+func (s CaptchaService) incrCaptchaAttempt(captchaId string) int {
+	key := s.attemptKey(captchaId)
+	ttl := s.expireTTL()
+	if s.redisAvailable() {
+		ctx := context.Background()
+		if err := global.OPS_REDIS.Incr(ctx, key).Err(); err == nil {
+			global.OPS_REDIS.Expire(ctx, key, ttl)
+		}
+		if v, err := global.OPS_REDIS.Get(ctx, key).Int(); err == nil {
+			return v
+		}
+		return 1
+	}
+	c := s.ensureMemCache()
+	n := 1
+	if v, ok := c.Get(key); ok {
+		if iv, _ := v.(int); iv > 0 {
+			n = iv + 1
+		}
+	}
+	c.Set(key, n, ttl)
+	return n
+}
+
+// delCaptchaAttempt 清除失败尝试计数。
+func (s CaptchaService) delCaptchaAttempt(captchaId string) {
+	key := s.attemptKey(captchaId)
 	if s.redisAvailable() {
 		global.OPS_REDIS.Del(context.Background(), key)
 		return
