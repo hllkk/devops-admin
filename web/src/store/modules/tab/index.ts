@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import { defineStore } from 'pinia';
-import type { RouteKey } from '@elegant-router/types';
+import type { LastLevelRouteKey, RouteKey } from '@elegant-router/types';
 import { router } from '@/router';
 import { useRouteStore } from '@/store/modules/route';
 import { useRouterPush } from '@/hooks/common/router';
@@ -345,6 +345,20 @@ export const useTabStore = defineStore(SetupStoreId.Tab, () => {
     }
   }
 
+  /**
+   * Reset tabs and homeTab — used when switching modules.
+   *
+   * Clears all non-home tabs AND rebuilds homeTab to the new module's home,
+   * so the first tab always reflects the current module.
+   */
+  function resetTabs(newHomeRoute?: LastLevelRouteKey) {
+    tabs.value = [];
+    if (newHomeRoute) {
+      homeTab.value = getDefaultHomeTab(router, newHomeRoute);
+    }
+    cacheTabs();
+  }
+
   /** Cache tabs */
   function cacheTabs() {
     if (!themeStore.tab.cache) return;
@@ -369,6 +383,7 @@ export const useTabStore = defineStore(SetupStoreId.Tab, () => {
     removeActiveTab,
     removeTabByRouteName,
     replaceTab,
+    resetTabs,
     clearTabs,
     clearLeftTabs,
     clearRightTabs,

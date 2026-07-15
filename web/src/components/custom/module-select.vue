@@ -1,46 +1,52 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import type { SelectOption } from 'naive-ui';
-import { useLoading } from '@sa/hooks';
-import { useAuthStore } from '@/store/modules/auth';
+import { computed, h } from 'vue';
+import { useRouter } from 'vue-router';
+import type { LastLevelRouteKey } from '@elegant-router/types';
+import type { DropdownOption } from 'naive-ui';
+import { ALL_MODULES, MODULE_CONFIG, type RouteModule } from '@/constants/module';
+import { useRouteStore } from '@/store/modules/route';
+import { useTabStore } from '@/store/modules/tab';
+import { $t } from '@/locales';
+import SvgIcon from '@/components/custom/svg-icon.vue';
 
 defineOptions({ name: 'ModuleSelect' });
 
-interface Props {
-  clearable?: boolean;
+const router = useRouter();
+const routeStore = useRouteStore();
+const tabStore = useTabStore();
+
+/** 当前模块配置（用于触发按钮展示图标+名称） */
+const currentConfig = computed(() => MODULE_CONFIG[routeStore.currentModule]);
+
+/** 下拉选项：全部模块，当前模块 disabled */
+const options = computed<DropdownOption[]>(() =>
+  ALL_MODULES.map(m => ({
+    label: $t(`route.module_${m}` as App.I18n.I18nKey),
+    key: m,
+    icon: () => h(SvgIcon, { icon: MODULE_CONFIG[m].icon }),
+    disabled: m === routeStore.currentModule
+  }))
+);
+
+/** 点击选项 → 清空旧模块 Tab → 重建 homeTab → 导航到新模块首页 */
+function handleSelect(key: string) {
+  if (key === routeStore.currentModule) return;
+  const module = key as RouteModule;
+  const homeRoute = MODULE_CONFIG[module].home as LastLevelRouteKey;
+  tabStore.resetTabs(homeRoute);
+  router.push(`/${key}`);
 }
-
-withDefaults(defineProps<Props>(), {
-  clearable: false
-});
-const { userInfo } = useAuthStore();
-
-const { loading } = useLoading();
-
-const moduleId = defineModel<CommonType.IdType>('moduleId', { required: false, default: undefined });
-const enabled = defineModel<boolean>('enabled', { required: false, default: false });
-const moduleOption = ref<SelectOption[]>([]);
-
-const handleChangeModule = (val: CommonType.IdType) => {
-  moduleId.value = val;
-};
-
-const handleClearModule = () => {};
-
-const showModuleSelect = computed<boolean>(() => {
-  return userInfo.user?.userId === 1 && enabled.value;
-});
 </script>
 
 <template>
-  <NSelect
-    v-if="showModuleSelect"
-    v-model:value="moduleId"
-    :clearable="clearable"
-    placeholder="请选择模块"
-    :options="moduleOption"
-    :loading="loading"
-    @update:value="handleChangeModule"
-    @clear="handleClearModule"
-  />
+  <NDropdown :options="options" trigger="click" @select="handleSelect">
+    <NButton quaternary :focusable="false" class="h-36px text-icon">
+      <div class="flex-center gap-8px">
+        <SvgIcon :icon="currentConfig.icon" />
+        <span class="text-14px">{{ $t(`route.module_${routeStore.currentModule}`) }}</span>
+      </div>
+    </NButton>
+  </NDropdown>
 </template>
+
+<style scoped></style>

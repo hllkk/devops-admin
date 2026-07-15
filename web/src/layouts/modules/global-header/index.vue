@@ -9,7 +9,6 @@ import GlobalSearch from '../global-search/index.vue';
 import ThemeButton from './components/theme-button.vue';
 import UserAvatar from './components/user-avatar.vue';
 import MessageButton from './components/message-button.vue';
-import ModuleSwitcher from './components/module-switcher.vue';
 
 defineOptions({
   name: 'GlobalHeader'
@@ -40,7 +39,7 @@ const { isFullscreen, toggle } = useFullscreen();
       <GlobalBreadcrumb v-if="!appStore.isMobile" class="ml-12px" />
     </div>
     <div class="h-full flex-y-center justify-end">
-      <ModuleSwitcher />
+      <ModuleSelect />
       <GlobalSearch v-if="themeStore.header.globalSearch.visible" />
       <MessageButton />
       <FullScreen v-if="!appStore.isMobile" :full="isFullscreen" @click="toggle" />

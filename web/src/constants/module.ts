@@ -56,7 +56,7 @@ export const MODULE_CONFIG: Record<RouteModule, ModuleConfig> = {
  * - 新增某模块的路由时，在对应数组里追加其路由名。
  */
 export const MODULE_ROUTES: Record<RouteModule, string[]> = {
-  admin: ['admin', 'system', 'system_user'],
+  admin: ['admin', 'system', 'system_user', 'log'],
   disk: ['disk'],
   server: ['server'],
   gateway: ['gateway']
