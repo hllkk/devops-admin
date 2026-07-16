@@ -44,10 +44,10 @@ func RegisterTables() {
 
 		// system.SysApi{},
 		// system.SysIgnoreApi{},
-		// system.SysUser{},
+		system.SysUser{},
 		// system.SysBaseMenu{},
-		// system.JwtBlacklist{},
-		// system.SysAuthority{},
+		system.JwtBlacklist{},
+		system.SysRole{},
 		// system.SysDictionary{},
 		// system.SysOperationRecord{},
 		// system.SysAutoCodeHistory{},
@@ -64,12 +64,6 @@ func RegisterTables() {
 		system.SysError{},
 		// system.SysApiToken{},
 		// system.SysLoginLog{},
-
-		// example.ExaFile{},
-		// example.ExaCustomer{},
-		// example.ExaFileChunk{},
-		// example.ExaFileUploadAndDownload{},
-		// example.ExaAttachmentCategory{},
 	)
 	if err != nil {
 		global.OPS_LOG.Error("register table failed", zap.Error(err))

@@ -15,8 +15,8 @@ import (
 
 // gin context 缓存键（供 operation.go 复用，避免重复读 body / 包装 writer）
 const (
-	ctxReqBodyKey    = "gva_req_body"
-	ctxRespBufferKey = "gva_resp_buffer"
+	ctxReqBodyKey    = "ops_req_body"
+	ctxRespBufferKey = "ops_resp_buffer"
 )
 
 // respCaptureLimit 响应捕获缓冲上限:SSE 等长/无界流的响应体只捕获前 1MB,
@@ -68,7 +68,7 @@ func AccessLog() gin.HandlerFunc {
 		buf := &bytes.Buffer{}
 		c.Writer = captureWriter{ResponseWriter: c.Writer, buf: buf}
 		c.Set(ctxRespBufferKey, buf)
-		c.Writer.Header().Set("X-Gva-Version", global.Version)
+		c.Writer.Header().Set("X-Ops-Version", global.Version)
 
 		c.Next()
 
