@@ -2,7 +2,7 @@ autocode:
     web: web/src
     root: /home/devops-admin
     server: server
-    module: github.com/flipped-aurora/gin-vue-admin/server
+    module: github.com/hllkk/devops-admin/server
     ai-path: ""
 captcha:
     key-long: 6
@@ -221,7 +221,7 @@ system:
     login-limit-window: 60 # 登录限流窗口（秒）
 zap:
     level: info
-    prefix: '[github.com/flipped-aurora/gin-vue-admin/server]'
+    prefix: '[github.com/hllkk/devops-admin/server]'
     format: console
     director: log
     encode-level: LowercaseColorLevelEncoder

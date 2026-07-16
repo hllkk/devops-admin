@@ -22,8 +22,8 @@ type SysOperLog struct {
 	OperUrl       string     `gorm:"column:oper_url;size:255;comment:请求URL" json:"operUrl"`                        // 请求URL
 	OperIp        string     `gorm:"column:oper_ip;size:128;index;comment:操作IP" json:"operIp"`                    // 操作IP
 	OperLocation  string     `gorm:"column:oper_location;size:255;comment:操作地点" json:"operLocation"`              // 操作地点
-	OperParam     string     `gorm:"column:oper_param;type:longtext;comment:请求参数" json:"operParam"`               // 请求参数(JSON)
-	JsonResult    string     `gorm:"column:json_result;type:longtext;comment:返回参数" json:"jsonResult"`             // 返回参数(JSON)
+	OperParam     string     `gorm:"column:oper_param;type:text;comment:请求参数" json:"operParam"`                    // 请求参数(JSON)
+	JsonResult    string     `gorm:"column:json_result;type:text;comment:返回参数" json:"jsonResult"`                  // 返回参数(JSON)
 	Status        string     `gorm:"column:status;size:1;default:'0';index;comment:操作状态" json:"status"`            // 0成功 1失败
 	ErrorMsg      string     `gorm:"column:error_msg;size:2000;default:'';comment:错误消息" json:"errorMsg"`          // 错误消息
 	CostTime      int        `gorm:"column:cost_time;default:0;comment:消耗时间(毫秒)" json:"costTime"`               // 消耗时间(毫秒)
