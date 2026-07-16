@@ -1,9 +1,48 @@
+# system configuration
+system:
+    env: local # 修改为public可以关闭路由日志输出
+    addr: 8888
+    db-type: mysql
+    oss-type: local # 控制oss选择走本地还是 七牛等其他仓 自行增加其他oss仓可以在 server/utils/upload/upload.go 中 NewOss函数配置
+    use-redis: false # 使用redis
+    use-mongo: false     # 使用mongo
+    use-multipoint: false
+    # IP限制次数 一个小时15000次
+    iplimit-count: 15000
+    #  IP限制一个小时
+    iplimit-time: 3600
+    #  路由全局前缀
+    router-prefix: ""
+    #  严格角色模式 打开后权限将会存在上下级关系
+    use-strict-auth: false
+    #  禁用自动迁移数据库表结构，生产环境建议设为true，手动迁移
+    disable-auto-migrate: false
+
 # jwt configuration
 jwt:
     signing-key: qmPlus
     expires-time: 7d
     buffer-time: 1d
     issuer: devops-admin
+
+# zap logger configuration
+zap:
+    level: info
+    prefix: '[github.com/flipped-aurora/gin-vue-admin/server]'
+    format: console
+    director: log
+    encode-level: LowercaseColorLevelEncoder
+    stacktrace-key: stacktrace
+    show-line: true
+    log-in-console: false
+    retention-day: -1
+    access-req-body: true
+    access-resp-data: true
+    access-req-headers: true
+    access-log-max-bytes: 1024
+    file-only-modules:
+      - http
+      - sql
 
 # autocode configuration
 autocode:
@@ -12,3 +51,88 @@ autocode:
     server: server
     module: 'github.com/hllkk/devops-admin/server'
     ai-path: ""  # AI服务路径
+
+# mysql connect configuration
+# 未初始化之前请勿手动修改数据库信息！！！如果一定要手动初始化请看（https://gin-vue-admin.com/docs/first_master）
+mysql:
+    path: ""
+    port: ""
+    config: ""
+    db-name: ""
+    username: ""
+    password: ""
+    max-idle-conns: 10
+    max-open-conns: 100
+    conn-max-lifetime: 0
+    log-mode: ""
+    log-zap: false
+
+mssql:
+    path: ""
+    port: ""
+    config: ""
+    db-name: ""
+    username: ""
+    password: ""
+    max-idle-conns: 10
+    max-open-conns: 100
+    conn-max-lifetime: 0
+    log-mode: ""
+    log-zap: false
+
+# pgsql connect configuration
+# 未初始化之前请勿手动修改数据库信息！！！如果一定要手动初始化请看（https://gin-vue-admin.com/docs/first_master）
+pgsql:
+    path: ""
+    port: ""
+    config: ""
+    db-name: ""
+    username: ""
+    password: ""
+    max-idle-conns: 10
+    max-open-conns: 100
+    conn-max-lifetime: 0
+    log-mode: ""
+    log-zap: false
+
+oracle:
+    path: ""
+    port: ""
+    config: ""
+    db-name: ""
+    username: ""
+    password: ""
+    max-idle-conns: 10
+    max-open-conns: 100
+    conn-max-lifetime: 0
+    log-mode: ""
+    log-zap: false
+
+sqlite:
+    path: ""
+    port: ""
+    config: ""
+    db-name: ""
+    username: ""
+    password: ""
+    max-idle-conns: 10
+    max-open-conns: 100
+    conn-max-lifetime: 0
+    log-mode: ""
+    log-zap: false
+
+db-list:
+    - disable: true # 是否禁用
+      type: "" # 数据库的类型,目前支持mysql、pgsql、mssql、oracle
+      alias-name: "" # 数据库的名称,注意: alias-name 需要在db-list中唯一
+      path: ""
+      port: ""
+      config: ""
+      db-name: ""
+      username: ""
+      password: ""
+      max-idle-conns: 10
+      max-open-conns: 100
+      conn-max-lifetime: 0
+      log-mode: ""
+      log-zap: false

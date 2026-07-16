@@ -1,6 +1,8 @@
 package main
 
 import (
+	"go.uber.org/zap"
+
 	"github.com/hllkk/devops-admin/server/core"
 	"github.com/hllkk/devops-admin/server/global"
 	"github.com/hllkk/devops-admin/server/initialize"
@@ -40,8 +42,8 @@ func initializeSystem() {
 	global.OPS_VP = core.Viper() // 初始化Viper
 	initialize.OtherInit()
 	global.OPS_LOG = core.Zap() // 初始化zap日志库
-	// zap.ReplaceGlobals(global.OPS_LOG)
-	// global.GVA_DB = initialize.Gorm() // gorm连接数据库
+	zap.ReplaceGlobals(global.OPS_LOG)
+	global.OPS_DB = initialize.Gorm() // gorm连接数据库
 	// initialize.Timer()
 	// initialize.DBList()
 	// initialize.SetupHandlers() // 注册全局函数
