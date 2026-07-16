@@ -10,23 +10,22 @@ captcha:
     img-height: 80
     open-captcha: 0
     open-captcha-timeout: 3600
-    # go-captcha 行为验证码（click 点选 / slide 滑动 / rotate 旋转）
     go-captcha:
-        enabled: true                 # 总开关；false 时登录不要求验证码
-        type: click                   # 当前类型：click | slide | rotate
-        store: redis                  # 答案存储：redis（不可用自动降级 memory）| memory
-        key-prefix: "gocaptcha:"      # redis key 前缀
-        expire-seconds: 120           # 验证码有效期（秒）
+        enabled: true
+        type: click
+        store: redis
+        key-prefix: 'gocaptcha:'
+        expire-seconds: 120
         trigger:
-            mode: threshold           # threshold(失败达阈值触发) | always(始终要求) | off(关闭)
-            fail-threshold: 1         # 阈值模式：账号/IP 在 fail-window 内连续失败 N 次后必须验证码
-            fail-window: 600          # 失败计数窗口（秒）
+            mode: threshold
+            fail-threshold: 1
+            fail-window: 600
         slide:
-            tolerance: 8              # 拖动容差（像素）
+            tolerance: 8
         click:
-            padding: 8                # 点选容差（像素）
+            padding: 8
         rotate:
-            tolerance: 8              # 旋转容差（角度）
+            tolerance: 8
 cors:
     mode: strict-whitelist
     whitelist:
@@ -70,7 +69,7 @@ email:
 excel:
     dir: ./resource/excel/
 jwt:
-    signing-key: change-me-in-.env # 开发占位符（<32 字符会触发弱密钥提示）；正式密钥请通过 .env / 环境变量 JWT_SIGNING_KEY 注入
+    signing-key: 734e7bed-7430-4f07-8e26-111060410704
     expires-time: 2h
     refresh-ex-time: 168h
     buffer-time: 1d
@@ -217,8 +216,8 @@ system:
     secret-encrypt-key: ""
     trusted-proxies: []
     strict-device-binding: false
-    login-limit-count: 10  # 登录端点单 IP 限流：窗口内最大尝试次数（防爆破，与验证码触发互补）
-    login-limit-window: 60 # 登录限流窗口（秒）
+    login-limit-count: 10
+    login-limit-window: 60
 zap:
     level: info
     prefix: '[github.com/hllkk/devops-admin/server]'

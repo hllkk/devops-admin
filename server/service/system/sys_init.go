@@ -20,6 +20,17 @@ func SetDBReadyCallback(callback func()) {
 	dbReadyCallback = callback
 }
 
+// dbCallbacksCallback 首初始化「db 创建后、建表前」的回调注册钩子，由 initialize 包
+// 注入（注册雪花主键回调）。InitDB 用 gorm.Open 新建的 db 不复用启动期注册的回调，
+// 必须在建表/建数据前显式注册，否则依赖雪花主键的 seed（如 sys_setting）会以主键 0
+// 裸插导致主键冲突。用注入而非直接调用，避免 service/system 反向依赖 initialize。
+var dbCallbacksCallback func(*gorm.DB)
+
+// SetDBCallbacksCallback 设置首初始化 db 的回调注册钩子。
+func SetDBCallbacksCallback(callback func(*gorm.DB)) {
+	dbCallbacksCallback = callback
+}
+
 const (
 	Mysql           = "mysql"
 	Pgsql           = "pgsql"
@@ -132,6 +143,13 @@ func (initDBService *InitDBService) InitDB(conf request.InitDB) (err error) {
 	db := ctx.Value("db").(*gorm.DB)
 	global.OPS_DB = db
 
+	// 首初始化创建的 db 尚未注册任何回调（启动期 RegisterCallbacks 只作用于上一次的
+	// OPS_DB）：在建表/建数据前注入雪花主键回调，确保 sys_setting 等依赖雪花主键的
+	// seed 能正确生成主键。注意 dbReadyCallback 在流程末尾才触发，来不及覆盖 InitData。
+	if dbCallbacksCallback != nil {
+		dbCallbacksCallback(db)
+	}
+
 	if err = initHandler.InitTables(ctx, initializers); err != nil {
 		return err
 	}
@@ -184,7 +202,9 @@ func createDatabase(dsn string, driver string, createSql string) error {
 	return err
 }
 
-// createTables 创建表（默认 dbInitHandler.initTables 行为）
+// createTables 创建表（默认 dbInitHandler.initTables 行为）：纯遍历 initializer 体系，
+// 每张表的建表职责都归属某个 initializer（有数据的归 seed initializer，无数据的归
+// initAutoMigrate），不再依赖独立维护的全量清单，与 RegisterTables 共用同一真相源。
 func createTables(ctx context.Context, inits initSlice) error {
 	next, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -196,6 +216,28 @@ func createTables(ctx context.Context, inits initSlice) error {
 			return err
 		} else {
 			next = n
+		}
+	}
+	return nil
+}
+
+// MigrateRegisteredTables 遍历所有已注册 initializer 的 MigrateTable，逐一建表。
+//
+// 这是建表清单的唯一真相源：正常启动（initialize.RegisterTables）与首次初始化
+//（createTables）都经由 initializer 体系建表，不再维护独立的全量模型清单。建表已
+// 关闭外键约束（DisableForeignKeyConstraintWhenMigrating），表间无依赖，按 order
+// 排序仅是为了与 InitDB 路径保持一致的执行顺序。
+func MigrateRegisteredTables(db *gorm.DB) error {
+	if db == nil {
+		return ErrMissingDBContext
+	}
+	ordered := make(initSlice, len(initializers))
+	copy(ordered, initializers)
+	sort.Sort(&ordered)
+	ctx := context.WithValue(context.Background(), "db", db)
+	for _, init := range ordered {
+		if _, err := init.MigrateTable(ctx); err != nil {
+			return fmt.Errorf("migrate %s failed: %w", init.InitializerName(), err)
 		}
 	}
 	return nil

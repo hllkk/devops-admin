@@ -17,9 +17,13 @@ type initSysSetting struct{}
 
 func init() { sysSvc.RegisterInit(initOrderSysSetting, &initSysSetting{}) }
 
-// MigrateTable 表结构已在 RegisterTables 的 AutoMigrate 中创建，此处无需操作。
+// MigrateTable 创建 sys_setting 表（建表职责归属于本 initializer，不再隐式依赖全量兜底）。
 func (i *initSysSetting) MigrateTable(ctx context.Context) (context.Context, error) {
-	return ctx, nil
+	db, ok := ctx.Value("db").(*gorm.DB)
+	if !ok {
+		return ctx, sysSvc.ErrMissingDBContext
+	}
+	return ctx, db.AutoMigrate(&system.SysSetting{})
 }
 
 func (i *initSysSetting) TableCreated(ctx context.Context) bool {
