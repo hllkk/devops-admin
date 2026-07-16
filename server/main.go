@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/hllkk/devops-admin/server/core"
 	"github.com/hllkk/devops-admin/server/global"
+	"github.com/hllkk/devops-admin/server/initialize"
 )
 
 //go:generate go env -w GO111MODULE=on
@@ -37,9 +38,9 @@ func main() {
 // 提取为单独函数以便于系统重载时调用
 func initializeSystem() {
 	global.OPS_VP = core.Viper() // 初始化Viper
-	// initialize.OtherInit()
-	// global.GVA_LOG = core.Zap() // 初始化zap日志库
-	// zap.ReplaceGlobals(global.GVA_LOG)
+	initialize.OtherInit()
+	global.OPS_LOG = core.Zap() // 初始化zap日志库
+	// zap.ReplaceGlobals(global.OPS_LOG)
 	// global.GVA_DB = initialize.Gorm() // gorm连接数据库
 	// initialize.Timer()
 	// initialize.DBList()
