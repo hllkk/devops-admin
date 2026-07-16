@@ -2,13 +2,13 @@
 
 ## 目的
 
-本文件是本仓库内 AI 协作规则的**唯一真源**。
+本文件是本仓库内 AI 协作规则的唯一真源。
 
-`.claude/`（以及未来可能的 `.codex/`、`.cursor/`、`.trae/`）下的规则文件仅作为兼容适配层，**不能再次演变成各自独立维护的 project rule 副本**。
+`.codex/`、`.claude/`、`.cursor/`、`.trae/` 下的规则文件仅作为兼容适配层，不能再次演变成各自独立维护的 project rule 副本。
 
 ## 交互语言
 
-- 所有 AI 协作过程（思考、回答、解释、代码注释、提交信息、文档、错误说明、计划）统一使用**中文**
+- 所有 AI 协作过程（思考、回答、解释、代码注释、提交信息、文档、错误说明、计划）统一使用中文
 - 代码标识符、命令、字段名、配置项、第三方库名等保持原文，不翻译
 
 ## 读取顺序
@@ -17,40 +17,43 @@
 
 1. `AGENT.MD`
 2. `aiDoc/README.md`
-3. 按任务**只打开相关子目录**中的文件：
-   - `aiDoc/relations/`（仓库结构、技术栈、开发流程）
-   - `aiDoc/modules/`（后端分层、业务模块、插件）
-   - `aiDoc/frontend-backend/`（前后端契约、前端规范、工具复用）
-   - `aiDoc/examples/`（讲解型范例）
-   - `aiDoc/memory/`（长期偏好与业务需求记忆）
+3. 按任务读取以下目录中的相关文件：
+   - `aiDoc/relations/`
+   - `aiDoc/modules/`
+   - `aiDoc/frontend-backend/`
+   - `aiDoc/examples/`
+   - `aiDoc/memory/`
 4. 仅在当前工具确实依赖时，再读取工具目录下的适配文件。
 
-若内容冲突，**以 `AGENT.MD` 为准**。
+若内容冲突，以 `AGENT.MD` 为准。
 
 ## 仓库概览
 
-- `server/`：Go + Gin + GORM 后端（gin-vue-admin 同款分层范式），module 名 `github.com/hllkk/devops-admin/server`（仓库内简称 `devops-admin`）
-- `web/`：SoybeanAdmin 2.x 前端（Vue3 + Vite + TS + NaiveUI + UnoCSS + Elegant Router），pnpm monorepo
+- `server/`：Go + Gin + GORM 后端
+- `web/`：Vue3 + Vite + TS + NaiveUI + UnoCSS + Elegant Router 前端
 - `deploy/`：部署资产
 - `docs/`：项目文档与设计记录
-- `aiDoc/`：AI 协作文档层（本规则的结构化细则）
+- `aiDoc/`：AI 协作文档层
 
 ## 工程规则
 
 ### 架构
 
-- 保持后端分层：`Router -> API -> Service -> Model`，依赖单向，**严禁跨层调用**
+- 保持现有后端分层：`Router -> API -> Service -> Model`
 - `enter.go` 继续作为分组注册与组合入口
-- API 层处理 HTTP 逻辑，**Service 层不得依赖 `gin.Context`**
-- 对外接口的 **Swagger 注释必须与真实行为一致**
-- 优先沿用 gin-vue-admin 现有模式，不做无关大改
+- API 层处理 HTTP 相关逻辑，Service 层不要依赖 `gin.Context`
+- 对外接口的 Swagger 注释必须和真实行为保持一致
+- Swagger 的 `@Success` 响应要落到具体类型，让 swag 能生成真实返回结构：列表用 `response.PageResult{list=[]Model}`、详情用具体 model，不要停留在空的 `response.PageResult` 或 `data=object`（仅动态/示例数据才用 `object`）；细则见 `aiDoc/modules/backend-layer-rules.md`
+- 列表分页统一走 `request.PageInfo`：Service 层取 limit/offset 一律用 `info.LimitOffset()`（内置 `MaxPageSize=100` 截断），不要手写 `PageSize*(Page-1)` 换算
+- `CreatedBy/UpdatedBy/DeletedBy/DeptId` 公共操作字段（`dept_id` 为数据权限的归属部门列）仅在业务表需要数据权限时才创建（对应代码生成器的 AutoCreateResource），手写时不要自造 `CreatorID` 之类同义字段；细则见 `aiDoc/modules/backend-layer-rules.md`
+- 优先沿用 devops-admin 现有模式，不做无关大改
 
 ### 前后端协作
 
 - 明确请求与响应契约
-- 保持统一响应结构：`{ code, data, msg }`（`code` 为**字符串**：成功 `"0000"`、失败 `"0001"`，GVA 范式；前端经 `VITE_SERVICE_SUCCESS_CODE` 适配，详见 `aiDoc/frontend-backend/boundary.md`）
-- 保持统一分页结构：响应 `{ pageNum, pageSize, total, rows }`；请求分页入参页码字段 **JSON body 用 `page`、form/query 用 `pageNum`**（后端 `request.PageInfo` 双 tag：`json:"page" form:"pageNum"`，`pageSize` 同名），即**请求（JSON）`page` / 响应 `pageNum`** 字段名不对称
-- 前后端字段名与数据类型保持一致；Go 指针 nil ↔ TS `null`
+- 保持统一响应结构：`{ code, data, msg }`
+- 保持统一分页结构：`{ pageNum, pageSize, total, rows }`
+- 前后端字段名与数据类型保持一致
 - 优先复用 `web/` 的 `@sa/*` 包与 `src/{service,utils,hooks}`，**禁止重复造轮子**
 - 涉及跨栈边界变更时，**同步更新 `aiDoc/frontend-backend/`**
 
@@ -61,6 +64,28 @@
 - 上游增量小且改动文件本地未动 → 0 冲突自动应用并提交；存在冲突则逐文件报告、**不改动工作区**，人工解决后重跑
 - 细则与冲突处理见 `aiDoc/relations/development-workflow.md`
 
+### 前端样式
+
+- 前端已接入 UnoCSS（`web/uno.config.ts`，presetWind3）。**写样式优先用 UnoCSS 原子类**：布局、间距、排版、尺寸、颜色等能用原子类表达的，一律用原子类，不再新增自定义 class
+- 只有以下情况才写 `<style scoped>`：需要 `:deep()` 覆盖 NaiveUI 内部样式、伪类/伪元素、复杂选择器，或原子类确实难以表达的样式
+- 避免内联 `style`；动态样式用绑定的原子 class 或 CSS 变量，主题相关能力优先走 CSS 变量
+- 细则见 `aiDoc/frontend-backend/frontend-rules.md`
+
+### 图标
+
+- 双体系:本地 SVG(`web/src/assets/svg-icon/`,经 `vite-plugin-svg-icons` + UnoCSS `FileSystemIconLoader` 在**构建期**注册)与 Iconify(`@iconify/vue`,离线走 `setupIconifyOffline()` / `VITE_ICONIFY_URL`);菜单/路由图标用**图标名字符串**引用,渲染统一走 `web/src/components/custom/svg-icon.vue`
+- **菜单图标**:本地款放 `web/src/assets/svg-icon/menu/<name>.svg`,路由里以 `localIcon: 'menu-<name>'` 引用(渲染为 `#icon-local-menu-<name>`);也可用 Iconify 名(如 `icon: 'lucide:users'`)。优先线框/空心风格,避免视觉实心款;**找不到合适的空心款时,去 Iconify(优先 `lucide`)挑一个合适的空心 svg、规整后存为本地 `web/src/assets/svg-icon/menu/<name>.svg`(不要手画自己发挥,也不要将就用实心款)**;新增本地 svg 后由构建期扫描注册,dev 按需热更、生产构建全量进 sprite,**根 `<svg>` 不要写固定 `stroke-width`/`fill`,颜色用 `currentColor` 由外层控制**
+- **其它系统 / 业务开发的图标**:只要语义合适即可,**不必在意空心还是实心**;优先复用现有图标集(lucide 等),确实没有合适的再往 `svg-icon/` 加本地 svg
+- 细则见 `aiDoc/frontend-backend/frontend-rules.md` 的「图标」一节
+
+### 页面点触测试(AI 驱动浏览器验证)
+
+- 前端页面改动需要真实浏览器点触验证时,按 `aiDoc/frontend-backend/page-click-testing.md` 执行
+- **登录态为 httpOnly cookie 模式**(token 不进 JS、前端不下发 Authorization):浏览器自动化**不能**用"向用户索取 token 注入 localStorage"的老办法,维持登录态走 Playwright 的 `storageState` 复用 / `context.addCookies` 注入后端下发的 cookie,或在自动化浏览器里走真实登录(用户名+密码+验证码);详见该文档
+- 浏览器自动化能力当前环境不具备时,**主动建议用户安装**(按该文档「环境前置」一节的话术给出推荐项,首选 Playwright),经用户确认后再装,不要不问就装;用户拒绝则回退为"给出人工目测清单"
+- 需要覆盖登录链路本身(验证码/锁定)时,用「系统设置 → 安全配置」的验证码阈值临时直登,测完改回
+- cookie / storageState 是真实凭证:缓存只能落 `.local/`(已 gitignore),不写入任何会提交的文件、不出现在截图/日志/commit 信息里;点触造成的破坏性数据操作先征得用户同意
+
 ### 插件与模块
 
 - 后端插件放 `server/plugin/<name>/`
@@ -69,26 +94,32 @@
 
 ### 示例文档
 
-- `aiDoc/examples/` 是讲解型示例层，告诉 AI 每一层按什么标准**组织**代码
+- `aiDoc/examples/` 是讲解型示例层
 - 示例**不是逐字复制**，而是示范写法
 - 新增某层文件前，先读对应示例再实现
 
 ### 记忆规则
 
-- `aiDoc/memory/long-term/`：长期稳定的用户偏好、协作方式、跨任务约束，**一主题一文件**
-- `aiDoc/memory/business/`：每次用户提出的业务需求（新增/修改模块、接口、页面、流程、业务规则、插件能力等），**一需求一文件**
-- 用户提出业务需求时，AI **必须**新增或更新一条 `business` 记录，并同步更新 `aiDoc/memory/demand-index.md`
-- 业务需求沉淀成长期偏好后，再提炼到 `long-term/`
-- `README.md`、`project-memory.md`、`demand-index.md` 只承担说明或索引职责，**不承载多条记忆正文**
-- 更新记忆时只改对应那条文件与必要索引，**不要重写汇总正文覆盖其他历史记忆**
+- `aiDoc/memory/long-term/` 用于记录长期稳定的用户偏好、协作方式和跨任务约束
+- `aiDoc/memory/business/` 用于记录每次用户提出的业务需求
+- 这里的“业务需求”指新增或修改模块、接口、页面、流程、业务规则、插件能力等项目需求
+- **一条记忆的粒度是「一个功能点 / 一次独立的变更意图」，不是「一个大模块」**：同一大模块下的不同功能点必须各自独立成一个文件，禁止用“新增子需求”的方式把新功能追加进已有文件
+- 用户提出新的功能点时，AI 必须新建一个 `business` 记忆文件，并在 `demand-index.md` 中登记
+- 只有更新**同一条记忆**（同一个功能点）的状态、进展或已确认约束时，才编辑那个已有文件
+- 同一大模块下的多个功能文件，用统一文件名前缀归组（如 `cli-xxx.md`），并在文件之间用反向链接关联上下文
+- 当某条业务需求沉淀成长期稳定偏好时，再提炼到 `long-term`
+- 长期记忆按主题一条一文件维护，业务记忆按功能点一条一文件维护
+- `README.md`、`project-memory.md`、`demand-index.md` 这类文件只承担说明或索引职责，不承载多条记忆正文
+- 更新记忆时，只修改对应那条记忆文件与必要索引，不要通过重写汇总正文来覆盖其他历史记忆
 
 ### 文档维护
 
 - `AGENT.MD` 只保留高层、稳定、跨任务的规则
 - 细节上下文写入 `aiDoc/`
-- 结构关系放 `aiDoc/relations/`；模块细则放 `aiDoc/modules/`
-- 长期与业务记忆放 `aiDoc/memory/`
-- 项目级 AI 规则变化时，**先改 `AGENT.MD`，再按需更新适配层**
+- 结构关系放在 `aiDoc/relations/`
+- 示例写法放在 `aiDoc/examples/`
+- 长期记忆与业务记忆放在 `aiDoc/memory/`
+- 若项目级 AI 规则发生变化，先改 `AGENT.MD`，再按需更新适配层
 
 ### 代码读取约束
 
@@ -116,8 +147,14 @@
 - `aiDoc/modules/plugin-development.md`
 - `aiDoc/frontend-backend/boundary.md`
 - `aiDoc/frontend-backend/frontend-rules.md`
+- `aiDoc/frontend-backend/page-click-testing.md`
 - `aiDoc/frontend-backend/frontend-utils.md`
+- `aiDoc/frontend-backend/component-library.md`
 - `aiDoc/examples/README.md`
+- `aiDoc/examples/backend/`
+- `aiDoc/examples/frontend/`
+- `aiDoc/examples/plugin/`
 - `aiDoc/memory/README.md`
 - `aiDoc/memory/project-memory.md`
-- `aiDoc/memory/demand-index.md`
+- `aiDoc/memory/long-term/`
+- `aiDoc/memory/business/`

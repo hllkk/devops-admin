@@ -47,6 +47,7 @@ server/log/*
 # Temp / local-only
 skill*
 settings.local.json
+.local/
 Soy*
 worktrees/
 .codegraph/
