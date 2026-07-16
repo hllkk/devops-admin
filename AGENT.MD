@@ -103,6 +103,7 @@
 - **简单改动**（bug 修复、单点调整、已有明确设计的实现）不问，直接按本文件与 `aiDoc/` 规范实现
 - 用户指令优先级高于 skill：用户明确要求轻量或指定流程时，以用户为准
 - 仅当用户同意后，才调用对应的 superpowers skill
+- **superpowers 产物统一存放于本地 `.superpowers/`，不提交仓库**：spec / plan / sdd 等过程性文档一律放入 `.superpowers/`（根 `.gitignore` 已忽略整个目录）。确有长期价值的设计决策，应剥离 superpowers 标签后写入 `aiDoc/`（稳定约束）或 `docs/`（设计记录），不要以 superpowers 产物形式入库
 
 ## AI 文档索引
 
