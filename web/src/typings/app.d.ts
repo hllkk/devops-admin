@@ -500,6 +500,13 @@ declare namespace App {
         };
       };
       route: Record<I18nRouteKey, string>;
+      /** 业务模块显示名（非路由，独立于 route 命名空间以免受 I18nRouteKey 约束） */
+      module: {
+        admin: string;
+        disk: string;
+        server: string;
+        gateway: string;
+      };
       page: {
         login: {
           common: {

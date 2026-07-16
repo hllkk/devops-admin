@@ -260,14 +260,16 @@ const local: App.I18n.Schema = {
     log: '日志中心',
     log_loginlog: '登录日志',
     log_operlog: '操作日志',
-    module_admin: '后台管理',
-    module_disk: '网盘',
-    module_server: '服务器管理',
-    module_gateway: 'AI 网关',
     disk: '网盘',
     server: '服务器管理',
     gateway: 'AI 网关',
     init: '系统初始化'
+  },
+  module: {
+    admin: '后台管理',
+    disk: '网盘',
+    server: '服务器管理',
+    gateway: 'AI 网关'
   },
   page: {
     login: {

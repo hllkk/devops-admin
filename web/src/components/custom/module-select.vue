@@ -21,7 +21,7 @@ const currentConfig = computed(() => MODULE_CONFIG[routeStore.currentModule]);
 /** 下拉选项：全部模块，当前模块 disabled */
 const options = computed<DropdownOption[]>(() =>
   ALL_MODULES.map(m => ({
-    label: $t(`route.module_${m}` as App.I18n.I18nKey),
+    label: $t(`module.${m}`),
     key: m,
     icon: () => h(SvgIcon, { icon: MODULE_CONFIG[m].icon }),
     disabled: m === routeStore.currentModule
@@ -43,7 +43,7 @@ function handleSelect(key: string) {
     <NButton quaternary :focusable="false" class="h-36px text-icon">
       <div class="flex-center gap-8px">
         <SvgIcon :icon="currentConfig.icon" />
-        <span class="text-14px">{{ $t(`route.module_${routeStore.currentModule}`) }}</span>
+        <span class="text-14px">{{ $t(`module.${routeStore.currentModule}`) }}</span>
       </div>
     </NButton>
   </NDropdown>

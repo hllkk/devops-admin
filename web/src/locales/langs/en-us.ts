@@ -264,14 +264,16 @@ const local: App.I18n.Schema = {
     log: 'Log',
     log_loginlog: 'Login Log',
     log_operlog: 'Operation Log',
-    module_admin: 'Admin',
-    module_disk: 'Disk',
-    module_server: 'Server',
-    module_gateway: 'AI Gateway',
     disk: 'Disk',
     server: 'Server',
     gateway: 'AI Gateway',
     init: 'System Init'
+  },
+  module: {
+    admin: 'Admin',
+    disk: 'Disk',
+    server: 'Server',
+    gateway: 'AI Gateway'
   },
   page: {
     login: {
