@@ -1,6 +1,6 @@
 # 后端分层约束
 
-> 适用范围：`server/`。写任何后端代码前先读本文件。技术基座 = gin-vue-admin 同款分层范式，module = `devops-admin`。
+> 适用范围：`server/`。写任何后端代码前先读本文件。技术基座 = gin-vue-admin 同款分层范式，module = `github.com/hllkk/devops-admin/server`（简称 `devops-admin`）。
 
 ## 总原则
 

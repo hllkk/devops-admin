@@ -9,4 +9,5 @@
 见 `business/`（按需求一文件）+ `demand-index.md` 索引。
 
 ## 当前状态
-- 项目刚启动，记忆层为空，随开发积累。
+- 业务记忆持续积累中（见 `business/` 与 `demand-index.md`，截至 2026-07-15 已 11 条）；`long-term/` 暂空，待偏好沉淀后再提炼。
+- 当前主线：**system 权限管理基座**（用户/角色/菜单/部门/岗位/字典/系统设置/初始化向导/httpOnly cookie 认证/go-captcha 验证码）。网盘等业务模块为未来规划，尚未启动（见 `aiDoc/modules/business-modules.md`）。
