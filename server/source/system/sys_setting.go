@@ -34,7 +34,7 @@ func (i *initSysSetting) TableCreated(ctx context.Context) bool {
 	return db.Migrator().HasTable(&system.SysSetting{})
 }
 
-func (i *initSysSetting) InitializerName() string { return "sys_setting" }
+func (i *initSysSetting) InitializerName() string { return system.SysSetting{}.TableName() }
 
 // InitializeData 写入默认 general / security 配置（按 name upsert，已存在则不覆盖）。
 func (i *initSysSetting) InitializeData(ctx context.Context) (context.Context, error) {

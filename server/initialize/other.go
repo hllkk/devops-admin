@@ -119,22 +119,22 @@ func applyEnvOverrides() {
 	// JWT 签名密钥
 	if v := os.Getenv("JWT_SIGNING_KEY"); v != "" {
 		global.OPS_CONFIG.JWT.SigningKey = v
-		global.OPS_LOG.Info("配置项从环境变量加载", zap.String("key", "JWT_SIGNING_KEY"))
+		zap.L().Info("配置项从环境变量加载", zap.String("key", "JWT_SIGNING_KEY"))
 	}
 	// 数据库敏感字段加密密钥
 	if v := os.Getenv("SECRET_ENCRYPT_KEY"); v != "" {
 		global.OPS_CONFIG.System.SecretEncryptKey = v
-		global.OPS_LOG.Info("配置项从环境变量加载", zap.String("key", "SECRET_ENCRYPT_KEY"))
+		zap.L().Info("配置项从环境变量加载", zap.String("key", "SECRET_ENCRYPT_KEY"))
 	}
 	// MySQL 密码
 	if v := os.Getenv("MYSQL_PASSWORD"); v != "" {
 		global.OPS_CONFIG.Mysql.Password = v
-		global.OPS_LOG.Info("配置项从环境变量加载", zap.String("key", "MYSQL_PASSWORD"))
+		zap.L().Info("配置项从环境变量加载", zap.String("key", "MYSQL_PASSWORD"))
 	}
 	// PostgreSQL 密码
 	if v := os.Getenv("PG_PASSWORD"); v != "" {
 		global.OPS_CONFIG.Pgsql.Password = v
-		global.OPS_LOG.Info("配置项从环境变量加载", zap.String("key", "PG_PASSWORD"))
+		zap.L().Info("配置项从环境变量加载", zap.String("key", "PG_PASSWORD"))
 	}
 	// Redis 密码（主实例 + redis-list 所有实例）
 	if v := os.Getenv("REDIS_PASSWORD"); v != "" {
@@ -142,17 +142,17 @@ func applyEnvOverrides() {
 		for i := range global.OPS_CONFIG.RedisList {
 			global.OPS_CONFIG.RedisList[i].Password = v
 		}
-		global.OPS_LOG.Info("配置项从环境变量加载", zap.String("key", "REDIS_PASSWORD"))
+		zap.L().Info("配置项从环境变量加载", zap.String("key", "REDIS_PASSWORD"))
 	}
 	// 初始化密钥
 	if v := os.Getenv("INIT_KEY"); v != "" {
 		global.OPS_CONFIG.System.InitKey = v
-		global.OPS_LOG.Info("配置项从环境变量加载", zap.String("key", "INIT_KEY"))
+		zap.L().Info("配置项从环境变量加载", zap.String("key", "INIT_KEY"))
 	}
 	// 严格设备绑定
 	if v := os.Getenv("STRICT_DEVICE_BINDING"); v != "" {
 		global.OPS_CONFIG.System.StrictDeviceBinding = (v == "true" || v == "1")
-		global.OPS_LOG.Info("配置项从环境变量加载", zap.String("key", "STRICT_DEVICE_BINDING"), zap.Bool("value", global.OPS_CONFIG.System.StrictDeviceBinding))
+		zap.L().Info("配置项从环境变量加载", zap.String("key", "STRICT_DEVICE_BINDING"), zap.Bool("value", global.OPS_CONFIG.System.StrictDeviceBinding))
 	}
 	// 可信反代列表（逗号分隔 CIDR/IP）
 	if v := os.Getenv("TRUSTED_PROXIES"); v != "" {
@@ -163,6 +163,6 @@ func applyEnvOverrides() {
 			}
 		}
 		global.OPS_CONFIG.System.TrustedProxies = tp
-		global.OPS_LOG.Info("配置项从环境变量加载", zap.String("key", "TRUSTED_PROXIES"), zap.Strings("value", tp))
+		zap.L().Info("配置项从环境变量加载", zap.String("key", "TRUSTED_PROXIES"), zap.Strings("value", tp))
 	}
 }

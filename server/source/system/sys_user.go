@@ -48,7 +48,7 @@ func (i *initUser) InitializeData(ctx context.Context) (context.Context, error) 
 	}
 	hashed := utils.BcryptHash(pw)
 	entities := []system.SysUser{
-		{UserId: 101, DeptId: 2, DeptName: "北京总部", UserName: "super", NickName: "超管", Password: hashed, Status: "0"},
+		{UserId: 101, DeptId: 2, DeptName: "北京总部", UserName: "super", NickName: "超级管理员", Password: hashed, Status: "0"},
 		{UserId: 102, DeptId: 2, DeptName: "北京总部", UserName: "admin", NickName: "管理员", Password: hashed, Status: "0"},
 		{UserId: 103, DeptId: 3, DeptName: "天津工厂", UserName: "test1", NickName: "测试用户", Password: hashed, Status: "0"},
 	}

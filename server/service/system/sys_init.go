@@ -45,7 +45,6 @@ const (
 const (
 	InitOrderSystem   = 10
 	InitOrderInternal = 1000
-	InitOrderExternal = 100000
 )
 
 var (
