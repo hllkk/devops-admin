@@ -50,3 +50,6 @@ settings.local.json
 Soy*
 worktrees/
 .codegraph/
+
+# Superpowers（AI 工作流产物：spec / plan / sdd 统一存放于此，不入库）
+.superpowers/
