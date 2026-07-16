@@ -69,7 +69,7 @@ email:
 excel:
     dir: ./resource/excel/
 jwt:
-    signing-key: 734e7bed-7430-4f07-8e26-111060410704
+    signing-key: 65a70b0a-8067-43aa-ad4c-313cc5d09b97
     expires-time: 2h
     refresh-ex-time: 168h
     buffer-time: 1d

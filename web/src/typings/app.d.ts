@@ -664,6 +664,7 @@ declare namespace App {
             statusChangeSuccess: string;
             addUser: string;
             editUser: string;
+            userList: string;
             form: {
               userName: FormMsg;
               nickName: FormMsg;

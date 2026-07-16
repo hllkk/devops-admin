@@ -289,7 +289,7 @@ function handleResetSearch() {
 </script>
 
 <template>
-  <TableSiderLayout :sider-title="$t('page.system.dept.title')">
+  <TableSiderLayout :sider-title="$t('page.system.post.deptTreeTitle')">
     <template #header-extra>
       <NButton size="small" text class="h-18px" @click.stop="() => handleResetTreeData()">
         <template #icon>
@@ -324,7 +324,7 @@ function handleResetSearch() {
     <div class="h-full flex-col-stretch gap-12px overflow-hidden lt-sm:overflow-auto">
       <UserSearch v-model:model="searchParams" @reset="handleResetSearch" @search="getDataByPage" />
       <TableRowCheckAlert v-model:checked-row-keys="checkedRowKeys" />
-      <NCard :title="$t('page.system.user.title')" :bordered="false" size="small" class="card-wrapper sm:flex-1-hidden">
+      <NCard :title="$t('page.system.user.userList')" :bordered="false" size="small" class="card-wrapper sm:flex-1-hidden">
         <template #header-extra>
           <TableHeaderOperation
             v-model:columns="columnChecks"

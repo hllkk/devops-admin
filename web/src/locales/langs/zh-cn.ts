@@ -429,6 +429,7 @@ const local: App.I18n.Schema = {
         statusChangeSuccess: '状态修改成功',
         addUser: '新增用户',
         editUser: '编辑用户',
+        userList: '用户列表',
         form: {
           userName: { required: '请输入用户名称', invalid: '用户名称格式不正确' },
           nickName: { required: '请输入用户昵称', invalid: '用户昵称格式不正确' },

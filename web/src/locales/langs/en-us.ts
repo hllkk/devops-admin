@@ -433,6 +433,7 @@ const local: App.I18n.Schema = {
         statusChangeSuccess: 'Status changed successfully',
         addUser: 'Add User',
         editUser: 'Edit User',
+        userList: 'User List',
         form: {
           userName: { required: 'Please enter user name', invalid: 'User name format is incorrect' },
           nickName: { required: 'Please enter nick name', invalid: 'Nick name format is incorrect' },

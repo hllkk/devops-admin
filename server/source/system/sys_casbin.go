@@ -7,7 +7,6 @@ import (
 	adapter "github.com/casbin/gorm-adapter/v3"
 	"github.com/hllkk/devops-admin/server/model/system"
 	sysSvc "github.com/hllkk/devops-admin/server/service/system"
-	"gorm.io/gorm"
 )
 
 const initOrderCasbin = sysSvc.InitOrderSystem + 7
@@ -17,16 +16,16 @@ type initCasbin struct{}
 func init() { sysSvc.RegisterInit(initOrderCasbin, &initCasbin{}) }
 
 func (i *initCasbin) MigrateTable(ctx context.Context) (context.Context, error) {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
-		return ctx, sysSvc.ErrMissingDBContext
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	return ctx, db.AutoMigrate(&adapter.CasbinRule{})
 }
 
 func (i *initCasbin) TableCreated(ctx context.Context) bool {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
 		return false
 	}
 	return db.Migrator().HasTable(&adapter.CasbinRule{})
@@ -38,9 +37,9 @@ func (i *initCasbin) InitializerName() string { return adapter.CasbinRule{}.Tabl
 // 方式 B：策略源是 sys_menu(C).apis，由 CasbinService.UpdateCasbin 推导，不硬编码 CasbinRule。
 // 顺序 +7：必须在 role(+2)/menu(+3)/role_menu(+6) 之后执行。
 func (i *initCasbin) InitializeData(ctx context.Context) (context.Context, error) {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
-		return ctx, sysSvc.ErrMissingDBContext
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	var roleIds []int64
 	if err := db.Model(&system.SysRole{}).Pluck("role_id", &roleIds).Error; err != nil {

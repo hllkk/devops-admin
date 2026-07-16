@@ -8,6 +8,8 @@ import (
 
 	"github.com/hllkk/devops-admin/server/global"
 	sysSvc "github.com/hllkk/devops-admin/server/service/system"
+
+	_ "github.com/hllkk/devops-admin/server/source/system" // 触发 seed initializer 的 init() 自注册（建表清单的唯一真相源）
 )
 
 func Gorm() *gorm.DB {
@@ -48,10 +50,6 @@ func RegisterTables() {
 		os.Exit(1)
 	}
 
-	if err := bizModel(); err != nil {
-		global.OPS_LOG.Error("register biz_table failed", zap.Error(err))
-		os.Exit(1)
-	}
 	global.OPS_LOG.Info("register table success")
 
 	// 启动时幂等数据迁移：为「已初始化」的旧库补齐后续新增的 seed 内容（菜单/字典/权限）

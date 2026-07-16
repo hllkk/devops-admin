@@ -5,7 +5,6 @@ import (
 
 	"github.com/hllkk/devops-admin/server/model/system"
 	sysSvc "github.com/hllkk/devops-admin/server/service/system"
-	"gorm.io/gorm"
 )
 
 const initOrderAutoMigrate = sysSvc.InitOrderInternal // 排在所有有数据的 seed initializer 之后
@@ -37,16 +36,16 @@ func (i *initAutoMigrate) models() []interface{} {
 }
 
 func (i *initAutoMigrate) MigrateTable(ctx context.Context) (context.Context, error) {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
-		return ctx, sysSvc.ErrMissingDBContext
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	return ctx, db.AutoMigrate(i.models()...)
 }
 
 func (i *initAutoMigrate) TableCreated(ctx context.Context) bool {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
 		return false
 	}
 	for _, m := range i.models() {

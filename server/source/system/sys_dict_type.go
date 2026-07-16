@@ -17,16 +17,16 @@ type initDictType struct{}
 func init() { sysSvc.RegisterInit(initOrderDictType, &initDictType{}) }
 
 func (i *initDictType) MigrateTable(ctx context.Context) (context.Context, error) {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
-		return ctx, sysSvc.ErrMissingDBContext
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	return ctx, db.AutoMigrate(&system.SysDictType{})
 }
 
 func (i *initDictType) TableCreated(ctx context.Context) bool {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
 		return false
 	}
 	return db.Migrator().HasTable(&system.SysDictType{})
@@ -35,9 +35,9 @@ func (i *initDictType) TableCreated(ctx context.Context) bool {
 func (i *initDictType) InitializerName() string { return system.SysDictType{}.TableName() }
 
 func (i *initDictType) InitializeData(ctx context.Context) (context.Context, error) {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
-		return ctx, sysSvc.ErrMissingDBContext
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	entities := []system.SysDictType{
 		{DictId: 1, DictName: "系统状态", DictType: "sys_common_status", Remark: "登录状态列表"},
@@ -61,8 +61,8 @@ func (i *initDictType) InitializeData(ctx context.Context) (context.Context, err
 }
 
 func (i *initDictType) DataInserted(ctx context.Context) bool {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
 		return false
 	}
 	return !errors.Is(db.Where("dict_type = ?", "sys_common_status").First(&system.SysDictType{}).Error, gorm.ErrRecordNotFound)

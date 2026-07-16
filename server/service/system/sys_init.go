@@ -243,6 +243,16 @@ func MigrateRegisteredTables(db *gorm.DB) error {
 	return nil
 }
 
+// DBFromCtx 从初始化上下文取出 *gorm.DB，供各 seed initializer 复用，
+// 替代每个方法重复的 ctx.Value("db").(*gorm.DB) 断言与 ErrMissingDBContext 守卫。
+func DBFromCtx(ctx context.Context) (*gorm.DB, error) {
+	db, ok := ctx.Value("db").(*gorm.DB)
+	if !ok {
+		return nil, ErrMissingDBContext
+	}
+	return db, nil
+}
+
 /* -- sortable interface -- */
 
 func (a initSlice) Len() int {

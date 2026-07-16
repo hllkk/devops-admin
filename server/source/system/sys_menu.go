@@ -18,16 +18,16 @@ type initMenu struct{}
 func init() { sysSvc.RegisterInit(initOrderMenu, &initMenu{}) }
 
 func (i *initMenu) MigrateTable(ctx context.Context) (context.Context, error) {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
-		return ctx, sysSvc.ErrMissingDBContext
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	return ctx, db.AutoMigrate(&system.SysMenu{})
 }
 
 func (i *initMenu) TableCreated(ctx context.Context) bool {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
 		return false
 	}
 	return db.Migrator().HasTable(&system.SysMenu{})
@@ -46,9 +46,9 @@ func apis(pairs ...[2]string) common.JSONSlice[system.MenuApi] {
 }
 
 func (i *initMenu) InitializeData(ctx context.Context) (context.Context, error) {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
-		return ctx, sysSvc.ErrMissingDBContext
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	entities := []system.SysMenu{
 		// ===== 顶级：仪表盘 admin（单页，无子菜单，前端 /admin）=====
@@ -132,8 +132,8 @@ func (i *initMenu) InitializeData(ctx context.Context) (context.Context, error) 
 }
 
 func (i *initMenu) DataInserted(ctx context.Context) bool {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
 		return false
 	}
 	return !errors.Is(db.Where("menu_id = ?", 1500).First(&system.SysMenu{}).Error, gorm.ErrRecordNotFound)

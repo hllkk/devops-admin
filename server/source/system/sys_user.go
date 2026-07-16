@@ -18,16 +18,16 @@ type initUser struct{}
 func init() { sysSvc.RegisterInit(initOrderUser, &initUser{}) }
 
 func (i *initUser) MigrateTable(ctx context.Context) (context.Context, error) {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
-		return ctx, sysSvc.ErrMissingDBContext
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	return ctx, db.AutoMigrate(&system.SysUser{})
 }
 
 func (i *initUser) TableCreated(ctx context.Context) bool {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
 		return false
 	}
 	return db.Migrator().HasTable(&system.SysUser{})
@@ -36,9 +36,9 @@ func (i *initUser) TableCreated(ctx context.Context) bool {
 func (i *initUser) InitializerName() string { return system.SysUser{}.TableName() }
 
 func (i *initUser) InitializeData(ctx context.Context) (context.Context, error) {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
-		return ctx, sysSvc.ErrMissingDBContext
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	pw := "admin123"
 	if v, _ := ctx.Value("adminPassword").(string); v != "" {
@@ -59,8 +59,8 @@ func (i *initUser) InitializeData(ctx context.Context) (context.Context, error) 
 }
 
 func (i *initUser) DataInserted(ctx context.Context) bool {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
 		return false
 	}
 	return !errors.Is(db.Where("user_id = ?", 103).First(&system.SysUser{}).Error, gorm.ErrRecordNotFound)

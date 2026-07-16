@@ -17,16 +17,16 @@ type initUserRole struct{}
 func init() { sysSvc.RegisterInit(initOrderUserRole, &initUserRole{}) }
 
 func (i *initUserRole) MigrateTable(ctx context.Context) (context.Context, error) {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
-		return ctx, sysSvc.ErrMissingDBContext
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	return ctx, db.AutoMigrate(&system.SysUserRole{})
 }
 
 func (i *initUserRole) TableCreated(ctx context.Context) bool {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
 		return false
 	}
 	return db.Migrator().HasTable(&system.SysUserRole{})
@@ -35,9 +35,9 @@ func (i *initUserRole) TableCreated(ctx context.Context) bool {
 func (i *initUserRole) InitializerName() string { return system.SysUserRole{}.TableName() }
 
 func (i *initUserRole) InitializeData(ctx context.Context) (context.Context, error) {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
-		return ctx, sysSvc.ErrMissingDBContext
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	entities := []system.SysUserRole{
 		{UserId: 101, RoleId: 1}, // super → superadmin
@@ -51,8 +51,8 @@ func (i *initUserRole) InitializeData(ctx context.Context) (context.Context, err
 }
 
 func (i *initUserRole) DataInserted(ctx context.Context) bool {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
 		return false
 	}
 	return !errors.Is(db.Where("user_id = ? AND role_id = ?", 103, 3).First(&system.SysUserRole{}).Error, gorm.ErrRecordNotFound)

@@ -19,16 +19,16 @@ func init() { sysSvc.RegisterInit(initOrderSysSetting, &initSysSetting{}) }
 
 // MigrateTable 创建 sys_setting 表（建表职责归属于本 initializer，不再隐式依赖全量兜底）。
 func (i *initSysSetting) MigrateTable(ctx context.Context) (context.Context, error) {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
-		return ctx, sysSvc.ErrMissingDBContext
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	return ctx, db.AutoMigrate(&system.SysSetting{})
 }
 
 func (i *initSysSetting) TableCreated(ctx context.Context) bool {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
 		return false
 	}
 	return db.Migrator().HasTable(&system.SysSetting{})
@@ -38,9 +38,9 @@ func (i *initSysSetting) InitializerName() string { return "sys_setting" }
 
 // InitializeData 写入默认 general / security 配置（按 name upsert，已存在则不覆盖）。
 func (i *initSysSetting) InitializeData(ctx context.Context) (context.Context, error) {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
-		return ctx, sysSvc.ErrMissingDBContext
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
+		return ctx, err
 	}
 
 	general := system.GeneralSettings{
@@ -77,8 +77,8 @@ func (i *initSysSetting) InitializeData(ctx context.Context) (context.Context, e
 }
 
 func (i *initSysSetting) DataInserted(ctx context.Context) bool {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
 		return false
 	}
 	var count int64

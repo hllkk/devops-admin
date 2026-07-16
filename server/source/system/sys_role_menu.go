@@ -6,7 +6,6 @@ import (
 
 	"github.com/hllkk/devops-admin/server/model/system"
 	sysSvc "github.com/hllkk/devops-admin/server/service/system"
-	"gorm.io/gorm"
 )
 
 const initOrderRoleMenu = sysSvc.InitOrderSystem + 6
@@ -16,16 +15,16 @@ type initRoleMenu struct{}
 func init() { sysSvc.RegisterInit(initOrderRoleMenu, &initRoleMenu{}) }
 
 func (i *initRoleMenu) MigrateTable(ctx context.Context) (context.Context, error) {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
-		return ctx, sysSvc.ErrMissingDBContext
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	return ctx, db.AutoMigrate(&system.SysRoleMenu{})
 }
 
 func (i *initRoleMenu) TableCreated(ctx context.Context) bool {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
 		return false
 	}
 	return db.Migrator().HasTable(&system.SysRoleMenu{})
@@ -34,9 +33,9 @@ func (i *initRoleMenu) TableCreated(ctx context.Context) bool {
 func (i *initRoleMenu) InitializerName() string { return system.SysRoleMenu{}.TableName() }
 
 func (i *initRoleMenu) InitializeData(ctx context.Context) (context.Context, error) {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
-		return ctx, sysSvc.ErrMissingDBContext
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	// super(admin) 与 admin 挂全部菜单；user(3) 不挂（无系统管理权限）
 	var allMenuIds []int64
@@ -56,8 +55,8 @@ func (i *initRoleMenu) InitializeData(ctx context.Context) (context.Context, err
 }
 
 func (i *initRoleMenu) DataInserted(ctx context.Context) bool {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
 		return false
 	}
 	var c int64

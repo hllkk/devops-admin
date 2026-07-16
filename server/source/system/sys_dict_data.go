@@ -17,16 +17,16 @@ type initDictData struct{}
 func init() { sysSvc.RegisterInit(initOrderDictData, &initDictData{}) }
 
 func (i *initDictData) MigrateTable(ctx context.Context) (context.Context, error) {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
-		return ctx, sysSvc.ErrMissingDBContext
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	return ctx, db.AutoMigrate(&system.SysDictData{})
 }
 
 func (i *initDictData) TableCreated(ctx context.Context) bool {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
 		return false
 	}
 	return db.Migrator().HasTable(&system.SysDictData{})
@@ -35,9 +35,9 @@ func (i *initDictData) TableCreated(ctx context.Context) bool {
 func (i *initDictData) InitializerName() string { return system.SysDictData{}.TableName() }
 
 func (i *initDictData) InitializeData(ctx context.Context) (context.Context, error) {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
-		return ctx, sysSvc.ErrMissingDBContext
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
+		return ctx, err
 	}
 	entities := []system.SysDictData{
 		// dict_type=sys_common_status：正常/成功状态。DictValue 为字符串列，故键值 "0"。
@@ -102,8 +102,8 @@ func (i *initDictData) InitializeData(ctx context.Context) (context.Context, err
 }
 
 func (i *initDictData) DataInserted(ctx context.Context) bool {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
+	db, err := sysSvc.DBFromCtx(ctx)
+	if err != nil {
 		return false
 	}
 	return !errors.Is(db.Where("dict_code = ?", 1).First(&system.SysDictData{}).Error, gorm.ErrRecordNotFound)
