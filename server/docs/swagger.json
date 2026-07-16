@@ -1,0 +1,27 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "使用devops-admin进行开发基础平台",
+        "title": "Devops-Admin Swagger API接口文档",
+        "contact": {},
+        "version": "v0.2.0"
+    },
+    "paths": {},
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "x-token",
+            "in": "header"
+        }
+    },
+    "tags": [
+        {
+            "description": "基础接口",
+            "name": "Base"
+        },
+        {
+            "description": "用户",
+            "name": "SysUser"
+        }
+    ]
+}

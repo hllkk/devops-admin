@@ -276,7 +276,7 @@ cors:
           expose-headers: Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Content-Type
           allow-credentials: true # 布尔值
 mcp:
-    name: GVA_MCP
+    name: OPS_MCP
     version: v1.0.0
     addr: 8889
     separate: false

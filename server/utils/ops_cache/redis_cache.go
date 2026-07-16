@@ -29,14 +29,14 @@ func (r *redisCache) Get(key string) (any, bool) {
 
 func (r *redisCache) Set(key string, value any, ttl time.Duration) {
 	if err := r.client.Set(context.Background(), key, value, ttl).Err(); err != nil {
-		zap.L().Warn("gva_cache: redis set 失败", zap.String("key", key), zap.Error(err))
+		zap.L().Warn("ops_cache: redis set 失败", zap.String("key", key), zap.Error(err))
 	}
 }
 
 func (r *redisCache) SetDefault(key string, value any) {
 	// 无过期
 	if err := r.client.Set(context.Background(), key, value, 0).Err(); err != nil {
-		zap.L().Warn("gva_cache: redis setDefault 失败", zap.String("key", key), zap.Error(err))
+		zap.L().Warn("ops_cache: redis setDefault 失败", zap.String("key", key), zap.Error(err))
 	}
 }
 
@@ -69,6 +69,6 @@ func (r *redisCache) Exists(key string) bool {
 
 func (r *redisCache) Delete(key string) {
 	if err := r.client.Del(context.Background(), key).Err(); err != nil {
-		zap.L().Warn("gva_cache: redis delete 失败", zap.String("key", key), zap.Error(err))
+		zap.L().Warn("ops_cache: redis delete 失败", zap.String("key", key), zap.Error(err))
 	}
 }

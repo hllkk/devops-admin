@@ -1,0 +1,17 @@
+info:
+  contact: {}
+  description: 使用devops-admin进行开发基础平台
+  title: Devops-Admin Swagger API接口文档
+  version: v0.2.0
+paths: {}
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: x-token
+    type: apiKey
+swagger: "2.0"
+tags:
+- description: 基础接口
+  name: Base
+- description: 用户
+  name: SysUser

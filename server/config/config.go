@@ -20,16 +20,15 @@ type Server struct {
 	AwsS3        AwsS3           `mapstructure:"aws-s3" json:"aws-s3" yaml:"aws-s3"`
 	CloudflareR2 CloudflareR2    `mapstructure:"cloudflare-r2" json:"cloudflare-r2" yaml:"cloudflare-r2"`
 	Minio        Minio           `mapstructure:"minio" json:"minio" yaml:"minio"`
-	// Redis        Redis           `mapstructure:"redis" json:"redis" yaml:"redis"`
-	// RedisList    []Redis         `mapstructure:"redis-list" json:"redis-list" yaml:"redis-list"`
-	// Mongo        Mongo           `mapstructure:"mongo" json:"mongo" yaml:"mongo"`
+	Redis        Redis           `mapstructure:"redis" json:"redis" yaml:"redis"`
+	RedisList    []Redis         `mapstructure:"redis-list" json:"redis-list" yaml:"redis-list"`
+	Mongo        Mongo           `mapstructure:"mongo" json:"mongo" yaml:"mongo"`
+	Captcha      Captcha         `mapstructure:"captcha" json:"captcha" yaml:"captcha"`
 	// Email        Email           `mapstructure:"email" json:"email" yaml:"email"`
-	// Captcha      Captcha         `mapstructure:"captcha" json:"captcha" yaml:"captcha"`
-
 	// Excel        Excel           `mapstructure:"excel" json:"excel" yaml:"excel"`
 
 	// DiskList     []DiskList      `mapstructure:"disk-list" json:"disk-list" yaml:"disk-list"`
 	// Cors         CORS            `mapstructure:"cors" json:"cors" yaml:"cors"`
-	// MCP          MCP             `mapstructure:"mcp" json:"mcp" yaml:"mcp"`
+	MCP MCP `mapstructure:"mcp" json:"mcp" yaml:"mcp"`
 	// App          App             `mapstructure:"app" json:"app" yaml:"app"`
 }

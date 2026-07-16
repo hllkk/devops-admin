@@ -22,7 +22,7 @@ import (
 // @Tag.Description 用户
 
 // @title                       Devops-Admin Swagger API接口文档
-// @version                     v3.0.0
+// @version                     v0.2.0
 // @description                 使用devops-admin进行开发基础平台
 // @securityDefinitions.apikey  ApiKeyAuth
 // @in                          header
@@ -33,7 +33,7 @@ func main() {
 	// 初始化系统
 	initializeSystem()
 	// 运行服务器
-	// core.RunServer()
+	core.RunServer()
 }
 
 // initializeSystem 初始化系统所有组件
@@ -45,12 +45,12 @@ func initializeSystem() {
 	zap.ReplaceGlobals(global.OPS_LOG)
 	global.OPS_DB = initialize.Gorm() // gorm连接数据库
 	initialize.Timer()
-	// initialize.DBList()
-	// initialize.SetupHandlers() // 注册全局函数
-	//
-	//	if global.GVA_DB != nil {
-	//		initialize.RegisterDataScopeCallbacks() // 注册数据权限 GORM 回调
-	//		initialize.RegisterTables()             // 初始化表
-	//		initialize.LoadTimedTasks()             // 从 DB 恢复定时任务调度(必须在建表后)
-	//	}
+	initialize.DBList()
+	initialize.SetupHandlers() // 注册全局函数
+
+	if global.OPS_DB != nil {
+		initialize.RegisterDataScopeCallbacks() // 注册数据权限 GORM 回调
+		initialize.RegisterTables()             // 初始化表
+		initialize.LoadTimedTasks()             // 从 DB 恢复定时任务调度(必须在建表后)
+	}
 }

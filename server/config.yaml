@@ -208,3 +208,59 @@ hua-wei-obs:
     endpoint: you-endpoint
     access-key: you-access-key
     secret-key: you-secret-key
+
+# redis configuration
+redis:
+    #是否使用redis集群模式
+    useCluster: false
+    #使用集群模式addr和db默认无效
+    addr: 127.0.0.1:6379
+    password: ""
+    db: 0
+    clusterAddrs:
+        - "172.21.0.3:7000"
+        - "172.21.0.4:7001"
+        - "172.21.0.2:7002"
+
+# redis-list configuration
+redis-list:
+    - name: cache           # 数据库的名称,注意: name 需要在 redis-list 中唯一
+      useCluster: false     # 是否使用redis集群模式
+      addr: 127.0.0.1:6379  # 使用集群模式addr和db默认无效
+      password: ""
+      db: 0
+      clusterAddrs:
+          - "172.21.0.3:7000"
+          - "172.21.0.4:7001"
+          - "172.21.0.2:7002"
+
+# mongo configuration
+mongo:
+    coll: ''
+    options: ''
+    database: ''
+    username: ''
+    password: ''
+    auth-source: ''
+    min-pool-size: 0
+    max-pool-size: 100
+    socket-timeout-ms: 0
+    connect-timeout-ms: 0
+    is-zap: false
+    hosts:
+        - host: ''
+          port: ''
+
+# captcha configuration
+captcha:
+    key-long: 6
+    img-width: 240
+    img-height: 80
+    open-captcha: 0 # 0代表一直开启，大于0代表限制次数
+    open-captcha-timeout: 3600 # open-captcha大于0时才生效
+
+mcp:
+    name: OPS_MCP
+    version: v1.0.0
+    addr: 8889
+    separate: false

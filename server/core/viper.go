@@ -51,7 +51,7 @@ func getConfigPath() (config string) {
 		fmt.Printf("您正在使用命令行的 '-c' 参数传递的值, config 的路径为 %s\n", config)
 		return
 	}
-	if env := os.Getenv(internal.ConfigEnv); env != "" { // 判断环境变量 GVA_CONFIG
+	if env := os.Getenv(internal.ConfigEnv); env != "" { // 判断环境变量 OPS_CONFIG
 		config = env
 		fmt.Printf("您正在使用 %s 环境变量, config 的路径为 %s\n", internal.ConfigEnv, config)
 		return
