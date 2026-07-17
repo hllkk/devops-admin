@@ -18,6 +18,10 @@ import (
 // 也可通过 --generalInfo flag 指定其他文件
 // @Tag.Name        Base
 // @Tag.Description 基础接口
+
+// @Tag.Name        SysInit
+// @Tag.Description 初始化数据库
+
 // @Tag.Name        SysUser
 // @Tag.Description 用户
 

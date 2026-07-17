@@ -1,9 +1,104 @@
+definitions:
+  request.InitDB:
+    properties:
+      adminPassword:
+        type: string
+      dbName:
+        description: 数据库名
+        type: string
+      dbPath:
+        description: sqlite数据库文件路径
+        type: string
+      dbType:
+        description: 数据库类型
+        type: string
+      host:
+        description: 服务器地址
+        type: string
+      initKey:
+        description: 系统初始化密钥（配置 init-key 非空时必须匹配）
+        type: string
+      password:
+        description: 数据库密码
+        type: string
+      port:
+        description: 数据库连接端口
+        type: string
+      redisAddr:
+        description: Redis 配置（向导第 2 步采集，随 initdb 一次性提交）
+        type: string
+      redisDB:
+        type: integer
+      redisPassword:
+        type: string
+      template:
+        description: postgresql指定template
+        type: string
+      userName:
+        description: 数据库用户名
+        type: string
+    required:
+    - adminPassword
+    - dbName
+    type: object
+  response.Response:
+    properties:
+      code:
+        type: string
+      data: {}
+      msg:
+        type: string
+    type: object
 info:
   contact: {}
   description: 使用devops-admin进行开发基础平台
   title: Devops-Admin Swagger API接口文档
   version: v0.2.0
-paths: {}
+paths:
+  /init/checkdb:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 初始化用户数据库
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  additionalProperties: true
+                  type: object
+                msg:
+                  type: string
+              type: object
+      summary: 初始化用户数据库
+      tags:
+      - SysInit
+  /init/initdb:
+    post:
+      parameters:
+      - description: 初始化数据库参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.InitDB'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 初始化用户数据库
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: 初始化用户数据库
+      tags:
+      - SysInit
 securityDefinitions:
   ApiKeyAuth:
     in: header
@@ -13,5 +108,7 @@ swagger: "2.0"
 tags:
 - description: 基础接口
   name: Base
+- description: 初始化数据库
+  name: SysInit
 - description: 用户
   name: SysUser
