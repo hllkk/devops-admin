@@ -48,6 +48,8 @@ func RegisterTables() {
 		// system.SysBaseMenu{},
 		system.JwtBlacklist{},
 		system.SysRole{},
+		system.SysMenu{},
+		system.SysRoleMenu{},
 		// system.SysDictionary{},
 		// system.SysOperationRecord{},
 		// system.SysAutoCodeHistory{},

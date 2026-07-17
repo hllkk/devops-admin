@@ -44,7 +44,12 @@ func (i *initMenu) DataInserted(ctx context.Context) bool {
 	if !ok {
 		return false
 	}
+	// 检查根级和子级两层哨兵记录,防止部分初始化误判为完整
 	if errors.Is(db.Where("path = ?", "/admin").
+		First(&sysModel.SysMenu{}).Error, gorm.ErrRecordNotFound) {
+		return false
+	}
+	if errors.Is(db.Where("path = ?", "/system/user").
 		First(&sysModel.SysMenu{}).Error, gorm.ErrRecordNotFound) {
 		return false
 	}
@@ -57,7 +62,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 		return ctx, system.ErrMissingDBContext
 	}
 
-	// 定义所有菜单(顶级分组)
+	// 根级菜单: M=目录(有子菜单) / C=菜单(实际页面)
 	rootMenus := []sysModel.SysMenu{
 		{
 			ParentId:  0,
@@ -102,11 +107,12 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 		menuNameMap[menu.MenuName] = menu.MenuId
 	}
 
+	// 子菜单(MenuType=C:有 Component 的实际页面,非目录节点)
 	childMenus := []sysModel.SysMenu{
 		{
 			ParentId:  menuNameMap["route.system"],
 			MenuName:  "route.system_user",
-			MenuType:  "M",
+			MenuType:  "C",
 			Path:      "/system/user",
 			Component: "view.system_user",
 			Icon:      "carbon:user",
@@ -116,7 +122,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 		{
 			ParentId:  menuNameMap["route.system"],
 			MenuName:  "route.system_role",
-			MenuType:  "M",
+			MenuType:  "C",
 			Path:      "/system/role",
 			Component: "view.system_role",
 			Icon:      "carbon-user-role",
@@ -126,7 +132,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 		{
 			ParentId:  menuNameMap["route.system"],
 			MenuName:  "route.system_menu",
-			MenuType:  "M",
+			MenuType:  "C",
 			Path:      "/system/menu",
 			Component: "view.system_menu",
 			Icon:      "mingcute:list-ordered-line",
@@ -136,7 +142,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 		{
 			ParentId:  menuNameMap["route.system"],
 			MenuName:  "route.system_dept",
-			MenuType:  "M",
+			MenuType:  "C",
 			Path:      "/system/dept",
 			Component: "view.system_dept",
 			Icon:      "local-icon-menu-department",
@@ -146,7 +152,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 		{
 			ParentId:  menuNameMap["route.system"],
 			MenuName:  "route.system_post",
-			MenuType:  "M",
+			MenuType:  "C",
 			Path:      "/system/post",
 			Component: "view.system_post",
 			Icon:      "local-icon-menu-post",
@@ -156,7 +162,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 		{
 			ParentId:  menuNameMap["route.system"],
 			MenuName:  "route.system_dict",
-			MenuType:  "M",
+			MenuType:  "C",
 			Path:      "/system/dict",
 			Component: "view.system_dict",
 			Icon:      "local-icon-menu-dict",
@@ -166,7 +172,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 		{
 			ParentId:  menuNameMap["route.system"],
 			MenuName:  "route.system_notice",
-			MenuType:  "M",
+			MenuType:  "C",
 			Path:      "/system/notice",
 			Component: "view.system_notice",
 			Icon:      "carbon:notification",
@@ -176,7 +182,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 		{
 			ParentId:  menuNameMap["route.system"],
 			MenuName:  "route.system_setting",
-			MenuType:  "M",
+			MenuType:  "C",
 			Path:      "/system/setting",
 			Component: "view.system_setting",
 			Icon:      "carbon:settings",
@@ -186,7 +192,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 		{
 			ParentId:  menuNameMap["route.log"],
 			MenuName:  "route.log_loginlog",
-			MenuType:  "M",
+			MenuType:  "C",
 			Path:      "/log/loginlog",
 			Component: "view.log_loginlog",
 			Icon:      "local-icon-menu-login_log",
@@ -196,7 +202,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 		{
 			ParentId:  menuNameMap["route.log"],
 			MenuName:  "route.log_operlog",
-			MenuType:  "M",
+			MenuType:  "C",
 			Path:      "/log/operlog",
 			Component: "view.log_operlog",
 			Icon:      "local-icon-menu-operate_log",
@@ -275,8 +281,11 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 		return ctx, errors.Wrap(err, sysModel.SysMenu{}.TableName()+"按钮权限初始化失败!")
 	}
 
-	// 组合所有菜单作为返回结果
-	allEntities := append(append(rootMenus, childMenus...), buttonMenus...)
+	// 组合所有菜单作为返回结果(独立分配新切片,避免修改 rootMenus 底层数组)
+	allEntities := make([]sysModel.SysMenu, 0, len(rootMenus)+len(childMenus)+len(buttonMenus))
+	allEntities = append(allEntities, rootMenus...)
+	allEntities = append(allEntities, childMenus...)
+	allEntities = append(allEntities, buttonMenus...)
 
 	next = context.WithValue(ctx, i.InitializerName(), allEntities)
 	return next, nil
