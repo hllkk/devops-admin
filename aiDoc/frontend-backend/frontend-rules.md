@@ -1,7 +1,7 @@
 # 前端规范 (frontend-rules)
 
 > 适用范围：仅 `web/`。基座 = SoybeanAdmin 2.x（Vue3 + Vite + TS + NaiveUI + UnoCSS + Elegant Router + `@sa/axios` + vue-i18n，pnpm monorepo）+ **RuoYi 约定混合体**（`CommonRecord`/`PaginatingQueryRecord`/`EnableStatus` 审计与状态类型、`system:模块:动作` 权限码、字典体系、`/system/<m>/*` REST 约定）。
-> `web/` **已 scaffold** 并有真实模块（`_admin/system/{user,role,menu,dept,post,dict,notice}`）。本文件为实况规范，新增模块前以 `dept` 模块为参照（见 §9）。
+> `web/` **已 scaffold** 并有真实模块（`_admin/system/{user,role,menu,dept,post,dict,notice,setting}`，其中 `setting` 是标签页式系统配置页、非标准三件套，见 §9.9）。本文件为实况规范，新增模块前以 `dept` 模块为参照（见 §9）。
 
 ## 1. 路由（Elegant Router，最易错）
 - 基于**文件**：`src/views/*` 文件 → 自动生成 `src/router/elegant/{routes,imports,transform}.ts` 与 `typings/elegant-router.d.ts`（`RouteKey` 联合类型）
@@ -72,7 +72,8 @@ src/views/_admin/system/<m>/
 src/service/api/system/<m>.ts          # CRUD：fetchGetXxx / fetchCreate / fetchUpdate / fetchBatchDelete
 src/typings/api/system.api.d.ts        # Api.System.<Entity> + <Entity>SearchParams + <Entity>OperateParams + <Entity>List
 ```
-- 树形模块（menu/dept）：`index.vue` 用 `useNaiveTreeTable`，列表返回扁平数组，前端 `handleTree` 构树。
+- 树形模块（dept）：`index.vue` 用 `useNaiveTreeTable`，列表返回扁平数组，前端 `handleTree` 构树。
+- 例外：`menu` 因交互形态特殊（树形 + 级联删除弹窗等），暂未接入 `useNaiveTreeTable`，改用 naive-ui `TreeInst` 自管；新增树形模块仍以 `dept` 为准、优先用 hook，不要把 `menu` 当模板。
 - 分页模块（post/role/user）：`index.vue` 用 `useNaivePaginatedTable`，列表返回 `{ pageNum, pageSize, total, rows }`。
 
 ### 9.2 列表页 hook 体系（`src/hooks/common/table.ts`，禁止手搓表格）
@@ -112,6 +113,10 @@ src/typings/api/system.api.d.ts        # Api.System.<Entity> + <Entity>SearchPar
 - `src/components/common/`：基座通用件（布局/主题/语言/全屏等）。
 - `src/components/custom/`：业务通用件（`button-icon`/`dict-*`/`status-switch`/`dept-tree`/`menu-tree`/`file-upload`…）。
 - 可复用 UI 必须抽组件，单一职责，完整 props/emit；优先 NaiveUI + UnoCSS 类名，**禁内联样式**。完整清单见 `frontend-utils.md`。
+
+### 9.9 系统配置页（`setting`，非标准三件套）
+- `setting` 是标签页式配置页，不走列表/抽屉三件套：`index.vue` 承载 `n-tabs`，每个 tab 对应 `modules/<area>-setting.vue`（`general-setting` 通用配置、`security-setting` 安全配置、`setting-menu` 菜单设置）。
+- 新增「系统设置」分区时，沿用「加一个 `<area>-setting.vue` tab + 对应接口封装」的模式，不要套用 §9.1 的列表三件套。
 
 ## 10. 工具复用
 - 先查 `@sa/*` workspace 包、`src/service/`、`src/utils/`、`src/hooks/`，**禁止重复造轮子**

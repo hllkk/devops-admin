@@ -28,7 +28,7 @@
 | | `dict-select` / `dict-radio` / `dict-checkbox` / `dict-tag` | 字典驱动的表单控件 / 列表回显标签 |
 | | `status-switch` | 启用/停用（`EnableStatus`）状态开关 |
 | | `dept-tree` / `menu-tree` | 部门树 / 菜单树选择 |
-| | `file-upload` / `svg-icon` / `soybean-avatar` / `count-to` / `wave-bg` / `better-scroll` / `look-forward` | 其他业务通用件 |
+| | `file-upload` / `svg-icon` / `soybean-avatar` / `count-to` / `wave-bg` / `better-scroll` / `look-forward` / `module-select` | 其他业务通用件 |
 
 ## 工具与常量
 
