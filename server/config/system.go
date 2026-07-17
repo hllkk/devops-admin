@@ -12,5 +12,5 @@ type System struct {
 	UseMongo           bool   `mapstructure:"use-mongo" json:"use-mongo" yaml:"use-mongo"`                                  // 使用mongo
 	UseStrictAuth      bool   `mapstructure:"use-strict-auth" json:"use-strict-auth" yaml:"use-strict-auth"`                // 使用树形角色分配模式
 	DisableAutoMigrate bool   `mapstructure:"disable-auto-migrate" json:"disable-auto-migrate" yaml:"disable-auto-migrate"` // 自动迁移数据库表结构，生产环境建议设为false，手动迁移
-	WorkerID           int    `mapstructure:"worker-id" json:"worker-id" yaml:"worker-id"`                                // 雪花算法工作节点ID(0-63),多副本部署时各实例必须唯一
+	WorkerID           int    `mapstructure:"worker-id" json:"worker-id" yaml:"worker-id"`                                  // 雪花算法工作节点ID(0-63),多副本部署时各实例必须唯一
 }

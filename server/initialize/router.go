@@ -90,14 +90,14 @@ func Routers() *gin.Engine {
 		// systemRouter.InitSystemRouter(PrivateGroup)                         // system相关路由
 		// systemRouter.InitSysVersionRouter(PrivateGroup)                     // 发版相关路由
 		// systemRouter.InitCasbinRouter(PrivateGroup)                         // 权限相关路由
-		// systemRouter.InitAuthorityRouter(PrivateGroup)                      // 注册角色路由
+		// systemRouter.InitRoleRouter(PrivateGroup)                      // 注册角色路由
 		// systemRouter.InitSysDepartmentRouter(PrivateGroup)                  // 注册部门路由
 		// systemRouter.InitSysPositionRouter(PrivateGroup)                    // 注册岗位路由
 		// systemRouter.InitSysDataAccessLogRouter(PrivateGroup)               // 数据权限审计日志
 		// systemRouter.InitSysDictionaryRouter(PrivateGroup)                  // 字典管理
 		// systemRouter.InitSysOperationRecordRouter(PrivateGroup)             // 操作记录
 		// systemRouter.InitSysDictionaryDetailRouter(PrivateGroup)            // 字典详情管理
-		// systemRouter.InitAuthorityBtnRouterRouter(PrivateGroup)             // 按钮权限管理
+		// systemRouter.InitRoleBtnRouterRouter(PrivateGroup)             // 按钮权限管理
 		// systemRouter.InitSysExportTemplateRouter(PrivateGroup, PublicGroup) // 导出模板
 		// systemRouter.InitSysParamsRouter(PrivateGroup, PublicGroup)         // 参数管理
 		// systemRouter.InitSysErrorRouter(PrivateGroup, PublicGroup)          // 错误日志

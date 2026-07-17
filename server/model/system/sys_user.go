@@ -12,8 +12,8 @@ type Login interface {
 	GetUsername() string
 	GetNickname() string
 	GetUUID() uuid.UUID
-	GetUserId() uint
-	GetRoleId() uint
+	GetUserId() int64
+	GetRoleId() int64
 	GetUserInfo() any
 }
 
@@ -22,14 +22,15 @@ type Login interface {
 // 设计要点:
 //   - 嵌入 OPS_AUDIT_MODEL 获取 createTime/updateTime/createBy/updateBy(对齐前端 CommonRecord)
 //   - 主键 UserId(DB 列复用 id,雪花 int64,json userId,string 对齐前端 IdType)
+//   - 全部 ID 字段统一 int64:UserId/DeptId/RoleId 与雪花主键一致,无 uint 特例
 //   - 字段命名严格对齐前端:userName/nickName/phonenumber(非 phone)/avatar(非 headerImg)/status('0'|'1')
-//   - DeptId(int64)为数据权限身份构建字段(service/system/data_scope.go 消费),json deptId 对齐前端
+//   - DeptId 为数据权限身份构建字段(service/system/data_scope.go 消费),json deptId 对齐前端
 //   - UUID 供登录链路 claims 使用; RoleId 为主角色(登录链路 claims 用,前端不输出,故 json:"-")
 //   - 多角色/多部门/多岗位走显式连接表 sys_user_role / sys_user_departments / sys_user_post
 type SysUser struct {
 	global.OPS_AUDIT_MODEL
 	UserId      int64      `gorm:"primarykey;column:id;comment:用户ID" json:"userId,string"`                          // 用户ID(DB列复用id,雪花int64)
-	DeptId      int64      `json:"deptId" gorm:"comment:主部门ID(数据归属/盖章)"`                                           // 主部门ID
+	DeptId      int64      `json:"deptId,string" gorm:"comment:主部门ID(数据归属/盖章)"`                                     // 主部门ID
 	DeptName    string     `json:"deptName" gorm:"-"`                                                               // 部门名称(内存组装,列表展示)
 	UserName    string     `json:"userName" gorm:"index;comment:用户登录名"`                                             // 用户登录名
 	NickName    string     `json:"nickName" gorm:"default:系统用户;comment:用户昵称"`                                       // 用户昵称
@@ -45,11 +46,11 @@ type SysUser struct {
 	Remark      string     `json:"remark" gorm:"comment:备注"`                                                        // 备注
 	UUID        uuid.UUID  `json:"uuid" gorm:"index;comment:用户UUID"`                                                // 用户UUID(登录链路)
 	// 关联(多角色/多部门/多岗位走显式连接表)
-	RoleId      uint            `json:"-" gorm:"default:888;comment:用户主角色ID(登录链路claims用,前端不输出)"`                 // 主角色ID
-	Roles       []SysRole       `json:"roles" gorm:"many2many:sys_user_role;"`                            // 多角色
-	Dept        SysDepartment   `json:"dept" form:"-" gorm:"foreignKey:DeptId;comment:主部门"`               // 主部门;form:"-" 防御 gin 绑定递归
-	Departments []SysDepartment `json:"departments" gorm:"many2many:sys_user_departments;"`               // 多部门归属(数据可见范围)
-	Posts       []SysPost       `json:"posts" gorm:"many2many:sys_user_post;"`                            // 多岗位
+	RoleId      int64           `json:"-" gorm:"default:888;comment:用户主角色ID(登录链路claims用,前端不输出)"` // 主角色ID
+	Roles       []SysRole       `json:"roles" gorm:"many2many:sys_user_role;"`                   // 多角色
+	Dept        SysDepartment   `json:"dept" form:"-" gorm:"foreignKey:DeptId;comment:主部门"`      // 主部门;form:"-" 防御 gin 绑定递归
+	Departments []SysDepartment `json:"departments" gorm:"many2many:sys_user_departments;"`      // 多部门归属(数据可见范围)
+	Posts       []SysPost       `json:"posts" gorm:"many2many:sys_user_post;"`                   // 多岗位
 }
 
 func (SysUser) TableName() string {
@@ -68,11 +69,11 @@ func (s *SysUser) GetUUID() uuid.UUID {
 	return s.UUID
 }
 
-func (s *SysUser) GetUserId() uint {
-	return uint(s.UserId)
+func (s *SysUser) GetUserId() int64 {
+	return s.UserId
 }
 
-func (s *SysUser) GetRoleId() uint {
+func (s *SysUser) GetRoleId() int64 {
 	return s.RoleId
 }
 

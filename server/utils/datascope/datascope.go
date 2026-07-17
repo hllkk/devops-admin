@@ -21,7 +21,7 @@ import (
 	"gorm.io/gorm/schema"
 )
 
-// 数据范围档位(挂在角色 SysAuthority.DataScope 上)
+// 数据范围档位(挂在角色 SysRole.DataScope 上)
 const (
 	ScopeAll          = 1 // 全部
 	ScopeDeptAndChild = 2 // 本部门及以下
@@ -38,14 +38,14 @@ const (
 
 // Identity 一次请求的数据权限身份, 由 DataScope 中间件构建并注入 request.Context()
 type Identity struct {
-	UserID         uint   // 当前用户ID
-	AuthorityID    uint   // 当前角色ID
-	DeptID         uint   // 主部门(创建时盖章)
-	DeptIDs        []uint // 直接归属部门(不含子级, 用于"本部门"档)
-	VisibleDeptIDs []uint // 可见部门并集(所有归属部门的子树之并, 用于"本部门及以下"档)
-	CustomDeptIDs  []uint // 自定义部门集(角色配置, 用于"自定义部门"档)
-	Scope          int    // 数据权限档位("看全部"由 ScopeAll 表达, 不设超管旁路)
-	IsSystem       bool   // 系统上下文(定时任务/CLI/初始化, 放行全部)
+	UserID         int64   // 当前用户ID
+	RoleID         int64   // 当前角色ID
+	DeptID         int64   // 主部门(创建时盖章)
+	DeptIDs        []int64 // 直接归属部门(不含子级, 用于"本部门"档)
+	VisibleDeptIDs []int64 // 可见部门并集(所有归属部门的子树之并, 用于"本部门及以下"档)
+	CustomDeptIDs  []int64 // 自定义部门集(角色配置, 用于"自定义部门"档)
+	Scope          int     // 数据权限档位("看全部"由 ScopeAll 表达, 不设超管旁路)
+	IsSystem       bool    // 系统上下文(定时任务/CLI/初始化, 放行全部)
 }
 
 // AuditEvent 数据权限审计事件, 经 SetAuditHook 注入的写入器异步落表 sys_data_access_logs
@@ -53,8 +53,8 @@ type AuditEvent struct {
 	EventType   string // 见 Event* 常量
 	TargetTable string // 受控业务表名
 	Operation   string // query / create / update / delete
-	UserID      uint   // 事发用户(无身份事件为 0)
-	AuthorityID uint
+	UserID      int64  // 事发用户(无身份事件为 0)
+	RoleID      int64
 	Scope       int
 	RequestID   string // 请求链路信息(来自 logger fields)
 	Method      string
@@ -82,7 +82,7 @@ func emitAudit(db *gorm.DB, eventType, operation, detail string, id *Identity) {
 	}
 	if id != nil {
 		evt.UserID = id.UserID
-		evt.AuthorityID = id.AuthorityID
+		evt.RoleID = id.RoleID
 		evt.Scope = id.Scope
 	}
 	if f := logger.FromCtx(db.Statement.Context); f != nil {
@@ -227,7 +227,7 @@ func filterByScope(db *gorm.DB, operation string) {
 		if hasDept {
 			ids := id.VisibleDeptIDs
 			if len(ids) == 0 {
-				ids = []uint{0} // 无可见部门 → 匹配不到任何行(安全默认)
+				ids = []int64{0} // 无可见部门 → 匹配不到任何行(安全默认)
 			}
 			db.Where(deptCol+" IN ?", ids)
 		}
@@ -235,7 +235,7 @@ func filterByScope(db *gorm.DB, operation string) {
 		if hasDept {
 			ids := id.DeptIDs
 			if len(ids) == 0 {
-				ids = []uint{0}
+				ids = []int64{0}
 			}
 			db.Where(deptCol+" IN ?", ids)
 		}
@@ -245,7 +245,7 @@ func filterByScope(db *gorm.DB, operation string) {
 		} else if hasDept {
 			ids := id.DeptIDs // 无 created_by 时降级为本部门
 			if len(ids) == 0 {
-				ids = []uint{0}
+				ids = []int64{0}
 			}
 			db.Where(deptCol+" IN ?", ids)
 		}
@@ -253,7 +253,7 @@ func filterByScope(db *gorm.DB, operation string) {
 		if hasDept {
 			ids := id.CustomDeptIDs
 			if len(ids) == 0 {
-				ids = []uint{0} // 未配置部门集 → 匹配不到任何行(安全默认)
+				ids = []int64{0} // 未配置部门集 → 匹配不到任何行(安全默认)
 			}
 			db.Where(deptCol+" IN ?", ids)
 		}

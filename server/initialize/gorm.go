@@ -54,7 +54,7 @@ func RegisterTables() {
 		// system.SysDictionaryDetail{},
 		// system.SysBaseMenuParameter{},
 		// system.SysBaseMenuBtn{},
-		// system.SysAuthorityBtn{},
+		// system.SysRoleBtn{},
 		// system.SysAutoCodePackage{},
 		// system.SysExportTemplate{},
 		// system.Condition{},

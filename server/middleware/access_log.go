@@ -77,7 +77,7 @@ func AccessLog() gin.HandlerFunc {
 		if route == "" {
 			route = "unmatched" // 未命中路由(404 等)统一兜底,防止基数爆炸
 		}
-		userID, authorityID := currentIdentity(c)
+		userID, roleID := currentIdentity(c)
 		privateErrs := c.Errors.ByType(gin.ErrorTypePrivate).String()
 		hasErr := c.Writer.Status() >= http.StatusInternalServerError || privateErrs != ""
 		bytesOut := int64(c.Writer.Size())
@@ -92,7 +92,7 @@ func AccessLog() gin.HandlerFunc {
 			Field("bytes_in", bytesIn).
 			Field("bytes_out", bytesOut).
 			Field("user_id", userID).
-			Field("authority_id", authorityID).
+			Field("role_id", roleID).
 			Field("error", hasErr).
 			Field("ua", c.Request.UserAgent()).
 			Field("req_query", c.Request.URL.RawQuery)
@@ -118,10 +118,10 @@ func AccessLog() gin.HandlerFunc {
 // currentIdentity 仅读取 JWTAuth 已解析放入 gin context 的 claims,
 // 不主动解析 token:公开路由无 token,主动解析会每请求产生一条无意义的错误日志。
 // 未认证请求返回 0/0。
-func currentIdentity(c *gin.Context) (userID, authorityID uint) {
+func currentIdentity(c *gin.Context) (userID, roleID int64) {
 	if v, ok := c.Get("claims"); ok {
 		if cl, ok := v.(*systemReq.CustomClaims); ok {
-			return cl.BaseClaims.ID, cl.AuthorityId
+			return cl.BaseClaims.ID, cl.RoleId
 		}
 	}
 	return 0, 0

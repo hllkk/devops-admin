@@ -12,15 +12,15 @@ import "github.com/hllkk/devops-admin/server/global"
 //   - Flag 为内存字段(用户是否拥有该角色标识),不建列
 type SysRole struct {
 	global.OPS_AUDIT_MODEL
-	RoleId            int64  `json:"roleId,string" gorm:"primarykey;comment:角色ID"`                       // 角色ID(列名 role_id)
-	RoleName          string `json:"roleName" gorm:"index;comment:角色名称"`                                // 角色名称
-	RoleKey           string `json:"roleKey" gorm:"index;comment:角色权限字符串"`                              // 角色权限字符串
-	RoleSort          int    `json:"roleSort" gorm:"default:0;comment:显示顺序"`                             // 显示顺序
-	Status            string `json:"status" gorm:"default:0;size:1;comment:角色状态 0正常1停用"`               // 角色状态(对齐前端 '0'/'1')
-	SuperAdmin        bool   `json:"superAdmin" gorm:"default:false;comment:是否管理员"`                     // 是否管理员
-	MenuCheckStrictly bool   `json:"menuCheckStrictly" gorm:"default:true;comment:菜单树选择项是否关联显示"`        // 菜单树选择项是否关联显示
+	RoleId            int64  `json:"roleId,string" gorm:"primarykey;comment:角色ID"`                   // 角色ID(列名 role_id)
+	RoleName          string `json:"roleName" gorm:"index;comment:角色名称"`                             // 角色名称
+	RoleKey           string `json:"roleKey" gorm:"index;comment:角色权限字符串"`                           // 角色权限字符串
+	RoleSort          int    `json:"roleSort" gorm:"default:0;comment:显示顺序"`                         // 显示顺序
+	Status            string `json:"status" gorm:"default:0;size:1;comment:角色状态 0正常1停用"`             // 角色状态(对齐前端 '0'/'1')
+	SuperAdmin        bool   `json:"superAdmin" gorm:"default:false;comment:是否管理员"`                  // 是否管理员
+	MenuCheckStrictly bool   `json:"menuCheckStrictly" gorm:"default:true;comment:菜单树选择项是否关联显示"`     // 菜单树选择项是否关联显示
 	DataScope         int    `json:"dataScope" gorm:"default:1;comment:数据范围 1全部2本部门及子级3本部门4仅本人5自定义"` // 数据范围(后端数据权限,前端不直接消费)
-	Remark            string `json:"remark" gorm:"comment:备注"`                                         // 备注
+	Remark            string `json:"remark" gorm:"comment:备注"`                                       // 备注
 	Flag              bool   `json:"flag" gorm:"-"`                                                  // 用户是否存在此角色标识(内存组装,默认不存在)
 }
 

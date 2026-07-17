@@ -29,7 +29,7 @@ func (s *DataAccessLogService) Enqueue(evt datascope.AuditEvent) {
 		TargetTable: evt.TargetTable,
 		Operation:   evt.Operation,
 		UserID:      evt.UserID,
-		AuthorityID: evt.AuthorityID,
+		RoleID:      evt.RoleID,
 		Scope:       evt.Scope,
 		RequestID:   evt.RequestID,
 		Method:      evt.Method,

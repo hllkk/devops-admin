@@ -14,14 +14,14 @@ var DataScopeServiceApp = new(DataScopeService)
 
 // BuildIdentity 依据用户与角色, 构建一次请求的数据权限身份。
 // 所有查询显式 data_scope:skip 旁路, 避免回调递归; 子树用内存 BFS 计算, 免方言差异。
-func (s *DataScopeService) BuildIdentity(ctx context.Context, userID, authorityID uint) (*datascope.Identity, error) {
-	id := &datascope.Identity{UserID: userID, AuthorityID: authorityID}
+func (s *DataScopeService) BuildIdentity(ctx context.Context, userID, roleID int64) (*datascope.Identity, error) {
+	id := &datascope.Identity{UserID: userID, RoleID: roleID}
 
 	// 1) 角色数据范围
 	var auth system.SysRole
 	err := global.OPS_DB.WithContext(ctx).Set("data_scope:skip", true).
 		Select("role_id", "data_scope").
-		Where("role_id = ?", authorityID).First(&auth).Error
+		Where("role_id = ?", roleID).First(&auth).Error
 	if err == nil && auth.DataScope != 0 {
 		id.Scope = auth.DataScope
 	} else {
@@ -36,13 +36,13 @@ func (s *DataScopeService) BuildIdentity(ctx context.Context, userID, authorityI
 	}
 
 	// 3) 用户全部归属部门(多部门)
-	var deptIDs []uint
+	var deptIDs []int64
 	global.OPS_DB.WithContext(ctx).Set("data_scope:skip", true).
 		Model(&system.SysUserDepartment{}).
 		Where("sys_user_id = ?", userID).
 		Pluck("sys_department_id", &deptIDs)
 
-	roots := make(map[uint]struct{}, len(deptIDs)+1)
+	roots := make(map[int64]struct{}, len(deptIDs)+1)
 	for _, d := range deptIDs {
 		roots[d] = struct{}{}
 	}
@@ -60,28 +60,28 @@ func (s *DataScopeService) BuildIdentity(ctx context.Context, userID, authorityI
 	if id.Scope == datascope.ScopeCustom {
 		global.OPS_DB.WithContext(ctx).Set("data_scope:skip", true).
 			Model(&system.SysRoleDepartment{}).
-			Where("sys_role_id = ?", authorityID).
+			Where("sys_role_id = ?", roleID).
 			Pluck("sys_department_id", &id.CustomDeptIDs)
 	}
 	return id, nil
 }
 
 // subtreeUnion 内存 BFS 计算多个部门子树的并集(含自身)。部门量级小, 一次全量加载即可。
-func (s *DataScopeService) subtreeUnion(ctx context.Context, roots map[uint]struct{}) []uint {
+func (s *DataScopeService) subtreeUnion(ctx context.Context, roots map[int64]struct{}) []int64 {
 	if len(roots) == 0 {
 		return nil
 	}
 	var all []system.SysDepartment
 	global.OPS_DB.WithContext(ctx).Set("data_scope:skip", true).
-		Select("id", "parent_id").Find(&all)
+		Select("dept_id", "parent_id").Find(&all)
 
-	children := make(map[uint][]uint, len(all))
+	children := make(map[int64][]int64, len(all))
 	for _, d := range all {
-		children[d.ParentId] = append(children[d.ParentId], d.ID)
+		children[d.ParentId] = append(children[d.ParentId], d.DeptId)
 	}
 
-	visited := make(map[uint]struct{}, len(roots))
-	queue := make([]uint, 0, len(roots))
+	visited := make(map[int64]struct{}, len(roots))
+	queue := make([]int64, 0, len(roots))
 	for r := range roots {
 		queue = append(queue, r)
 	}
@@ -99,7 +99,7 @@ func (s *DataScopeService) subtreeUnion(ctx context.Context, roots map[uint]stru
 		}
 	}
 
-	res := make([]uint, 0, len(visited))
+	res := make([]int64, 0, len(visited))
 	for id := range visited {
 		res = append(res, id)
 	}

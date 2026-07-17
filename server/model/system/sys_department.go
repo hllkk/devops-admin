@@ -12,18 +12,18 @@ import "github.com/hllkk/devops-admin/server/global"
 //   - Children/NamePath 内存组装,不建列
 type SysDepartment struct {
 	global.OPS_AUDIT_MODEL
-	DeptId       int64           `json:"deptId,string" gorm:"primarykey;comment:部门ID"`            // 部门ID(列名 dept_id)
-	ParentId     int64           `json:"parentId" gorm:"default:0;comment:父部门ID"`             // 父部门ID(0为顶级)
-	Ancestors    string          `json:"ancestors" gorm:"comment:祖级链,逗号分隔如 0,1,5"`          // 祖级链
+	DeptId       int64           `json:"deptId,string" gorm:"primarykey;comment:部门ID"`       // 部门ID(列名 dept_id)
+	ParentId     int64           `json:"parentId,string" gorm:"default:0;comment:父部门ID"`     // 父部门ID(0为顶级)
+	Ancestors    string          `json:"ancestors" gorm:"comment:祖级链,逗号分隔如 0,1,5"`           // 祖级链
 	DeptName     string          `json:"deptName" gorm:"index;comment:部门名称"`                 // 部门名称
-	DeptCategory string          `json:"deptCategory" gorm:"comment:部门类别编码"`                // 部门类别编码
+	DeptCategory string          `json:"deptCategory" gorm:"comment:部门类别编码"`                 // 部门类别编码
 	OrderNum     int             `json:"orderNum" gorm:"default:0;comment:显示顺序"`             // 显示顺序
-	Leader       int64           `json:"leader" gorm:"comment:负责人用户ID"`                    // 负责人(用户ID,对齐前端 number)
-	Phone        string          `json:"phone" gorm:"comment:联系电话"`                         // 联系电话(部门独立)
-	Email        string          `json:"email" gorm:"comment:邮箱"`                           // 邮箱(部门独立)
+	Leader       int64           `json:"leader" gorm:"comment:负责人用户ID"`                      // 负责人(用户ID,对齐前端 number)
+	Phone        string          `json:"phone" gorm:"comment:联系电话"`                          // 联系电话(部门独立)
+	Email        string          `json:"email" gorm:"comment:邮箱"`                            // 邮箱(部门独立)
 	Status       string          `json:"status" gorm:"default:0;size:1;comment:部门状态 0正常1停用"` // 部门状态(对齐前端 '0'/'1')
-	Children     []SysDepartment `json:"children" gorm:"-"`                               // 子部门(内存组装,不建列)
-	NamePath     string          `json:"namePath" gorm:"-"`                               // 公司/部门全路径名(内存组装,不建列)
+	Children     []SysDepartment `json:"children" gorm:"-"`                                  // 子部门(内存组装,不建列)
+	NamePath     string          `json:"namePath" gorm:"-"`                                  // 公司/部门全路径名(内存组装,不建列)
 }
 
 func (SysDepartment) TableName() string {
