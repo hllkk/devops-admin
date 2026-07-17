@@ -1,10 +1,13 @@
 package system
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/hllkk/devops-admin/server/global"
 )
 
+// Login 登录链路所需的最小用户视图(JWT claims 构建消费)
 type Login interface {
 	GetUsername() string
 	GetNickname() string
@@ -14,25 +17,40 @@ type Login interface {
 	GetUserInfo() any
 }
 
+// SysUser 用户(对外业务实体,字段对齐前端 Api.System.User / RuoYi 契约)
+//
+// 设计要点:
+//   - 嵌入 OPS_AUDIT_MODEL 获取 createTime/updateTime/createBy/updateBy(对齐前端 CommonRecord)
+//   - 主键自定义 UserId(DB 列复用 id,零迁移;雪花回调 ops:snowflake_id 待落地,当前走 DB 自增)
+//   - 字段命名严格对齐前端:userName/nickName/phonenumber(非 phone)/avatar(非 headerImg)/status('0'|'1')
+//   - DeptId 为数据权限身份构建字段(service/system/data_scope.go 消费),json deptId 对齐前端
+//   - UUID 供登录链路 claims 使用
+//   - 关联字段(Role/Roles/Dept/Departments/Positions)暂保留 many2many,显式关联表改造为后续任务
 type SysUser struct {
-	global.OPS_MODEL
-	UUID        uuid.UUID       `json:"uuid" gorm:"index;comment:用户UUID"`                                                     // 用户UUID
-	Username    string          `json:"userName" gorm:"index;comment:用户登录名"`                                                  // 用户登录名
-	Password    string          `json:"-"  gorm:"comment:用户登录密码"`                                                             // 用户登录密码
-	NickName    string          `json:"nickName" gorm:"default:系统用户;comment:用户昵称"`                                            // 用户昵称
-	HeaderImg   string          `json:"headerImg" gorm:"default:https://qmplusimg.henrongyi.top/gva_header.jpg;comment:用户头像"` // 用户头像
-	RoleId      uint            `json:"roleId" gorm:"default:888;comment:用户角色ID"`                                             // 用户角色ID
-	Role        SysRole         `json:"role" gorm:"foreignKey:RoleId;references:ID;comment:用户角色"`                             // 用户角色
-	Roles       []SysRole       `json:"roles" gorm:"many2many:sys_user_role;"`                                                // 多用户角色
-	DeptId      uint            `json:"deptId" gorm:"comment:主部门ID(数据归属/盖章)"`                                                 // 主部门ID(数据归属)
-	Dept        SysDepartment   `json:"dept" form:"-" gorm:"foreignKey:DeptId;references:ID;comment:主部门"`                     // 主部门;form:"-" 阻断 gin 绑定递归(与 SysDepartment.Leader 成环会栈溢出)
-	Departments []SysDepartment `json:"departments" gorm:"many2many:sys_user_departments;"`                                   // 多部门归属(数据可见范围)
-	Positions   []SysPosition   `json:"positions" gorm:"many2many:sys_user_positions;"`                                       // 多岗位
-	Phone       string          `json:"phone"  gorm:"comment:用户手机号"`                                                          // 用户手机号
-	Email       string          `json:"email"  gorm:"comment:用户邮箱"`                                                           // 用户邮箱
-	Enable      int             `json:"enable" gorm:"default:1;comment:用户是否被冻结 1正常 2冻结"`                                      //用户是否被冻结 1正常 2冻结
-	// OriginSetting     common.JSONMap  `json:"originSetting" form:"originSetting" gorm:"type:text;default:null;column:origin_setting;comment:配置;"` //配置
-	// PasswordUpdatedAt *time.Time      `json:"passwordUpdatedAt" gorm:"comment:密码最后修改时间"`                                                          //密码最后修改时间
+	global.OPS_AUDIT_MODEL
+	UserId      int64     `gorm:"primarykey;column:id;comment:用户ID" json:"userId,string"`                          // 用户ID(DB列复用id,零迁移)
+	DeptId      uint      `json:"deptId" gorm:"comment:主部门ID(数据归属/盖章)"`                                           // 主部门ID
+	DeptName    string    `json:"deptName" gorm:"-"`                                                              // 部门名称(内存组装,列表展示)
+	UserName    string    `json:"userName" gorm:"index;comment:用户登录名"`                                             // 用户登录名
+	NickName    string    `json:"nickName" gorm:"default:系统用户;comment:用户昵称"`                                       // 用户昵称
+	UserType    string    `json:"userType" gorm:"default:sys_user;size:32;comment:用户类型(sys_user系统用户)"`               // 用户类型
+	Email       string    `json:"email" gorm:"comment:用户邮箱"`                                                    // 用户邮箱
+	Phonenumber string    `json:"phonenumber" gorm:"index;comment:手机号"`                                            // 手机号(对齐前端 phonenumber)
+	Sex         string    `json:"sex" gorm:"default:0;size:1;comment:性别 0男1女2未知"`                                  // 性别
+	Avatar      string    `json:"avatar" gorm:"default:https://qmplusimg.henrongyi.top/gva_header.jpg;comment:头像"` // 头像
+	Password    string    `json:"-" gorm:"comment:用户登录密码"`                                                       // 密码(不输出)
+	Status      string    `json:"status" gorm:"default:0;size:1;comment:帐号状态 0正常1停用"`                              // 帐号状态(对齐前端 '0'/'1')
+	LoginIp     string    `json:"loginIp" gorm:"comment:最后登录IP"`                                                 // 最后登录IP
+	LoginDate   *time.Time `json:"loginDate" gorm:"comment:最后登录时间"`                                               // 最后登录时间
+	Remark      string    `json:"remark" gorm:"comment:备注"`                                                      // 备注
+	UUID        uuid.UUID `json:"uuid" gorm:"index;comment:用户UUID"`                                              // 用户UUID(登录链路)
+	// 关联(暂保留,many2many→显式关联表为后续任务)
+	RoleId      uint            `json:"roleId" gorm:"default:888;comment:用户主角色ID"`                                    // 主角色ID
+	Role        SysRole         `json:"role" gorm:"foreignKey:RoleId;references:ID;comment:用户主角色"`                     // 主角色
+	Roles       []SysRole       `json:"roles" gorm:"many2many:sys_user_role;"`                                          // 多角色(待改显式表)
+	Dept        SysDepartment   `json:"dept" form:"-" gorm:"foreignKey:DeptId;references:ID;comment:主部门"`               // 主部门;form:"-" 阻断 gin 绑定递归(与 SysDepartment.Leader 成环会栈溢出)
+	Departments []SysDepartment `json:"departments" gorm:"many2many:sys_user_departments;"`                            // 多部门归属(数据可见范围,待改显式表)
+	Positions   []SysPosition   `json:"positions" gorm:"many2many:sys_user_positions;"`                                // 多岗位(待改显式表)
 }
 
 func (SysUser) TableName() string {
@@ -40,7 +58,7 @@ func (SysUser) TableName() string {
 }
 
 func (s *SysUser) GetUsername() string {
-	return s.Username
+	return s.UserName
 }
 
 func (s *SysUser) GetNickname() string {
@@ -52,7 +70,7 @@ func (s *SysUser) GetUUID() uuid.UUID {
 }
 
 func (s *SysUser) GetUserId() uint {
-	return s.ID
+	return uint(s.UserId)
 }
 
 func (s *SysUser) GetRoleId() uint {
