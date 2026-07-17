@@ -10,18 +10,19 @@
 
 ## Model 层
 
-- 全局基座位于 `server/global/common.go`，分两个：
-  - `global.OPS_MODEL`：生命周期基座（`CreateTime/UpdateTime/DeletedAt`），所有表通用，**不含主键**
-  - `global.OPS_AUDIT_MODEL`：审计基座（内嵌 `OPS_MODEL` + `CreateBy/UpdateBy`），用于对齐 RuoYi/前端 `CommonRecord` 的对外业务实体（`SysUser`/`SysRole`/菜单…）
-- 内部系统记录（日志、黑名单等 append-only 表）用 `OPS_MODEL`；对外业务实体用 `OPS_AUDIT_MODEL`
-- 主键不在基座，由各模型自定义：对外用业务命名（`userId`/`roleId`，`json:"userId,string"`），内部用 `id`（`json:"id,string"`）；统一雪花 `int64`、`autoIncrement:false`，回调 `ops:snowflake_id` 按 `PrioritizedPrimaryField` 自动填充
+- 全局基座位于 `server/global/model.go`，分三个（最底层 `OPS_BASE` 不含主键）：
+  - `global.OPS_BASE`：生命周期基座（`CreateTime/UpdateTime/DeletedAt`），所有表通用，**不含主键**
+  - `global.OPS_MODEL`：过渡基座 = `OPS_BASE` + `ID`（`uint`，`json:"id,string"`，自带主键），供尚未改造为业务命名主键的内部系统表（日志/黑名单/单行配置等）直接复用
+  - `global.OPS_AUDIT_MODEL`：审计基座 = `OPS_BASE` + `CreateBy/UpdateBy`（`json:"createBy,string"` / `"updateBy,string"`），用于对齐 RuoYi/前端 `CommonRecord` 的对外业务实体（`SysUser`…）
+- 内部系统记录（日志、黑名单等 append-only 表）用 `OPS_MODEL`；对外业务实体用 `OPS_AUDIT_MODEL`，并自定义业务命名主键
+- 主键策略：对外业务实体自定义业务命名主键（`userId`/`roleId`，`json:"userId,string"`），内部表用 `id`。**目标**统一雪花 `int64` + `autoIncrement:false` + 回调 `ops:snowflake_id`（按 `PrioritizedPrimaryField` 自动填充，仅在主键为 0 时不覆盖显式值）；该回调与 `utils/snowflake` **当前待落地**，现阶段主键走 DB 自增，新建模型须显式声明主键列
 - 字段应补全清晰的 `json` 与 `gorm` 标签
 - 请求模型放在 `model/request/`
 - 列表查询模型应定义 `XxxSearch`，并内嵌通用的 `request.PageInfo`
 
 ### 关联建模：多对多用显式关联表，不用 GORM `many2many`
 
-多对多关系一律建**独立的关联表 struct**（复合主键 + 显式 `TableName()`），并在 `RegisterTables()` 注册；**不挂** `gorm:"many2many:..."` 自动关联。参考 `SysUserRole` / `SysRoleMenu`。
+多对多关系一律建**独立的关联表 struct**（复合主键 + 显式 `TableName()`），并在 `RegisterTables()` 注册；**不挂** `gorm:"many2many:..."` 自动关联。参考 `SysUserRole` / `SysRoleDepartment` / `SysUserDepartment`。
 
 理由：
 
@@ -33,7 +34,7 @@
 
 读写约定：
 
-- **写入侧**：批量删插走显式 struct（如 `SysRoleMenu`）。
+- **写入侧**：批量删插走显式 struct（如 `SysUserRole`）。
 - **读取侧**：默认也走显式 join 查询。若某场景确需对象图导航，可在模型上挂只读 `gorm:"many2many:..."` 字段（复用同一张物理表），但写入侧不变。
 
 ## 类型一致性

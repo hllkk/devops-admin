@@ -43,9 +43,9 @@
 - `enter.go` 继续作为分组注册与组合入口
 - API 层处理 HTTP 相关逻辑，Service 层不要依赖 `gin.Context`
 - 对外接口的 Swagger 注释必须和真实行为保持一致
-- Swagger 的 `@Success` 响应要落到具体类型，让 swag 能生成真实返回结构：列表用 `response.PageResult{list=[]Model}`、详情用具体 model，不要停留在空的 `response.PageResult` 或 `data=object`（仅动态/示例数据才用 `object`）；细则见 `aiDoc/modules/backend-layer-rules.md`
+- Swagger 的 `@Success` 响应要落到具体类型，让 swag 能生成真实返回结构：列表用 `response.PageResult{Rows=[]Model}`（`PageResult` 字段为 `Rows/Total/PageNum/PageSize`）、详情用具体 model，不要停留在空的 `response.PageResult` 或 `data=object`（仅动态/示例数据才用 `object`）；细则见 `aiDoc/modules/backend-layer-rules.md`
 - 列表分页统一走 `request.PageInfo`：Service 层取 limit/offset 一律用 `info.LimitOffset()`（内置 `MaxPageSize=100` 截断），不要手写 `PageSize*(Page-1)` 换算
-- `CreatedBy/UpdatedBy/DeletedBy/DeptId` 公共操作字段（`dept_id` 为数据权限的归属部门列）仅在业务表需要数据权限时才创建（对应代码生成器的 AutoCreateResource），手写时不要自造 `CreatorID` 之类同义字段；细则见 `aiDoc/modules/backend-layer-rules.md`
+- `CreateBy`/`UpdateBy`/`DeptId` 公共操作字段（审计基座 `OPS_AUDIT_MODEL` 提供 `create_by`/`update_by`；`dept_id` 为数据权限的归属部门列；`deleted_by` 不是基座字段，由数据权限引擎在表含该列时软删除盖章）仅在业务表需要数据权限时才创建（对应代码生成器的 AutoCreateResource），手写时不要自造 `CreatorID`/`CreatedBy` 之类同义字段；细则见 `aiDoc/modules/backend-layer-rules.md`
 - 优先沿用 devops-admin 现有模式，不做无关大改
 
 ### 前后端协作

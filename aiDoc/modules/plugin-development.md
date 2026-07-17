@@ -32,7 +32,7 @@
 - 通过 `Register` 方法挂载路由（调 `initialize.Router`）
 - 通过 `RouterPath` 返回插件根路径
 
-并在 `server/plugin/register.go` 用 `_ "devops-admin/server/plugin/<name>"` 匿名引用激活。
+并在 `server/plugin/register.go` 用 `_ "github.com/hllkk/devops-admin/server/plugin/<name>"` 匿名引用激活。
 
 入口写法见 `aiDoc/examples/backend/plugin-go-example.md`。
 

@@ -2,8 +2,8 @@
 
 > devops-admin 的业务按模块组织，每个模块一节，记录 model/接口/边界。随业务开发补充。
 >
-> **实现状态总览（2026-07-15 校准）**
-> - **当前已落地主线：system 权限管理基座**——含用户/角色/菜单/部门/岗位/字典模型、初始化向导、httpOnly cookie 认证、go-captcha 验证码（详见下方「系统设置（已实现）」节与 `aiDoc/memory/business/`）。
+> **实现状态总览（2026-07-16 校准）**
+> - **当前已落地主线：system 核心基座（`1d632d9` 重构后）**——用户/角色/部门/岗位模型 + 安全配置/数据权限/JWT 黑名单/错误日志/定时任务 Service 骨架（详见下方「系统模块（重构后现状）」节）。**注意**：重构前的菜单/字典模型、初始化向导、`/init/*`、`/auth/*`（httpOnly cookie + go-captcha）、`sys_setting` 等实现**在重构后未保留**，对应 API/Router 待重建（历史轨迹见 `aiDoc/memory/business/` 与 `demand-index.md`）；`api/` 层当前为空。
 > - **网盘模块：规划中、尚未启动**（见下方「网盘模块（规划中，未启动）」节）。前端 i18n 已预留 `disk` 等模块文案（`src/locales` 的 `module` 命名空间），后端无对应代码、`demand-index.md` 无相关记录。原需求骨架 `SoyDisk-Product-Spec.md` **当前不在仓库内**，启动前需重新确认去向。
 
 ## 网盘模块（规划中，未启动）
@@ -51,27 +51,33 @@
 ### 公共资料库
 - 一键覆盖全员可见可下载，管理员不必逐人共享
 
-## 系统设置（已实现）
+## 系统模块（重构后现状）
 
-全局配置中心：键值对表 `sys_setting`（`name`=分类 + `value`=JSON 文本），按分类聚合读写，不随业务表扩张。登录页用公开接口读展示配置，管理员用 admin 接口读写完整配置。源实现搬运自 `main` 子模块（backend/frontend），已按项目规则重构。
+`1d632d9`「完成项目基础架构重构与模块初始化」起，系统模块以**核心基座**形式重建，命名统一 `OPS_` 前缀。当前为 **Model + 部分 Service 骨架**，业务 API/Router 尚未补齐。
 
-### 存储与接口
-- 表 `sys_setting`：雪花主键 + `OPS_MODEL` + `name`(唯一索引) + `value`(text) + `desc`，一个分类一行。
-- 聚合 DTO `SystemSettings`：`general` / `security` / `authentication` / `ldap` / `notify` / `disk` 六类指针，未配置返回 nil。
-- 接口（单数路径 `/system/setting/*`）：`GET /system/setting/public`（公开，脱敏子集）、`GET /system/setting`（admin 完整）、`PUT /system/setting`（admin 整体保存，事务内按分类 upsert）。统一 `{code,data,msg}`，code 字符串 `0000`/`0001`。
-- 鉴权分层：public 组（无需登录，登录页用）/ admin 组（JWT + RequireAdmin）。
-- 菜单与权限 seed：`source/system/sys_menu.go`（菜单 `system:setting:list` + 按钮 `system:setting:save` + 关联 Apis）；默认配置 seed：`source/system/sys_setting.go`（general + security），初始化向导写入。
+### 已建模型（`model/system/`）
 
-### 配置分类
-- **general** 通用：站点名称/描述/Logo/Favicon、默认用户密码/角色、验证码（类型/长度/过期/误差）、登录与操作日志保留天数。
-- **security** 安全：密码策略（最小长度/大小写/数字/特殊字符）、登录失败锁定（次数/时长）、IP 黑白名单。
-- **authentication** 认证（阶段二）：企业微信/微信/Gitee/GitHub 第三方登录；密钥类字段返回时脱敏。
-- **ldap**（阶段二）：扁平结构——服务器/绑定账号/基础 OU/同步策略；master 暂无 LDAP 后端。
-- **notify** 通知（阶段二）：邮件（SMTP），预留短信/飞书/Webhook。
-- **disk** 网盘（阶段二）：上传限制/配额/分享密码/OnlyOffice/转码/解压缩——**网盘存储总量上限配置在此**（见网盘模块·配额），网盘模块落地后消费。
+- 业务实体：`SysUser`（`OPS_AUDIT_MODEL` + 自定义 `UserId`，字段对齐前端 `Api.System.User`/RuoYi）、`SysRole`（旧形态：手写时间戳、主键 `RoleId` json `id`）、`SysDepartment`、`SysPosition`。
+- 系统表：`JwtBlacklist`、`SysSecurityConfig`（安全配置，替代旧 `sys_setting`）、`SysError`（错误日志）、`SysDataAccessLog`（数据访问审计）、`SysTimedTask`/`SysTimedTaskLog`（定时任务）。
+- 关联表（显式 struct）：`SysUserRole`、`SysRoleDepartment`、`SysUserDepartment`。
+- **未保留**：`SysMenu`/`SysDictType`/`SysDictData`/`SysRoleMenu`（重构前曾建，重构后待重建）。
 
-### 前端
-- 页面 `_admin/system/setting/index.vue`：左侧分类菜单 + 右侧表单，整体加载、整体保存（用 `??` 兜底，保留合法的 0/false）。
-- 当前进度：general + security 两个 Tab；auth/disk/ldap/notify 随对应模块落地再补（后端存储已就绪，只需加 module）。
-- logo/favicon 当前为 URL 输入，上传组件待阶段二。
+### 已建 Service 骨架（`service/system/`）
+
+- `data_scope`：数据权限引擎（按 `dept_id`/`create_by` 构建身份与可见范围，实现见 `utils/datascope`）。
+- `jwt_black_list`：JWT 黑名单（refresh 轮换失效）。
+- `sys_security_config`：安全配置（密码策略/登录失败锁定/IP 黑白名单，存 `SysSecurityConfig` 表）。
+- `sys_error`：错误日志。
+- `sys_timed_task`（+ `http` + `runner`）：定时任务调度与 HTTP 触发。
+- `auto_code`：代码生成。
+
+### 待补
+
+- 业务 API/Router：`api/` 当前**为空**，user/role/dept/post/menu/dict 的 API+Router 待按 `Api.System.*` 反推实现（前端页面已齐备）。
+- 菜单/字典：模型与权限 seed 待重建（前端 `page.system.menu/dict` 已就绪）。
+- 认证与初始化链路：`/auth/*`（httpOnly cookie 登录 + go-captcha 验证码）、`/init/*`（初始化向导）等 HTTP 接口重构后未保留，待重建（历史设计见 `aiDoc/memory/business/` 的 `httponly-cookie-auth`、`go-captcha-login`、`system-init-flow`、`init-wizard-redis`）。
+
+### 系统设置（待重建）
+
+重构前的全局配置中心 `sys_setting`（`name`=分类 + `value`=JSON，六类 `general`/`security`/`authentication`/`ldap`/`notify`/`disk`）**在重构后未保留**。当前安全相关配置由 `SysSecurityConfig` 承载，其余分类（通用/认证/LDAP/通知/网盘）的落地方式待重新设计，历史设计要点见 `demand-index.md`。
 

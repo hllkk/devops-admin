@@ -23,10 +23,10 @@
 
 | 目录 | 用途 |
 |---|---|
-| `cmd/` | 命令行入口（如 `cmd/mcp/` MCP server 启动） |
-| `mcp/` | MCP server：让 AI 助手与本平台交互；开发新功能前先通过 MCP 获支持 |
-| `task/` | 定时任务（按模块需求，如过期数据清理） |
-| `resource/` | 静态资源 / 模板 |
+| `cmd/` | 命令行入口（当前为空，按需新增，如独立 server 启动） |
+| `mcp/` | MCP server 实现（`context.go`/`http_client.go`）：让 AI 助手与本平台交互；开发新功能前先通过 MCP 获支持 |
+| `task/` | 定时任务（`registry.go` 注册 + `clearTable.go` 清理，按模块需求扩展） |
+| `resource/` | 静态资源 / 模板（当前为空） |
 
 分层细则见 `aiDoc/modules/backend-layer-rules.md`。
 

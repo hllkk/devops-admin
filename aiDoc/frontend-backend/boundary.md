@@ -8,8 +8,8 @@
 
 ## 契约规则
 
-- 保持统一响应结构：`{ code, data, msg }`，`code` 为**字符串**（成功 `"0000"`、失败 `"0001"`，GVA 范式）。前端请求适配器 `isBackendSuccess` 判 `String(code) === VITE_SERVICE_SUCCESS_CODE`（默认 `"0000"`，见 `web/.env`），**不是判 `code === 0`**；`onBackendFail` 按 `.env` 的 `VITE_SERVICE_LOGOUT_CODES`(8888/8889) / `MODAL_LOGOUT_CODES`(7777/7778) / `EXPIRED_TOKEN_CODES`(9999/9998/3333) 分流登出与刷新 token
-- 保持统一分页结构：响应 `{ pageNum, pageSize, total, rows }`；请求分页入参的页码字段为 `page`（后端 `request.PageInfo.PageNum` 的 json tag 为 `page`，`pageSize` 同名），即**请求 `page` / 响应 `pageNum`** 字段名不对称，前后端各自遵守
+- 保持统一响应结构：`{ code, data, msg }`，`code` 为**字符串**（成功 `"0000"`；失败码 = `response.ERROR`，当前值为 `"7"`，凡 `!= "0000"` 前端一律视为失败）。前端请求适配器 `isBackendSuccess` 判 `String(code) === VITE_SERVICE_SUCCESS_CODE`（默认 `"0000"`，见 `web/.env`），**不是判 `code === 0`**；`onBackendFail` 按 `.env` 的 `VITE_SERVICE_LOGOUT_CODES`(8888/8889) / `MODAL_LOGOUT_CODES`(7777/7778) / `EXPIRED_TOKEN_CODES`(9999/9998/3333) 分流登出与刷新 token
+- 保持统一分页结构：响应 `{ pageNum, pageSize, total, rows }`（`response.PageResult` 字段 `Rows/Total/PageNum/PageSize`）；请求分页入参为同名字段（后端 `request.PageInfo.PageNum`/`PageSize`，json tag 均为 `pageNum`/`pageSize`），即**请求与响应字段名对称**（`pageNum`/`pageSize`）
 - 字段名不要随意漂移
 - 前后端字段类型必须保持一致
 - 后端必须提供完整而准确的 Swagger 接口说明
@@ -17,13 +17,15 @@
 
 ## 主键 ID 契约
 
-所有业务表的整型主键统一使用**雪花算法**生成的 `int64` ID（后端 `utils/snowflake` 自实现，GORM `BeforeCreate` 回调 `ops:snowflake_id` 在主键为 0 时按 `PrioritizedPrimaryField` 自动填充，三处 `OPS_DB` 赋值点均已注册）。主键不放在全局基座里，由各业务模型自定义列名/JSON 名（对外实体用业务命名 `userId`/`roleId`，内部表用 `id`）。
+**目标**：业务表整型主键统一用雪花算法生成的 `int64`，GORM `BeforeCreate` 回调 `ops:snowflake_id` 在主键为 0 时按 `PrioritizedPrimaryField` 自动填充、不覆盖显式值。主键不放在全局基座里，由各业务模型自定义列名/JSON 名（对外实体用业务命名 `userId`/`roleId`，内部表用 `id`）。
+
+> **当前状态（2026-07-16）**：`utils/snowflake` 与 `ops:snowflake_id` 回调**尚未落地**，`OPS_DB` 赋值点未注册该回调，现阶段主键走 **DB 自增**；新建模型须显式声明主键列。雪花链路待重建（历史设计见 `aiDoc/memory/business/snowflake-id-generator.md`）。
 
 - **传输格式**：JSON 中 ID 一律以**字符串**传输（Go 端 `json:"...,string"`，如 `json:"userId,string"` / `json:"id,string"`），规避 JS `Number` 仅能安全表示到 2^53 的精度丢失（雪花 ID 通常 18~19 位十进制）。
 - **前端约束**：所有 ID 字段一律按 `string` 收发，**禁止当 number 做数值运算或比较**；需要排序/比较时转 BigInt。
-- **显式 ID 不被覆盖**：创建时若已指定主键，回调不会覆盖。
+- **显式 ID 不被覆盖**：创建时若已指定主键，回调不会覆盖（雪花落地后生效）。
 
-> 例外：GVA 基座认证链路（`BaseClaims.ID` / `Login.GetUserId` / `GetById.ID` 等）目前仍是独立的 `uint`/`int` 空壳，待用户表/登录实现时统一改为 int64，并解决 JWT token 内 ID 的精度问题（届时 claims 改用 string 存储）。
+> 例外：基座认证链路（`BaseClaims.ID` / `Login.GetUserId` / `GetById.ID` 等）目前仍是独立的 `uint`/`int`，待登录链路重建时统一处理（届时 claims 改用 string 存储 ID 解决精度问题）。
 
 ## 变更规则
 
@@ -32,15 +34,19 @@
 - 前端接口封装应继续放在 `web/src/service/api/` 或 `web/src/plugin/<name>/api/`
 - 可复用逻辑优先复用 `web/src/utils/` 现有能力
 
-## 初始化向导（/init/*）
+## 初始化向导（/init/*，重构后待重建）
+
+> 重构（`1d632d9`）后 `/init/*` 接口与对应 service/router **未保留**，以下为重构前的契约设计，重建时以此为准（历史记录见 `aiDoc/memory/business/system-init-flow.md`、`init-wizard-redis.md`）。
 
 - `POST /init/checkdb`：返回 `{needInit}`，路由守卫用，语义 = `OPS_DB==nil`。
 - `POST /init/db/ping`：请求 `DBConnTest{dbType,host,port,userName,password,dbName,dbPath,template}`，ephemeral 连接测试（**只 ping 不建库、不落盘**）；`OPS_DB!=nil`（已初始化）时拒绝。
 - `POST /init/redis/ping`：请求 `PingRedis{addr,password,db}`，ephemeral 连接测试（不落盘）；`OPS_DB!=nil` 时拒绝。
 - `POST /init/initdb`：请求 `InitDB`（含 `adminPassword` + DB 字段 + `redisAddr/redisPassword/redisDB`），原子完成建库+建表+种子+回写 config（含 Redis 段、`system.use-redis:true`）+ 即时连接 `OPS_REDIS`。
-- 统一响应 `{code:"0000"|"0001", data, msg}`；ping 成功 `data` 为空串，前端 flat request 只看 `error`。
+- 统一响应 `{code:"0000"|"7", data, msg}`（成功 `SUCCESS="0000"`、失败 `ERROR="7"`）；ping 成功 `data` 为空串，前端 flat request 只看 `error`。
 
-## 认证（httpOnly cookie）
+## 认证（httpOnly cookie，重构后待重建）
+
+> 重构（`1d632d9`）后 `/auth/*` 接口与对应 service/router **未保留**，以下为重构前的契约设计（access/refresh 双 cookie、go-captcha 行为验证码、鉴权失败 HTTP200+业务 code），重建时以此为准（历史记录见 `aiDoc/memory/business/httponly-cookie-auth.md`、`go-captcha-login.md`）。
 
 - 认证载体：access + refresh 双 **httpOnly cookie**，token 不进 JS。
   - cookie 名：`token`（access）、`refresh-token`（refresh）

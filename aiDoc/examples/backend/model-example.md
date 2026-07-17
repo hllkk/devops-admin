@@ -12,25 +12,24 @@ Model 负责定义数据库实体与持久化字段，是 Service 和数据库�
 
 ## 推荐写法示例
 
-两种姿势——按「是否需要追溯操作人」选基座：
+两种姿势——按「是否需要追溯操作人」选基座（`OPS_MODEL` / `OPS_AUDIT_MODEL`）：
 
 ```go
 package disk
 
 import "github.com/hllkk/devops-admin/server/global"
 
-// 内部表（append-only 系统记录）：生命周期基座 + 自定义主键
+// 内部表（append-only 系统记录）：直接内嵌 OPS_MODEL（自带 ID 主键），无需再声明主键
 type File struct {
-	ID   int64  `json:"id,string" gorm:"primaryKey;autoIncrement:false;comment:雪花主键"`
 	global.OPS_MODEL
 	Name   string `json:"name" gorm:"comment:文件名"`
 	Size   int64  `json:"size" gorm:"comment:文件大小(字节)"`
 	Status int    `json:"status" gorm:"default:1;comment:文件状态"`
 }
 
-// 对外业务实体（需追溯创建/更新人）：审计基座 + 业务命名主键
+// 对外业务实体（需追溯创建/更新人）：内嵌 OPS_AUDIT_MODEL + 自定义业务命名主键
 type FileShare struct {
-	ShareId int64 `json:"shareId,string" gorm:"primaryKey;autoIncrement:false"`
+	ShareId int64 `json:"shareId,string" gorm:"primarykey;comment:分享ID"` // 雪花目标(autoIncrement:false+回调);当前 DB 自增
 	global.OPS_AUDIT_MODEL
 	Url string `json:"url" gorm:"comment:分享链接"`
 }
@@ -38,9 +37,9 @@ type FileShare struct {
 
 ## 为什么这样写
 
-- 内部表内嵌 `global.OPS_MODEL`（时间戳）；对外业务实体内嵌 `global.OPS_AUDIT_MODEL`（时间戳 + `CreateBy`/`UpdateBy`）
-- 主键不在基座，由模型自定义：内部 `id`，对外用业务命名（`shareId` 等）
-- 主键统一雪花 `int64` + `json:",string"`（防前端精度丢失），回调 `ops:snowflake_id` 自动填充
+- 基座三层在 `global/model.go`：`OPS_BASE`（CreateTime/UpdateTime/DeletedAt，无主键）/ `OPS_MODEL`（OPS_BASE + 自带 `ID` 主键，内部表直接复用）/ `OPS_AUDIT_MODEL`（OPS_BASE + CreateBy/UpdateBy，对外实体）
+- 内部表内嵌 `OPS_MODEL`（自带主键，无需再声明）；对外业务实体内嵌 `OPS_AUDIT_MODEL` + 自定义业务命名主键（`shareId` 等）
+- 主键统一 `json:",string"`（防前端精度丢失）；雪花 `int64` + `ops:snowflake_id` 回调为**目标**，当前 `utils/snowflake` 待落地、走 DB 自增
 - `json` 标签用于接口输出，`gorm` 标签约束字段类型、默认值和注释
 - 字段命名清晰、稳定，便于前后端保持一致
 
@@ -53,5 +52,5 @@ type FileShare struct {
 
 ## 真实参考文件
 
-- 对外业务实体（`OPS_AUDIT_MODEL`）：`server/model/system/sys_user.go`、`sys_role.go`
+- 对外业务实体（`OPS_AUDIT_MODEL`）：`server/model/system/sys_user.go`（目前仅 `SysUser` 完成新基座改造；`SysRole` 等仍为旧形态，待改造）
 - 内部表（`OPS_MODEL`）：`server/model/system/sys_error.go`、`sys_jwt_blacklist.go`

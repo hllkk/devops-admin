@@ -38,8 +38,8 @@ API 层负责接收 HTTP 请求、从合适的位置提取参数、调用 Servic
 package disk
 
 import (
-	"devops-admin/server/model/common/response"
-	diskReq "devops-admin/server/model/disk/request"
+	"github.com/hllkk/devops-admin/server/model/common/response"
+	diskReq "github.com/hllkk/devops-admin/server/model/disk/request"
 	"github.com/gin-gonic/gin"
 )
 

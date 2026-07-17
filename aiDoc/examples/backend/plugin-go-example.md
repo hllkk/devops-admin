@@ -18,8 +18,8 @@ package announcement
 import (
 	"context"
 
-	"devops-admin/server/plugin/announcement/initialize"
-	interfaces "devops-admin/server/utils/plugin/v2"
+	"github.com/hllkk/devops-admin/server/plugin/announcement/initialize"
+	interfaces "github.com/hllkk/devops-admin/server/utils/plugin/v2"
 	"github.com/gin-gonic/gin"
 )
 

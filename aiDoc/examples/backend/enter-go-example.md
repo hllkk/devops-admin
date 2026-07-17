@@ -18,8 +18,8 @@
 package service
 
 import (
-	"devops-admin/server/service/disk"
-	"devops-admin/server/service/system"
+	"github.com/hllkk/devops-admin/server/service/disk"
+	"github.com/hllkk/devops-admin/server/service/system"
 )
 
 var ServiceGroupApp = new(ServiceGroup)
@@ -35,7 +35,7 @@ type ServiceGroup struct {
 ```go
 package disk
 
-import api "devops-admin/server/api/v1"
+import api "github.com/hllkk/devops-admin/server/api/v1"
 
 type RouterGroup struct {
 	FileRouter

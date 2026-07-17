@@ -15,7 +15,7 @@
 ```go
 package request
 
-import common "devops-admin/server/model/common/request"
+import common "github.com/hllkk/devops-admin/server/model/common/request"
 
 type CreateFileReq struct {
 	Name   string `json:"name" form:"name"`
@@ -46,4 +46,4 @@ type FileSearch struct {
 
 ## 真实参考文件
 
-> devops-admin 尚无业务代码；待网盘模块落地后在此补充。可对照 gin-vue-admin 的 `server/model/system/request/sys_user.go`、`server/model/common/request/common.go` 学习写法。
+> devops-admin 已有部分业务 request（见 `server/model/system/request/`），列表查询 DTO 统一内嵌通用 `PageInfo`；新增模块可对照 `server/model/common/request/common.go` 与 gin-vue-admin 的 `server/model/system/request/sys_user.go` 学习写法。

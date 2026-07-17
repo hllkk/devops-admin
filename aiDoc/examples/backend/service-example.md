@@ -16,9 +16,9 @@ Service 层负责业务逻辑、数据库查询、事务控制和数据拼装，
 package disk
 
 import (
-	"devops-admin/server/global"
-	"devops-admin/server/model/disk"
-	diskReq "devops-admin/server/model/disk/request"
+	"github.com/hllkk/devops-admin/server/global"
+	"github.com/hllkk/devops-admin/server/model/disk"
+	diskReq "github.com/hllkk/devops-admin/server/model/disk/request"
 )
 
 type FileService struct{}
