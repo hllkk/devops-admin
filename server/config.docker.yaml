@@ -87,6 +87,8 @@ system:
     router-prefix: ""
     #  严格角色模式 打开后权限将会存在上下级关系
     use-strict-auth: false
+    #  雪花算法工作节点ID(0-63),多副本部署时各实例必须唯一
+    worker-id: 1
 
 # captcha configuration
 captcha:

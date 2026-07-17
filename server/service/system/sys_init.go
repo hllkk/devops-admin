@@ -133,6 +133,14 @@ func (initDBService *InitDBService) InitDB(conf request.InitDB) (err error) {
 	db := ctx.Value("db").(*gorm.DB)
 	global.OPS_DB = db
 
+	// 初始化雪花算法并注册 GORM 回调(service 包不能 import initialize,直接用 global 版)
+	if err = global.InitSnowflake(global.OPS_CONFIG.System.WorkerID); err != nil {
+		return err
+	}
+	if err = global.RegisterSnowflakeCallbacks(db); err != nil {
+		return err
+	}
+
 	if err = initHandler.InitTables(ctx, initializers); err != nil {
 		return err
 	}

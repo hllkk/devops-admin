@@ -33,8 +33,12 @@ func Reload() error {
 	DBList()
 
 	if global.OPS_DB != nil {
+		// 重新初始化雪花算法并注册 GORM 回调
+		InitSnowflake()
 		// 重新注册数据权限 GORM 回调
 		RegisterDataScopeCallbacks()
+		// 注册雪花 ID GORM 回调(须在建表前)
+		RegisterSnowflakeCallbacks()
 		// 确保数据库表结构是最新的
 		RegisterTables()
 	}

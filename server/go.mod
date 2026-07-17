@@ -35,6 +35,7 @@ require (
 	github.com/swaggo/gin-swagger v1.6.1
 	github.com/swaggo/swag v1.16.6
 	github.com/tencentyun/cos-go-sdk-v5 v0.7.74
+	github.com/yitter/idgenerator-go v1.3.3
 	go.mongodb.org/mongo-driver v1.17.9
 	go.uber.org/zap v1.28.0
 	golang.org/x/crypto v0.54.0
