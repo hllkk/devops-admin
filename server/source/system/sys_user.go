@@ -25,7 +25,7 @@ func (i *initUser) MigrateTable(ctx context.Context) (context.Context, error) {
 	if !ok {
 		return ctx, system.ErrMissingDBContext
 	}
-	return ctx, db.AutoMigrate(&sysModel.SysUser{})
+	return ctx, db.AutoMigrate(&sysModel.SysUser{}, &sysModel.SysLoginLog{}, &sysModel.SysOperLog{})
 }
 
 func (i *initUser) TableCreated(ctx context.Context) bool {
