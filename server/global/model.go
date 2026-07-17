@@ -23,8 +23,9 @@ type OPS_MODEL struct {
 }
 
 // OPS_AUDIT_MODEL 审计基座:内嵌 OPS_BASE + CreateBy/UpdateBy,
+// CreateBy/UpdateBy 从 uint 升级为 int64(对齐雪花 ID 主键类型,json string 传输对齐前端)
 type OPS_AUDIT_MODEL struct {
 	OPS_BASE
-	CreateBy uint `json:"createBy,string" gorm:"comment:创建者"`
-	UpdateBy uint `json:"updateBy,string" gorm:"comment:更新者"`
+	CreateBy int64 `json:"createBy,string" gorm:"comment:创建者"`
+	UpdateBy int64 `json:"updateBy,string" gorm:"comment:更新者"`
 }

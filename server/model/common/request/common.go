@@ -1,6 +1,8 @@
 package request
 
 import (
+	"strconv"
+
 	"gorm.io/gorm"
 )
 
@@ -44,22 +46,36 @@ func (r *PageInfo) LimitOffset() (limit, offset int) {
 	return limit, limit * (page - 1)
 }
 
-// GetById Find by id structure
+// GetById Find by id structure (雪花 int64,string 对齐前端 IdType)
 type GetById struct {
-	ID int `json:"id" form:"id"` // 主键ID
+	ID int64 `json:"id,string" form:"id"` // 主键ID(雪花int64,JSON传输为string)
 }
 
-func (r *GetById) Uint() uint {
-	return uint(r.ID)
+// Int64 返回 int64 主键,供 GORM / service 直接消费
+func (r *GetById) Int64() int64 {
+	return r.ID
 }
 
+// IdsReq 批量 ID 请求(string 对齐前端雪花 ID 传输契约,Int64s() 转 []int64 供 GORM)
 type IdsReq struct {
-	Ids []int `json:"ids" form:"ids"`
+	Ids []string `json:"ids" form:"ids"` // ID列表(string对齐前端,雪花ID传输为string)
 }
 
-// GetRoleId Get role by id structure
+// Int64s 将 string IDs 转为 []int64,跳过无法解析的项
+func (r *IdsReq) Int64s() []int64 {
+	result := make([]int64, 0, len(r.Ids))
+	for _, id := range r.Ids {
+		n, err := strconv.ParseInt(id, 10, 64)
+		if err == nil {
+			result = append(result, n)
+		}
+	}
+	return result
+}
+
+// GetRoleId Get role by id structure (雪花 int64,string 对齐前端 IdType)
 type GetRoleId struct {
-	RoleId uint `json:"roleId" form:"roleId"` // 角色ID
+	RoleId int64 `json:"roleId,string" form:"roleId"` // 角色ID(雪花int64,JSON传输为string)
 }
 
 type Empty struct{}
