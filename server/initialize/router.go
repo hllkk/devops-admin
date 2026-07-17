@@ -8,6 +8,7 @@ import (
 	"github.com/hllkk/devops-admin/server/docs"
 	"github.com/hllkk/devops-admin/server/global"
 	"github.com/hllkk/devops-admin/server/middleware"
+	"github.com/hllkk/devops-admin/server/router"
 	"github.com/hllkk/devops-admin/server/utils/logger"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -45,7 +46,7 @@ func Routers() *gin.Engine {
 		Router.Use(gin.Logger())
 	}
 
-	// systemRouter := router.RouterGroupApp.System
+	systemRouter := router.RouterGroupApp.System
 	// mediaRouter := router.RouterGroupApp.Media
 	// 如果想要不使用nginx代理前端网页，可以修改 web/.env.production 下的
 	// VUE_APP_BASE_API = /
@@ -78,7 +79,7 @@ func Routers() *gin.Engine {
 	}
 	{
 		// systemRouter.InitBaseRouter(PublicGroup) // 注册基础功能路由 不做鉴权
-		// systemRouter.InitInitRouter(PublicGroup) // 自动初始化相关
+		systemRouter.InitInitRouter(PublicGroup) // 自动初始化相关
 	}
 
 	{

@@ -28,17 +28,17 @@ export function fetchInitDB(data: Api.Init.InitDBForm) {
 /**
  * 测试数据库连接（仅 ping，不建库不落盘）
  *
- * 对应后端 POST /init/db/ping。
+ * 对应后端 POST /init/conn-test。
  */
 export function fetchPingDB(data: Api.Init.PingDBForm) {
-  return request<string>({ url: '/init/db/ping', method: 'post', data });
+  return request<string>({ url: '/init/conn-test', method: 'post', data });
 }
 
 /**
  * 测试 Redis 连接（不落盘）
  *
- * 对应后端 POST /init/redis/ping。
+ * 对应后端 POST /init/ping-redis。
  */
 export function fetchPingRedis(data: Api.Init.PingRedisForm) {
-  return request<string>({ url: '/init/redis/ping', method: 'post', data });
+  return request<string>({ url: '/init/ping-redis', method: 'post', data });
 }

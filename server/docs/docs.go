@@ -23,10 +23,10 @@ const docTemplate = `{
                 "tags": [
                     "SysInit"
                 ],
-                "summary": "初始化用户数据库",
+                "summary": "检查数据库是否需要初始化",
                 "responses": {
                     "200": {
-                        "description": "初始化用户数据库",
+                        "description": "检查数据库是否需要初始化结果",
                         "schema": {
                             "allOf": [
                                 {
@@ -40,6 +40,48 @@ const docTemplate = `{
                                             "additionalProperties": true
                                         },
                                         "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/init/db/ping": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysInit"
+                ],
+                "summary": "测试数据库连接",
+                "parameters": [
+                    {
+                        "description": "数据库连接参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.DBConnTest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "连接成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
                                             "type": "string"
                                         }
                                     }
@@ -91,9 +133,80 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/init/redis/ping": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysInit"
+                ],
+                "summary": "测试 Redis 连接",
+                "parameters": [
+                    {
+                        "description": "Redis 连接参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.PingRedis"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "连接成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "request.DBConnTest": {
+            "type": "object",
+            "properties": {
+                "dbName": {
+                    "type": "string"
+                },
+                "dbPath": {
+                    "type": "string"
+                },
+                "dbType": {
+                    "type": "string"
+                },
+                "host": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "string"
+                },
+                "template": {
+                    "type": "string"
+                },
+                "userName": {
+                    "type": "string"
+                }
+            }
+        },
         "request.InitDB": {
             "type": "object",
             "required": [
@@ -148,6 +261,20 @@ const docTemplate = `{
                 },
                 "userName": {
                     "description": "数据库用户名",
+                    "type": "string"
+                }
+            }
+        },
+        "request.PingRedis": {
+            "type": "object",
+            "properties": {
+                "addr": {
+                    "type": "string"
+                },
+                "db": {
+                    "type": "integer"
+                },
+                "password": {
                     "type": "string"
                 }
             }
