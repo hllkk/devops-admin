@@ -1,21 +1,27 @@
 package system
 
-import (
-	"time"
-)
+import "github.com/hllkk/devops-admin/server/global"
 
+// SysRole 角色(平表,对外业务实体,字段对齐前端 Api.System.Role)
+//
+// 设计要点:
+//   - 嵌入 OPS_AUDIT_MODEL 获取 createTime/updateTime/createBy/updateBy(对齐前端 CommonRecord)
+//   - 主键 RoleId 走雪花 int64(json roleId,string); 列名 role_id(data_scope 依赖)
+//   - 前端 Role 为平表(无 parentId/children),已去除角色树
+//   - DataScope 为后端数据权限档位(前端无此字段,json 输出前端忽略):1全部2本部门及子级3本部门4仅本人5自定义
+//   - Flag 为内存字段(用户是否拥有该角色标识),不建列
 type SysRole struct {
-	CreatedAt time.Time  // 创建时间
-	UpdatedAt time.Time  // 更新时间
-	DeletedAt *time.Time `sql:"index"`
-	RoleId    uint       `json:"id" gorm:"not null;unique;primary_key;comment:角色ID;size:90"` // 角色ID
-	RoleName  string     `json:"roleName" gorm:"comment:角色名"`                                // 角色名
-	ParentId  *uint      `json:"parentId" gorm:"comment:父角色ID"`                              // 父角色ID
-	Children  []SysRole  `json:"children" gorm:"-"`
-	// SysBaseMenus  []SysBaseMenu  `json:"menus" gorm:"many2many:sys_authority_menus;"`
-	Users         []SysUser `json:"-" gorm:"many2many:sys_user_authority;"`
-	DataScope     int       `json:"dataScope" gorm:"default:1;comment:数据范围 1全部 2本部门及子级 3本部门 4仅本人"` // 数据范围(数据权限)
-	DefaultRouter string    `json:"defaultRouter" gorm:"comment:默认菜单;default:dashboard"`           // 默认菜单(默认dashboard)
+	global.OPS_AUDIT_MODEL
+	RoleId            int64  `json:"roleId,string" gorm:"primarykey;comment:角色ID"`                       // 角色ID(列名 role_id)
+	RoleName          string `json:"roleName" gorm:"index;comment:角色名称"`                                // 角色名称
+	RoleKey           string `json:"roleKey" gorm:"index;comment:角色权限字符串"`                              // 角色权限字符串
+	RoleSort          int    `json:"roleSort" gorm:"default:0;comment:显示顺序"`                             // 显示顺序
+	Status            string `json:"status" gorm:"default:0;size:1;comment:角色状态 0正常1停用"`               // 角色状态(对齐前端 '0'/'1')
+	SuperAdmin        bool   `json:"superAdmin" gorm:"default:false;comment:是否管理员"`                     // 是否管理员
+	MenuCheckStrictly bool   `json:"menuCheckStrictly" gorm:"default:true;comment:菜单树选择项是否关联显示"`        // 菜单树选择项是否关联显示
+	DataScope         int    `json:"dataScope" gorm:"default:1;comment:数据范围 1全部2本部门及子级3本部门4仅本人5自定义"` // 数据范围(后端数据权限,前端不直接消费)
+	Remark            string `json:"remark" gorm:"comment:备注"`                                         // 备注
+	Flag              bool   `json:"flag" gorm:"-"`                                                  // 用户是否存在此角色标识(内存组装,默认不存在)
 }
 
 func (SysRole) TableName() string {
