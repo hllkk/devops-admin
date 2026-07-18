@@ -92,6 +92,9 @@ system:
 
 # captcha configuration
 captcha:
+    enable: true
+    type: click
+    tolerance: 5
     key-long: 6
     img-width: 240
     img-height: 80

@@ -11,16 +11,19 @@ import (
 //
 // 字段对齐策略:
 //   - 密码策略/登录失败锁定/IP 校验 段的 json tag 严格对齐前端 SecuritySettingConfig
-//   - Captcha*/Limit*/PwdExpire* 段保留供登录链路(图片验证码生成/限流/密码过期)使用,前端不直接消费;
+//   - Captcha*/Limit*/PwdExpire* 段保留供登录链路(验证码生成/限流/密码过期)使用,前端不直接消费;
 //     前端 GeneralSettingConfig 的 verifyCode* 验证码配置落在 SysGeneralConfig,二者关系由 setting service 整合
 type SysSecurityConfig struct {
 	global.OPS_MODEL
-	// 验证码(登录链路图片验证码生成用,前端 general 段的 verifyCode* 落在 SysGeneralConfig)
-	CaptchaOpen    int `json:"captchaOpen" gorm:"default:0;comment:错误N次后出验证码 0=每次都要"`
-	CaptchaTimeout int `json:"captchaTimeout" gorm:"default:3600;comment:防爆破计数缓存超时(秒)"`
-	KeyLong        int `json:"keyLong" gorm:"default:6;comment:验证码长度"`
-	ImgWidth       int `json:"imgWidth" gorm:"default:240;comment:验证码宽度"`
-	ImgHeight      int `json:"imgHeight" gorm:"default:80;comment:验证码高度"`
+	// 验证码(登录链路验证码生成用,前端 general 段的 verifyCode* 落在 SysGeneralConfig)
+	CaptchaEnabled   bool   `json:"captchaEnabled" gorm:"default:true;comment:验证码总开关"`
+	CaptchaType      string `json:"captchaType" gorm:"default:click;comment:验证码类型 image|click|slide|rotate"`
+	CaptchaOpen      int    `json:"captchaOpen" gorm:"default:0;comment:错误N次后出验证码 0=每次都要"`
+	CaptchaTimeout   int    `json:"captchaTimeout" gorm:"default:3600;comment:防爆破计数缓存超时(秒)"`
+	CaptchaTolerance int    `json:"captchaTolerance" gorm:"default:5;comment:命中容差 click/slide像素 rotate角度"`
+	KeyLong          int    `json:"keyLong" gorm:"default:6;comment:image验证码长度/click文字点选字符数"`
+	ImgWidth         int    `json:"imgWidth" gorm:"default:240;comment:验证码宽度"`
+	ImgHeight        int    `json:"imgHeight" gorm:"default:80;comment:验证码高度"`
 	// 密码复杂度(对齐前端 SecuritySettingConfig.password*)
 	PasswordMinLength      int  `json:"passwordMinLength" gorm:"default:8;comment:密码最小长度"`
 	PasswordRequireUpper   bool `json:"passwordRequireUppercase" gorm:"default:false;comment:需大写字母"`
@@ -66,8 +69,11 @@ func (c SysSecurityConfig) LimitWindowDuration() time.Duration {
 // DefaultSecurityConfig 由 config.yaml 的 captcha 生成默认单行配置 调用方负责设 id=1
 func DefaultSecurityConfig(captcha config.Captcha) SysSecurityConfig {
 	return SysSecurityConfig{
+		CaptchaEnabled:         captcha.Enable,
+		CaptchaType:            captcha.Type,
 		CaptchaOpen:            captcha.OpenCaptcha,
 		CaptchaTimeout:         captcha.OpenCaptchaTimeOut,
+		CaptchaTolerance:       captcha.Tolerance,
 		KeyLong:                captcha.KeyLong,
 		ImgWidth:               captcha.ImgWidth,
 		ImgHeight:              captcha.ImgHeight,

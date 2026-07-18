@@ -7,4 +7,5 @@ type ServiceGroup struct {
 	DataScopeService
 	InitDBService
 	SecurityConfigService
+	CaptchaService
 }

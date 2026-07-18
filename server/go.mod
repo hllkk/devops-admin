@@ -19,11 +19,13 @@ require (
 	github.com/go-sql-driver/mysql v1.10.0
 	github.com/goccy/go-json v0.10.6
 	github.com/golang-jwt/jwt/v5 v5.3.1
+	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/google/uuid v1.6.0
 	github.com/gookit/color v1.6.1
 	github.com/huaweicloud/huaweicloud-sdk-go-obs v3.26.3+incompatible
 	github.com/mark3labs/mcp-go v0.56.0
 	github.com/minio/minio-go/v7 v7.2.1
+	github.com/mojocn/base64Captcha v1.3.8
 	github.com/pkg/errors v0.9.1
 	github.com/qiniu/go-sdk/v7 v7.26.16
 	github.com/qiniu/qmgo v1.1.10
@@ -35,6 +37,8 @@ require (
 	github.com/swaggo/gin-swagger v1.6.1
 	github.com/swaggo/swag v1.16.6
 	github.com/tencentyun/cos-go-sdk-v5 v0.7.74
+	github.com/wenlng/go-captcha-assets v1.0.7
+	github.com/wenlng/go-captcha/v2 v2.0.5
 	github.com/yitter/idgenerator-go v1.3.3
 	go.mongodb.org/mongo-driver v1.17.9
 	go.uber.org/zap v1.28.0
@@ -148,6 +152,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/arch v0.29.0 // indirect
+	golang.org/x/image v0.23.0 // indirect
 	golang.org/x/mod v0.37.0 // indirect
 	golang.org/x/net v0.57.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
