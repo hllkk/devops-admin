@@ -155,8 +155,8 @@ func (initDBService *InitDBService) InitDB(conf request.InitDB) (err error) {
 	if err = initHandler.WriteConfig(ctx); err != nil {
 		return err
 	}
-	initializers = initSlice{}
-	cache = map[string]*orderedInitializer{}
+	// 不清空 initializers:保留供 RegisterTables/Reload 复用同一份建表清单;
+	// 二次 /initdb 由各 initializer 的 TableCreated/DataInserted 探针幂等跳过。
 
 	// 通知数据库已就绪，触发插件注册
 	if dbReadyCallback != nil {
@@ -203,6 +203,22 @@ func createTables(ctx context.Context, inits initSlice) error {
 			return err
 		} else {
 			next = n
+		}
+	}
+	return nil
+}
+
+// MigrateRegisteredTables 遍历所有已注册 initializer,对尚未建表的执行 MigrateTable。
+// 供 initialize.RegisterTables 复用,与 /initdb 的 InitTables 共用同一份建表逻辑(单一真源),
+// 避免常规启动路径与初始化路径的表清单漂移。
+func MigrateRegisteredTables(db *gorm.DB) error {
+	ctx := context.WithValue(context.TODO(), "db", db)
+	for _, init := range initializers {
+		if init.TableCreated(ctx) {
+			continue
+		}
+		if _, err := init.MigrateTable(ctx); err != nil {
+			return err
 		}
 	}
 	return nil

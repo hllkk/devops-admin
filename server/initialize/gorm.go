@@ -5,6 +5,7 @@ import (
 
 	"github.com/hllkk/devops-admin/server/global"
 	"github.com/hllkk/devops-admin/server/model/system"
+	sysService "github.com/hllkk/devops-admin/server/service/system"
 
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -40,42 +41,22 @@ func RegisterTables() {
 	}
 
 	db := global.OPS_DB
-	err := db.AutoMigrate(
-
-		// system.SysApi{},
-		// system.SysIgnoreApi{},
-		system.SysUser{},
-		// system.SysBaseMenu{},
+	// 无 initializer 管理的表在此显式迁移;其余表复用已注册 initializer 的 MigrateTable,
+	// 与 /initdb 共用单一真源,避免两套建表清单漂移(详见 service/system.MigrateRegisteredTables)。
+	if err := db.AutoMigrate(
 		system.JwtBlacklist{},
-		system.SysRole{},
-		system.SysMenu{},
-		system.SysRoleMenu{},
-		// system.SysDictionary{},
-		// system.SysOperationRecord{},
-		// system.SysAutoCodeHistory{},
-		// system.SysDictionaryDetail{},
-		// system.SysBaseMenuParameter{},
-		// system.SysBaseMenuBtn{},
-		// system.SysRoleBtn{},
-		// system.SysAutoCodePackage{},
-		// system.SysExportTemplate{},
-		// system.Condition{},
-		// system.JoinTemplate{},
-		// system.SysParams{},
-		// system.SysVersion{},
 		system.SysError{},
-		// system.SysApiToken{},
-		// system.SysLoginLog{},
-		// system.SysOperLog{},
-	)
-	if err != nil {
+	); err != nil {
 		global.OPS_LOG.Error("register table failed", zap.Error(err))
 		os.Exit(1)
 	}
 
-	err = bizModel()
+	if err := sysService.MigrateRegisteredTables(db); err != nil {
+		global.OPS_LOG.Error("register table via initializers failed", zap.Error(err))
+		os.Exit(1)
+	}
 
-	if err != nil {
+	if err := bizModel(); err != nil {
 		global.OPS_LOG.Error("register biz_table failed", zap.Error(err))
 		os.Exit(1)
 	}

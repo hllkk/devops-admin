@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const initOrderUser = initOrderRole + 1
+const initOrderUser = initOrderMenu + 1
 
 type initUser struct{}
 

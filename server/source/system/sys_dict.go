@@ -7,9 +7,11 @@ import (
 	"github.com/hllkk/devops-admin/server/service/system"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
-const initOrderDict = initOrderCasbin + 1
+// 字典无跨初始化器依赖,排到单链末尾,避免与 sys_role(casbin+1)撞号。
+const initOrderDict = initOrderDepartment + 1
 
 type initDict struct{}
 
@@ -59,7 +61,8 @@ func (i *initDict) InitializeData(ctx context.Context) (next context.Context, er
 		{DictName: "任务状态", DictType: "wf_task_status", Remark: "任务状态"},
 	}
 
-	if err := db.Create(&dictTypes).Error; err != nil {
+	// DictType 有 uniqueIndex,用 OnConflict DoNothing 避免中间态重跑时撞唯一键,使 InitDB 可自愈。
+	if err := db.Clauses(clause.OnConflict{DoNothing: true}).Create(&dictTypes).Error; err != nil {
 		return ctx, errors.Wrap(err, sysModel.SysDictType{}.TableName()+"字典类型数据初始化失败!")
 	}
 
@@ -117,7 +120,15 @@ func (i *initDict) InitializeData(ctx context.Context) (next context.Context, er
 		{DictSort: 10, DictLabel: "dict.wf_task_status.add_sign", DictValue: "sign", DictType: "wf_task_status", ListClass: "primary", Remark: "加签"},
 	}
 
-	// 初始化字典数据
+	// 初始化字典数据。SysDictData 无业务唯一键,直接 Create 重跑会产生重复行;
+	// 故先按本次涉及的 dict_type 清旧(软删除基座会软删,默认查询已过滤),再批量插入,保证幂等。
+	dictTypeNames := make([]string, 0, len(dictTypes))
+	for _, t := range dictTypes {
+		dictTypeNames = append(dictTypeNames, t.DictType)
+	}
+	if err := db.Where("dict_type IN ?", dictTypeNames).Delete(&sysModel.SysDictData{}).Error; err != nil {
+		return ctx, errors.Wrap(err, sysModel.SysDictData{}.TableName()+"清理旧字典数据失败!")
+	}
 	if err := db.Create(&dictDatas).Error; err != nil {
 		return ctx, errors.Wrap(err, sysModel.SysDictData{}.TableName()+"字典数据初始化失败!")
 	}

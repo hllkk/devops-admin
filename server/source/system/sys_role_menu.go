@@ -7,9 +7,11 @@ import (
 	"github.com/hllkk/devops-admin/server/service/system"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
-const initOrderRoleMenu = initOrderMenu + initOrderRole
+// 依赖 sys_menu 与 sys_role,须排在两者之后;用 +1 接入单链,避免相加写法制造撞号。
+const initOrderRoleMenu = initOrderUser + 1
 
 type initRoleMenu struct{}
 
@@ -43,9 +45,14 @@ func (i *initRoleMenu) DataInserted(ctx context.Context) bool {
 	if !ok {
 		return false
 	}
-	// 检查 super 角色是否有菜单关联(至少有一条记录)
-	count := int64(0)
-	db.Model(&sysModel.SysRoleMenu{}).Count(&count)
+	// 探针收紧到 super 角色的菜单关联:全局 Count>0 会被任意残留记录误判为已完成,
+	// super 角色必然初始化且关联全部菜单,以其是否已授权作为完成标志。
+	var superRole sysModel.SysRole
+	if errors.Is(db.Where("role_key = ?", "super").First(&superRole).Error, gorm.ErrRecordNotFound) {
+		return false
+	}
+	var count int64
+	db.Model(&sysModel.SysRoleMenu{}).Where("sys_role_id = ?", superRole.RoleId).Count(&count)
 	return count > 0
 }
 
@@ -114,7 +121,8 @@ func (i *initRoleMenu) InitializeData(ctx context.Context) (next context.Context
 	allLinks = append(allLinks, adminLinks...)
 	allLinks = append(allLinks, userLinks...)
 
-	if err = db.Create(&allLinks).Error; err != nil {
+	// 联合主键 (sys_role_id, sys_menu_id) 上 OnConflict DoNothing,使重跑幂等、不产生重复关联。
+	if err = db.Clauses(clause.OnConflict{DoNothing: true}).Create(&allLinks).Error; err != nil {
 		return ctx, errors.Wrapf(err, "%s表数据初始化失败!", (&sysModel.SysRoleMenu{}).TableName())
 	}
 
