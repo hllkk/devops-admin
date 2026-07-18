@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"net"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -11,32 +10,17 @@ import (
 	"github.com/hllkk/devops-admin/server/utils/logger"
 )
 
+// ClearToken 清除 x-token cookie，domain 留空走 host-only（见 SetToken 说明）。
 func ClearToken(c *gin.Context) {
-	// 增加cookie x-token 向来源的web添加
-	host, _, err := net.SplitHostPort(c.Request.Host)
-	if err != nil {
-		host = c.Request.Host
-	}
-
-	if net.ParseIP(host) != nil {
-		c.SetCookie("x-token", "", -1, "/", "", false, true)
-	} else {
-		c.SetCookie("x-token", "", -1, "/", host, false, true)
-	}
+	c.SetCookie("x-token", "", -1, "/", "", false, true)
 }
 
+// SetToken 登录成功后下发 x-token，走 httpOnly cookie。
+// domain 传空串即为 host-only cookie，由浏览器绑定到实际访问的 host；
+// 不再按 c.Request.Host 推断 domain：经反向代理或 vite proxy(changeOrigin) 转发时 Host 会被改写，
+// 误设 domain 会导致浏览器丢弃该 cookie（表现为登录成功但后续接口 401 未登录）。
 func SetToken(c *gin.Context, token string, maxAge int) {
-	// 增加cookie x-token 向来源的web添加
-	host, _, err := net.SplitHostPort(c.Request.Host)
-	if err != nil {
-		host = c.Request.Host
-	}
-
-	if net.ParseIP(host) != nil {
-		c.SetCookie("x-token", token, maxAge, "/", "", false, true)
-	} else {
-		c.SetCookie("x-token", token, maxAge, "/", host, false, true)
-	}
+	c.SetCookie("x-token", token, maxAge, "/", "", false, true)
 }
 
 func GetToken(c *gin.Context) string {
