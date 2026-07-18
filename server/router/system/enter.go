@@ -8,9 +8,11 @@ type RouterGroup struct {
 	UserRouter
 	AuthRouter
 	RouteRouter
+	DictRouter
 }
 
 var (
 	baseApi = v1.ApiGroupApp.SystemApiGroup.BaseApi
 	dbApi   = v1.ApiGroupApp.SystemApiGroup.DBApi
+	dictApi = v1.ApiGroupApp.SystemApiGroup.DictApi
 )

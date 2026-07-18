@@ -10,4 +10,6 @@ type ServiceGroup struct {
 	CaptchaService
 	UserService
 	LoginLogService
+	DictTypeService
+	DictDataService
 }

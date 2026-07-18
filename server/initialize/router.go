@@ -76,7 +76,7 @@ func Routers() *gin.Engine {
 	PrivateGroup.Use(middleware.JWTAuth()).
 		Use(middleware.OperationRecord()).
 		Use(middleware.MustChangePwdGuard()).
-		Use(middleware.CasbinHandler()).
+		// Use(middleware.CasbinHandler()).
 		Use(middleware.DataScope())
 
 	{
@@ -86,11 +86,14 @@ func Routers() *gin.Engine {
 		})
 	}
 	{
-		systemRouter.InitBaseRouter(PublicGroup)  // 注册基础功能路由(login POST + captcha GET,不做鉴权)
-		systemRouter.InitAuthRouter(PrivateGroup) // 鉴权路由(getUserInfo/logout/refreshToken)
+		systemRouter.InitInitRouter(PublicGroup) // 自动初始化相关
+		systemRouter.InitBaseRouter(PublicGroup) // 注册基础功能路由(login POST + captcha GET,不做鉴权)
+	}
+	{
+
+		systemRouter.InitAuthRouter(PrivateGroup)  // 鉴权路由(getUserInfo/logout/refreshToken)
 		systemRouter.InitRouteRouter(PrivateGroup) // 路由下发(/route/getConstantRoutes)
-		systemRouter.InitInitRouter(PublicGroup)   // 自动初始化相关
-		// systemRouter.InitCaptchaRouter(PublicGroup) // captcha 已并入 BaseRouter(base 组),T3 启用 InitBaseRouter 时一起注册
+		systemRouter.InitDictRouter(PrivateGroup)  // 字典管理(/system/dict/type/*、/system/dict/data/*)
 	}
 
 	{

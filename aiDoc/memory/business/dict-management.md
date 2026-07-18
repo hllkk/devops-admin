@@ -1,6 +1,6 @@
 # 字典管理（Dict Management）
 
-> 类型：业务模块需求 · 状态：前端已就绪，后端 Model 已落地（service/api/router/seed 待补）
+> 类型：业务模块需求 · 状态：前端已就绪，后端 Model + dict type 全套 + dict data 全套已落地（refreshCache 缓存层、菜单/权限 seed 待补）
 
 ## 需求
 
@@ -16,7 +16,7 @@
 - 复用组件：`TableSiderLayout`、`TableRowCheckAlert`、`TableHeaderOperation`、`DictTag`、`DictRadio`、`ButtonIcon`；hooks `useDict`、`useDownload`、`useAuth`；util `handleCopy`。
 - i18n：`page.system.dict` 全量（zh/en + `app.d.ts` 声明）齐全。权限码 `system:dict:add/edit/remove/export`（list 隐含）。
 
-## 后端（Model 已落地，接口待补）
+## 后端（Model 已落地，dict type list 接口已落地，其余待补）
 
 - **2026-07-15 model 落地**：新增 `SysDictType`（`sys_dict_type`）、`SysDictData`（`sys_dict_data`）两个模型，对齐前端 `Api.System.DictType/DictData`，已注册进 `initialize/gorm.go` 的 `RegisterTables`（AutoMigrate），`go build ./...` 通过。
 - 字段决策（严格对齐前端类型）：
@@ -24,7 +24,27 @@
   - `dict_type`：类型表 `uniqueIndex:uk_dict_type`（`/data/type/{dictType}` 查询键），数据表普通 `index:idx_dict_data_type`。
   - `isDefault`→`string`(Y/N)；`listClass`→`string`(ThemeColor)；`isI18n`→`bool` 预留；`createDept` 不建（前端 CommonRecord 残留，同 SysPost 不建 tenantId）。
   - 基座 `OPS_AUDIT_MODEL`，主键 `dictId/dictCode` 雪花 `int64` + `json:",string"`。
-- 仍未实现：service/api/router（`/system/dict/type/*`、`/system/dict/data/*`）、菜单/权限种子（`server/source/` 无 `system:dict:*`）。
+- **2026-07-18 dict type list 接口落地**：打通 `GET /system/dict/type/list`（query 传参，对齐前端 `DictTypeSearchParams`/`DictTypeList`）：
+  - request `DictTypeSearch`（`model/system/request/sys_dict.go`，内嵌 `PageInfo` + `dictName/dictType`，`form` tag 适配 GET query）。
+  - service `DictTypeService.GetDictTypeList`（`service/system/sys_dict.go`，`dictName/dictType` 模糊过滤 + `LimitOffset` 分页 + `dict_id DESC` 排序），已注册进 `service/system/enter.go`。
+  - api `DictApi.GetDictTypeList`（`api/v1/system/sys_dict.go`，`ShouldBindQuery` + `response.PageResult` 响应 + 完整 swag 注释），已注册进 `api/v1/system/enter.go`。
+  - router `DictRouter.InitDictRouter`（`router/system/sys_dict.go`，挂 `system/dict/type` group），已注册进 `router/system/enter.go` 与 `initialize/router.go` 的 PrivateGroup（鉴权/操作日志由该组全局中间件统一处理，子 group 不重复挂）。
+  - `go build ./...` 通过。
+- **2026-07-18 type 增删改 + optionselect 落地**（在 list 基础上同四层文件扩展）：
+  - request `DictTypeOperateParams`（dictId/dictName/dictType/remark，对齐前端 `DictTypeOperateParams`，create 时 dictId 空）。
+  - service：`CreateDictType`（dictType 唯一校验 + 审计字段从 claims 注入）、`UpdateDictType`（唯一校验排除自身 + dictType 变更时同步 `dict_data.dict_type` 冗余列）、`DeleteDictType`（批量 + 级联清理对应 `dict_data`，对齐 RuoYi 避免孤儿数据）、`GetDictTypeOptionList`（全量，下拉框）。
+  - 审计字段 `CreateBy/UpdateBy` 由 API 层 `utils.GetUserID(c)` 取 claims 后传 service（service 不依赖 gin.Context）；struct literal 因 Go 内嵌提升字段规则改用赋值写入。
+  - api：`CreateDictType`(POST)、`UpdateDictType`(PUT)、`BatchDeleteDictType`(DELETE `/system/dict/type/:ids`，逗号分隔解析)、`GetDictTypeOption`(GET optionselect)；写操作返回 `data=true` 对齐前端 `request<boolean>`。
+  - router 注册同 group 新增 POST/PUT/DELETE`:ids`/GET optionselect 四条。
+  - `go build ./...` + `go vet ./...` 通过。
+- **2026-07-18 dict data 全套落地**（新增 `DictDataService`，复用同一 `DictApi`/`DictRouter`，对齐前端 `dict-data.ts`）：
+  - request `DictDataSearch`（dictLabel/dictType + PageInfo）、`DictDataOperateParams`（dictCode/dictSort/dictLabel/dictValue/dictType/cssClass/listClass/isDefault/remark，不含 isI18n/i18nKey，对齐前端 operate params）。
+  - service：`GetDictDataList`（dictLabel 模糊、dictType 精确，`dict_sort ASC, dict_code ASC` 排序）、`CreateDictData`/`UpdateDictData`（审计字段从 claims 注入）、`DeleteDictData`（按 dictCode 批量）、`GetDictDataByType`（按 type 查全量，DictTag/DictRadio 渲染用）。已注册进 `service/system/enter.go`。
+  - api：`GetDictDataList`(GET list)、`GetDictDataByType`(GET `/type/:dictType`)、`CreateDictData`(POST)、`UpdateDictData`(PUT)、`BatchDeleteDictData`(DELETE `/:dictCodes`)；写操作 `data=true`。`api/v1/system/enter.go` 加 `dictDataService`。
+  - router `system/dict/data` group 注册 5 条。
+  - 顺手将批量删除 ID 解析改为 `strings.SplitSeq`（Go 1.26 + 项目 `utils/sse` 已用先例，IDE lint 提示更高效）。
+  - `go build ./...` + `go vet ./...` 通过。
+- 仍未实现：type 的 `refreshCache`（依赖字典缓存层，当前 list/optionselect/`data/type` 直查 DB 无缓存，DictTag 每次落库；待缓存设计后统一实现并接 refreshCache）、菜单/权限种子（`server/source/` 无 `system:dict:*`，启用 casbin 前需补）。
 - 后续可参照 [[menu-management]] 文档里 `menu.go 初始化种子：默认菜单与权限` 的规划，补字典模块的菜单+按钮权限种子。
 
 ## 本次（2026-07-13）前端补齐
@@ -43,4 +63,5 @@
 
 - 前端：`web/src/views/_admin/system/dict/`、`web/src/service/api/system/{dict,dict-data}.ts`、`web/src/typings/api/system.api.d.ts`、`web/src/locales/langs/{zh-cn,en-us}.ts`、`web/src/typings/app.d.ts`
 - 后端 model：`server/model/system/sys_dict_type.go`、`server/model/system/sys_dict_data.go`、`server/initialize/gorm.go`（RegisterTables）
+- 后端 dict type list：`server/model/system/request/sys_dict.go`、`server/service/system/sys_dict.go`、`server/api/v1/system/sys_dict.go`、`server/router/system/sys_dict.go`（及对应 `enter.go` 注册、`initialize/router.go` 挂载）
 - 关联：[[menu-management]]（菜单+权限种子规划参考）
