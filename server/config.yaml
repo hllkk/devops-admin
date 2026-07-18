@@ -1,33 +1,238 @@
-# system configuration
-system:
-    env: local # 修改为public可以关闭路由日志输出
-    addr: 8888
-    db-type: mysql
-    oss-type: local # 控制oss选择走本地还是 七牛等其他仓 自行增加其他oss仓可以在 server/utils/upload/upload.go 中 NewOss函数配置
-    use-redis: false # 使用redis
-    use-mongo: false     # 使用mongo
-    use-multipoint: false
-    # IP限制次数 一个小时15000次
-    iplimit-count: 15000
-    #  IP限制一个小时
-    iplimit-time: 3600
-    #  路由全局前缀
-    router-prefix: ""
-    #  严格角色模式 打开后权限将会存在上下级关系
-    use-strict-auth: false
-    #  禁用自动迁移数据库表结构，生产环境建议设为true，手动迁移
-    disable-auto-migrate: false
-    #  雪花算法工作节点ID(0-63),多副本部署时各实例必须唯一
-    worker-id: 1
-
-# jwt configuration
+aliyun-oss:
+    endpoint: yourEndpoint
+    access-key-id: yourAccessKeyId
+    access-key-secret: yourAccessKeySecret
+    bucket-name: yourBucketName
+    bucket-url: yourBucketUrl
+    base-path: yourBasePath
+app:
+    node: ""
+    app-id: ""
+    env: ""
+autocode:
+    web: web/src
+    root: /home/devops-admin
+    server: server
+    module: github.com/hllkk/devops-admin/server
+    ai-path: ""
+aws-s3:
+    bucket: xxxxx-10005608
+    region: ap-shanghai
+    endpoint: ""
+    secret-id: your-secret-id
+    secret-key: your-secret-key
+    base-url: https://gin.vue.admin
+    path-prefix: github.com/flipped-aurora/gin-vue-admin/server
+    s3-force-path-style: false
+    disable-ssl: false
+captcha:
+    key-long: 6
+    img-width: 240
+    img-height: 80
+    open-captcha: 0
+    open-captcha-timeout: 3600
+cloudflare-r2:
+    bucket: xxxx0bucket
+    base-url: https://gin.vue.admin.com
+    path: uploads
+    account-id: xxx_account_id
+    access-key-id: xxx_key_id
+    secret-access-key: xxx_secret_key
+cors:
+    mode: ""
+    whitelist: []
+db-list:
+    - type: ""
+      alias-name: ""
+      prefix: ""
+      port: ""
+      config: ""
+      db-name: ""
+      username: ""
+      password: ""
+      path: ""
+      engine: ""
+      log-mode: ""
+      max-idle-conns: 10
+      max-open-conns: 100
+      conn-max-lifetime: 0
+      singular: false
+      log-zap: false
+      disable: true
+hua-wei-obs:
+    path: you-path
+    bucket: you-bucket
+    endpoint: you-endpoint
+    access-key: you-access-key
+    secret-key: you-secret-key
 jwt:
-    signing-key: qmPlus
+    signing-key: 7021d1b1-069a-4342-9e8f-3866c2d909a1
     expires-time: 7d
     buffer-time: 1d
     issuer: devops-admin
-
-# zap logger configuration
+local:
+    path: uploads/file
+    store-path: uploads/file
+mcp:
+    name: OPS_MCP
+    version: v1.0.0
+    path: ""
+    addr: 8889
+    base_url: ""
+    upstream_base_url: ""
+    auth_header: ""
+    request_timeout: 0
+    sse_path: ""
+    message_path: ""
+    url_prefix: ""
+    separate: false
+media:
+    chunk-dir: ""
+    max-file-size: 0
+    session-ttl: 0
+minio:
+    endpoint: yourEndpoint
+    access-key-id: yourAccessKeyId
+    access-key-secret: yourAccessKeySecret
+    bucket-name: yourBucketName
+    use-ssl: false
+    base-path: ""
+    bucket-url: http://host:9000/yourBucketName
+mongo:
+    coll: ""
+    options: ""
+    database: ""
+    username: ""
+    password: ""
+    auth-source: ""
+    min-pool-size: 0
+    max-pool-size: 100
+    socket-timeout-ms: 0
+    connect-timeout-ms: 0
+    is-zap: false
+    hosts:
+        - host: ""
+          port: ""
+mssql:
+    prefix: ""
+    port: ""
+    config: ""
+    db-name: ""
+    username: ""
+    password: ""
+    path: ""
+    engine: ""
+    log-mode: ""
+    max-idle-conns: 10
+    max-open-conns: 100
+    conn-max-lifetime: 0
+    singular: false
+    log-zap: false
+mysql:
+    prefix: ""
+    port: ""
+    config: ""
+    db-name: ""
+    username: ""
+    password: ""
+    path: ""
+    engine: ""
+    log-mode: ""
+    max-idle-conns: 10
+    max-open-conns: 100
+    conn-max-lifetime: 0
+    singular: false
+    log-zap: false
+oracle:
+    prefix: ""
+    port: ""
+    config: ""
+    db-name: ""
+    username: ""
+    password: ""
+    path: ""
+    engine: ""
+    log-mode: ""
+    max-idle-conns: 10
+    max-open-conns: 100
+    conn-max-lifetime: 0
+    singular: false
+    log-zap: false
+pgsql:
+    prefix: ""
+    port: "5432"
+    config: sslmode=disable TimeZone=Asia/Shanghai
+    db-name: devops_admin
+    username: postgres
+    password: Tricolor_123
+    path: 127.0.0.1
+    engine: ""
+    log-mode: error
+    max-idle-conns: 10
+    max-open-conns: 100
+    conn-max-lifetime: 0
+    singular: false
+    log-zap: false
+qiniu:
+    zone: ZoneHuaDong
+    bucket: ""
+    img-path: ""
+    access-key: ""
+    secret-key: ""
+    use-https: false
+    use-cdn-domains: false
+redis:
+    name: default
+    addr: 127.0.0.1:6379
+    password: ""
+    db: 0
+    useCluster: false
+    clusterAddrs: []
+redis-list:
+    - name: cache
+      addr: 127.0.0.1:6379
+      password: ""
+      db: 0
+      useCluster: false
+      clusterAddrs:
+        - 172.21.0.3:7000
+        - 172.21.0.4:7001
+        - 172.21.0.2:7002
+sqlite:
+    prefix: ""
+    port: ""
+    config: ""
+    db-name: ""
+    username: ""
+    password: ""
+    path: ""
+    engine: ""
+    log-mode: ""
+    max-idle-conns: 10
+    max-open-conns: 100
+    conn-max-lifetime: 0
+    singular: false
+    log-zap: false
+system:
+    db-type: pgsql
+    oss-type: local
+    router-prefix: ""
+    addr: 8888
+    iplimit-count: 15000
+    iplimit-time: 3600
+    use-multipoint: false
+    use-redis: true
+    use-mongo: false
+    use-strict-auth: false
+    disable-auto-migrate: false
+    worker-id: 1
+tencent-cos:
+    bucket: xxxxx-10005608
+    region: ap-shanghai
+    secret-id: your-secret-id
+    secret-key: your-secret-key
+    base-url: https://gin.vue.admin
+    path-prefix: github.com/flipped-aurora/gin-vue-admin/server
 zap:
     level: info
     prefix: '[github.com/flipped-aurora/gin-vue-admin/server]'
@@ -43,226 +248,5 @@ zap:
     access-req-headers: true
     access-log-max-bytes: 1024
     file-only-modules:
-      - http
-      - sql
-
-# autocode configuration
-autocode:
-    web: web/src
-    root: "" # root 自动适配项目根目录, 请不要手动配置,他会在项目加载的时候识别出根路径
-    server: server
-    module: 'github.com/hllkk/devops-admin/server'
-    ai-path: ""  # AI服务路径
-
-# mysql connect configuration
-# 未初始化之前请勿手动修改数据库信息！！！如果一定要手动初始化请看（https://gin-vue-admin.com/docs/first_master）
-mysql:
-    path: ""
-    port: ""
-    config: ""
-    db-name: ""
-    username: ""
-    password: ""
-    max-idle-conns: 10
-    max-open-conns: 100
-    conn-max-lifetime: 0
-    log-mode: ""
-    log-zap: false
-
-mssql:
-    path: ""
-    port: ""
-    config: ""
-    db-name: ""
-    username: ""
-    password: ""
-    max-idle-conns: 10
-    max-open-conns: 100
-    conn-max-lifetime: 0
-    log-mode: ""
-    log-zap: false
-
-# pgsql connect configuration
-# 未初始化之前请勿手动修改数据库信息！！！如果一定要手动初始化请看（https://gin-vue-admin.com/docs/first_master）
-pgsql:
-    path: ""
-    port: ""
-    config: ""
-    db-name: ""
-    username: ""
-    password: ""
-    max-idle-conns: 10
-    max-open-conns: 100
-    conn-max-lifetime: 0
-    log-mode: ""
-    log-zap: false
-
-oracle:
-    path: ""
-    port: ""
-    config: ""
-    db-name: ""
-    username: ""
-    password: ""
-    max-idle-conns: 10
-    max-open-conns: 100
-    conn-max-lifetime: 0
-    log-mode: ""
-    log-zap: false
-
-sqlite:
-    path: ""
-    port: ""
-    config: ""
-    db-name: ""
-    username: ""
-    password: ""
-    max-idle-conns: 10
-    max-open-conns: 100
-    conn-max-lifetime: 0
-    log-mode: ""
-    log-zap: false
-
-db-list:
-    - disable: true # 是否禁用
-      type: "" # 数据库的类型,目前支持mysql、pgsql、mssql、oracle
-      alias-name: "" # 数据库的名称,注意: alias-name 需要在db-list中唯一
-      path: ""
-      port: ""
-      config: ""
-      db-name: ""
-      username: ""
-      password: ""
-      max-idle-conns: 10
-      max-open-conns: 100
-      conn-max-lifetime: 0
-      log-mode: ""
-      log-zap: false
-
-# local configuration
-local:
-    path: uploads/file
-    store-path: uploads/file
-
-# qiniu configuration (请自行七牛申请对应的 公钥 私钥 bucket 和 域名地址)
-qiniu:
-    zone: ZoneHuaDong
-    bucket: ""
-    img-path: ""
-    use-https: false
-    access-key: ""
-    secret-key: ""
-    use-cdn-domains: false
-
-# minio oss configuration
-minio:
-    endpoint: yourEndpoint
-    access-key-id: yourAccessKeyId
-    access-key-secret: yourAccessKeySecret
-    bucket-name: yourBucketName
-    use-ssl: false
-    base-path: ""
-    bucket-url: "http://host:9000/yourBucketName"
-
-# aliyun oss configuration
-aliyun-oss:
-    endpoint: yourEndpoint
-    access-key-id: yourAccessKeyId
-    access-key-secret: yourAccessKeySecret
-    bucket-name: yourBucketName
-    bucket-url: yourBucketUrl
-    base-path: yourBasePath
-
-# tencent cos configuration
-tencent-cos:
-    bucket: xxxxx-10005608
-    region: ap-shanghai
-    secret-id: your-secret-id
-    secret-key: your-secret-key
-    base-url: https://gin.vue.admin
-    path-prefix: github.com/flipped-aurora/gin-vue-admin/server
-
-# aws s3 configuration (minio compatible)
-aws-s3:
-    bucket: xxxxx-10005608
-    region: ap-shanghai
-    endpoint: ""
-    s3-force-path-style: false
-    disable-ssl: false
-    secret-id: your-secret-id
-    secret-key: your-secret-key
-    base-url: https://gin.vue.admin
-    path-prefix: github.com/flipped-aurora/gin-vue-admin/server
-
-# cloudflare r2 configuration
-cloudflare-r2:
-    bucket: xxxx0bucket
-    base-url: https://gin.vue.admin.com
-    path: uploads
-    account-id: xxx_account_id
-    access-key-id: xxx_key_id
-    secret-access-key: xxx_secret_key
-
-# huawei obs configuration
-hua-wei-obs:
-    path: you-path
-    bucket: you-bucket
-    endpoint: you-endpoint
-    access-key: you-access-key
-    secret-key: you-secret-key
-
-# redis configuration
-redis:
-    #是否使用redis集群模式
-    useCluster: false
-    #使用集群模式addr和db默认无效
-    addr: 127.0.0.1:6379
-    password: ""
-    db: 0
-    clusterAddrs:
-        - "172.21.0.3:7000"
-        - "172.21.0.4:7001"
-        - "172.21.0.2:7002"
-
-# redis-list configuration
-redis-list:
-    - name: cache           # 数据库的名称,注意: name 需要在 redis-list 中唯一
-      useCluster: false     # 是否使用redis集群模式
-      addr: 127.0.0.1:6379  # 使用集群模式addr和db默认无效
-      password: ""
-      db: 0
-      clusterAddrs:
-          - "172.21.0.3:7000"
-          - "172.21.0.4:7001"
-          - "172.21.0.2:7002"
-
-# mongo configuration
-mongo:
-    coll: ''
-    options: ''
-    database: ''
-    username: ''
-    password: ''
-    auth-source: ''
-    min-pool-size: 0
-    max-pool-size: 100
-    socket-timeout-ms: 0
-    connect-timeout-ms: 0
-    is-zap: false
-    hosts:
-        - host: ''
-          port: ''
-
-# captcha configuration
-captcha:
-    key-long: 6
-    img-width: 240
-    img-height: 80
-    open-captcha: 0 # 0代表一直开启，大于0代表限制次数
-    open-captcha-timeout: 3600 # open-captcha大于0时才生效
-
-mcp:
-    name: OPS_MCP
-    version: v1.0.0
-    addr: 8889
-    separate: false
+        - http
+        - sql

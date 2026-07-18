@@ -2,6 +2,7 @@ package system
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"path/filepath"
@@ -52,15 +53,23 @@ func (h PgsqlInitHandler) EnsureDB(ctx context.Context, conf *request.InitDB) (n
 	} // 如果没有数据库名, 则跳出初始化数据
 
 	dsn := conf.PgsqlEmptyDsn()
-	var createSql string
-	if conf.Template != "" {
-		createSql = fmt.Sprintf("CREATE DATABASE %s WITH TEMPLATE %s;", c.Dbname, conf.Template)
-	} else {
-		createSql = fmt.Sprintf("CREATE DATABASE %s;", c.Dbname)
-	}
-	if err = createDatabase(dsn, "pgx", createSql); err != nil {
+	// PostgreSQL 不支持 CREATE DATABASE IF NOT EXISTS, 先查 pg_database 判断库是否已存在;
+	// 已存在则跳过建库(幂等), 与建表/建数据的探针一致, 避免二次 /initdb 撞 42P04 失败。
+	existed, err := pgsqlDatabaseExists(dsn, c.Dbname)
+	if err != nil {
 		return nil, err
-	} // 创建数据库
+	}
+	if !existed {
+		var createSql string
+		if conf.Template != "" {
+			createSql = fmt.Sprintf("CREATE DATABASE %s WITH TEMPLATE %s;", c.Dbname, conf.Template)
+		} else {
+			createSql = fmt.Sprintf("CREATE DATABASE %s;", c.Dbname)
+		}
+		if err = createDatabase(dsn, "pgx", createSql); err != nil {
+			return nil, err
+		} // 创建数据库
+	}
 
 	var db *gorm.DB
 	if db, err = gorm.Open(postgres.New(postgres.Config{
@@ -96,4 +105,21 @@ func (h PgsqlInitHandler) InitData(ctx context.Context, inits initSlice) error {
 	}
 	color.Info.Printf(InitSuccess, Pgsql)
 	return nil
+}
+
+// pgsqlDatabaseExists 查询 PostgreSQL 目标库是否已存在。
+// 连到默认 postgres 库读取 pg_database: PostgreSQL 不支持 CREATE DATABASE IF NOT EXISTS,
+// 故由调用方在建库前用本函数做幂等判断。
+func pgsqlDatabaseExists(dsn, dbname string) (bool, error) {
+	db, err := sql.Open("pgx", dsn)
+	if err != nil {
+		return false, err
+	}
+	defer func() { _ = db.Close() }()
+	if err = db.Ping(); err != nil {
+		return false, err
+	}
+	var exists bool
+	err = db.QueryRow("SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = $1)", dbname).Scan(&exists)
+	return exists, err
 }

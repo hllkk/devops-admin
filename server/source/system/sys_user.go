@@ -25,7 +25,13 @@ func (i *initUser) MigrateTable(ctx context.Context) (context.Context, error) {
 	if !ok {
 		return ctx, system.ErrMissingDBContext
 	}
-	return ctx, db.AutoMigrate(&sysModel.SysUser{}, &sysModel.SysLoginLog{}, &sysModel.SysOperLog{})
+	// 显式迁移 SysUser 的全部 many2many 连接表: GORM 对主表 AutoMigrate 不会可靠迁移 join 表,
+	// 历史上 sys_user_role 因未纳入迁移而 schema 漂移(旧列 user_id/role_id 残留); 另两个连接表列名虽未变更,
+	// 同样存在隐式建表不可靠的隐患, 一并纳入显式迁移堵死同类问题。
+	return ctx, db.AutoMigrate(
+		&sysModel.SysUser{}, &sysModel.SysLoginLog{}, &sysModel.SysOperLog{},
+		&sysModel.SysUserRole{}, &sysModel.SysUserDepartment{}, &sysModel.SysUserPost{},
+	)
 }
 
 func (i *initUser) TableCreated(ctx context.Context) bool {
@@ -33,7 +39,17 @@ func (i *initUser) TableCreated(ctx context.Context) bool {
 	if !ok {
 		return false
 	}
-	return db.Migrator().HasTable(&sysModel.SysUser{})
+	// 主表与全部 many2many 连接表都已存在才视为已建; 任一缺失或 sys_user_role 关键列漂移时返回 false,
+	// 触发 MigrateTable 用 AutoMigrate 校正(幂等, 重复无害)。
+	if !db.Migrator().HasTable(&sysModel.SysUser{}) ||
+		!db.Migrator().HasTable(&sysModel.SysUserRole{}) ||
+		!db.Migrator().HasTable(&sysModel.SysUserDepartment{}) ||
+		!db.Migrator().HasTable(&sysModel.SysUserPost{}) {
+		return false
+	}
+	// sys_user_role 列名历史变更过(fd99b5d: user_id/role_id → 13816c0: sys_user_id/sys_role_id),
+	// 旧库可能表在但列漂移, 故额外校验关键列; 另两个连接表列名从未变更, 表在即视为 OK。
+	return db.Migrator().HasColumn(&sysModel.SysUserRole{}, "sys_user_id")
 }
 
 func (i *initUser) InitializerName() string {
