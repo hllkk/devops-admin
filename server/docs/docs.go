@@ -15,6 +15,49 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/auth/captcha": {
+            "get": {
+                "description": "按触发策略决定是否返回验证码：captchaEnabled=false 表示当前无需验证码；为 true 时返回 type/captchaId 与对应图片。type=image 为传统图形验证码，click/slide/rotate 为 go-captcha 行为验证码。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "生成验证码",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户名(阈值模式下用于判断账号是否触发验证码)",
+                        "name": "username",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "captchaEnabled/type/captchaId/masterImage/tileImage/thumbImage",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/system.CaptchaResult"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/init/checkdb": {
             "post": {
                 "produces": [
@@ -50,7 +93,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/init/db/ping": {
+        "/init/conn-test": {
             "post": {
                 "produces": [
                     "application/json"
@@ -287,6 +330,59 @@ const docTemplate = `{
                 },
                 "data": {},
                 "msg": {
+                    "type": "string"
+                }
+            }
+        },
+        "system.CaptchaResult": {
+            "type": "object",
+            "properties": {
+                "angle": {
+                    "description": "rotate 缩略图初始角度",
+                    "type": "integer"
+                },
+                "captchaEnabled": {
+                    "description": "当前是否要求验证码（触发策略决定）",
+                    "type": "boolean"
+                },
+                "captchaId": {
+                    "description": "验证码会话 ID",
+                    "type": "string"
+                },
+                "masterImage": {
+                    "description": "主图 base64（含 data:image/*;base64, 前缀）",
+                    "type": "string"
+                },
+                "thumbHeight": {
+                    "description": "slide 拼图块高度",
+                    "type": "integer"
+                },
+                "thumbImage": {
+                    "description": "缩略图 base64（click/rotate）",
+                    "type": "string"
+                },
+                "thumbSize": {
+                    "description": "rotate 缩略图尺寸",
+                    "type": "integer"
+                },
+                "thumbWidth": {
+                    "description": "slide 拼图块宽度",
+                    "type": "integer"
+                },
+                "thumbX": {
+                    "description": "slide 拼图块初始 X",
+                    "type": "integer"
+                },
+                "thumbY": {
+                    "description": "slide 拼图块初始 Y",
+                    "type": "integer"
+                },
+                "tileImage": {
+                    "description": "拼图块 base64（slide）",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "image | click | slide | rotate",
                     "type": "string"
                 }
             }

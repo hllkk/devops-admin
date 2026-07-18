@@ -64,7 +64,7 @@ func (i *DBApi) CheckDB(c *gin.Context) {
 // @Produce  application/json
 // @Param    data  body      request.DBConnTest               true  "数据库连接参数"
 // @Success  200   {object}  response.Response{data=string}  "连接成功"
-// @Router   /init/db/ping [post]
+// @Router   /init/conn-test [post]
 func (i *DBApi) PingDB(c *gin.Context) {
 	if global.OPS_DB != nil {
 		var count int64
