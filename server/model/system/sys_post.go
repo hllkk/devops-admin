@@ -19,3 +19,14 @@ type SysPost struct {
 func (SysPost) TableName() string {
 	return "sys_posts"
 }
+
+// DeptTreeNode 部门树节点(对齐前端 Api.Common.CommonTreeRecord,岗位页左侧部门树 + 新增抽屉部门选择用)。
+// id/parentId/weight 用数字序列化,对齐前端 expandedKeys=[100] 等数字 key;
+// 待部门模块独立实现后,该树构建迁出至部门 service。
+type DeptTreeNode struct {
+	Id       int64          `json:"id"`       // 部门ID(数字,对齐前端 NTree/NTreeSelect 的数字 key)
+	ParentId int64          `json:"parentId"` // 父部门ID
+	Label    string         `json:"label"`    // 部门名称
+	Weight   int            `json:"weight"`   // 显示顺序(对应 SysDepartment.OrderNum)
+	Children []DeptTreeNode `json:"children"` // 子部门
+}

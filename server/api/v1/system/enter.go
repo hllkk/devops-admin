@@ -6,6 +6,7 @@ type ApiGroup struct {
 	DBApi
 	BaseApi
 	DictApi
+	PostApi
 }
 
 var (
@@ -16,4 +17,5 @@ var (
 	captchaService        = service.ServiceGroupApp.SystemServiceGroup.CaptchaService
 	dictTypeService       = service.ServiceGroupApp.SystemServiceGroup.DictTypeService
 	dictDataService       = service.ServiceGroupApp.SystemServiceGroup.DictDataService
+	postService           = service.ServiceGroupApp.SystemServiceGroup.PostService
 )

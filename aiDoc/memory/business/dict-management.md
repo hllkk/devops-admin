@@ -1,6 +1,6 @@
 # 字典管理（Dict Management）
 
-> 类型：业务模块需求 · 状态：前端已就绪，后端 Model + dict type 全套 + dict data 全套已落地（refreshCache 缓存层、菜单/权限 seed 待补）
+> 类型：业务模块需求 · 状态：前端已就绪，后端 Model + dict type 全套 + dict data 全套已落地；菜单+按钮权限种子 07-15 已存在（refreshCache 缓存层待补；apis→casbin 策略机制项目级未落地，见 [[menu-seed-routes-alignment]]）
 
 ## 需求
 
@@ -44,7 +44,8 @@
   - router `system/dict/data` group 注册 5 条。
   - 顺手将批量删除 ID 解析改为 `strings.SplitSeq`（Go 1.26 + 项目 `utils/sse` 已用先例，IDE lint 提示更高效）。
   - `go build ./...` + `go vet ./...` 通过。
-- 仍未实现：type 的 `refreshCache`（依赖字典缓存层，当前 list/optionselect/`data/type` 直查 DB 无缓存，DictTag 每次落库；待缓存设计后统一实现并接 refreshCache）、菜单/权限种子（`server/source/` 无 `system:dict:*`，启用 casbin 前需补）。
+- 仍未实现：type 的 `refreshCache`（依赖字典缓存层，当前 list/optionselect/`data/type` 直查 DB 无缓存，DictTag 每次落库；待缓存设计后统一实现并接 refreshCache）。
+- **菜单/权限种子已存在（2026-07-18 核对纠正）**：`source/system/sys_menu.go` 早在 07-15 已 seed `route.system_dict` C 菜单 + 5 个 F 按钮（`system:dict:query/add/edit/remove/export`），供前端按钮显隐。**注意**：业务记忆曾记"菜单/权限种子待补"是基于 [[menu-seed-routes-alignment]] 的 apis 规划态误判——实际 `SysMenu` 无 `Apis` 字段、`service/system/sys_casbin.go` 不存在、`CasbinHandler` 在 `initialize/router.go:79` 被注释，apis→casbin 策略机制项目级未落地；当前 dict 接口仅过 JWT 鉴权即可访问，启用 casbin 是另一个独立功能。
 - 后续可参照 [[menu-management]] 文档里 `menu.go 初始化种子：默认菜单与权限` 的规划，补字典模块的菜单+按钮权限种子。
 
 ## 本次（2026-07-13）前端补齐

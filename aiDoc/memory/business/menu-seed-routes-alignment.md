@@ -35,6 +35,10 @@
 
 已实现真实 API：`user`、`setting`、`loginlog`。**仅有 model + seed、API/router/service 尚未实现**：`dict`、`notice`、`operlog`，以及 `menu`/`role`/`dept`/`post` 的 CRUD 接口。
 
+## 2026-07-18 核对纠正（apis 机制未落地）
+
+核对代码发现：本文档"关键约束"描述的"C 菜单 apis → casbin 策略"机制**未落地**——`SysMenu` 无 `Apis` 字段、`service/system/sys_casbin.go` 不存在、无 `UpdateCasbin`、`CasbinHandler` 在 `initialize/router.go:79` 被注释。当前 `source/system/sys_menu.go` 仅 seed 菜单(M/C)与按钮(F, 带 `Perms`)；`Perms` 供前端按钮显隐(`useAuth`)，**不参与 API 级鉴权**。启用 casbin 是独立功能，需先实现 apis 字段 + 策略推导 + 策略表初始化。本文档 07-15 写作时 apis 部分为规划态，实际代码未含。
+
 ## 相关
 
 - [[menu-management]] 菜单模型建模（SysMenu + DTO + i18n）

@@ -12,4 +12,5 @@ type ServiceGroup struct {
 	LoginLogService
 	DictTypeService
 	DictDataService
+	PostService
 }
