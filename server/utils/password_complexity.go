@@ -11,8 +11,8 @@ import (
 
 // ValidatePasswordComplexity 按安全配置校验密码复杂度 不满足返回可读错误
 func ValidatePasswordComplexity(pwd string, cfg system.SysSecurityConfig) error {
-	if cfg.PwdMinLength > 0 && utf8.RuneCountInString(pwd) < cfg.PwdMinLength {
-		return fmt.Errorf("密码长度不能少于 %d 位", cfg.PwdMinLength)
+	if cfg.PasswordMinLength > 0 && utf8.RuneCountInString(pwd) < cfg.PasswordMinLength {
+		return fmt.Errorf("密码长度不能少于 %d 位", cfg.PasswordMinLength)
 	}
 	var hasUpper, hasLower, hasDigit, hasSpecial bool
 	for _, r := range pwd {
@@ -28,16 +28,16 @@ func ValidatePasswordComplexity(pwd string, cfg system.SysSecurityConfig) error 
 		}
 	}
 	var missing []string
-	if cfg.PwdRequireUpper && !hasUpper {
+	if cfg.PasswordRequireUpper && !hasUpper {
 		missing = append(missing, "大写字母")
 	}
-	if cfg.PwdRequireLower && !hasLower {
+	if cfg.PasswordRequireLower && !hasLower {
 		missing = append(missing, "小写字母")
 	}
-	if cfg.PwdRequireDigit && !hasDigit {
+	if cfg.PasswordRequireDigit && !hasDigit {
 		missing = append(missing, "数字")
 	}
-	if cfg.PwdRequireSpecial && !hasSpecial {
+	if cfg.PasswordRequireSpecial && !hasSpecial {
 		missing = append(missing, "特殊字符")
 	}
 	if len(missing) > 0 {

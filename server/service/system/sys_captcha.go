@@ -188,6 +188,11 @@ func (s CaptchaService) Verify(ctx context.Context, captchaId, userAnswer string
 	return nil
 }
 
+// NeedCaptcha 是否要求提交验证码(供 login 校验入口判断) 导出封装
+func (s CaptchaService) NeedCaptcha(ctx context.Context, username, ip string) bool {
+	return s.needCaptcha(s.config(ctx), username, ip)
+}
+
 // needCaptcha 总开关 CaptchaEnabled 关闭则永不要求；否则按 CaptchaOpen 阈值触发
 // (0=每次都要 / N=失败N次后触发)。
 func (s CaptchaService) needCaptcha(cfg system.SysSecurityConfig, username, ip string) bool {

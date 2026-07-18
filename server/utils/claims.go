@@ -19,9 +19,9 @@ func ClearToken(c *gin.Context) {
 	}
 
 	if net.ParseIP(host) != nil {
-		c.SetCookie("x-token", "", -1, "/", "", false, false)
+		c.SetCookie("x-token", "", -1, "/", "", false, true)
 	} else {
-		c.SetCookie("x-token", "", -1, "/", host, false, false)
+		c.SetCookie("x-token", "", -1, "/", host, false, true)
 	}
 }
 
@@ -33,9 +33,9 @@ func SetToken(c *gin.Context, token string, maxAge int) {
 	}
 
 	if net.ParseIP(host) != nil {
-		c.SetCookie("x-token", token, maxAge, "/", "", false, false)
+		c.SetCookie("x-token", token, maxAge, "/", "", false, true)
 	} else {
-		c.SetCookie("x-token", token, maxAge, "/", host, false, false)
+		c.SetCookie("x-token", token, maxAge, "/", host, false, true)
 	}
 }
 

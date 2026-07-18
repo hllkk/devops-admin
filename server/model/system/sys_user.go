@@ -41,6 +41,7 @@ type SysUser struct {
 	Sex         string     `json:"sex" gorm:"default:0;size:1;comment:性别 0男1女2未知"`                                  // 性别
 	Avatar      string     `json:"avatar" gorm:"default:https://qmplusimg.henrongyi.top/gva_header.jpg;comment:头像"` // 头像
 	Password    string     `json:"-" gorm:"comment:用户登录密码"`                                                         // 密码(不输出)
+	PasswordUpdatedAt *time.Time `json:"passwordUpdatedAt,omitempty" gorm:"comment:密码最后修改时间"`                        // 密码最后修改时间(密码过期判定)
 	Status      string     `json:"status" gorm:"default:0;size:1;comment:帐号状态 0正常1停用"`                              // 帐号状态(对齐前端 '0'/'1')
 	LoginIp     string     `json:"loginIp" gorm:"comment:最后登录IP"`                                                   // 最后登录IP
 	LoginDate   *time.Time `json:"loginDate" gorm:"comment:最后登录时间"`                                                 // 最后登录时间

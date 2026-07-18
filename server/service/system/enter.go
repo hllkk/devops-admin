@@ -8,4 +8,6 @@ type ServiceGroup struct {
 	InitDBService
 	SecurityConfigService
 	CaptchaService
+	UserService
+	LoginLogService
 }

@@ -3,7 +3,7 @@ import { request } from '../request';
 /** 获取行为验证码（go-captcha），按后端触发策略决定是否返回；username 用于阈值判断 */
 export function fetchCaptcha(username?: string) {
   return request<Api.Auth.CaptchaResult>({
-    url: '/auth/captcha',
+    url: '/base/captcha',
     method: 'get',
     params: username ? { username } : {}
   });
@@ -16,7 +16,7 @@ export function fetchCaptcha(username?: string) {
  */
 export function fetchLogin(data: Api.Auth.PwdLoginForm) {
   return request<Api.Auth.LoginToken>({
-    url: '/auth/login',
+    url: '/base/login',
     method: 'post',
     data
   });
