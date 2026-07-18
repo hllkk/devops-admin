@@ -4,10 +4,10 @@ import "github.com/hllkk/devops-admin/server/service"
 
 type ApiGroup struct {
 	DBApi
-	CaptchaApi
+	BaseApi
 }
 
 var (
-	initDBService  = service.ServiceGroupApp.SystemServiceGroup.InitDBService
-	captchaService = service.ServiceGroupApp.SystemServiceGroup.CaptchaService
+	initDBService         = service.ServiceGroupApp.SystemServiceGroup.InitDBService
+	securityConfigService = service.ServiceGroupApp.SystemServiceGroup.SecurityConfigService
 )
