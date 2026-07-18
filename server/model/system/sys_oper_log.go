@@ -34,6 +34,9 @@ type SysOperLog struct {
 	ErrorMsg      string    `json:"errorMsg" gorm:"type:text;comment:错误消息"`      // 错误消息
 	OperTime      time.Time `json:"operTime" gorm:"comment:操作时间"`               // 操作时间(业务时间,区别于 createTime)
 	CostTime      int       `json:"costTime" gorm:"comment:消耗时间(毫秒)"`          // 消耗时间
+	// 以下为后端独有字段(前端 Api.Log.OperLog 暂未声明,保留用于与访问日志/链路追踪打通,便于排障扩展):
+	RequestID string `json:"requestId,omitempty" gorm:"index;comment:请求ID(关联访问日志)"` // 请求ID(关联 access log 的 request_id)
+	TraceID   string `json:"traceId,omitempty" gorm:"index;comment:链路追踪ID"`        // 链路追踪ID
 }
 
 func (SysOperLog) TableName() string {

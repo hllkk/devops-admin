@@ -74,6 +74,11 @@ func OperationRecord() gin.HandlerFunc {
 			record.OperName = claims.Username
 			record.OperatorType = operatorBackend
 		}
+		// 链路关联:与 access log 的 request_id/trace_id 对齐,便于跨日志排障
+		if f := logger.FromCtx(c.Request.Context()); f != nil {
+			record.RequestID = f.GetRequestID()
+			record.TraceID = f.GetTraceID()
+		}
 		// 审计基座的 CreateTime/UpdateTime 无 autoCreateTime 标签, 显式落值, 避免零值。
 		record.CreateTime = start
 		record.UpdateTime = start
