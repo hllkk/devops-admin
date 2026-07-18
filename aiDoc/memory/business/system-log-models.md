@@ -36,7 +36,7 @@
 - [ ] Service（列表分页走 `request.PageInfo` + `info.LimitOffset()`；批量删除/clean/unlock）
 - [ ] API + Router（`/monitor/operlog`、`/log/loginlog`，Swagger `@Success` 落 `response.PageResult{Rows=[]SysOperLog}`）
 - [ ] 启用 AutoMigrate 注册（取消注释）
-- [ ] 操作日志切面（middleware/aspect 记录 operName/deptName/operIp/operParam/jsonResult/costTime/status）
+- [x] 操作日志切面（middleware 记录 operName/operIp/operParam/jsonResult/costTime/status）→ 已于 [[system-oper-log-middleware]]（07-18）落地（中间件重写 + 异步落表 + 路由接入）
 
 ## 相关文件
 
