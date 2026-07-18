@@ -9,6 +9,7 @@ import (
 	"github.com/hllkk/devops-admin/server/global"
 	"github.com/hllkk/devops-admin/server/middleware"
 	"github.com/hllkk/devops-admin/server/router"
+	"github.com/hllkk/devops-admin/server/service"
 	"github.com/hllkk/devops-admin/server/utils/logger"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -42,6 +43,8 @@ func Routers() *gin.Engine {
 	Router.Use(middleware.GinRecovery(true))
 	// 全局访问日志 + 唯一 body/resp 捕获点（供 OperationRecord 复用）
 	Router.Use(middleware.AccessLog())
+	// 启动操作日志异步写入协程（幂等），供 OperationRecord 落表
+	service.ServiceGroupApp.SystemServiceGroup.SysOperLogService.StartWriter()
 	if gin.Mode() == gin.DebugMode {
 		Router.Use(gin.Logger())
 	}
@@ -69,7 +72,12 @@ func Routers() *gin.Engine {
 	PublicGroup := Router.Group(global.OPS_CONFIG.System.RouterPrefix)
 	PrivateGroup := Router.Group(global.OPS_CONFIG.System.RouterPrefix)
 
-	PrivateGroup.Use(middleware.JWTAuth()).Use(middleware.MustChangePwdGuard()).Use(middleware.CasbinHandler()).Use(middleware.DataScope())
+	// OperationRecord 置于 JWTAuth 之后:operName 已可用,且可记录授权拒绝(403)与业务结果
+	PrivateGroup.Use(middleware.JWTAuth()).
+		Use(middleware.OperationRecord()).
+		Use(middleware.MustChangePwdGuard()).
+		Use(middleware.CasbinHandler()).
+		Use(middleware.DataScope())
 
 	{
 		// 健康监测

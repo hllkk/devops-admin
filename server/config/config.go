@@ -24,11 +24,11 @@ type Server struct {
 	RedisList    []Redis         `mapstructure:"redis-list" json:"redis-list" yaml:"redis-list"`
 	Mongo        Mongo           `mapstructure:"mongo" json:"mongo" yaml:"mongo"`
 	Captcha      Captcha         `mapstructure:"captcha" json:"captcha" yaml:"captcha"`
+	Cors         CORS            `mapstructure:"cors" json:"cors" yaml:"cors"`
+	MCP          MCP             `mapstructure:"mcp" json:"mcp" yaml:"mcp"`
+	App          App             `mapstructure:"app" json:"app" yaml:"app"`
 	// Email        Email           `mapstructure:"email" json:"email" yaml:"email"`
 	// Excel        Excel           `mapstructure:"excel" json:"excel" yaml:"excel"`
-
 	// DiskList     []DiskList      `mapstructure:"disk-list" json:"disk-list" yaml:"disk-list"`
-	// Cors         CORS            `mapstructure:"cors" json:"cors" yaml:"cors"`
-	MCP MCP `mapstructure:"mcp" json:"mcp" yaml:"mcp"`
-	// App          App             `mapstructure:"app" json:"app" yaml:"app"`
+
 }

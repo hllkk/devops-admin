@@ -14,6 +14,12 @@ import (
 func CasbinHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		waitUse, _ := utils.GetClaims(c)
+		// 超管经 SuperAdmin 标志直接放行,绕过策略校验
+		// (见 source/system/sys_role_menu.go: super 虽有 SuperAdmin 标志可绕过权限检查)
+		if waitUse != nil && waitUse.SuperAdmin {
+			c.Next()
+			return
+		}
 		//获取请求的PATH
 		path := c.Request.URL.Path
 		obj := strings.TrimPrefix(path, global.OPS_CONFIG.System.RouterPrefix)

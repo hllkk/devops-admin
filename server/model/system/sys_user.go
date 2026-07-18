@@ -14,6 +14,7 @@ type Login interface {
 	GetUUID() uuid.UUID
 	GetUserId() int64
 	GetRoleId() int64
+	GetSuperAdmin() bool
 	GetUserInfo() any
 }
 
@@ -75,6 +76,18 @@ func (s *SysUser) GetUserId() int64 {
 
 func (s *SysUser) GetRoleId() int64 {
 	return s.RoleId
+}
+
+// GetSuperAdmin 是否拥有超管角色。
+// 依赖登录链路 Preload Roles;任一关联角色 SuperAdmin=true 即视为超管,
+// 供 JWT claims 携带,CasbinHandler 据此绕过策略校验。
+func (s *SysUser) GetSuperAdmin() bool {
+	for _, r := range s.Roles {
+		if r.SuperAdmin {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *SysUser) GetUserInfo() any {

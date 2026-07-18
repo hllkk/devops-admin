@@ -5,7 +5,6 @@ import (
 
 	adapter "github.com/casbin/gorm-adapter/v3"
 	"github.com/hllkk/devops-admin/server/service/system"
-	"github.com/pkg/errors"
 	"gorm.io/gorm"
 )
 
@@ -40,26 +39,14 @@ func (i *initCasbin) InitializerName() string {
 }
 
 func (i *initCasbin) InitializeData(ctx context.Context) (context.Context, error) {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
-		return ctx, system.ErrMissingDBContext
-	}
-	entities := []adapter.CasbinRule{}
-	if err := db.Create(&entities).Error; err != nil {
-		return ctx, errors.Wrap(err, "Casbin 表 ("+i.InitializerName()+") 数据初始化失败!")
-	}
-	next := context.WithValue(ctx, i.InitializerName(), entities)
-	return next, nil
+	// Casbin 不预置种子策略: 权限规则由运行时角色授权写入 casbin_rule;
+	// 超管则经 SuperAdmin 标志在 CasbinHandler 中间件直接放行(见 source/system/sys_role_menu.go 注释)。
+	// 仅写空切片到 ctx 以满足 initializer 契约,不执行任何 INSERT,避免 gorm 对空切片报 "empty slice found"。
+	return context.WithValue(ctx, i.InitializerName(), []adapter.CasbinRule{}), nil
 }
 
 func (i *initCasbin) DataInserted(ctx context.Context) bool {
-	db, ok := ctx.Value("db").(*gorm.DB)
-	if !ok {
-		return false
-	}
-	if errors.Is(db.Where(adapter.CasbinRule{Ptype: "p", V0: "9528", V1: "/user/getUserInfo", V2: "GET"}).
-		First(&adapter.CasbinRule{}).Error, gorm.ErrRecordNotFound) { // 判断是否存在数据
-		return false
-	}
+	// 无种子策略可插入: 建表完成即视为数据初始化完成(表存在由 TableCreated 保证),
+	// 返回 true 使 InitData 跳过 InitializeData,避免对空表反复执行无意义操作。
 	return true
 }

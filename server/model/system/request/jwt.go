@@ -14,9 +14,10 @@ type CustomClaims struct {
 }
 
 type BaseClaims struct {
-	UUID     uuid.UUID
-	ID       int64
-	Username string
-	NickName string
-	RoleId   int64
+	UUID       uuid.UUID
+	ID         int64
+	Username   string
+	NickName   string
+	RoleId     int64
+	SuperAdmin bool // 超管标志:CasbinHandler 中间件据此放行,绕过策略校验
 }

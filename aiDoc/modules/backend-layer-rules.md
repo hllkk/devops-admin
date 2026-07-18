@@ -19,6 +19,7 @@
 - 字段应补全清晰的 `json` 与 `gorm` 标签
 - 请求模型放在 `model/request/`
 - 列表查询模型应定义 `XxxSearch`，并内嵌通用的 `request.PageInfo`
+- 新增 model 的**建表与初始化注册**见下文「Initialize 层 → 表注册与新增 model 的建表维护点」
 
 ### 关联建模：多对多用显式关联表，不用 GORM `many2many`
 
@@ -92,6 +93,30 @@ JSON body / Query string / Path params / `multipart/form-data` / Header / Cookie
 - `menu.go`: 菜单与权限初始化
 - `viper.go`: 配置加载
 - `api.go`: API 注册
+
+### 表注册与新增 model 的建表维护点
+
+后端建表走 **initializer 单一真源注册制**（`85742ae` 重构确立）。新增 model 的建表/初始化按下表分类落点，**不要在多处各写一份 `AutoMigrate` 造成建表清单漂移**。
+
+**自注册链路：**
+
+- 每个 initializer 放 `server/source/system/sys_xxx.go`，实现 `SubInitializer` 五个方法：`InitializerName()`（用 `TableName()`，重名会 panic）、`MigrateTable()`（建表）、`TableCreated()`（探针：表是否已建）、`InitializeData()`（种子数据）、`DataInserted()`（探针：数据是否已插入）；通过包级 `init()` 调 `system.RegisterInit(order, ...)` 自注册。
+- `server/initialize/register_init.go` 空白导入 `source/system` 包以触发自注册——**新建 initializer 无需手动登记**，只要文件落在该包内即可被编译期纳入。
+- 两条建表路径共用同一份 initializer 清单（单一真源）：
+  - 首次 `/initdb`：`InitDBService.InitDB` → 建表 + 种子数据，靠探针幂等跳过；
+  - 常规启动：`initialize.RegisterTables()` → `service/system.MigrateRegisteredTables`，仅建表。
+- initializer 的粒度是「一组有依赖、需按序初始化的逻辑表组」，一个 initializer 的 `MigrateTable` 可建多张表（如 `source/system/sys_department.go` 同时建 `SysDepartment/SysPost/SysDataAccessLog/SysRoleDepartment`）。
+- 依赖顺序用 `const initOrderXxx = initOrderYyy + 1` 表达，三级顶层常量 `InitOrderSystem/Internal/External`（定义在 `service/system/sys_init.go`）。
+
+**新增 model 的三类落点：**
+
+| 场景 | 维护点 |
+|---|---|
+| 需要 `/initdb` 种子数据的系统表（或要纳入幂等建表流程） | ① `model/system/sys_xxx.go` 定义 model；② 新建 `source/system/sys_xxx.go` initializer（5 方法 + `init()` + `initOrder` 常量），或归入语义相关的已有 initializer 的 `MigrateTable`/`InitializeData` |
+| 纯业务表（无种子数据、不走 `/initdb`） | ① 定义 model；② 加到 `initialize/gorm_biz.go` 的 `bizModel()`（当前是空 `db.AutoMigrate()`，专为业务表预留） |
+| 无 initializer 的内部散表（如 `JwtBlacklist`/`SysError`） | ① 定义 model；② 加到 `initialize/gorm.go` 的 `RegisterTables()` 显式 `AutoMigrate` 入参 |
+
+> 多对多关联表（显式 struct）同样要在所属 initializer 的 `MigrateTable` 里 `AutoMigrate`，见上文「关联建模」。
 
 ## Swagger 约束
 

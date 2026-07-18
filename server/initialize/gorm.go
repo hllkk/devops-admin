@@ -4,10 +4,10 @@ import (
 	"os"
 
 	"github.com/hllkk/devops-admin/server/global"
+	"github.com/hllkk/devops-admin/server/model/media"
 	"github.com/hllkk/devops-admin/server/model/system"
-	sysService "github.com/hllkk/devops-admin/server/service/system"
+	"github.com/hllkk/devops-admin/server/utils/logger"
 
-	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -36,29 +36,44 @@ func Gorm() *gorm.DB {
 
 func RegisterTables() {
 	if global.OPS_CONFIG.System.DisableAutoMigrate {
-		global.OPS_LOG.Info("auto-migrate is disabled, skipping table registration")
+		logger.Bg().Mod("system").Info("auto-migrate is disabled, skipping table registration")
 		return
 	}
 
 	db := global.OPS_DB
-	// 无 initializer 管理的表在此显式迁移;其余表复用已注册 initializer 的 MigrateTable,
-	// 与 /initdb 共用单一真源,避免两套建表清单漂移(详见 service/system.MigrateRegisteredTables)。
-	if err := db.AutoMigrate(
+	// 重启路径独立建表清单(与 /initdb 的 initializer 清单分离, 内容保持等价)
+	err := db.AutoMigrate(
+		system.SysUser{},
+		system.SysMenu{},
 		system.JwtBlacklist{},
+		system.SysRole{},
+		system.SysDepartment{},
+		system.SysPost{},
+		system.SysLoginLog{},
+		system.SysOperLog{},
+		system.SysDataAccessLog{},
+		system.SysRoleDepartment{},
+		system.SysDictType{},
+		system.SysDictData{},
+		system.SysRoleMenu{},
 		system.SysError{},
-	); err != nil {
-		global.OPS_LOG.Error("register table failed", zap.Error(err))
+
+		media.MediaUpload{},
+		media.MediaUploadChunk{},
+		media.FileUploadAndDownload{},
+		media.AttachmentCategory{},
+	)
+
+	if err != nil {
+		logger.Bg().Mod("system").Err(err).Error("register table failed")
 		os.Exit(1)
 	}
 
-	if err := sysService.MigrateRegisteredTables(db); err != nil {
-		global.OPS_LOG.Error("register table via initializers failed", zap.Error(err))
-		os.Exit(1)
-	}
+	err = bizModel()
 
-	if err := bizModel(); err != nil {
-		global.OPS_LOG.Error("register biz_table failed", zap.Error(err))
+	if err != nil {
+		logger.Bg().Mod("system").Err(err).Error("register biz_table failed")
 		os.Exit(1)
 	}
-	global.OPS_LOG.Info("register table success")
+	logger.Bg().Mod("system").Info("register table success")
 }

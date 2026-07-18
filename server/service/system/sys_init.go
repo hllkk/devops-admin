@@ -9,6 +9,7 @@ import (
 	"database/sql"
 
 	"github.com/hllkk/devops-admin/server/global"
+	sysModel "github.com/hllkk/devops-admin/server/model/system"
 	"github.com/hllkk/devops-admin/server/model/system/request"
 	"gorm.io/gorm"
 )
@@ -191,6 +192,19 @@ func createDatabase(dsn string, driver string, createSql string) error {
 	return err
 }
 
+// extraTables 为不纳入 initializer 体系的孤儿表(JWT 黑名单 / 错误日志):
+// 无种子数据、与角色菜单等无 context 依赖,故集中单独迁移。
+// /initdb 的 createTables 末尾统一迁移; 常规重启则由 initialize.RegisterTables 独立清单覆盖。
+var extraTables = []any{
+	&sysModel.JwtBlacklist{},
+	&sysModel.SysError{},
+}
+
+// MigrateExtraTables 迁移孤儿表,供 /initdb 的 createTables 调用。
+func MigrateExtraTables(db *gorm.DB) error {
+	return db.AutoMigrate(extraTables...)
+}
+
 // createTables 创建表（默认 dbInitHandler.initTables 行为）
 func createTables(ctx context.Context, inits initSlice) error {
 	next, cancel := context.WithCancel(ctx)
@@ -205,23 +219,13 @@ func createTables(ctx context.Context, inits initSlice) error {
 			next = n
 		}
 	}
-	return nil
-}
-
-// MigrateRegisteredTables 遍历所有已注册 initializer,对尚未建表的执行 MigrateTable。
-// 供 initialize.RegisterTables 复用,与 /initdb 的 InitTables 共用同一份建表逻辑(单一真源),
-// 避免常规启动路径与初始化路径的表清单漂移。
-func MigrateRegisteredTables(db *gorm.DB) error {
-	ctx := context.WithValue(context.TODO(), "db", db)
-	for _, init := range initializers {
-		if init.TableCreated(ctx) {
-			continue
-		}
-		if _, err := init.MigrateTable(ctx); err != nil {
-			return err
-		}
+	// 孤儿表不纳入 initializer 体系, 在 initializer 建表后统一迁移。
+	// 注: 此为 /initdb 路径独有; 常规重启走 initialize.RegisterTables 的独立清单。
+	db, ok := ctx.Value("db").(*gorm.DB)
+	if !ok {
+		return ErrMissingDBContext
 	}
-	return nil
+	return MigrateExtraTables(db)
 }
 
 /* -- sortable interface -- */

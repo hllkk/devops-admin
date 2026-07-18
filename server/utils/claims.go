@@ -137,11 +137,12 @@ func GetUserName(c *gin.Context) string {
 func LoginToken(user system.Login) (token string, claims systemReq.CustomClaims, err error) {
 	j := NewJWT()
 	claims = j.CreateClaims(systemReq.BaseClaims{
-		UUID:     user.GetUUID(),
-		ID:       user.GetUserId(),
-		NickName: user.GetNickname(),
-		Username: user.GetUsername(),
-		RoleId:   user.GetRoleId(),
+		UUID:       user.GetUUID(),
+		ID:         user.GetUserId(),
+		NickName:   user.GetNickname(),
+		Username:   user.GetUsername(),
+		RoleId:     user.GetRoleId(),
+		SuperAdmin: user.GetSuperAdmin(),
 	})
 	token, err = j.CreateToken(claims)
 	return
@@ -151,11 +152,12 @@ func LoginToken(user system.Login) (token string, claims systemReq.CustomClaims,
 func LoginTokenWithExpire(user system.Login, mustChangePwd bool) (token string, claims systemReq.CustomClaims, err error) {
 	j := NewJWT()
 	claims = j.CreateClaims(systemReq.BaseClaims{
-		UUID:     user.GetUUID(),
-		ID:       user.GetUserId(),
-		NickName: user.GetNickname(),
-		Username: user.GetUsername(),
-		RoleId:   user.GetRoleId(),
+		UUID:       user.GetUUID(),
+		ID:         user.GetUserId(),
+		NickName:   user.GetNickname(),
+		Username:   user.GetUsername(),
+		RoleId:     user.GetRoleId(),
+		SuperAdmin: user.GetSuperAdmin(),
 	})
 	claims.MustChangePwd = mustChangePwd
 	token, err = j.CreateToken(claims)
