@@ -191,7 +191,7 @@ func (s *MediaUploadService) CleanupStale(ctx context.Context, ttlHours int) err
 	}
 	deadline := time.Now().Add(-time.Duration(ttlHours) * time.Hour)
 	var stale []media.MediaUpload
-	global.OPS_DB.WithContext(ctx).Where("status = ? AND updated_at < ?", media.UploadStatusUploading, deadline).Find(&stale)
+	global.OPS_DB.WithContext(ctx).Where("status = ? AND update_time < ?", media.UploadStatusUploading, deadline).Find(&stale)
 	for _, up := range stale {
 		global.OPS_DB.WithContext(ctx).Where("upload_id = ?", up.ID).Delete(&media.MediaUploadChunk{})
 		_ = upload.RemoveUploadDir(up.ID)

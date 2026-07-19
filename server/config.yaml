@@ -28,11 +28,11 @@ aws-s3:
 captcha:
     enable: true
     type: click
-    tolerance: 5
-    key-long: 6
+    key-long: 4
     img-width: 240
     img-height: 80
-    open-captcha: 0
+    tolerance: 8
+    open-captcha: 1
     open-captcha-timeout: 3600
 cloudflare-r2:
     bucket: xxxx0bucket
@@ -69,7 +69,7 @@ hua-wei-obs:
     access-key: you-access-key
     secret-key: you-secret-key
 jwt:
-    signing-key: 7021d1b1-069a-4342-9e8f-3866c2d909a1
+    signing-key: e644347a-a810-46e1-9e02-6226b6548f75
     expires-time: 7d
     buffer-time: 1d
     issuer: devops-admin

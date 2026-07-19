@@ -57,6 +57,8 @@ func RegisterTables() {
 		system.SysDictData{},
 		system.SysRoleMenu{},
 		system.SysError{},
+		system.SysSecurityConfig{},
+		system.SysGeneralConfig{},
 
 		media.MediaUpload{},
 		media.MediaUploadChunk{},

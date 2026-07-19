@@ -79,9 +79,9 @@ func OperationRecord() gin.HandlerFunc {
 			record.RequestID = f.GetRequestID()
 			record.TraceID = f.GetTraceID()
 		}
-		// 审计基座的 CreateTime/UpdateTime 无 autoCreateTime 标签, 显式落值, 避免零值。
-		record.CreateTime = start
-		record.UpdateTime = start
+		// 显式用操作起始时刻 start 落审计时间(优先于 gorm 默认 time.Now(); 非零值 gorm 不覆盖)。
+		record.CreatedAt = start
+		record.UpdatedAt = start
 
 		c.Next()
 

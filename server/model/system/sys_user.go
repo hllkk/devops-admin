@@ -49,10 +49,10 @@ type SysUser struct {
 	UUID        uuid.UUID  `json:"uuid" gorm:"index;comment:用户UUID"`                                                // 用户UUID(登录链路)
 	// 关联(多角色/多部门/多岗位走显式连接表)
 	RoleId      int64           `json:"-" gorm:"default:888;comment:用户主角色ID(登录链路claims用,前端不输出)"` // 主角色ID
-	Roles       []SysRole       `json:"roles" gorm:"many2many:sys_user_role;"`                   // 多角色
-	Dept        SysDepartment   `json:"dept" form:"-" gorm:"foreignKey:DeptId;comment:主部门"`      // 主部门;form:"-" 防御 gin 绑定递归
-	Departments []SysDepartment `json:"departments" gorm:"many2many:sys_user_departments;"`      // 多部门归属(数据可见范围)
-	Posts       []SysPost       `json:"posts" gorm:"many2many:sys_user_post;"`                   // 多岗位
+	Roles []SysRole `json:"roles" gorm:"many2many:sys_user_role;joinForeignKey:SysUserId;joinReferences:SysRoleId"`               // 多角色(join 列对齐 sys_user_id/sys_role_id)
+	Dept        SysDepartment   `json:"dept" form:"-" gorm:"foreignKey:DeptId;comment:主部门"`                                    // 主部门;form:"-" 防御 gin 绑定递归
+	Departments []SysDepartment `json:"departments" gorm:"many2many:sys_user_departments;joinForeignKey:SysUserId;joinReferences:SysDepartmentId"` // 多部门归属(数据可见范围)
+	Posts       []SysPost       `json:"posts" gorm:"many2many:sys_user_post;joinForeignKey:SysUserId;joinReferences:SysPostId"` // 多岗位
 }
 
 func (SysUser) TableName() string {

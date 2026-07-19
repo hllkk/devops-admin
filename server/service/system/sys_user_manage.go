@@ -17,8 +17,8 @@ import (
 // 用户管理 CRUD(对齐前端 /system/user/* 管理员侧资源)。
 // auth 链路(Login/Register/GetUserInfo/GetUserDetail)仍在 sys_user.go,本文件只含管理方法。
 
-// userOrder 用户列表统一排序:user_id 升序。
-const userOrder = "user_id ASC"
+// userOrder 用户列表统一排序:主键 id(雪花)升序。限定 sys_users.id 以避免 roleId join 时列名歧义。
+const userOrder = "sys_users.id ASC"
 
 // GetList 分页查用户列表(对齐前端 GET /system/user/list)。
 // deptId/userName/nickName/phonenumber/status 过滤;roleId>0 时 join sys_user_role;分页走 LimitOffset。

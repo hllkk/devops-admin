@@ -55,11 +55,11 @@ func (sysErrorService *SysErrorService) GetSysError(ctx context.Context, ID stri
 func (sysErrorService *SysErrorService) GetSysErrorInfoList(ctx context.Context, info systemReq.SysErrorSearch) (list []system.SysError, total int64, err error) {
 	limit, offset := info.LimitOffset()
 	// 创建db
-	db := global.OPS_DB.WithContext(ctx).Model(&system.SysError{}).Order("created_at desc")
+	db := global.OPS_DB.WithContext(ctx).Model(&system.SysError{}).Order("create_time desc")
 	var sysErrors []system.SysError
 	// 如果有条件搜索 下方会自动创建搜索语句
 	if len(info.CreatedAtRange) == 2 {
-		db = db.Where("created_at BETWEEN ? AND ?", info.CreatedAtRange[0], info.CreatedAtRange[1])
+		db = db.Where("create_time BETWEEN ? AND ?", info.CreatedAtRange[0], info.CreatedAtRange[1])
 	}
 
 	if info.Form != nil && *info.Form != "" {

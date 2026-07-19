@@ -11,9 +11,12 @@ import (
 // 内部表用 id),回调 ops:snowflake_id 按 PrioritizedPrimaryField 自动填充(待落地)。
 // json 对齐前端 CommonRecord 的 createTime/updateTime。
 type OPS_BASE struct {
-	CreateTime time.Time      `json:"createTime" gorm:"comment:创建时间"`
-	UpdateTime time.Time      `json:"updateTime" gorm:"comment:更新时间"`
-	DeletedAt  gorm.DeletedAt `gorm:"index" json:"-"`
+	// 字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);
+	// column 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;
+	// json 仍叫 createTime/updateTime 对齐前端 CommonRecord。
+	CreatedAt time.Time      `json:"createTime" gorm:"column:create_time;comment:创建时间"`
+	UpdatedAt time.Time      `json:"updateTime" gorm:"column:update_time;comment:更新时间"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 // OPS_MODEL 过渡基座:OPS_BASE + ID 主键。

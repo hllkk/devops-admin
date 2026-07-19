@@ -123,10 +123,10 @@ func (e *FileUploadAndDownloadService) GetFileRecordInfoList(ctx context.Context
 	}
 
 	if !info.StartCreatedAt.IsZero() {
-		db = db.Where("created_at >= ?", info.StartCreatedAt)
+		db = db.Where("create_time >= ?", info.StartCreatedAt)
 	}
 	if !info.EndCreatedAt.IsZero() {
-		db = db.Where("created_at < ?", info.EndCreatedAt)
+		db = db.Where("create_time < ?", info.EndCreatedAt)
 	}
 
 	err = db.Count(&total).Error
@@ -136,7 +136,7 @@ func (e *FileUploadAndDownloadService) GetFileRecordInfoList(ctx context.Context
 
 	// 排序：允许指定字段，默认 id desc；白名单防注入
 	orderKey := info.OrderKey
-	allowedOrder := map[string]bool{"id": true, "size": true, "created_at": true, "name": true}
+	allowedOrder := map[string]bool{"id": true, "size": true, "create_time": true, "name": true}
 	if !allowedOrder[orderKey] {
 		orderKey = "id"
 	}
