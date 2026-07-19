@@ -10,6 +10,7 @@ type ApiGroup struct {
 	DeptApi
 	MenuApi
 	RoleApi
+	UserApi
 }
 
 var (

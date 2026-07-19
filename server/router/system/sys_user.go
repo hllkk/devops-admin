@@ -27,4 +27,19 @@ func (s *UserRouter) InitUserRouter(Router *gin.RouterGroup) {
 		userRouterWithoutRecord.POST("getUserList", baseApi.GetUserList) // 分页获取用户列表
 		userRouterWithoutRecord.GET("getUserInfo", baseApi.GetUserInfo)  // 获取自身信息
 	}
+
+	// /system/user/* RESTful 接口(对齐前端 user.ts);鉴权与操作日志由 PrivateGroup 全局中间件统一处理。
+	// GET ":userId" 放在 static 路由之后(param 兜底,gin static 优先匹配)。
+	systemUserRouter := Router.Group("system/user")
+	{
+		systemUserRouter.GET("list", userApi.GetUserList)                  // 用户分页列表
+		systemUserRouter.GET("list/dept/:deptId", userApi.GetDeptUserList) // 部门下用户(负责人选择用)
+		systemUserRouter.GET("deptTree", userApi.GetDeptTree)              // 部门树(复用部门模块)
+		systemUserRouter.GET(":userId", userApi.GetUserDetail)             // 用户详情
+		systemUserRouter.POST("", userApi.CreateUser)                      // 新增用户(含分配角色/岗位)
+		systemUserRouter.PUT("", userApi.UpdateUser)                       // 修改用户(全量替换角色/岗位)
+		systemUserRouter.PUT("changeStatus", userApi.UpdateUserStatus)     // 修改用户状态
+		systemUserRouter.PUT("resetPwd", userApi.ResetUserPwd)             // 重置密码
+		systemUserRouter.DELETE(":userIds", userApi.BatchDeleteUser)       // 批量删除用户
+	}
 }

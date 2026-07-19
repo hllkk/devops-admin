@@ -98,6 +98,7 @@ func Routers() *gin.Engine {
 		systemRouter.InitDeptRouter(PrivateGroup)  // 部门管理(/system/dept/*)
 		systemRouter.InitMenuRouter(PrivateGroup)  // 菜单管理(/system/menu/*)
 		systemRouter.InitRoleRouter(PrivateGroup)  // 角色管理(/system/role/*)
+		systemRouter.InitUserRouter(PrivateGroup)  // 用户管理(/system/user/*)
 	}
 
 	{

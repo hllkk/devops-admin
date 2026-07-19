@@ -23,4 +23,5 @@ var (
 	deptApi = v1.ApiGroupApp.SystemApiGroup.DeptApi
 	menuApi = v1.ApiGroupApp.SystemApiGroup.MenuApi
 	roleApi = v1.ApiGroupApp.SystemApiGroup.RoleApi
+	userApi = v1.ApiGroupApp.SystemApiGroup.UserApi
 )

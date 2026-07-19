@@ -30,3 +30,40 @@ type GetUserList struct {
 	UserName string `json:"userName" form:"userName"`
 	DeptId   int64  `json:"deptId,string" form:"deptId"`
 }
+
+// UserSearch 用户分页查询(对齐前端 Api.System.UserSearchParams,GET query 传输)。
+// deptId/userName/nickName/phonenumber 过滤;roleId>0 时 join sys_user_role。
+type UserSearch struct {
+	commonReq.PageInfo
+	DeptId      int64  `json:"deptId,string" form:"deptId"`      // 主部门ID(精确)
+	UserName    string `json:"userName" form:"userName"`         // 用户名(模糊)
+	NickName    string `json:"nickName" form:"nickName"`         // 昵称(模糊)
+	Phonenumber string `json:"phonenumber" form:"phonenumber"`   // 手机号(模糊)
+	Status      string `json:"status" form:"status"`             // 状态(精确 '0'正常/'1'停用)
+	RoleId      int64  `json:"roleId,string" form:"roleId"`      // 角色ID(精确,join sys_user_role)
+}
+
+// UserOperateParams 用户新增/修改请求(对齐前端 Api.System.UserOperateParams)。
+// create 时 userId 为空、password 必填;update 时 userId 必填、password 空=不改。
+// roleIds/postIds 用 []Int64String 兼容前端 IdType[](string 混合)。
+type UserOperateParams struct {
+	UserId      Int64String   `json:"userId"`      // 用户ID(新增时为空)
+	DeptId      Int64String   `json:"deptId"`      // 主部门ID
+	UserName    string        `json:"userName"`    // 用户名(create 必填,唯一)
+	NickName    string        `json:"nickName"`    // 昵称
+	Email       string        `json:"email"`       // 邮箱
+	Phonenumber string        `json:"phonenumber"` // 手机号
+	Sex         string        `json:"sex"`         // 性别 0男1女2未知
+	Password    string        `json:"password"`    // 密码(create 必填;update 空=不改)
+	Status      string        `json:"status"`      // 状态
+	Remark      string        `json:"remark"`      // 备注
+	RoleIds     []Int64String `json:"roleIds"`     // 角色ID列表(全量替换)
+	PostIds     []Int64String `json:"postIds"`     // 岗位ID列表(全量替换)
+}
+
+// ResetUserPwdParams 重置用户密码(对齐前端 PUT /system/user/resetPwd,{userId,password})。
+// 项目无加密中间件,password 明文传输(传输层由网关/TLS 保护),后端 bcrypt 存储。
+type ResetUserPwdParams struct {
+	UserId   Int64String `json:"userId"`   // 用户ID
+	Password string      `json:"password"` // 新密码(明文)
+}

@@ -59,6 +59,14 @@ func (SysUser) TableName() string {
 	return "sys_users"
 }
 
+// UserInfo 用户详情响应(对齐前端 Api.System.UserInfo)。
+// postIds/roleIds 用 []string 对齐前端 string[](NSelect/PostSelect 回显需与 Role.roleId 字符串匹配)。
+type UserInfo struct {
+	PostIds []string  `json:"postIds"` // 用户岗位 ID 列表(字符串)
+	RoleIds []string  `json:"roleIds"` // 用户角色 ID 列表(字符串)
+	Roles   []SysRole `json:"roles"`   // 用户角色列表(含 roleName/roleId 供下拉)
+}
+
 func (s *SysUser) GetUsername() string {
 	return s.UserName
 }
