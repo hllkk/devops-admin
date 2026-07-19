@@ -44,10 +44,17 @@ func (s *UserService) GetList(ctx context.Context, q systemReq.UserSearch) (list
 			Where("sys_user_role.sys_role_id = ?", q.RoleId)
 	}
 	limit, offset := q.LimitOffset()
+	db = db.Preload("Dept") // 主部门(参照 GVA GetUserInfoList 的 Preload("Dept")),供回填扁平 deptName
 	if limit > 0 {
 		err = db.Count(&total).Order(userOrder).Limit(limit).Offset(offset).Find(&list).Error
 	} else {
 		err = db.Count(&total).Order(userOrder).Find(&list).Error
+	}
+	if err == nil {
+		// deptName 为 gorm:"-" 内存字段,Find 不会填充,Preload Dept 后显式回填(前端列表 deptName 列依赖该字段)
+		for i := range list {
+			list[i].DeptName = list[i].Dept.DeptName
+		}
 	}
 	return
 }
