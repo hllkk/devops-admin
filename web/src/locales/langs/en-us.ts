@@ -275,6 +275,55 @@ const local: App.I18n.Schema = {
     server: 'Server',
     gateway: 'AI Gateway'
   },
+  dict: {
+    sys_common_status: { success: 'Success', fail: 'Fail' },
+    sys_device_type: { pc: 'PC', android: 'Android', ios: 'iOS', miniapp: 'Mini Program' },
+    sys_grant_type: {
+      password: 'Password',
+      sms: 'SMS',
+      email: 'Email',
+      miniapp: 'Mini Program',
+      social: 'Social Login'
+    },
+    sys_normal_disable: { normal: 'Normal', disable: 'Disabled' },
+    sys_notice_status: { notice: 'Notice', announcement: 'Announcement' },
+    sys_oper_type: {
+      insert: 'Insert',
+      update: 'Update',
+      delete: 'Delete',
+      grant: 'Grant',
+      export: 'Export',
+      import: 'Import',
+      force: 'Force Logout',
+      gencode: 'Generate',
+      clean: 'Clean',
+      other: 'Other'
+    },
+    sys_show_hide: { show: 'Show', hide: 'Hide' },
+    sys_user_sex: { male: 'Male', female: 'Female', unknown: 'Unknown' },
+    sys_yes_no: { yes: 'Yes', no: 'No' },
+    wf_business_status: {
+      revoked: 'Revoked',
+      draft: 'Draft',
+      pending: 'Pending',
+      completed: 'Completed',
+      cancelled: 'Cancelled',
+      returned: 'Returned',
+      terminated: 'Terminated'
+    },
+    wf_form_type: { custom_form: 'Custom Form', dynamic_form: 'Dynamic Form' },
+    wf_task_status: {
+      revoke: 'Revoked',
+      pass: 'Approved',
+      pending_review: 'Pending Review',
+      cancel: 'Cancelled',
+      return: 'Returned',
+      terminate: 'Terminated',
+      transfer: 'Transferred',
+      delegate: 'Delegated',
+      copy: 'CC'
+    }
+  },
   page: {
     login: {
       common: {
@@ -671,6 +720,9 @@ const local: App.I18n.Schema = {
         dictTypeTitle: 'Dict Type',
         dictType: 'Dict Type',
         dictData: 'Dict Data',
+        status: 'Status',
+        addDict: 'Add Dict',
+        editDict: 'Edit Dict',
         addDictType: 'Add Dict Type',
         addDictData: 'Add Dict Data',
         exportDictType: 'Export Dict Type',
@@ -682,17 +734,21 @@ const local: App.I18n.Schema = {
         confirmDeleteDictType: 'Confirm delete dict type',
         refreshCacheSuccess: 'Cache refreshed successfully',
         remark: 'Remark',
+        createTime: 'Create Time',
         data: {
+          title: 'Dict Data',
           label: 'Dict Label',
           value: 'Dict Value',
           dictSort: 'Dict Sort',
           listClass: 'List Class',
           cssClass: 'CSS Class',
+          status: 'Status',
           remark: 'Remark',
           createTime: 'Create Time',
           isDefault: 'Is Default'
         },
         form: {
+          dictId: { required: 'Please enter dict ID', invalid: 'Dict ID cannot be empty' },
           dictName: { required: 'Please enter dict name', invalid: 'Dict name cannot be empty' },
           dictCode: { required: 'Please enter dict code', invalid: 'Dict code cannot be empty' },
           dictLabel: { required: 'Please enter dict label', invalid: 'Dict label cannot be empty' },
@@ -701,6 +757,8 @@ const local: App.I18n.Schema = {
           listClass: { required: 'Please select list class', invalid: 'Please select list class' },
           cssClass: { required: 'Please enter CSS class', invalid: 'Invalid CSS class' },
           dictSort: { required: 'Please enter dict sort', invalid: 'Dict sort cannot be empty' },
+          status: { required: 'Please select status', invalid: 'Status cannot be empty' },
+          isDefault: { required: 'Please select default', invalid: 'Default cannot be empty' },
           remark: { required: 'Please enter remark', invalid: 'Invalid remark' }
         }
       }

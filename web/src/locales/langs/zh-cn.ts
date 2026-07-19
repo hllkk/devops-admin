@@ -271,6 +271,55 @@ const local: App.I18n.Schema = {
     server: '服务器管理',
     gateway: 'AI 网关'
   },
+  dict: {
+    sys_common_status: { success: '成功', fail: '失败' },
+    sys_device_type: { pc: 'PC', android: '安卓', ios: 'iOS', miniapp: '小程序' },
+    sys_grant_type: {
+      password: '密码认证',
+      sms: '短信认证',
+      email: '邮箱认证',
+      miniapp: '小程序认证',
+      social: '三方登录'
+    },
+    sys_normal_disable: { normal: '正常', disable: '停用' },
+    sys_notice_status: { notice: '通知', announcement: '公告' },
+    sys_oper_type: {
+      insert: '新增',
+      update: '修改',
+      delete: '删除',
+      grant: '授权',
+      export: '导出',
+      import: '导入',
+      force: '强退',
+      gencode: '生成',
+      clean: '清空',
+      other: '其他'
+    },
+    sys_show_hide: { show: '显示', hide: '隐藏' },
+    sys_user_sex: { male: '男', female: '女', unknown: '未知' },
+    sys_yes_no: { yes: '是', no: '否' },
+    wf_business_status: {
+      revoked: '已撤销',
+      draft: '草稿',
+      pending: '待审核',
+      completed: '已完成',
+      cancelled: '已作废',
+      returned: '已退回',
+      terminated: '已终止'
+    },
+    wf_form_type: { custom_form: '自定义表单', dynamic_form: '动态表单' },
+    wf_task_status: {
+      revoke: '已撤销',
+      pass: '已通过',
+      pending_review: '待审核',
+      cancel: '已作废',
+      return: '已退回',
+      terminate: '已终止',
+      transfer: '转办',
+      delegate: '委托',
+      copy: '抄送'
+    }
+  },
   page: {
     login: {
       common: {
@@ -667,6 +716,9 @@ const local: App.I18n.Schema = {
         dictTypeTitle: '字典类型',
         dictType: '字典类型',
         dictData: '字典数据',
+        status: '状态',
+        addDict: '新增字典',
+        editDict: '编辑字典',
         addDictType: '新增字典类型',
         addDictData: '新增字典数据',
         exportDictType: '导出字典类型',
@@ -678,17 +730,21 @@ const local: App.I18n.Schema = {
         confirmDeleteDictType: '确认删除字典类型',
         refreshCacheSuccess: '刷新缓存成功',
         remark: '备注',
+        createTime: '创建时间',
         data: {
+          title: '字典数据',
           label: '字典标签',
           value: '字典键值',
           dictSort: '字典排序',
           listClass: '回显样式',
           cssClass: 'CSS 类',
+          status: '状态',
           remark: '备注',
           createTime: '创建时间',
           isDefault: '是否默认'
         },
         form: {
+          dictId: { required: '请输入字典ID', invalid: '字典ID不能为空' },
           dictName: { required: '请输入字典名称', invalid: '字典名称不能为空' },
           dictCode: { required: '请输入字典编码', invalid: '字典编码不能为空' },
           dictLabel: { required: '请输入字典标签', invalid: '字典标签不能为空' },
@@ -697,6 +753,8 @@ const local: App.I18n.Schema = {
           listClass: { required: '请选择回显样式', invalid: '请选择回显样式' },
           cssClass: { required: '请输入 CSS 类', invalid: 'CSS 类格式不正确' },
           dictSort: { required: '请输入字典排序', invalid: '字典排序不能为空' },
+          status: { required: '请选择状态', invalid: '状态不能为空' },
+          isDefault: { required: '请选择是否默认', invalid: '是否默认不能为空' },
           remark: { required: '请输入备注', invalid: '备注格式不正确' }
         }
       }

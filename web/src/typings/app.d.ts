@@ -507,6 +507,12 @@ declare namespace App {
         server: string;
         gateway: string;
       };
+      /** 字典数据值的动态国际化键：dict.{dictType}.{value}，与后端 dictLabel 约定一致 */
+      dict: {
+        [dictType: string]: {
+          [dictValue: string]: string;
+        };
+      };
       page: {
         login: {
           common: {
@@ -902,6 +908,9 @@ declare namespace App {
             dictTypeTitle: string;
             dictType: string;
             dictData: string;
+            status: string;
+            addDict: string;
+            editDict: string;
             addDictType: string;
             addDictData: string;
             exportDictType: string;
@@ -913,17 +922,21 @@ declare namespace App {
             confirmDeleteDictType: string;
             refreshCacheSuccess: string;
             remark: string;
+            createTime: string;
             data: {
+              title: string;
               label: string;
               value: string;
               dictSort: string;
               listClass: string;
               cssClass: string;
+              status: string;
               remark: string;
               createTime: string;
               isDefault: string;
             };
             form: {
+              dictId: FormMsg;
               dictName: FormMsg;
               dictCode: FormMsg;
               dictLabel: FormMsg;
@@ -932,6 +945,8 @@ declare namespace App {
               listClass: FormMsg;
               cssClass: FormMsg;
               dictSort: FormMsg;
+              status: FormMsg;
+              isDefault: FormMsg;
               remark: FormMsg;
             };
           };
