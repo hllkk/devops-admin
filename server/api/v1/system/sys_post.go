@@ -143,7 +143,7 @@ func (p *PostApi) GetPostOption(c *gin.Context) {
 // @Success   200  {object}  response.Response{data=[]system.DeptTreeNode,msg=string}
 // @Router    /system/post/deptTree [get]
 func (p *PostApi) GetPostDeptTree(c *gin.Context) {
-	tree, err := postService.GetDeptTree(c.Request.Context())
+	tree, err := departmentService.GetDeptTree(c.Request.Context())
 	if err != nil {
 		logger.WithCtx(c.Request.Context()).Mod("biz").Err(err).Error("获取岗位部门树失败")
 		response.FailWithMessage("获取失败", c)

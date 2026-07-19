@@ -29,3 +29,13 @@ type SysDepartment struct {
 func (SysDepartment) TableName() string {
 	return "sys_departments"
 }
+
+// DeptTreeNode 部门树节点(对齐前端 Api.Common.CommonTreeRecord,岗位页左侧部门树 + 新增抽屉部门选择用)。
+// id/parentId/weight 用数字序列化,对齐前端 expandedKeys=[100] 等数字 key。
+type DeptTreeNode struct {
+	Id       int64          `json:"id"`       // 部门ID(数字,对齐前端 NTree/NTreeSelect 的数字 key)
+	ParentId int64          `json:"parentId"` // 父部门ID
+	Label    string         `json:"label"`    // 部门名称
+	Weight   int            `json:"weight"`   // 显示顺序(对应 SysDepartment.OrderNum)
+	Children []DeptTreeNode `json:"children"` // 子部门
+}

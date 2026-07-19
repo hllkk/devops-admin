@@ -42,7 +42,7 @@
 
 ## 设计决策
 
-- **deptTree 放岗位 service 内**：部门模块尚未独立实现（无 department service/router），前端契约固定为 `/system/post/deptTree`，故在 `PostService.GetDeptTree` 内查 `sys_departments` 构建树。**待部门模块独立实现后迁出**至部门 service，`DeptTreeNode` 一并迁移。
+- **deptTree 已迁出至部门模块（2026-07-18）**：部门模块本轮落地（见 [[department-management]]），`DeptTreeNode` 迁至 `model/system/sys_department.go`，`buildDeptTree`/`GetDeptTree` 迁至 `DepartmentService`；`PostService` 删除这两个方法，`PostApi.GetPostDeptTree` 改调 `departmentService.GetDeptTree`，岗位 `/system/post/deptTree` 行为不变。落地前曾临时放在 `PostService` 内（无 department service/router），现已归位。
 - **不实现 export**：`post.ts` 无 export 方法（`index.vue` 的 `/system/post/export` 走通用 `useDownload`，后端导出能力项目级未落地，同字典），暂不实现。
 - **postCode 唯一 + 删除引用校验**：对齐 RuoYi 岗位语义，避免编码重复与孤儿用户岗位引用。
 - **菜单+按钮权限种子早已存在**：`source/system/sys_menu.go` 07-15 已 seed `route.system_post` C 菜单 + 5 个 F 按钮（`system:post:query/add/edit/remove/export`），本次无需动菜单。当前接口仅过 JWT 鉴权即可访问（casbin 接口权限推导项目级未落地，见 [[menu-seed-routes-alignment]]）。

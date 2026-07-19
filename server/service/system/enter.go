@@ -13,4 +13,5 @@ type ServiceGroup struct {
 	DictTypeService
 	DictDataService
 	PostService
+	DepartmentService
 }

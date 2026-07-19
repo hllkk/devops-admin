@@ -130,38 +130,3 @@ func (s *PostService) GetPostOptionList(ctx context.Context, deptId int64) (list
 	return
 }
 
-// GetDeptTree 构建部门树(对齐前端 GET /system/post/deptTree,返回 CommonTreeRecord 结构)。
-// 查全部启用部门按 parentId 递归组装成树;待部门模块独立实现后,该树构建迁出至部门 service。
-func (s *PostService) GetDeptTree(ctx context.Context) ([]system.DeptTreeNode, error) {
-	var depts []system.SysDepartment
-	if err := global.OPS_DB.WithContext(ctx).
-		Where("status = ?", "0").Order("order_num ASC, dept_id ASC").Find(&depts).Error; err != nil {
-		return nil, err
-	}
-	return buildDeptTree(depts), nil
-}
-
-// buildDeptTree 将部门平表按 parentId 递归组装为树(顶级 parentId=0)。
-// 依赖 depts 已按 order_num ASC 排序,保证同层展示顺序。
-func buildDeptTree(depts []system.SysDepartment) []system.DeptTreeNode {
-	byParent := make(map[int64][]system.SysDepartment, len(depts))
-	for _, d := range depts {
-		byParent[d.ParentId] = append(byParent[d.ParentId], d)
-	}
-	var build func(parentId int64) []system.DeptTreeNode
-	build = func(parentId int64) []system.DeptTreeNode {
-		children := byParent[parentId]
-		nodes := make([]system.DeptTreeNode, 0, len(children))
-		for _, d := range children {
-			nodes = append(nodes, system.DeptTreeNode{
-				Id:       d.DeptId,
-				ParentId: d.ParentId,
-				Label:    d.DeptName,
-				Weight:   d.OrderNum,
-				Children: build(d.DeptId),
-			})
-		}
-		return nodes
-	}
-	return build(0)
-}

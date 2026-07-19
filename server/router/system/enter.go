@@ -10,6 +10,7 @@ type RouterGroup struct {
 	RouteRouter
 	DictRouter
 	PostRouter
+	DeptRouter
 }
 
 var (
@@ -17,4 +18,5 @@ var (
 	dbApi   = v1.ApiGroupApp.SystemApiGroup.DBApi
 	dictApi = v1.ApiGroupApp.SystemApiGroup.DictApi
 	postApi = v1.ApiGroupApp.SystemApiGroup.PostApi
+	deptApi = v1.ApiGroupApp.SystemApiGroup.DeptApi
 )
