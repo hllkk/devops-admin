@@ -96,6 +96,7 @@ func Routers() *gin.Engine {
 		systemRouter.InitDictRouter(PrivateGroup)  // 字典管理(/system/dict/type/*、/system/dict/data/*)
 		systemRouter.InitPostRouter(PrivateGroup)  // 岗位管理(/system/post/*)
 		systemRouter.InitDeptRouter(PrivateGroup)  // 部门管理(/system/dept/*)
+		systemRouter.InitMenuRouter(PrivateGroup)  // 菜单管理(/system/menu/*)
 	}
 
 	{

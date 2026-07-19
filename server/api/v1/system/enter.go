@@ -8,6 +8,7 @@ type ApiGroup struct {
 	DictApi
 	PostApi
 	DeptApi
+	MenuApi
 }
 
 var (
@@ -20,4 +21,5 @@ var (
 	dictDataService       = service.ServiceGroupApp.SystemServiceGroup.DictDataService
 	postService           = service.ServiceGroupApp.SystemServiceGroup.PostService
 	departmentService     = service.ServiceGroupApp.SystemServiceGroup.DepartmentService
+	menuService           = service.ServiceGroupApp.SystemServiceGroup.MenuService
 )

@@ -33,3 +33,10 @@ type SysMenu struct {
 func (SysMenu) TableName() string {
 	return "sys_menu"
 }
+
+// RoleMenuTreeSelect 角色菜单权限树响应(对齐前端 Api.System.RoleMenuTreeSelect)。
+// menus=全部菜单平表(前端组装树);checkedKeys=角色已分配菜单的叶子 ID(NTree cascade 回显用,对齐 RuoYi)。
+type RoleMenuTreeSelect struct {
+	CheckedKeys []int64   `json:"checkedKeys"` // 角色已分配菜单的叶子 ID
+	Menus       []SysMenu `json:"menus"`       // 全部菜单平表
+}
