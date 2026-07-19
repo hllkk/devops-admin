@@ -15,4 +15,5 @@ type ServiceGroup struct {
 	PostService
 	DepartmentService
 	MenuService
+	RoleService
 }

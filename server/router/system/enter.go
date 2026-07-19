@@ -12,6 +12,7 @@ type RouterGroup struct {
 	PostRouter
 	DeptRouter
 	MenuRouter
+	RoleRouter
 }
 
 var (
@@ -21,4 +22,5 @@ var (
 	postApi = v1.ApiGroupApp.SystemApiGroup.PostApi
 	deptApi = v1.ApiGroupApp.SystemApiGroup.DeptApi
 	menuApi = v1.ApiGroupApp.SystemApiGroup.MenuApi
+	roleApi = v1.ApiGroupApp.SystemApiGroup.RoleApi
 )
