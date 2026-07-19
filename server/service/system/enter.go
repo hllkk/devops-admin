@@ -16,4 +16,5 @@ type ServiceGroup struct {
 	DepartmentService
 	MenuService
 	RoleService
+	NoticeService
 }

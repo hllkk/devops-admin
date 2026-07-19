@@ -1,16 +1,18 @@
 package system
 
 import (
+	"context"
+	"errors"
 	"sync"
 	"time"
 
 	"github.com/hllkk/devops-admin/server/global"
 	"github.com/hllkk/devops-admin/server/model/system"
+	systemReq "github.com/hllkk/devops-admin/server/model/system/request"
 	"github.com/hllkk/devops-admin/server/utils/logger"
 )
 
-// SysOperLogService 操作日志服务:承载操作日志的异步落表。
-// 查询/批量删除/清空等读路径由后续 monitor/operlog API 接入,此处先补齐写路径。
+// SysOperLogService 操作日志服务:承载操作日志的异步落表 + 读路径(列表/批量删除/清空)。
 type SysOperLogService struct{}
 
 // 异步写入: 有界缓冲 + 后台批量落表, 满则丢弃(审计尽力而为, 绝不阻塞业务请求)。
@@ -62,4 +64,52 @@ func (s *SysOperLogService) startWriter() {
 			}
 		}
 	}()
+}
+
+// GetOperLogList 分页查操作日志列表(对齐前端 GET /log/operlog/list)。
+// 按 title/operName/operIp 模糊、businessType/status 精确、operTime 时间范围(BETWEEN)过滤;
+// 分页统一走 PageInfo.LimitOffset(内置 MaxPageSize=100 截断)。
+func (s *SysOperLogService) GetOperLogList(ctx context.Context, q systemReq.OperLogSearch) (list []system.SysOperLog, total int64, err error) {
+	db := global.OPS_DB.WithContext(ctx).Model(&system.SysOperLog{})
+	if q.Title != "" {
+		db = db.Where("title LIKE ?", "%"+q.Title+"%")
+	}
+	if q.BusinessType != "" {
+		db = db.Where("business_type = ?", q.BusinessType)
+	}
+	if q.OperName != "" {
+		db = db.Where("oper_name LIKE ?", "%"+q.OperName+"%")
+	}
+	if q.OperIp != "" {
+		db = db.Where("oper_ip LIKE ?", "%"+q.OperIp+"%")
+	}
+	if q.Status != "" {
+		db = db.Where("status = ?", q.Status)
+	}
+	// operTime 时间范围(BeginTime/EndTime 由 api 层从 query params[beginTime/endTime] 显式取后传入);
+	// 仅成对提供时过滤,DB 直接解析 yyyy-MM-dd HH:mm:ss 字符串为 datetime。
+	if q.BeginTime != "" && q.EndTime != "" {
+		db = db.Where("oper_time BETWEEN ? AND ?", q.BeginTime, q.EndTime)
+	}
+	limit, offset := q.LimitOffset()
+	if limit > 0 {
+		err = db.Count(&total).Order("oper_id DESC").Limit(limit).Offset(offset).Find(&list).Error
+	} else {
+		err = db.Count(&total).Order("oper_id DESC").Find(&list).Error
+	}
+	return
+}
+
+// DeleteOperLog 批量删除操作日志(按 oper_id,物理删除:日志为 append-only 审计数据,无恢复需求)。
+// 模型嵌入 OPS_AUDIT_MODEL 带 DeletedAt 软删除,故用 Unscoped() 物理删,避免软删垃圾行累积。
+func (s *SysOperLogService) DeleteOperLog(ctx context.Context, ids []int64) error {
+	if len(ids) == 0 {
+		return errors.New("未选择删除项")
+	}
+	return global.OPS_DB.WithContext(ctx).Unscoped().Where("oper_id IN ?", ids).Delete(&system.SysOperLog{}).Error
+}
+
+// CleanOperLog 清空全部操作日志(物理删除)。
+func (s *SysOperLogService) CleanOperLog(ctx context.Context) error {
+	return global.OPS_DB.WithContext(ctx).Unscoped().Where("1 = 1").Delete(&system.SysOperLog{}).Error
 }

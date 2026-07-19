@@ -91,14 +91,17 @@ func Routers() *gin.Engine {
 	}
 	{
 
-		systemRouter.InitAuthRouter(PrivateGroup)  // 鉴权路由(getUserInfo/logout/refreshToken)
-		systemRouter.InitRouteRouter(PrivateGroup) // 路由下发(/route/getConstantRoutes)
-		systemRouter.InitDictRouter(PrivateGroup)  // 字典管理(/system/dict/type/*、/system/dict/data/*)
-		systemRouter.InitPostRouter(PrivateGroup)  // 岗位管理(/system/post/*)
-		systemRouter.InitDeptRouter(PrivateGroup)  // 部门管理(/system/dept/*)
-		systemRouter.InitMenuRouter(PrivateGroup)  // 菜单管理(/system/menu/*)
-		systemRouter.InitRoleRouter(PrivateGroup)  // 角色管理(/system/role/*)
-		systemRouter.InitUserRouter(PrivateGroup)  // 用户管理(/system/user/*)
+		systemRouter.InitAuthRouter(PrivateGroup)     // 鉴权路由(getUserInfo/logout/refreshToken)
+		systemRouter.InitRouteRouter(PrivateGroup)    // 路由下发(/route/getConstantRoutes)
+		systemRouter.InitDictRouter(PrivateGroup)     // 字典管理(/system/dict/type/*、/system/dict/data/*)
+		systemRouter.InitPostRouter(PrivateGroup)     // 岗位管理(/system/post/*)
+		systemRouter.InitDeptRouter(PrivateGroup)     // 部门管理(/system/dept/*)
+		systemRouter.InitMenuRouter(PrivateGroup)     // 菜单管理(/system/menu/*)
+		systemRouter.InitRoleRouter(PrivateGroup)     // 角色管理(/system/role/*)
+		systemRouter.InitUserRouter(PrivateGroup)     // 用户管理(/system/user/*)
+		systemRouter.InitLoginLogRouter(PrivateGroup) // 登录日志(/log/loginlog/*)
+		systemRouter.InitOperLogRouter(PrivateGroup)  // 操作日志(/log/operlog/*)
+		systemRouter.InitNoticeRouter(PrivateGroup)   // 通知公告(/system/notice/*)
 	}
 
 	{

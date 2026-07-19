@@ -44,8 +44,8 @@
 
 ## 待办（后续最小闭环）
 
-- [ ] 读路径 Service/API/Router：`GET /monitor/operlog/list`（分页走 `request.PageInfo` + `LimitOffset()`）、`DELETE /monitor/operlog/{ids}`、`DELETE /monitor/operlog/clean`、`/monitor/operlog/export`；Swagger `@Success` 落 `response.PageResult{Rows=[]SysOperLog}`。
-- [ ] 批量删除/clean 走物理删除（`Unscoped()`，因模型带软删除 `DeletedAt`）。
+- [x] 读路径 Service/API/Router：`GET /log/operlog/list`、`DELETE /log/operlog/{ids}`、`DELETE /log/operlog/clean` 已落地（[[system-log-read-api]]，07-19）；`/log/operlog/export` 延后。
+- [x] 批量删除/clean 走物理删除（`Unscoped()`，因模型带软删除 `DeletedAt`）—— 已落地（[[system-log-read-api]]，07-19）。
 - [ ] （可选）IP 归属地：接 ip2region/qqwry 填 `OperLocation`；claims 扩展 deptId 或中间件查 `deptName`。
 - [ ] （可选）title/businessType 精确化：在关键写接口 `c.Set` 覆盖，或引入轻量注解。
 
