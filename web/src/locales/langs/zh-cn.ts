@@ -47,6 +47,7 @@ const local: App.I18n.Schema = {
     update: '更新',
     updateSuccess: '更新成功',
     updateExisting: '更新已存在的数据',
+    export: '导出',
     import: '导入',
     importSuccess: '导入成功',
     importFail: '导入失败',

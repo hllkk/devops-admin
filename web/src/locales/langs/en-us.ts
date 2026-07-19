@@ -47,6 +47,7 @@ const local: App.I18n.Schema = {
     update: 'Update',
     updateSuccess: 'Update Success',
     updateExisting: 'Update Existing',
+    export: 'Export',
     import: 'Import',
     importSuccess: 'Import Success',
     importFail: 'Import Fail',

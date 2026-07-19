@@ -31,10 +31,10 @@ func (SysDepartment) TableName() string {
 }
 
 // DeptTreeNode 部门树节点(对齐前端 Api.Common.CommonTreeRecord,岗位页左侧部门树 + 新增抽屉部门选择用)。
-// id/parentId/weight 用数字序列化,对齐前端 expandedKeys=[100] 等数字 key。
+// id/parentId 为雪花 id,用字符串序列化(与 SysUser.DeptId/userId 统一,避免 JS Number 精度丢失与前端树回显类型不匹配);weight 仍用数字(排序权重,非 id)。
 type DeptTreeNode struct {
-	Id       int64          `json:"id"`       // 部门ID(数字,对齐前端 NTree/NTreeSelect 的数字 key)
-	ParentId int64          `json:"parentId"` // 父部门ID
+	Id       int64          `json:"id,string"`       // 部门ID(字符串,雪花 id 统一 string)
+	ParentId int64          `json:"parentId,string"` // 父部门ID(字符串)
 	Label    string         `json:"label"`    // 部门名称
 	Weight   int            `json:"weight"`   // 显示顺序(对应 SysDepartment.OrderNum)
 	Children []DeptTreeNode `json:"children"` // 子部门

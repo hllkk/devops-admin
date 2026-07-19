@@ -358,6 +358,7 @@ declare namespace App {
         update: string;
         updateSuccess: string;
         updateExisting: string;
+        export: string;
         import: string;
         importSuccess: string;
         importFail: string;
