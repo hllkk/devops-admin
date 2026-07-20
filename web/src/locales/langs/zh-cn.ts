@@ -557,7 +557,7 @@ const local: App.I18n.Schema = {
         assignUser: '分配用户',
         assignUserTitle: '分配用户权限',
         statusChangeSuccess: '状态修改成功',
-        roleKeyTip: "控制器中定义的权限字符，如：@SaCheckRole('admin')",
+        roleKeyTip: "控制器中定义的权限字符，如：{'@'}SaCheckRole('admin')",
         form: {
           roleId: { required: '角色ID不能为空', invalid: '角色ID不能为空' },
           roleName: { required: '请输入角色名称', invalid: '角色名称格式不正确' },

@@ -561,7 +561,7 @@ const local: App.I18n.Schema = {
         assignUser: 'Assign User',
         assignUserTitle: 'Assign User Permission',
         statusChangeSuccess: 'Status changed successfully',
-        roleKeyTip: "Permission key defined in the controller, e.g.: @SaCheckRole('admin')",
+        roleKeyTip: "Permission key defined in the controller, e.g.: {'@'}SaCheckRole('admin')",
         form: {
           roleId: { required: 'Role ID cannot be empty', invalid: 'Role ID cannot be empty' },
           roleName: { required: 'Please enter the role name', invalid: 'Role name format is incorrect' },
