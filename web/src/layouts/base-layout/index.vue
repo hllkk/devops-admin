@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent } from 'vue';
+import { computed, defineAsyncComponent, onMounted } from 'vue';
 import { AdminLayout, LAYOUT_SCROLL_EL_ID } from '@sa/materials';
 import type { LayoutMode } from '@sa/materials';
 import { useAppStore } from '@/store/modules/app';
@@ -11,6 +11,8 @@ import GlobalContent from '../modules/global-content/index.vue';
 import GlobalFooter from '../modules/global-footer/index.vue';
 import ThemeDrawer from '../modules/theme-drawer/index.vue';
 import { provideMixMenuContext } from '../modules/global-menu/context';
+import { initWebSocket } from '@/utils/websocket';
+import { initSSE } from '@/utils/sse';
 
 defineOptions({
   name: 'BaseLayout'
@@ -114,6 +116,12 @@ function getSiderAndCollapsedWidth(isCollapsed: boolean) {
 
   return finalWidth;
 }
+
+onMounted(() => {
+  const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+  initWebSocket(`${protocol + window.location.host + import.meta.env.VITE_APP_BASE_API}/resource/websocket`);
+  initSSE(`${import.meta.env.VITE_APP_BASE_API}/resource/sse`);
+});
 </script>
 
 <template>
