@@ -39,7 +39,8 @@ async function getMenuList() {
   options.value = [
     {
       id: 0,
-      label: '根目录',
+      // 根目录标签由 renderLabel 对 id=0 特判实时翻译，此处保留翻译值兜底
+      label: $t('page.system.menu.rootName'),
       icon: 'material-symbols:home-outline-rounded',
       children: data
     }
@@ -64,6 +65,10 @@ watch([expandAll, options], ([newVal]) => {
 });
 
 function renderLabel({ option }: { option: TreeOption }) {
+  // 根目录是前端拼装的虚拟节点（id=0），在渲染层实时翻译，确保跟随语言切换
+  if (option.id === 0) {
+    return <div>{$t('page.system.menu.rootName')}</div>;
+  }
   let label = option.label;
   if (label?.startsWith('route.') || label?.startsWith('menu.')) {
     label = $t(label as App.I18n.I18nKey);

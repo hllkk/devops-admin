@@ -26,6 +26,7 @@ require (
 	github.com/mark3labs/mcp-go v0.56.0
 	github.com/minio/minio-go/v7 v7.2.1
 	github.com/mojocn/base64Captcha v1.3.8
+	github.com/mssola/user_agent v0.6.0
 	github.com/pkg/errors v0.9.1
 	github.com/qiniu/go-sdk/v7 v7.26.16
 	github.com/qiniu/qmgo v1.1.10
@@ -121,7 +122,6 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/montanaflynn/stats v0.11.0 // indirect
 	github.com/mozillazg/go-httpheader v0.4.0 // indirect
-	github.com/mssola/user_agent v0.6.0 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.4.3 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect

@@ -61,6 +61,7 @@ const getMeunTree = async () => {
   treeData.value = [
     {
       menuId: 0,
+      // 主树标签由 getMenuLabel 对 menuId=0 特判实时翻译；此处保留翻译值，兜底供 MenuTreeSelect 等其它消费方显示
       menuName: $t('page.system.menu.rootName'),
       icon: 'material-symbols:home-outline-rounded',
       children: tree
@@ -110,6 +111,10 @@ async function handleDeleteMenu(id?: CommonType.IdType) {
 }
 
 function getMenuLabel(option: TreeOption) {
+  // 根目录是前端拼装的虚拟节点（menuId=0），在渲染层实时翻译，确保跟随语言切换
+  if (option.menuId === 0) {
+    return $t('page.system.menu.rootName');
+  }
   const raw = String(option.menuName);
   if (raw.startsWith('route.') || raw.startsWith('menu.')) {
     return $t(raw as App.I18n.I18nKey);

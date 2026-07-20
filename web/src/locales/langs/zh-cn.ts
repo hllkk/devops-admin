@@ -571,7 +571,7 @@ const local: App.I18n.Schema = {
         title: '菜单管理',
         parentId: '上级菜单',
         orderNum: '显示顺序',
-        rootName: '主类目',
+        rootName: '根目录',
         menuName: '菜单名称',
         addMenu: '新增菜单',
         addChildMenu: '新增子菜单',
