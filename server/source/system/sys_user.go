@@ -72,22 +72,20 @@ func (i *initUser) InitializeData(ctx context.Context) (next context.Context, er
 	var superRoleID int64
 	var adminRoleID int64
 	var userRoleID int64
+	// 注:原实现每段 if 后 break,循环只命中第一个角色(roleEntities[0]=super),
+	// adminRoleID/userRoleID 恒为 0,Create 时被 GORM default:888 覆盖。改 switch 遍历全部角色。
 	for _, r := range roleEntities {
-		if r.RoleKey == "super" {
+		switch r.RoleKey {
+		case "super":
 			superRoleID = r.RoleId
-			break
-		}
-		if r.RoleKey == "admin" {
+		case "admin":
 			adminRoleID = r.RoleId
-			break
-		}
-		if r.RoleKey == "user" {
+		case "user":
 			userRoleID = r.RoleId
-			break
 		}
 	}
-	if superRoleID == 0 {
-		return ctx, errors.New("未找到 super 角色,请确认 sys_role 初始化已先执行")
+	if superRoleID == 0 || adminRoleID == 0 || userRoleID == 0 {
+		return ctx, errors.New("未找到 super/admin/user 角色,请确认 sys_role 初始化已先执行")
 	}
 
 	ap := ctx.Value("adminPassword")
@@ -136,8 +134,11 @@ func (i *initUser) InitializeData(ctx context.Context) (next context.Context, er
 
 	// 写显式连接表 sys_user_role,使"主角色(RoleId)"与"多角色(Roles many2many)"一致;
 	// 与 SysUser.Roles 的 many2many tag 同表,后续 service 层可经 Association 或本 struct 直接操作。
+	// 三个用户都写主角色关联(原实现仅写 entities[0]=super,admin/user 的 sys_user_role 缺失)
 	userRoleLinks := []sysModel.SysUserRole{
 		{SysUserId: entities[0].UserId, SysRoleId: superRoleID},
+		{SysUserId: entities[1].UserId, SysRoleId: adminRoleID},
+		{SysUserId: entities[2].UserId, SysRoleId: userRoleID},
 	}
 	if err = db.Create(&userRoleLinks).Error; err != nil {
 		return ctx, errors.Wrapf(err, "%s连接表数据初始化失败!", (&sysModel.SysUserRole{}).TableName())

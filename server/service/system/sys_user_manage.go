@@ -101,6 +101,9 @@ func (s *UserService) Create(ctx context.Context, req systemReq.UserOperateParam
 	u.CreateBy = createBy
 	u.UpdateBy = createBy
 	roleIds := toInt64Slice(req.RoleIds)
+	if len(roleIds) > 0 {
+		u.RoleId = roleIds[0] // 主角色(登录链路 claims 用),取所选角色第一个回填,避免落 default 888
+	}
 	postIds := toInt64Slice(req.PostIds)
 	return global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(&u).Error; err != nil {
@@ -137,6 +140,9 @@ func (s *UserService) Update(ctx context.Context, req systemReq.UserOperateParam
 		updates["password"] = utils.BcryptHash(req.Password)
 	}
 	roleIds := toInt64Slice(req.RoleIds)
+	if len(roleIds) > 0 {
+		updates["role_id"] = roleIds[0] // 主角色随所选角色同步,避免落 default 888
+	}
 	postIds := toInt64Slice(req.PostIds)
 	return global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Model(&system.SysUser{}).Where("id = ?", userId).Updates(updates).Error; err != nil {
