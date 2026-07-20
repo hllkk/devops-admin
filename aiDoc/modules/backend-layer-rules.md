@@ -52,6 +52,53 @@
 - 函数应返回业务结果和 `error`
 - 每个模块在 `service/` 下建立独立文件，并在 `service/enter.go` 注册
 
+### GORM 链式查询：不要复用被 finisher 污染的 `db`
+
+**规则**：同一个 `*gorm.DB` 变量一旦跑过 finisher（`First` / `Take` / `Last` / `Find` / `Count` …），不要再拿它继续做下一次查询。需要"先查一条再查列表"时，两次查询各用独立的 `tx`（重新 `global.OPS_DB.WithContext(ctx)` 起一个）。
+
+**尤其致命的是先 `First`/`Take`/`Last` 再 `Find`**：`First/Take/Last` 会把 `Statement.RaiseErrorOnNotFound = true`、查询后的 `db.Error`、本次的 `WHERE`/`LIMIT` 全部写回 `db`，于是后续 `Find` 出现两类静默错误：
+
+- **`db.Error` 残留短路**：`First` 没命中 → `db.Error = ErrRecordNotFound` → 下一段 `db.Find` 的 `Query` 回调开头 `if db.Error == nil` 直接短路，不执行查询，返回的还是那个 NotFound；
+- **`RaiseErrorOnNotFound` 残留误报**：`First` 命中但残留了 `RaiseErrorOnNotFound=true` 与 `WHERE/LIMIT`，再叠加新条件，`Find` 查到 0 行时被残留标记触发成 `ErrRecordNotFound`。
+
+> 机制依据（GORM 公开 API）：`clone==0` 的 `db`（`WithContext().Model(...)` 得到的就是这种）链式调用共享同一 `Statement`；`First/Take/Last` 在 `finisher_api.go` 里把 `RaiseErrorOnNotFound=true` 写到 `tx.Statement`，`clone==0` 时 `tx` 即 `db` 本身；`callbacks/query.go` 的 `Query` 以 `if db.Error == nil` 开头；`scan.go` 在 `RowsAffected==0 && RaiseErrorOnNotFound && db.Error==nil` 时落 NotFound。
+
+**反例**（`sys_department.go` 历史 bug，编辑部门选父级必报"获取失败"）：
+
+```go
+db := global.OPS_DB.WithContext(ctx).Model(&system.SysDepartment{})
+if deptId > 0 {
+    var d system.SysDepartment
+    if e := db.Where("dept_id = ?", deptId).First(&d).Error; e != nil { // 污染 db
+        if errors.Is(e, gorm.ErrRecordNotFound) {
+            return list, db.Order(deptOrder).Find(&list).Error          // 被短路/误报
+        }
+        return nil, e
+    }
+    db = db.Where("dept_id <> ?", deptId).Where("ancestors <> ? AND ancestors NOT LIKE ?", ...)
+}
+err = db.Order(deptOrder).Find(&list).Error                              // 被污染
+```
+
+**正例**：`First` 起独立 `tx`，主 `db` 只承载 `Find` 与过滤条件的累积：
+
+```go
+db := global.OPS_DB.WithContext(ctx).Model(&system.SysDepartment{})
+if deptId > 0 {
+    var d system.SysDepartment
+    if e := global.OPS_DB.WithContext(ctx).Where("dept_id = ?", deptId).First(&d).Error; e != nil {
+        if errors.Is(e, gorm.ErrRecordNotFound) {
+            return list, db.Order(deptOrder).Find(&list).Error
+        }
+        return nil, e
+    }
+    db = db.Where("dept_id <> ?", deptId).Where("ancestors <> ? AND ancestors NOT LIKE ?", ...)
+}
+err = db.Order(deptOrder).Find(&list).Error
+```
+
+> 同文件其它写法（`GetDeptList` 只 `Find`、`UpdateDept`/`CreateDept`/`isDescendant` 每次独立 `tx`）都不踩这个坑——风险只在"同一变量先 finisher 后再查询"时出现。
+
 ## API 层
 
 - 负责参数提取、参数校验、调用 Service 和统一响应

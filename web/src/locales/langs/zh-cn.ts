@@ -283,7 +283,8 @@ const local: App.I18n.Schema = {
       social: '三方登录'
     },
     sys_normal_disable: { normal: '正常', disable: '停用' },
-    sys_notice_status: { notice: '通知', announcement: '公告' },
+    sys_notice_status: { normal: '正常', close: '关闭' },
+    sys_notice_type: { notice: '通知', announcement: '公告' },
     sys_oper_type: {
       insert: '新增',
       update: '修改',
@@ -651,7 +652,7 @@ const local: App.I18n.Schema = {
         title: '部门',
         parentId: '父部门',
         deptName: '部门名称',
-        deptCategory: '部门类别',
+        deptCategory: '部门类别编码',
         leader: '负责人',
         phone: '联系电话',
         email: '邮箱',

@@ -287,7 +287,8 @@ const local: App.I18n.Schema = {
       social: 'Social Login'
     },
     sys_normal_disable: { normal: 'Normal', disable: 'Disabled' },
-    sys_notice_status: { notice: 'Notice', announcement: 'Announcement' },
+    sys_notice_status: { normal: 'Normal', close: 'Close' },
+    sys_notice_type: { notice: 'Notice', announcement: 'Announcement' },
     sys_oper_type: {
       insert: 'Insert',
       update: 'Update',
@@ -655,7 +656,7 @@ const local: App.I18n.Schema = {
         title: 'Department',
         parentId: 'Parent Dept',
         deptName: 'Dept Name',
-        deptCategory: 'Dept Category',
+        deptCategory: 'Dept Category Code',
         leader: 'Leader',
         phone: 'Phone',
         email: 'Email',

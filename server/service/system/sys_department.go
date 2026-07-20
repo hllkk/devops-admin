@@ -38,7 +38,11 @@ func (s *DepartmentService) GetExcludeDeptList(ctx context.Context, deptId int64
 	db := global.OPS_DB.WithContext(ctx).Model(&system.SysDepartment{})
 	if deptId > 0 {
 		var d system.SysDepartment
-		if e := db.Where("dept_id = ?", deptId).First(&d).Error; e != nil {
+		// First 必须用独立 tx,不能复用 db: GORM 在 clone==0 的 db 上链式调用共享同一 Statement,
+		// 复用会让 First 残留的 RaiseErrorOnNotFound/查询后 db.Error(NotFound)/WHERE/LIMIT 污染后续 Find
+		// ——Query 回调 if db.Error==nil 会短路, 或残留 RaiseErrorOnNotFound 叠加矛盾条件误报 NotFound,
+		// 导致选父级接口在 deptId 存在/不存在两种情况下都报"获取失败"。
+		if e := global.OPS_DB.WithContext(ctx).Where("dept_id = ?", deptId).First(&d).Error; e != nil {
 			if errors.Is(e, gorm.ErrRecordNotFound) {
 				return list, db.Order(deptOrder).Find(&list).Error
 			}
