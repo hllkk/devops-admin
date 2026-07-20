@@ -115,18 +115,54 @@ func (s *MenuService) DeleteMenu(ctx context.Context, menuId int64) error {
 	return global.OPS_DB.WithContext(ctx).Where("menu_id = ?", menuId).Delete(&system.SysMenu{}).Error
 }
 
-// GetMenuTreeSelect 全量菜单平表(对齐前端 GET /system/menu/treeselect,选父级/树选择用,前端组装树)。
-func (s *MenuService) GetMenuTreeSelect(ctx context.Context) (list []system.SysMenu, err error) {
-	err = global.OPS_DB.WithContext(ctx).Order(menuOrder).Find(&list).Error
+// buildMenuTreeSelect 将菜单平表按 parent_id 组装成树并映射为 MenuTreeSelectNode(仅树选择所需字段)。
+// 输入需已按展示顺序排序(menuOrder);parent_id=0 为顶级。O(n),用 map 索引子节点避免嵌套查询。
+func (s *MenuService) buildMenuTreeSelect(all []system.SysMenu) []system.MenuTreeSelectNode {
+	childrenOf := make(map[int64][]system.SysMenu, len(all))
+	for _, m := range all {
+		childrenOf[m.ParentId] = append(childrenOf[m.ParentId], m)
+	}
+	var attach func([]system.SysMenu) []system.MenuTreeSelectNode
+	attach = func(nodes []system.SysMenu) []system.MenuTreeSelectNode {
+		out := make([]system.MenuTreeSelectNode, 0, len(nodes))
+		for _, n := range nodes {
+			node := system.MenuTreeSelectNode{
+				Id:       n.MenuId,
+				Label:    n.MenuName,
+				MenuType: n.MenuType,
+				Icon:     n.Icon,
+				Visible:  n.Visible,
+				Status:   n.Status,
+			}
+			if kids := childrenOf[n.MenuId]; len(kids) > 0 {
+				node.Children = attach(kids)
+			}
+			out = append(out, node)
+		}
+		return out
+	}
+	return attach(childrenOf[0])
+}
+
+// GetMenuTreeSelect 全量菜单树(对齐前端 GET /system/menu/treeselect,选父级/树选择用)。
+// 返回已组装的 MenuTreeSelectNode 树(精简字段),前端 NTree 直接渲染。
+func (s *MenuService) GetMenuTreeSelect(ctx context.Context) (list []system.MenuTreeSelectNode, err error) {
+	var menus []system.SysMenu
+	if err = global.OPS_DB.WithContext(ctx).Order(menuOrder).Find(&menus).Error; err != nil {
+		return
+	}
+	list = s.buildMenuTreeSelect(menus)
 	return
 }
 
 // GetRoleMenuTreeSelect 角色菜单权限树(对齐前端 GET /system/menu/roleMenuTreeselect/{roleId})。
-// menus=全部菜单平表;checkedKeys=该角色已分配菜单的叶子节点 ID(NTree cascade 回显用,对齐 RuoYi)。
+// menus=全部菜单的 MenuTreeSelectNode 树(精简字段,后端组装);checkedKeys=该角色已分配菜单的叶子节点 ID(NTree cascade 回显用,对齐 RuoYi)。
 func (s *MenuService) GetRoleMenuTreeSelect(ctx context.Context, roleId int64) (result system.RoleMenuTreeSelect, err error) {
-	if err = global.OPS_DB.WithContext(ctx).Order(menuOrder).Find(&result.Menus).Error; err != nil {
+	var menus []system.SysMenu
+	if err = global.OPS_DB.WithContext(ctx).Order(menuOrder).Find(&menus).Error; err != nil {
 		return
 	}
+	result.Menus = s.buildMenuTreeSelect(menus)
 	var roleMenuIds []int64
 	if err = global.OPS_DB.WithContext(ctx).Model(&system.SysRoleMenu{}).
 		Where("sys_role_id = ?", roleId).Pluck("sys_menu_id", &roleMenuIds).Error; err != nil {

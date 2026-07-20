@@ -38,9 +38,9 @@ func (a *MenuApi) GetMenuList(c *gin.Context) {
 
 // GetMenuTreeSelect
 // @Tags      SysMenu
-// @Summary   获取菜单树选择列表
+// @Summary   获取菜单树(已组装,树选择用)
 // @Produce   application/json
-// @Success   200  {object}  response.Response{data=[]system.SysMenu,msg=string}
+// @Success   200  {object}  response.Response{data=[]system.MenuTreeSelectNode,msg=string}
 // @Router    /system/menu/treeselect [get]
 func (a *MenuApi) GetMenuTreeSelect(c *gin.Context) {
 	list, err := menuService.GetMenuTreeSelect(c.Request.Context())

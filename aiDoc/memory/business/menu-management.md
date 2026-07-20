@@ -24,8 +24,8 @@
   - `GetMenuList`：不分页平表（前端 `handleTree` 组装树），menuName 模糊 / status/menuType/parentId 精确，`order_num ASC, menu_id ASC`。
   - `CreateMenu`/`UpdateMenu`：menuName 必填；审计字段从 claims 注入。
   - `DeleteMenu`：**子菜单 + 角色引用(sys_role_menu)双重校验**，任一占用即禁删（对齐 RuoYi）。
-  - `GetMenuTreeSelect`：全量平表（选父级/树选择）。
-  - `GetRoleMenuTreeSelect(roleId)`：`{menus: 全量平表, checkedKeys: 角色已分配菜单的叶子 ID}`；`leafCheckedKeys` 取角色菜单中"没有子菜单也属角色菜单"的节点（对齐 RuoYi，供 NTree cascade 回显）。
+  - `GetMenuTreeSelect`：全量菜单的 `MenuTreeSelectNode` 树（精简 VO：id/label/menuType/icon/visible/status/children，`buildMenuTreeSelect` 按 parent_id 组装；选父级/树选择用，前端 NTree 零组装）。
+  - `GetRoleMenuTreeSelect(roleId)`：`{menus: 全量菜单的 MenuTreeSelectNode 树(精简VO,后端组装), checkedKeys: 角色已分配菜单的叶子 ID}`；`leafCheckedKeys` 取角色菜单中"没有子菜单也属角色菜单"的节点（对齐 RuoYi，供 NTree cascade 回显）。
   - `CascadeDeleteMenu`：`collectWithDescendants` 按 parent_id 递归收集选中+全部子孙（菜单无 ancestors 字段），删菜单 + 清理 sys_role_menu。
 - **api**（`api/v1/system/sys_menu.go`，新建）：`MenuApi` 7 handler + swag 注释；审计字段走 `utils.GetUserID(c)`；批量 ID 解析用 `strings.SplitSeq`。
 - **router**（`router/system/sys_menu.go`，新建）：`MenuRouter.InitMenuRouter` 挂 `system/menu` group，注册 list / treeselect / roleMenuTreeselect/:roleId / POST / PUT / DELETE`:menuId` / DELETE`cascade/:menuIds`。
@@ -33,7 +33,7 @@
 
 ## 设计决策
 
-- **菜单不分页、后端返平表**：前端 `handleTree`/`treeTransform` 组装树，后端无需建树。treeselect / roleMenuTreeselect 的 menus 同为平表。
+- **list 返平表；树选择接口后端组装树**：菜单列表（`GetMenuList`）返平表，前端 `handleTree`/`treeTransform` 组装树；**树选择接口（`treeselect`/`roleMenuTreeselect`）后端用 `buildMenuTreeSelect` 组装成 `MenuTreeSelectNode` 树（精简 VO，对齐 RuoYi `MenuTreeSelect`）返回**，前端 NTree 零组装——修复此前"后端平表 + 前端不组装 = 菜单权限无层级"问题（`SysMenu.Children` 字段一直预留内存组装，此接口以精简 VO 落地，去 component/path/perms 等冗余字段）。
 - **DELETE :menuId 与 cascade/:menuIds 同层共存**：gin 允许 static(cascade)+param(:menuId) 同层（static 优先匹配），经 `router/system/sys_menu_test.go` 的 `TestMenuRouterRegistration` 验证不 panic（测试保留作回归防护）。
 - **roleMenuTreeselect 返回叶子 checkedKeys**：对齐 RuoYi——NTree cascade 模式只需回显最深层节点，父级自动半选/全选；`leafCheckedKeys` 用 `parent_id IN roleIds AND menu_id IN roleIds` 找"有子也属角色"的父，取补集得叶子。
 - **菜单无 ancestors，cascade 靠递归**：`collectWithDescendants` 逐层 Pluck parent_id，避免一次拉全表。

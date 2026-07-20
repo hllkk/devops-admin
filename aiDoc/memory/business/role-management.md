@@ -12,7 +12,7 @@
 
 完整链路两端对称，回显已由菜单模块支持、保存本轮落地：
 
-- **回显（读）**：编辑角色 → `GET /system/menu/roleMenuTreeselect/{roleId}`（[[menu-management]] 已实现）→ `{menus: 全量平表, checkedKeys: 角色已分配菜单的叶子 ID}` → drawer `model.menuIds = checkedKeys`，NTree cascade 自动推导父级半选。
+- **回显（读）**：编辑角色 → `GET /system/menu/roleMenuTreeselect/{roleId}`（[[menu-management]] 已实现）→ `{menus: 全量菜单的 MenuTreeSelectNode 树(精简VO,id/label/menuType/icon/visible/status/children,后端组装), checkedKeys: 角色已分配菜单的叶子 ID}` → drawer `model.menuIds = checkedKeys`、`menuOptions = menus`，NTree cascade 自动推导父级半选。menus 由后端 `buildMenuTreeSelect` 按 parent_id 组装成树(对齐 RuoYi MenuTreeSelect,前端零组装)。
 - **保存（写）**：drawer 提交 → `POST/PUT /system/role`（`RoleOperateParams.menuIds`）→ 后端事务全量替换 `sys_role_menu`。前端 `MenuTree.getCheckedMenuIds` 在 cascade 模式返回「叶子 + 半选父级」= 应保存全集，与回显的叶子集对称。
 
 ## 前端契约（反推后端）

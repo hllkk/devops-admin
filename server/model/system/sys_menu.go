@@ -34,9 +34,22 @@ func (SysMenu) TableName() string {
 	return "sys_menu"
 }
 
+// MenuTreeSelectNode 菜单树选择节点(角色/菜单选择树专用,对齐前端 NTree key-field=id/label-field=label 与 RuoYi MenuTreeSelect)。
+// 仅含树选择渲染所需字段,精简于 SysMenu(去 component/path/queryParam/isFrame/isCache/perms/remark/orderNum 等冗余);
+// 已按 parent_id 组装 children 树,前端 NTree 直接消费。
+type MenuTreeSelectNode struct {
+	Id       int64                `json:"id,string"`  // 菜单ID(对齐前端 IdType)
+	Label    string               `json:"label"`      // 菜单名称(NTree label-field;可能为 i18n key 如 route.xxx)
+	MenuType string               `json:"menuType"`   // 菜单类型 M目录C菜单F按钮(前端渲染区分)
+	Icon     string               `json:"icon"`       // 菜单图标
+	Visible  string               `json:"visible"`    // 显示状态 0显示1隐藏(前端隐藏标灰)
+	Status   string               `json:"status"`     // 菜单状态 0正常1停用(前端禁用标红)
+	Children []MenuTreeSelectNode `json:"children,omitempty"` // 子节点(内存组装;叶子节点省略)
+}
+
 // RoleMenuTreeSelect 角色菜单权限树响应(对齐前端 Api.System.RoleMenuTreeSelect)。
-// menus=全部菜单平表(前端组装树);checkedKeys=角色已分配菜单的叶子 ID(NTree cascade 回显用,对齐 RuoYi)。
+// menus=全部菜单的 MenuTreeSelectNode 树(精简字段,后端组装);checkedKeys=角色已分配菜单的叶子 ID(NTree cascade 回显用,对齐 RuoYi)。
 type RoleMenuTreeSelect struct {
-	CheckedKeys []int64   `json:"checkedKeys"` // 角色已分配菜单的叶子 ID
-	Menus       []SysMenu `json:"menus"`       // 全部菜单平表
+	CheckedKeys []int64              `json:"checkedKeys"` // 角色已分配菜单的叶子 ID
+	Menus       []MenuTreeSelectNode `json:"menus"`       // 全部菜单树(精简 VO,后端组装)
 }
