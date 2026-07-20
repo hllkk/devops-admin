@@ -1,6 +1,6 @@
 <script setup lang="tsx">
 import { computed, ref } from 'vue';
-import { NAvatar, NButton, NDivider, NEllipsis } from 'naive-ui';
+import { NAvatar, NButton, NDivider, NEllipsis, NTime } from 'naive-ui';
 import { useBoolean, useLoading } from '@sa/hooks';
 import { jsonClone } from '@sa/utils';
 import { fetchBatchDeleteUser, fetchGetDeptTree, fetchGetUserList, fetchUpdateUserStatus } from '@/service/api/system';
@@ -128,7 +128,8 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
         key: 'createTime',
         title: $t('page.system.user.createTime'),
         align: 'center',
-        width: 120
+        width: 170,
+        render: row => <NTime time={Date.parse(row.createTime)} format="yyyy-MM-dd HH:mm:ss" />
       },
       {
         key: 'operate',

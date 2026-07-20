@@ -1,7 +1,7 @@
 <script setup lang="tsx">
 import { computed, ref } from 'vue';
 import type { DataTableColumns, TreeInst, TreeOption } from 'naive-ui';
-import { NButton, NDivider, NIcon, NInput, NPopconfirm } from 'naive-ui';
+import { NButton, NDivider, NIcon, NInput, NPopconfirm, NTime } from 'naive-ui';
 import { useBoolean, useLoading } from '@sa/hooks';
 import { menuIsFrameRecord, menuTypeRecord } from '@/constants/business';
 import { fetchDeleteMenu, fetchGetMenuList } from '@/service/api/system';
@@ -279,7 +279,8 @@ const btnColumns: DataTableColumns<Api.System.Menu> = [
     title: $t('page.system.menu.createTime'),
     key: 'createTime',
     align: 'center',
-    minWidth: 150
+    minWidth: 170,
+    render: row => <NTime time={Date.parse(row.createTime)} format="yyyy-MM-dd HH:mm:ss" />
   },
   {
     title: $t('common.action'),

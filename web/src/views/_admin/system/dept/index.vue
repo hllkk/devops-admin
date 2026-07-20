@@ -1,6 +1,6 @@
 <script setup lang="tsx">
 import { ref } from 'vue';
-import { NButton, NDivider } from 'naive-ui';
+import { NButton, NDivider, NTime } from 'naive-ui';
 import { jsonClone } from '@sa/utils';
 import { fetchBatchDeleteDept, fetchGetDeptList } from '@/service/api/system/dept';
 import { useAppStore } from '@/store/modules/app';
@@ -77,7 +77,8 @@ const {
       key: 'createTime',
       title: $t('page.system.dept.createTime'),
       align: 'center',
-      minWidth: 120
+      minWidth: 170,
+      render: row => <NTime time={Date.parse(row.createTime)} format="yyyy-MM-dd HH:mm:ss" />
     },
     {
       key: 'operate',

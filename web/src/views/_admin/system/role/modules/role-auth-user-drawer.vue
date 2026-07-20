@@ -1,6 +1,6 @@
 <script setup lang="tsx">
 import { computed, ref, toRaw, watch } from 'vue';
-import { NDatePicker } from 'naive-ui';
+import { NDatePicker, NTime } from 'naive-ui';
 import { jsonClone } from '@sa/utils';
 import {
   fetchGetRoleUserList,
@@ -116,7 +116,8 @@ const { columns, data, getData, getDataByPage, loading, mobilePagination, scroll
       key: 'createTime',
       title: $t('page.system.user.createTime'),
       align: 'center',
-      minWidth: 120
+      minWidth: 170,
+      render: row => <NTime time={Date.parse(row.createTime)} format="yyyy-MM-dd HH:mm:ss" />
     }
   ]
 });

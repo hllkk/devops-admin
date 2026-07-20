@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import type { TreeOption } from 'naive-ui';
-import { NDivider, NEllipsis, NTooltip } from 'naive-ui';
+import { NDivider, NEllipsis, NTooltip, NTime } from 'naive-ui';
 import { useBoolean, useLoading } from '@sa/hooks';
 import {
   fetchBatchDeleteDictData,
@@ -109,11 +109,12 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
         key: 'createTime',
         title: $t('page.system.dict.data.createTime'),
         align: 'center',
-        minWidth: 80,
+        minWidth: 160,
         resizable: true,
         ellipsis: {
           tooltip: true
-        }
+        },
+        render: row => <NTime time={Date.parse(row.createTime)} format="yyyy-MM-dd HH:mm:ss" />
       },
       {
         key: 'operate',
@@ -261,7 +262,7 @@ function renderLabel({ option }: { option: TreeOption }) {
               {option.dictName} {option.dictType}
             </span>
             {option.remark ? <span>( {option.remark} )</span> : null}
-            <span>{option.createTime}</span>
+            <NTime time={Date.parse(String(option.createTime))} format="yyyy-MM-dd HH:mm:ss" />
           </div>
         )
       }}

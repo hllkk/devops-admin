@@ -1,6 +1,6 @@
 <script setup lang="tsx">
 import { ref } from 'vue';
-import { NButton } from 'naive-ui';
+import { NButton, NTime } from 'naive-ui';
 import { fetchBatchDeleteOperLog, fetchCleanOperLog, fetchGetOperLogList } from '@/service/api/log';
 import { useAppStore } from '@/store/modules/app';
 import { useAuth } from '@/hooks/business/auth';
@@ -102,7 +102,8 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
         key: 'operTime',
         title: $t('page.log.operlog.operTime'),
         align: 'center',
-        minWidth: 120
+        minWidth: 120,
+        render: row => <NTime time={Date.parse(row.operTime)} format="yyyy-MM-dd HH:mm:ss" />
       },
       {
         key: 'costTime',

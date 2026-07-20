@@ -1,6 +1,6 @@
 <script setup lang="tsx">
 import { ref } from 'vue';
-import { NDivider } from 'naive-ui';
+import { NDivider, NTime } from 'naive-ui';
 import {
   fetchBatchDeleteLoginLog,
   fetchCleanLoginLog,
@@ -136,7 +136,8 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
         ellipsis: {
           tooltip: true
         },
-        minWidth: 120
+        minWidth: 120,
+        render: row => <NTime time={Date.parse(row.loginTime)} format="yyyy-MM-dd HH:mm:ss" />
       },
       {
         key: 'operate',

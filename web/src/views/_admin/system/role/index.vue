@@ -1,6 +1,6 @@
 <script setup lang="tsx">
 import { ref } from 'vue';
-import { NDivider } from 'naive-ui';
+import { NDivider, NTime } from 'naive-ui';
 import { jsonClone } from '@sa/utils';
 import { useBoolean } from '@sa/hooks';
 import { fetchBatchDeleteRole, fetchGetRoleList, fetchUpdateRoleStatus } from '@/service/api/system/role';
@@ -96,7 +96,8 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
         key: 'createTime',
         title: $t('page.system.role.createTime'),
         align: 'center',
-        minWidth: 120
+        minWidth: 170,
+        render: row => <NTime time={Date.parse(row.createTime)} format="yyyy-MM-dd HH:mm:ss" />
       },
       {
         key: 'operate',

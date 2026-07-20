@@ -1,6 +1,6 @@
 <script setup lang="tsx">
 import { computed, ref } from 'vue';
-import { NButton, NDivider } from 'naive-ui';
+import { NButton, NDivider, NTime } from 'naive-ui';
 import { useLoading } from '@sa/hooks';
 import { fetchBatchDeletePost, fetchGetPostDeptSelect, fetchGetPostList } from '@/service/api/system/post';
 import { useAppStore } from '@/store/modules/app';
@@ -91,10 +91,11 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
         key: 'createTime',
         title: $t('page.system.post.createTime'),
         align: 'center',
-        minWidth: 120,
+        minWidth: 170,
         ellipsis: {
           tooltip: true
-        }
+        },
+        render: row => <NTime time={Date.parse(row.createTime)} format="yyyy-MM-dd HH:mm:ss" />
       },
       {
         key: 'operate',

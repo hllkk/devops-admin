@@ -121,3 +121,23 @@ src/typings/api/system.api.d.ts        # Api.System.<Entity> + <Entity>SearchPar
 ## 10. 工具复用
 - 先查 `@sa/*` workspace 包、`src/service/`、`src/utils/`、`src/hooks/`，**禁止重复造轮子**
 - 详见 `frontend-utils.md`
+
+## 11. 时间展示格式化（列表/详情通用）
+
+后端时间字段一律以 ISO（RFC3339Nano，如 `2026-07-19T21:25:53.071037-04:00`）返回，**前端禁止直接渲染原始字符串**——不要 `{{ row.createTime }}`，列表列也不要只给 `key` 不给 `render`。统一用 NaiveUI `NTime` 在展示层格式化。
+
+- 列表列（`<script setup lang="tsx">`）：补 `import { ..., NTime } from 'naive-ui'`，列加
+  ```tsx
+  render: row => <NTime time={Date.parse(row.xxxTime)} format="yyyy-MM-dd HH:mm:ss" />
+  ```
+- 详情/抽屉（模板）：
+  ```html
+  <NTime :time="Date.parse(data.xxxTime ?? '')" format="yyyy-MM-dd HH:mm:ss" />
+  ```
+  抽屉数据可能为 null，`?? ''` 兜底；`Date.parse('')` 返回 `NaN`，`NTime` 渲染为空。
+- **关键坑**：`NTime` 的 `time` 只收 `number | Date`，**不收 string**。后端 ISO 是 string，必须 `Date.parse(iso)` 转毫秒时间戳再传，否则 `vue-tsc` 报错。（在线用户表 `loginTime` 本身是 `number`，可直接传，是例外。）
+- format 统一 `yyyy-MM-dd HH:mm:ss`（NaiveUI token，不是 dayjs 的 `YYYY-MM-DD`）。
+- 列宽给够：`minWidth`/`width` ≥ 160，否则 `2026-07-19 21:25:53` 被截断；空间紧张时配 `ellipsis: { tooltip: true }` 兜底。
+- 搜索表单里的 `createTime` 是 `NDatePicker`（日期范围**筛选**），不是展示，无需此处理。
+- 已落地参照：`loginlog`/`operlog`（loginTime/operTime）、`user`/`role`/`dept`/`post`/`menu`/`notice`/`dict`/`role-auth-user-drawer`（createTime）。
+- 契约面（后端为何保持 ISO、禁止改全局序列化）见 `boundary.md`「时间字段契约」。

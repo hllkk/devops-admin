@@ -27,6 +27,12 @@
 
 > 例外：基座认证链路（`BaseClaims.ID` / `Login.GetUserId` / `GetById.ID` 等）目前仍是独立的 `uint`/`int`，待登录链路重建时统一处理（届时 claims 改用 string 存储 ID 解决精度问题）。
 
+## 时间字段契约
+
+- 后端所有时间字段保持原生 `time.Time`（公共基座 `OPS_AUDIT_MODEL` 的 `CreatedAt`/`UpdatedAt`、各业务 `XxxTime`），JSON 序列化为 RFC3339Nano（如 `2026-07-19T21:25:53.071037-04:00`），**保留时区与精度**。
+- **禁止改全局时间序列化**：不要给 `time.Time` 加自定义 `MarshalJSON` 输出 `2026-07-19 21:25:53` 这类友好字符串——会丢时区/精度、影响所有表所有消费方、还干扰前端 `NTime` 对 ISO 的解析，属于"为局部展示问题改全局契约"。
+- 时间展示格式化是**前端职责**：前端用 `NTime` 把 ISO 转成人可读格式，见 `frontend-rules.md`「时间展示格式化」。后端契约保持机器友好的 ISO 不变。
+
 ## 变更规则
 
 - 涉及破坏性接口调整时，要先写清楚变更范围

@@ -1,6 +1,6 @@
 <script setup lang="tsx">
 import { ref } from 'vue';
-import { NDivider } from 'naive-ui';
+import { NDivider, NTime } from 'naive-ui';
 import { fetchBatchDeleteNotice, fetchGetNoticeList } from '@/service/api/system/notice';
 import { useAppStore } from '@/store/modules/app';
 import { useAuth } from '@/hooks/business/auth';
@@ -77,7 +77,8 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
         key: 'createTime',
         title: $t('page.system.notice.createTime'),
         align: 'center',
-        minWidth: 120
+        minWidth: 170,
+        render: row => <NTime time={Date.parse(row.createTime)} format="yyyy-MM-dd HH:mm:ss" />
       },
       {
         key: 'operate',

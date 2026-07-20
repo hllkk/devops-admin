@@ -1,5 +1,5 @@
 <script setup lang="tsx">
-import { NDescriptions, NDescriptionsItem, NTag } from 'naive-ui';
+import { NDescriptions, NDescriptionsItem, NTag, NTime } from 'naive-ui';
 import { getRequestMethodTagType } from '@/utils/icon-tag-format';
 import { $t } from '@/locales';
 import DictTag from '@/components/custom/dict-tag.vue';
@@ -51,7 +51,9 @@ function closeDrawer() {
             {{ props.rowData?.operUrl }}
           </NSpace>
         </NDescriptionsItem>
-        <NDescriptionsItem :label="$t('page.log.operlog.operTime')">{{ props.rowData?.operTime }}</NDescriptionsItem>
+        <NDescriptionsItem :label="$t('page.log.operlog.operTime')">
+          <NTime :time="Date.parse(props.rowData?.operTime ?? '')" format="yyyy-MM-dd HH:mm:ss" />
+        </NDescriptionsItem>
         <NDescriptionsItem :label="$t('page.log.operlog.operParam')">
           <JsonPreview :code="props.rowData?.operParam" />
         </NDescriptionsItem>

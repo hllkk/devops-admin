@@ -33,11 +33,14 @@ func (b *BaseApi) Login(c *gin.Context) {
 
 	cfg := securityConfigService.Current(c.Request.Context())
 
+	// 解析客户端 UA(浏览器/操作系统/设备类型),供登录日志记录
+	uaBrowser, uaOS, uaDevice := utils.ParseUserAgent(c.Request.UserAgent())
+
 	// 1. 账号锁定检查
 	if cfg.LoginFailLockCount > 0 && systemSvc.IsAccountLocked(c.Request.Context(), l.Username) {
 		response.FailWithMessage("账号已锁定，请 "+strconv.Itoa(cfg.LoginFailLockTime)+" 分钟后再试", c)
 		_ = loginLogService.CreateLoginLog(c.Request.Context(), system.SysLoginLog{
-			UserName: l.Username, Ipaddr: c.ClientIP(), Browser: c.Request.UserAgent(),
+			UserName: l.Username, Ipaddr: c.ClientIP(), Browser: uaBrowser, Os: uaOS, DeviceType: uaDevice,
 			Status: "1", Msg: "账号已锁定",
 		})
 		return
@@ -50,7 +53,7 @@ func (b *BaseApi) Login(c *gin.Context) {
 			captchaService.RecordLoginFail(c.Request.Context(), l.Username, ip)
 			response.FailWithMessage("验证码错误", c)
 			_ = loginLogService.CreateLoginLog(c.Request.Context(), system.SysLoginLog{
-				UserName: l.Username, Ipaddr: ip, Browser: c.Request.UserAgent(),
+				UserName: l.Username, Ipaddr: ip, Browser: uaBrowser, Os: uaOS, DeviceType: uaDevice,
 				Status: "1", Msg: "验证码错误",
 			})
 			return
@@ -65,7 +68,7 @@ func (b *BaseApi) Login(c *gin.Context) {
 		systemSvc.RecordLoginFail(c.Request.Context(), l.Username, cfg)
 		response.FailWithMessage(err.Error(), c)
 		_ = loginLogService.CreateLoginLog(c.Request.Context(), system.SysLoginLog{
-			UserName: l.Username, Ipaddr: ip, Browser: c.Request.UserAgent(),
+			UserName: l.Username, Ipaddr: ip, Browser: uaBrowser, Os: uaOS, DeviceType: uaDevice,
 			Status: "1", Msg: "用户名或密码错误",
 		})
 		return
@@ -73,7 +76,7 @@ func (b *BaseApi) Login(c *gin.Context) {
 	if user.Status != "0" {
 		response.FailWithMessage("用户已被停用", c)
 		_ = loginLogService.CreateLoginLog(c.Request.Context(), system.SysLoginLog{
-			UserName: l.Username, Ipaddr: ip, Browser: c.Request.UserAgent(),
+			UserName: l.Username, Ipaddr: ip, Browser: uaBrowser, Os: uaOS, DeviceType: uaDevice,
 			Status: "1", Msg: "用户被停用",
 		})
 		return
@@ -91,6 +94,7 @@ func (b *BaseApi) Login(c *gin.Context) {
 // TokenNext 登录成功后签发 jwt，token 经 httpOnly Cookie 下发，响应体只回 expiresAt。
 // 开启 System.UseMultipoint 时实现多端互踢(对齐 GVA):同一用户新登录将旧 token 入黑名单。
 func (b *BaseApi) TokenNext(c *gin.Context, user system.SysUser, mustChangePwd bool) {
+	uaBrowser, uaOS, uaDevice := utils.ParseUserAgent(c.Request.UserAgent())
 	token, claims, err := utils.LoginTokenWithExpire(&user, mustChangePwd)
 	if err != nil {
 		logger.WithCtx(c.Request.Context()).Mod("biz").Err(err).Error("获取token失败")
@@ -98,7 +102,7 @@ func (b *BaseApi) TokenNext(c *gin.Context, user system.SysUser, mustChangePwd b
 		return
 	}
 	_ = loginLogService.CreateLoginLog(c.Request.Context(), system.SysLoginLog{
-		UserName: user.UserName, Ipaddr: c.ClientIP(), Browser: c.Request.UserAgent(),
+		UserName: user.UserName, Ipaddr: c.ClientIP(), Browser: uaBrowser, Os: uaOS, DeviceType: uaDevice,
 		Status: "0", Msg: "登录成功",
 	})
 	expire := int(claims.RegisteredClaims.ExpiresAt.Unix() - time.Now().Unix())

@@ -33,6 +33,8 @@ function createProxyItem(item: App.Service.ServiceConfigItem, enableLog: boolean
   proxy[item.proxyPattern] = {
     target: item.baseURL,
     changeOrigin: true,
+    // 透传真实客户端 IP(X-Forwarded-For/Host/Proto),使后端 c.ClientIP() 在 dev 期可还原访问者 IP
+    xfwd: true,
     configure: (_proxy, options) => {
       _proxy.on('proxyReq', (_proxyReq, req, _res) => {
         if (!enableLog) return;

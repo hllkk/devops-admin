@@ -58,7 +58,7 @@ function closeDrawer() {
           {{ props.rowData?.msg }}
         </NDescriptionsItem>
         <NDescriptionsItem :label="$t('page.log.loginlog.loginTime')">
-          {{ props.rowData?.loginTime }}
+          <NTime :time="Date.parse(props.rowData?.loginTime ?? '')" format="yyyy-MM-dd HH:mm:ss" />
         </NDescriptionsItem>
       </NDescriptions>
       <template #footer>
