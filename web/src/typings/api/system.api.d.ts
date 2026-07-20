@@ -62,6 +62,8 @@ declare namespace Api {
       deptId: CommonType.IdType;
       /** 部门名称 */
       deptName: string;
+      /** 是否超管(任一角色 SuperAdmin;列表超管保护用) */
+      superAdmin: boolean;
       /** 用户账号 */
       userName: string;
       /** 用户昵称 */

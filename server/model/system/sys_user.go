@@ -33,6 +33,7 @@ type SysUser struct {
 	UserId      int64      `gorm:"primarykey;column:id;comment:用户ID" json:"userId,string"`                          // 用户ID(DB列复用id,雪花int64)
 	DeptId      int64      `json:"deptId,string" gorm:"comment:主部门ID(数据归属/盖章)"`                                     // 主部门ID
 	DeptName    string     `json:"deptName" gorm:"-"`                                                               // 部门名称(内存组装,列表展示)
+	SuperAdmin  bool       `json:"superAdmin" gorm:"-"`                                                            // 是否超管(内存组装,任一关联角色 SuperAdmin;前端列表超管保护依赖)
 	UserName    string     `json:"userName" gorm:"index;comment:用户登录名"`                                             // 用户登录名
 	NickName    string     `json:"nickName" gorm:"default:系统用户;comment:用户昵称"`                                       // 用户昵称
 	UserType    string     `json:"userType" gorm:"default:sys_user;size:32;comment:用户类型(sys_user系统用户)"`             // 用户类型
@@ -50,7 +51,7 @@ type SysUser struct {
 	// 关联(多角色/多部门/多岗位走显式连接表)
 	RoleId      int64           `json:"-" gorm:"default:888;comment:用户主角色ID(登录链路claims用,前端不输出)"` // 主角色ID
 	Roles []SysRole `json:"roles" gorm:"many2many:sys_user_role;joinForeignKey:SysUserId;joinReferences:SysRoleId"`               // 多角色(join 列对齐 sys_user_id/sys_role_id)
-	Dept        SysDepartment   `json:"dept" form:"-" gorm:"foreignKey:DeptId;comment:主部门"`                                    // 主部门;form:"-" 防御 gin 绑定递归
+	Dept        SysDepartment   `json:"dept" form:"-" gorm:"foreignKey:DeptId;references:DeptId;comment:主部门"`                    // 主部门(belongs-to:DeptId→Dept.DeptId);form:"-" 防御 gin 绑定递归
 	Departments []SysDepartment `json:"departments" gorm:"many2many:sys_user_departments;joinForeignKey:SysUserId;joinReferences:SysDepartmentId"` // 多部门归属(数据可见范围)
 	Posts       []SysPost       `json:"posts" gorm:"many2many:sys_user_post;joinForeignKey:SysUserId;joinReferences:SysPostId"` // 多岗位
 }

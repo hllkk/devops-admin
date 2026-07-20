@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue';
 import { jsonClone } from '@sa/utils';
 import { useLoading } from '@sa/hooks';
-import { fetchCreateUser, fetchGetUserInfo, fetchUpdateUser } from '@/service/api/system';
+import { fetchCreateUser, fetchGetRoleList, fetchGetUserInfo, fetchUpdateUser } from '@/service/api/system';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
 import { $t } from '@/locales';
 
@@ -79,25 +79,32 @@ const rules: Record<RuleKey, App.Global.FormRule[]> = {
   roleIds: [{ ...createRequiredRule('请选择角色'), type: 'array' }]
 };
 
-async function getUserInfo(id: CommonType.IdType = '') {
+/** 拉取全部启用角色作为下拉选项(角色选项统一走列表接口;用户详情返回的 roles 仅是该用户已有角色,不能当选项) */
+async function getRoleOptions() {
+  const { error, data } = await fetchGetRoleList({ pageNum: 1, pageSize: 0 });
+  if (!error) {
+    roleOptions.value = (data.rows ?? [])
+      .filter(role => role.status === '0')
+      .map(role => ({ label: role.roleName, value: role.roleId }));
+  }
+}
+
+/** 回显编辑用户的 roleIds/postIds */
+async function getUserInfo(id: CommonType.IdType) {
   startLoading();
   const { error, data } = await fetchGetUserInfo(id);
   if (!error) {
     model.value.roleIds = data.roleIds;
     model.value.postIds = data.postIds;
-    roleOptions.value = data.roles.map(role => ({
-      label: role.roleName,
-      value: role.roleId
-    }));
   }
   endLoading();
 }
 
 function handleUpdateModelWhenEdit() {
   model.value = createDefaultModel();
+  getRoleOptions(); // 新增/编辑统一加载全部启用角色作为下拉选项
 
   if (props.operateType === 'add') {
-    getUserInfo();
     model.value.deptId = props.deptId;
     return;
   }

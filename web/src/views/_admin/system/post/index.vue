@@ -178,7 +178,7 @@ async function handleExport() {
   download('/system/post/export', searchParams.value, `${$t('page.system.post.exportFileName')}_${new Date().getTime()}.xlsx`);
 }
 
-const expandedKeys = ref<CommonType.IdType[]>([100]);
+const expandedKeys = ref<CommonType.IdType[]>([]);
 
 const selectable = computed(() => {
   return !loading.value;
@@ -195,6 +195,7 @@ async function getDeptOptions() {
   const { data: tree, error } = await fetchGetPostDeptSelect();
   if (!error) {
     deptData.value = tree;
+    // 注:暂不自动设置 expandedKeys——v-model:expanded-keys 配 virtual-scroll 设有效值会触发渲染循环卡死主线程
   }
   endTreeLoading();
 }
