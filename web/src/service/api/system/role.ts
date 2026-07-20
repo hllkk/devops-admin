@@ -44,6 +44,15 @@ export function fetchBatchDeleteRole(roleIds: CommonType.IdType[]) {
   });
 }
 
+/** 获取角色选择框列表 */
+export function fetchGetRoleSelect(roleIds?: CommonType.IdType[]) {
+  return request<Api.System.Role[]>({
+    url: '/system/role/optionselect',
+    method: 'get',
+    params: { roleIds }
+  });
+}
+
 /** 获取对应角色用户列表 */
 export function fetchGetRoleUserList(params: Api.System.UserSearchParams) {
   return request<Api.System.UserList>({
