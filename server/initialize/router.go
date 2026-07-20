@@ -41,6 +41,13 @@ func Routers() *gin.Engine {
 	Router.Use(middleware.RequestMeta())
 	// 使用自定义的 Recovery 中间件，记录 panic 并入库
 	Router.Use(middleware.GinRecovery(true))
+	// SSE 专用组:必须在 AccessLog 之前注册,绕过 captureWriter(缓冲会破坏流式 Flusher 并致内存膨胀)。
+	// 仅挂 JWTAuth(httpOnly cookie 鉴权),不套 OperationRecord/AccessLog/Timeout。路径对齐前端 /resource/sse。
+	{
+		sseGroup := Router.Group(global.OPS_CONFIG.System.RouterPrefix)
+		sseGroup.Use(middleware.JWTAuth())
+		router.RouterGroupApp.System.InitNoticeSSERouter(sseGroup)
+	}
 	// 全局访问日志 + 唯一 body/resp 捕获点（供 OperationRecord 复用）
 	Router.Use(middleware.AccessLog())
 	// 启动操作日志异步写入协程（幂等），供 OperationRecord 落表

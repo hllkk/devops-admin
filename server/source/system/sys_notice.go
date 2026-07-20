@@ -23,7 +23,7 @@ func (i *initNotice) MigrateTable(ctx context.Context) (context.Context, error) 
 	if !ok {
 		return ctx, system.ErrMissingDBContext
 	}
-	return ctx, db.AutoMigrate(&sysModel.SysNotice{})
+	return ctx, db.AutoMigrate(&sysModel.SysNotice{}, &sysModel.SysNoticeRecord{})
 }
 
 func (i *initNotice) TableCreated(ctx context.Context) bool {

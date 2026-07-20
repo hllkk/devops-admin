@@ -9,6 +9,7 @@ import (
 	systemReq "github.com/hllkk/devops-admin/server/model/system/request"
 	"github.com/hllkk/devops-admin/server/utils"
 	"github.com/hllkk/devops-admin/server/utils/logger"
+	"github.com/hllkk/devops-admin/server/utils/sse"
 )
 
 // NoticeApi 通知公告管理(对齐前端 /system/notice/* 资源)
@@ -112,4 +113,74 @@ func (n *NoticeApi) BatchDeleteNotice(c *gin.Context) {
 		return
 	}
 	response.OkWithDetailed(true, "删除成功", c)
+}
+
+// Stream SSE 通知接入(对齐前端 EventSource 连 /resource/sse)。
+// 鉴权身份由专用路由组的 JWTAuth 中间件从 httpOnly cookie x-token 解析(见 utils/claims.go)。
+// 阻塞直到客户端断开;该路由绝不能套 Timeout/AccessLog(见 utils/sse/hub.go:168 约束)。
+// Stream 是传输层关注点,直接调 sse,不经 service(service 不依赖 gin.Context)。
+func (n *NoticeApi) Stream(c *gin.Context) {
+	uid := utils.GetUserID(c)
+	if uid == 0 {
+		response.FailWithMessage("未登录", c)
+		return
+	}
+	sse.Default().Stream(c, uint(uid), 0)
+}
+
+// GetUnreadNotice
+// @Tags      SysNotice
+// @Summary   当前用户通知列表(未读/历史)
+// @Produce   application/json
+// @Param     pageNum     query  int   true   "页码"
+// @Param     pageSize    query  int   true   "每页大小"
+// @Param     onlyUnread  query  bool  false  "仅未读"
+// @Success   200  {object}  response.Response{data=response.PageResult{rows=[]system.NoticeRecordVO},msg=string}
+// @Router    /system/notice/unread [get]
+func (n *NoticeApi) GetUnreadNotice(c *gin.Context) {
+	var q systemReq.NoticeUnreadSearch
+	if err := c.ShouldBindQuery(&q); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	userId := utils.GetUserID(c)
+	if userId == 0 {
+		response.FailWithMessage("未登录", c)
+		return
+	}
+	list, total, err := noticeService.GetNoticeRecordList(c.Request.Context(), userId, q)
+	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("biz").Err(err).Error("获取通知列表失败")
+		response.FailWithMessage("获取失败", c)
+		return
+	}
+	response.OkWithDetailed(response.PageResult{
+		Rows: list, Total: total, PageNum: q.PageNum, PageSize: q.PageSize,
+	}, "获取成功", c)
+}
+
+// MarkNoticeRead
+// @Tags      SysNotice
+// @Summary   标记通知已读(noticeIds 为空=全部已读)
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  body  systemReq.NoticeReadParams  true  "通知ID列表(空=全部已读)"
+// @Success   200   {object}  response.Response{data=bool,msg=string}
+// @Router    /system/notice/read [put]
+func (n *NoticeApi) MarkNoticeRead(c *gin.Context) {
+	var req systemReq.NoticeReadParams
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	userId := utils.GetUserID(c)
+	if userId == 0 {
+		response.FailWithMessage("未登录", c)
+		return
+	}
+	if err := noticeService.MarkNoticeRead(c.Request.Context(), userId, req.NoticeIds); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	response.OkWithDetailed(true, "标记成功", c)
 }

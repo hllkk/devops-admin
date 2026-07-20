@@ -34,3 +34,21 @@ export function fetchBatchDeleteNotice(noticeIds: CommonType.IdType[]) {
     method: 'delete'
   });
 }
+
+/** 获取当前用户通知列表(未读/历史) */
+export function fetchGetUnreadNotice(params: { pageNum: number; pageSize: number; onlyUnread?: boolean }) {
+  return request<Api.System.NoticeList>({
+    url: '/system/notice/unread',
+    method: 'get',
+    params
+  });
+}
+
+/** 标记通知已读(noticeIds 为空=全部已读) */
+export function fetchMarkNoticeRead(noticeIds: CommonType.IdType[] = []) {
+  return request<boolean>({
+    url: '/system/notice/read',
+    method: 'put',
+    data: { noticeIds }
+  });
+}

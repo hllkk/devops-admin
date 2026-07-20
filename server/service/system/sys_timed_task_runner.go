@@ -28,7 +28,6 @@ var (
 const (
 	maxHTTPRespBytes = 1 << 20 // HTTP 响应体读取上限 1MB
 	maxLogTextLen    = 4000    // error/output 落库截断长度
-	alertRoleID      = 888     // 失败告警接收角色
 	alertEventName   = "timedTask:alert"
 )
 
@@ -171,23 +170,28 @@ func (s *TimedTaskService) runHTTP(t system.SysTimedTask) (string, error) {
 	return out, nil
 }
 
-// alertFailure 失败告警: 查 888 角色用户, 经本体 SSE Hub 定向推送(离线静默丢弃, 不阻塞)
+// alertFailure 失败告警: 查超级管理员(SuperAdmin=true 角色)用户, 经本体 SSE Hub 定向推送(离线静默丢弃, 不阻塞)。
+// 历史硬编码 alertRoleID=888 是 GVA 遗留:devops-admin 角色主键走雪花 int64, 不存在 888 角色, 原查询恒空。
 func (s *TimedTaskService) alertFailure(t system.SysTimedTask, errMsg string) {
 	var ids []uint
+	superRoleIDs := global.OPS_DB.Model(&system.SysRole{}).Select("role_id").Where("super_admin = ?", true)
 	if err := global.OPS_DB.Model(&system.SysUserRole{}).
-		Where("sys_role_id = ?", alertRoleID).
+		Where("sys_role_id IN (?)", superRoleIDs).
 		Pluck("sys_user_id", &ids).Error; err != nil {
-		logger.Bg().Mod("timedTask").Err(err).Error("查询告警接收人失败")
+		logger.Bg().Mod("timedTask").Err(err).Error("查询告警接收人(超管)失败")
 		return
 	}
 	if len(ids) == 0 {
 		return
 	}
 	payload, _ := json.Marshal(map[string]interface{}{
+		"type":  alertEventName,
 		"taskId": t.ID,
 		"name":   t.Name,
 		"error":  errMsg,
 		"time":   time.Now().Format(time.RFC3339),
 	})
-	sse.Default().PublishToUsers(ids, sse.Event{Name: alertEventName, Data: string(payload)})
+	// Name 留空走 SSE 默认 message 通道:前端 useEventSource(url,[]) 只监听 message,
+	// 故通知/告警统一走 message,用 payload.type 区分(见 web/src/utils/sse.ts)。
+	sse.Default().PublishToUsers(ids, sse.Event{Name: "", Data: string(payload)})
 }

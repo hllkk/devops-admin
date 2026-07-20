@@ -15,5 +15,13 @@ func (n *NoticeRouter) InitNoticeRouter(Router *gin.RouterGroup) {
 		noticeRouter.POST("", noticeApi.CreateNotice)            // 新增通知公告
 		noticeRouter.PUT("", noticeApi.UpdateNotice)             // 修改通知公告
 		noticeRouter.DELETE(":ids", noticeApi.BatchDeleteNotice) // 批量删除通知公告
+		noticeRouter.GET("unread", noticeApi.GetUnreadNotice)    // 当前用户通知列表(未读/历史)
+		noticeRouter.PUT("read", noticeApi.MarkNoticeRead)       // 标记通知已读
 	}
+}
+
+// InitNoticeSSERouter SSE 接入路由,挂在专用组(不经 AccessLog/OperationRecord,避免缓冲破坏流式)。
+// JWTAuth 已在专用组上挂载,从 httpOnly cookie 解析身份。路径对齐前端 /resource/sse。
+func (n *NoticeRouter) InitNoticeSSERouter(Router *gin.RouterGroup) {
+	Router.GET("resource/sse", noticeApi.Stream)
 }

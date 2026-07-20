@@ -1,21 +1,18 @@
 import { watch } from 'vue';
 import { useEventSource } from '@vueuse/core';
 import { useNoticeStore } from '@/store/modules/notice';
-import { $t } from '@/locales';
-import { localStg } from './storage';
 
 /**
- * 初始化 SSE
+ * 初始化 SSE(鉴权走 httpOnly cookie x-token,EventSource 同源/withCredentials 自动携带)
  *
- * @param url - SSE 地址
+ * @param url - SSE 地址(/resource/sse)
  */
 export const initSSE = (url: string) => {
-  const token = localStg.get('token');
-  if (import.meta.env.VITE_APP_SSE === 'N' || !token) {
+  if (import.meta.env.VITE_APP_SSE === 'N') {
     return;
   }
-  const sseUrl = `${url}?Authorization=Bearer ${token}&clientid=${import.meta.env.VITE_APP_CLIENT_ID}`;
-  const { data, error } = useEventSource(sseUrl, [], {
+  const { data, error } = useEventSource(url, [], {
+    withCredentials: true,
     autoReconnect: {
       retries: 5,
       delay: 5000,
@@ -38,20 +35,37 @@ export const initSSE = (url: string) => {
   watch(data, () => {
     if (!data.value) return;
 
-    let content = data.value;
-    const noticeType = content.match(/\[dict\.(.*?)\]/)?.[1];
-    if (noticeType) {
-      content = content.replace(`dict.${noticeType}`, $t(`dict.${noticeType}` as App.I18n.I18nKey));
+    // 后端推送 JSON,统一走 message 通道,用 payload.type 区分:
+    // 通知: { noticeId, noticeTitle, noticeContent, noticeType }
+    // 告警: { type:'timedTask:alert', taskId, name, error, time }
+    let payload: {
+      type?: string;
+      noticeId?: number;
+      noticeTitle?: string;
+      noticeContent?: string;
+      taskId?: number;
+      name?: string;
+      error?: string;
+    } = {};
+    try {
+      payload = JSON.parse(data.value);
+    } catch {
+      payload = { noticeTitle: '消息', noticeContent: data.value };
     }
+    const isAlert = payload.type === 'timedTask:alert' || payload.taskId !== undefined;
+    const title = payload.noticeTitle || (isAlert ? '定时任务告警' : '消息');
+    const content = payload.noticeContent || (isAlert ? `${payload.name ?? ''}:${payload.error ?? ''}` : '');
     useNoticeStore().addNotice({
+      noticeId: payload.noticeId,
+      title,
       message: content,
       read: false,
       time: new Date().toLocaleString()
     });
     window.$notification?.create({
-      title: '消息',
+      title,
       content,
-      type: 'success',
+      type: isAlert ? 'error' : 'success',
       duration: 3000
     });
     data.value = null;

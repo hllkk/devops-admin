@@ -25,7 +25,10 @@ func (s *DataScopeService) BuildIdentity(ctx context.Context, userID, roleID int
 	if err == nil && auth.DataScope != 0 {
 		id.Scope = auth.DataScope
 	} else {
-		id.Scope = datascope.ScopeAll // 查不到或未配置 → 默认全部(与列默认一致, 安全不破坏)
+		// 查不到角色(RoleId 无效)或角色未配置 data_scope → 默认仅本人(最小权限)。
+		// 历史默认 ScopeAll(全部)会让 RoleId 异常的用户获得全量数据权限,存在越权隐患;
+		// 超管正常 RoleId(Create 取 roleIds[0]=超管角色)不会走到此分支。
+		id.Scope = datascope.ScopeSelf
 	}
 
 	// 2) 用户主部门
@@ -104,4 +107,16 @@ func (s *DataScopeService) subtreeUnion(ctx context.Context, roots map[int64]str
 		res = append(res, id)
 	}
 	return res
+}
+
+// ExpandDeptIDs 展开部门集合(含子部门并集)。供通知定向投递等"按部门含子部门"场景复用,
+// 内部走 subtreeUnion 的内存 BFS(部门量级小,一次全量加载)。
+func (s *DataScopeService) ExpandDeptIDs(ctx context.Context, deptIDs []int64) []int64 {
+	roots := make(map[int64]struct{}, len(deptIDs))
+	for _, d := range deptIDs {
+		if d != 0 {
+			roots[d] = struct{}{}
+		}
+	}
+	return s.subtreeUnion(ctx, roots)
 }

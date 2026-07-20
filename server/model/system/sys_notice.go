@@ -14,6 +14,12 @@ type SysNotice struct {
 	CreateByName  string `json:"createByName" gorm:"-"`                                  // 创建者名称(内存组装,join sys_users 带出)
 }
 
+// 通知公告类型(对齐字典 sys_notice_type)
+const (
+	NoticeTypeNotice       = "1" // 通知(定向投递)
+	NoticeTypeAnnouncement = "2" // 公告(全员广播)
+)
+
 func (SysNotice) TableName() string {
 	return "sys_notice"
 }

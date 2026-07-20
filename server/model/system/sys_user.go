@@ -49,7 +49,7 @@ type SysUser struct {
 	Remark      string     `json:"remark" gorm:"comment:备注"`                                                        // 备注
 	UUID        uuid.UUID  `json:"uuid" gorm:"index;comment:用户UUID"`                                                // 用户UUID(登录链路)
 	// 关联(多角色/多部门/多岗位走显式连接表)
-	RoleId      int64           `json:"-" gorm:"default:888;comment:用户主角色ID(登录链路claims用,前端不输出)"` // 主角色ID
+	RoleId      int64           `json:"-" gorm:"default:0;comment:用户主角色ID(登录链路claims用,前端不输出;0=未指定,Create 取所选角色首项回填)"` // 主角色ID
 	Roles []SysRole `json:"roles" gorm:"many2many:sys_user_role;joinForeignKey:SysUserId;joinReferences:SysRoleId"`               // 多角色(join 列对齐 sys_user_id/sys_role_id)
 	Dept        SysDepartment   `json:"dept" form:"-" gorm:"foreignKey:DeptId;references:DeptId;comment:主部门"`                    // 主部门(belongs-to:DeptId→Dept.DeptId);form:"-" 防御 gin 绑定递归
 	Departments []SysDepartment `json:"departments" gorm:"many2many:sys_user_departments;joinForeignKey:SysUserId;joinReferences:SysDepartmentId"` // 多部门归属(数据可见范围)

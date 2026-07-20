@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useNoticeStore } from '@/store/modules/notice';
 
@@ -10,6 +10,11 @@ defineOptions({
 const show = ref(false);
 const noticeStore = useNoticeStore();
 const { state } = storeToRefs(noticeStore);
+
+// 铃铛加载时拉取未读通知(离线消息补齐,SSE 只负责在线实时增量)
+onMounted(() => {
+  noticeStore.fetchUnread();
+});
 
 const noticeNum = computed(() => {
   return state.value.notices.filter(notice => !notice.read).length || 0;

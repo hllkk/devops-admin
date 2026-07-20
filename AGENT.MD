@@ -87,7 +87,7 @@
 ### 页面点触测试(AI 驱动浏览器验证)
 
 - 前端页面改动需要真实浏览器点触验证时,按 `aiDoc/frontend-backend/page-click-testing.md` 执行
-- **登录态契约(目标:httpOnly cookie 模式,重构后待重建,详见 `aiDoc/frontend-backend/boundary.md`「认证」一节)**:当前后端 `/auth/*` 路由尚未重建(`server/api/` 为空)、登录链路暂不可用;目标态为 token 不进 JS、前端不下发 Authorization。浏览器自动化**不能**用"向用户索取 token 注入 localStorage"的老办法,维持登录态走 Playwright 的 `storageState` 复用 / `context.addCookies` 注入后端下发的 cookie,或在自动化浏览器里走真实登录(用户名+密码+验证码);详见该文档
+- **登录态契约(httpOnly cookie 模式,已落地)**:后端登录接口(挂 PublicGroup 的 base router,`api/v1/system/sys_user.go` 的 Login)成功后经 `utils.SetToken` 下发 httpOnly `x-token` cookie;`utils.GetToken` 双取(header `x-token` → cookie `x-token`)→ `ParseToken`;`/auth/*`(getUserInfo/logout/refreshToken)已注册并挂 PrivateGroup。token 不进 JS、前端不下发 Authorization。`aiDoc/frontend-backend/boundary.md`「认证」一节描述的是 access/refresh 双 cookie + go-captcha 的完整重构蓝图,当前实际为单 `x-token` cookie 的可用简化实现,蓝图尚未按原设计全量落地。浏览器自动化**不能**用"向用户索取 token 注入 localStorage"的老办法,维持登录态走 Playwright 的 `storageState` 复用 / `context.addCookies` 注入后端下发的 cookie,或在自动化浏览器里走真实登录(用户名+密码+验证码);详见该文档
 - 浏览器自动化能力当前环境不具备时,**主动建议用户安装**(按该文档「环境前置」一节的话术给出推荐项,首选 Playwright),经用户确认后再装,不要不问就装;用户拒绝则回退为"给出人工目测清单"
 - 需要覆盖登录链路本身(验证码/锁定)时,用「系统设置 → 安全配置」的验证码阈值临时直登,测完改回
 - cookie / storageState 是真实凭证:缓存只能落 `.local/`(已 gitignore),不写入任何会提交的文件、不出现在截图/日志/commit 信息里;点触造成的破坏性数据操作先征得用户同意
