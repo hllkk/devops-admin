@@ -69,7 +69,7 @@ hua-wei-obs:
     access-key: you-access-key
     secret-key: you-secret-key
 jwt:
-    signing-key: 35fd896d-e1e9-4020-a6e9-a2fb66e7c42a
+    signing-key: 769cb8fc-0eca-4512-aa38-13a8de8430ce
     expires-time: 7d
     buffer-time: 1d
     issuer: devops-admin
@@ -229,9 +229,6 @@ system:
     use-strict-auth: false
     disable-auto-migrate: false
     worker-id: 1
-    # 受信任反代 CIDR 列表:ClientIP() 从 X-Forwarded-For 取值时仅信任这些来源。
-    # 直连暴露(无反代)留空;反代场景必须配置,否则 c.ClientIP() 永远等于反代 IP,限流/日志失真。
-    # 示例:["127.0.0.1/32","10.0.0.0/8","172.16.0.0/12"]
     trusted-proxies: []
 tencent-cos:
     bucket: xxxxx-10005608

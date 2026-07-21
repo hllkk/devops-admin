@@ -15,7 +15,7 @@ import (
 //   - 登录链路(captcha/限流中间件/失败锁定/密码过期/密码复杂度校验)同样读这张表
 type SysSecurityConfig struct {
 	global.OPS_MODEL
-	// 验证码(登录链路验证码生成用,前端 general 段的 verifyCode* 落在 SysGeneralConfig)
+	// 验证码(登录链路验证码生成用,前端「安全配置-验证码」tab 直接消费本段)
 	CaptchaEnabled   bool   `json:"captchaEnabled" gorm:"default:true;comment:验证码总开关"`
 	CaptchaType      string `json:"captchaType" gorm:"default:click;comment:验证码类型 image|click|slide|rotate"`
 	CaptchaOpen      int    `json:"captchaOpen" gorm:"default:0;comment:错误N次后出验证码 0=每次都要"`

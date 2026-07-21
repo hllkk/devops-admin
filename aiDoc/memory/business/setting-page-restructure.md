@@ -33,7 +33,12 @@
 ## 仍未做
 
 - /system/setting/public（登录页脱敏 PublicSetting）：验证码字段需整合 Captcha* ↔ verifyCode*，单独设计，本次不做。
-- SysGeneralConfig 仍保留 verifyCode* 字段（model 未动），聚合接口 general 段会返回，前端 mergeConfig 忽略多余字段。
+
+## 字段对齐修复（2026-07-20）
+
+- SysGeneralConfig 移除 6 个 verifyCode* 字段（EnableVerifyCode/VerifyCodeType/VerifyCodeLen/VerifyCodeExp/VerifyCodeTokenExp/VerifyInaccuracy）+ DefaultGeneralConfig 对应赋值；消除 GeneralConfigService.Set 的零值覆盖 bug（前端只传 8 字段，旧 model 多余字段被 Save 用零值覆盖）。
+- 现常规配置前后端 8 字段、安全配置 24 字段均完全对齐（json tag 一一对应）。go build / go vet 通过。
+- 旧库 verifyCode* 列成孤儿列（GORM AutoMigrate 不删列，model 不再映射），无害，可后续手动 DROP COLUMN。
 
 ## 关联
 
