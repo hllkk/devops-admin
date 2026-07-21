@@ -229,7 +229,9 @@ system:
     use-strict-auth: false
     disable-auto-migrate: false
     worker-id: 1
-    trusted-proxies: []
+    trusted-proxies:
+      - "::1/128" # 同机反代(Vite dev proxy / Nginx)走 IPv6 回环连后端
+      - "127.0.0.1/32" # 同机反代走 IPv4 回环连后端
 tencent-cos:
     bucket: xxxxx-10005608
     region: ap-shanghai
