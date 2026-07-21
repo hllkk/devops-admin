@@ -679,7 +679,19 @@ const local: App.I18n.Schema = {
         authOAuthClientSecretPlaceholder: '请输入应用 Client Secret',
         authOAuthCallbackUrl: '回调地址',
         authOAuthCallbackUrlPlaceholder: '请输入 OAuth2 回调地址',
-        authOAuthCallbackUrlTip: '格式：https://your-domain.com/auth/callback/<provider>。请确保已在第三方平台配置此回调地址。'
+        authOAuthCallbackUrlTip: '格式：https://your-domain.com/auth/callback/<provider>。请确保已在第三方平台配置此回调地址。',
+        authWecomCorpId: '企业 ID',
+        authWecomCorpIdPlaceholder: 'Corp ID，如 ww1234567890abcdef',
+        authWecomAgentId: '应用 AgentId',
+        authWecomAgentIdPlaceholder: '请输入应用 AgentId',
+        authWecomDomainVerifyTitle: '⚠️ 可信域名校验',
+        authWecomDomainVerifyTip1: '1. 用于企业微信自建应用"网页授权及JS-SDK"中可信域名校验。',
+        authWecomDomainVerifyTip2: '2. 填写文件名与内容后，系统自动响应 /WW_verify_*.txt，无需手动放置文件或重新构建前端。',
+        authWecomDomainVerifyTip3: '3. 验证通过后可清空此处配置。',
+        authWecomDomainFileName: '文件名',
+        authWecomDomainFileNamePlaceholder: '如 WW_verify_xxxx.txt',
+        authWecomDomainFileContent: '文件内容',
+        authWecomDomainFileContentPlaceholder: '请输入可信域名文件内容'
       },
       role: {
         title: '角色管理',

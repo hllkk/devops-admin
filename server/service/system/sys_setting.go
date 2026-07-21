@@ -3,6 +3,7 @@ package system
 import (
 	"context"
 
+	"github.com/hllkk/devops-admin/server/model/system"
 	systemReq "github.com/hllkk/devops-admin/server/model/system/request"
 )
 
@@ -98,4 +99,9 @@ func (s *SettingService) GetPublic(ctx context.Context) systemReq.PublicSetting 
 		GithubEnabled:     auth.GithubEnabled,
 		DingtalkEnabled:   auth.DingtalkEnabled,
 	}
+}
+
+// CurrentAuth 返回当前认证配置(从内存缓存读取，用于热路径如可信域名校验)
+func (s *SettingService) CurrentAuth(ctx context.Context) system.SysAuthConfig {
+	return (&AuthConfigService{}).Current(ctx)
 }

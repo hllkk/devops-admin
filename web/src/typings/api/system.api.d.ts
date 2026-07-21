@@ -615,9 +615,13 @@ declare namespace Api {
       resetPwdEnabled: boolean;
       /** 企业微信 */
       wecomEnabled: boolean;
+      wecomCorpId: string;
+      wecomAgentId: number;
       wecomClientId: string;
       wecomClientSecret: string;
       wecomCallbackUrl: string;
+      wecomDomainFileName: string;
+      wecomDomainFileContent: string;
       /** 微信开放平台 */
       wechatEnabled: boolean;
       wechatClientId: string;

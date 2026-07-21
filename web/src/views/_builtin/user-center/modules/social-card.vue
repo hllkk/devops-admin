@@ -1,6 +1,7 @@
 <script lang="ts" setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useLoading } from '@sa/hooks';
+import { useThemeStore } from '@/store/modules/theme';
 import { fetchSocialAuthBinding, fetchSocialAuthUnbinding, fetchSocialList } from '@/service/api/system';
 
 defineOptions({
@@ -40,19 +41,18 @@ async function unbindSsoAccount(socialId: CommonType.IdType) {
   endBtnLoading();
 }
 
-const socialSources: {
-  key: Api.System.SocialSource;
-  icon?: string;
-  localIcon?: string;
-  color: string;
-  name: string;
-}[] = [
-  { key: 'wechat_open', icon: 'ic:outline-wechat', color: '#44b549', name: '微信' },
-  { key: 'topiam', localIcon: 'topiam', color: '', name: 'TopIAM' },
-  { key: 'maxkey', localIcon: 'maxkey', color: '', name: 'MaxKey' },
-  { key: 'gitee', icon: 'simple-icons:gitee', color: '#c71d23', name: 'Gitee' },
-  { key: 'github', icon: 'mdi:github', color: '#010409', name: 'GitHub' }
-];
+const themeStore = useThemeStore();
+
+const socialSources = computed(() => {
+  const githubColor = themeStore.darkMode ? '#ffffff' : '#010409';
+  return [
+    { key: 'wechat_open' as Api.System.SocialSource, icon: 'ic:outline-wechat', color: '#44b549', name: '微信' },
+    { key: 'topiam' as Api.System.SocialSource, localIcon: 'topiam', color: '', name: 'TopIAM' },
+    { key: 'maxkey' as Api.System.SocialSource, localIcon: 'maxkey', color: '', name: 'MaxKey' },
+    { key: 'gitee' as Api.System.SocialSource, icon: 'simple-icons:gitee', color: '#c71d23', name: 'Gitee' },
+    { key: 'github' as Api.System.SocialSource, icon: 'mdi:github', color: githubColor, name: 'GitHub' }
+  ];
+});
 
 getSsoUserList();
 

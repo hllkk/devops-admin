@@ -31,11 +31,19 @@ const configModel = defineModel<Api.System.AuthSettingConfig>('config', { requir
           <NSwitch v-model:value="configModel.wecomEnabled" />
         </NFormItem>
         <template v-if="configModel.wecomEnabled">
-          <NFormItem :label="$t('page.system.setting.authOAuthClientId')" path="wecomClientId">
+          <NFormItem :label="$t('page.system.setting.authWecomCorpId')" path="wecomCorpId">
             <NInput
-              v-model:value="configModel.wecomClientId"
-              :placeholder="$t('page.system.setting.authOAuthClientIdPlaceholder')"
+              v-model:value="configModel.wecomCorpId"
+              :placeholder="$t('page.system.setting.authWecomCorpIdPlaceholder')"
               class="max-w-400px"
+            />
+          </NFormItem>
+          <NFormItem :label="$t('page.system.setting.authWecomAgentId')" path="wecomAgentId">
+            <NInputNumber
+              v-model:value="configModel.wecomAgentId"
+              :placeholder="$t('page.system.setting.authWecomAgentIdPlaceholder')"
+              class="max-w-400px"
+              :show-button="false"
             />
           </NFormItem>
           <NFormItem :label="$t('page.system.setting.authOAuthClientSecret')" path="wecomClientSecret">
@@ -56,6 +64,30 @@ const configModel = defineModel<Api.System.AuthSettingConfig>('config', { requir
               <span class="text-12px color-gray-400">{{ $t('page.system.setting.authOAuthCallbackUrlTip') }}</span>
             </div>
           </NFormItem>
+
+          <NCollapse class="mt-16px">
+            <NCollapseItem :title="$t('page.system.setting.authWecomDomainVerifyTitle')" name="domain">
+              <NAlert type="warning" :show-icon="false" class="mb-16px">
+                <div>{{ $t('page.system.setting.authWecomDomainVerifyTip1') }}</div>
+                <div>{{ $t('page.system.setting.authWecomDomainVerifyTip2') }}</div>
+                <div>{{ $t('page.system.setting.authWecomDomainVerifyTip3') }}</div>
+              </NAlert>
+              <NFormItem :label="$t('page.system.setting.authWecomDomainFileName')" path="wecomDomainFileName">
+                <NInput
+                  v-model:value="configModel.wecomDomainFileName"
+                  :placeholder="$t('page.system.setting.authWecomDomainFileNamePlaceholder')"
+                  class="max-w-400px"
+                />
+              </NFormItem>
+              <NFormItem :label="$t('page.system.setting.authWecomDomainFileContent')" path="wecomDomainFileContent">
+                <NInput
+                  v-model:value="configModel.wecomDomainFileContent"
+                  :placeholder="$t('page.system.setting.authWecomDomainFileContentPlaceholder')"
+                  class="max-w-400px"
+                />
+              </NFormItem>
+            </NCollapseItem>
+          </NCollapse>
         </template>
       </NForm>
     </NTabPane>

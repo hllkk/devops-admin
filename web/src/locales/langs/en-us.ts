@@ -683,7 +683,19 @@ const local: App.I18n.Schema = {
         authOAuthClientSecretPlaceholder: 'Enter application Client Secret',
         authOAuthCallbackUrl: 'Callback URL',
         authOAuthCallbackUrlPlaceholder: 'Enter OAuth2 callback URL',
-        authOAuthCallbackUrlTip: 'Format: https://your-domain.com/auth/callback/<provider>. Make sure this URL is configured in the third-party platform.'
+        authOAuthCallbackUrlTip: 'Format: https://your-domain.com/auth/callback/<provider>. Make sure this URL is configured in the third-party platform.',
+        authWecomCorpId: 'Corp ID',
+        authWecomCorpIdPlaceholder: 'Corp ID, e.g. ww1234567890abcdef',
+        authWecomAgentId: 'Agent ID',
+        authWecomAgentIdPlaceholder: 'Enter application Agent ID',
+        authWecomDomainVerifyTitle: '⚠️ Trusted Domain Verification',
+        authWecomDomainVerifyTip1: '1. Used for WeCom self-built app "Web Authorization & JS-SDK" trusted domain verification.',
+        authWecomDomainVerifyTip2: '2. After filling in the file name and content, the system automatically responds to /WW_verify_*.txt — no manual file placement or frontend rebuild needed.',
+        authWecomDomainVerifyTip3: '3. You may clear this configuration after verification passes.',
+        authWecomDomainFileName: 'File Name',
+        authWecomDomainFileNamePlaceholder: 'e.g. WW_verify_xxxx.txt',
+        authWecomDomainFileContent: 'File Content',
+        authWecomDomainFileContentPlaceholder: 'Enter trusted domain verification file content'
       },
       role: {
         title: 'Role Management',

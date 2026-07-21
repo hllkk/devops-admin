@@ -16,10 +16,14 @@ type SysAuthConfig struct {
 	RegisterEnabled  bool `json:"registerEnabled" gorm:"default:false;comment:是否开放注册"`
 	ResetPwdEnabled  bool `json:"resetPwdEnabled" gorm:"default:false;comment:是否开放找回密码"`
 	// 企业微信
-	WecomEnabled      bool   `json:"wecomEnabled" gorm:"default:false;comment:企业微信登录开关"`
-	WecomClientId     string `json:"wecomClientId" gorm:"comment:企业微信 ClientId/CorpId"`
-	WecomClientSecret string `json:"wecomClientSecret" gorm:"comment:企业微信 ClientSecret/CorpSecret"`
-	WecomCallbackUrl  string `json:"wecomCallbackUrl" gorm:"comment:企业微信 OAuth2 回调地址"`
+	WecomEnabled           bool   `json:"wecomEnabled" gorm:"default:false;comment:企业微信登录开关"`
+	WecomCorpId            string `json:"wecomCorpId" gorm:"comment:企业微信 CorpId（企业ID）"`
+	WecomAgentId           int    `json:"wecomAgentId" gorm:"default:0;comment:企业微信应用 AgentId"`
+	WecomClientId          string `json:"wecomClientId" gorm:"comment:企业微信 ClientId/CorpId"`
+	WecomClientSecret      string `json:"wecomClientSecret" gorm:"comment:企业微信 ClientSecret/CorpSecret（应用 Secret）"`
+	WecomCallbackUrl       string `json:"wecomCallbackUrl" gorm:"comment:企业微信 OAuth2 回调地址"`
+	WecomDomainFileName    string `json:"wecomDomainFileName" gorm:"comment:企业微信可信域名校验文件名(WW_verify_*.txt)"`
+	WecomDomainFileContent string `json:"wecomDomainFileContent" gorm:"comment:企业微信可信域名校验文件内容"`
 	// 微信开放平台
 	WechatEnabled      bool   `json:"wechatEnabled" gorm:"default:false;comment:微信开放平台登录开关"`
 	WechatClientId     string `json:"wechatClientId" gorm:"comment:微信开放平台 AppId"`

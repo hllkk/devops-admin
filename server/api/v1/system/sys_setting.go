@@ -1,6 +1,8 @@
 package system
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/hllkk/devops-admin/server/model/common/response"
 	"github.com/hllkk/devops-admin/server/model/system"
@@ -89,4 +91,23 @@ func (s *SettingApi) TestEmail(c *gin.Context) {
 		return
 	}
 	response.OkWithDetailed(true, "测试邮件发送成功", c)
+}
+
+// WecomDomainVerify 企业微信可信域名校验：响应 /WW_verify_*.txt 请求。
+// 企业微信会请求 http://your-domain/WW_verify_xxxx.txt 验证域名所有权，
+// 文件名与内容由管理员在认证配置中填写，系统从 DB 读取并自动响应，无需手动放置文件。
+func (s *SettingApi) WecomDomainVerify(c *gin.Context) {
+	name := c.Param("name")
+	filename := "WW_verify_" + name + ".txt"
+
+	cfg := settingService.CurrentAuth(c.Request.Context())
+	if cfg.WecomDomainFileName == "" || cfg.WecomDomainFileContent == "" {
+		c.String(http.StatusNotFound, "not found")
+		return
+	}
+	if cfg.WecomDomainFileName != filename {
+		c.String(http.StatusNotFound, "not found")
+		return
+	}
+	c.String(http.StatusOK, cfg.WecomDomainFileContent)
 }
