@@ -20,7 +20,7 @@ type SysLdapConfig struct {
 	BindDN  string `json:"bindDN" gorm:"comment:管理员绑定DN"`
 	BindPass string `json:"bindPass" gorm:"comment:管理员绑定密码"`
 	BaseDN  string `json:"baseDN" gorm:"comment:用户搜索BaseDN"`
-	Filter  string `json:"filter" gorm:"default:(uid=%s);comment:用户过滤器 %%s 认证时替换为登录用户名"`
+	Filter  string `json:"filter" gorm:"comment:用户过滤器 %%s 认证时替换为登录用户名"`
 	// 属性映射
 	AttrUsername string `json:"attrUsername" gorm:"default:uid;comment:用户名属性"`
 	AttrNickname string `json:"attrNickname" gorm:"default:cn;comment:昵称属性"`
