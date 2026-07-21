@@ -14,12 +14,6 @@ func Reload() error {
 		logger.Bg().Mod("system").Err(err).Error("重新读取配置文件失败!")
 		return err
 	}
-	// ReadInConfig 后必须 Unmarshal 刷新内存(修复历史 bug:只读不刷),再应用 env 覆盖与安全校验
-	if err := global.OPS_VP.Unmarshal(&global.OPS_CONFIG); err != nil {
-		logger.Bg().Mod("system").Err(err).Error("重新 Unmarshal 配置失败!")
-		return err
-	}
-	global.ApplySensitiveEnvAndValidate()
 
 	// 重新初始化数据库连接
 	if global.OPS_DB != nil {

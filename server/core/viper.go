@@ -31,14 +31,11 @@ func Viper() *viper.Viper {
 		fmt.Println("config file changed:", e.Name)
 		if err = v.Unmarshal(&global.OPS_CONFIG); err != nil {
 			fmt.Println(err)
-			return
 		}
-		global.ApplySensitiveEnvAndValidate() // 热更新也应用 env 覆盖 + 校验,防 yaml 改回泄露值
 	})
 	if err = v.Unmarshal(&global.OPS_CONFIG); err != nil {
 		panic(fmt.Errorf("fatal error unmarshal config: %w", err))
 	}
-	global.ApplySensitiveEnvAndValidate()
 
 	// root 适配性 根据root位置去找到对应迁移位置,保证root路径有效
 	global.OPS_CONFIG.AutoCode.Root, _ = filepath.Abs("..")
