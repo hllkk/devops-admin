@@ -229,6 +229,10 @@ system:
     use-strict-auth: false
     disable-auto-migrate: false
     worker-id: 1
+    # 受信任反代 CIDR 列表:ClientIP() 从 X-Forwarded-For 取值时仅信任这些来源。
+    # 直连暴露(无反代)留空;反代场景必须配置,否则 c.ClientIP() 永远等于反代 IP,限流/日志失真。
+    # 示例:["127.0.0.1/32","10.0.0.0/8","172.16.0.0/12"]
+    trusted-proxies: []
 tencent-cos:
     bucket: xxxxx-10005608
     region: ap-shanghai

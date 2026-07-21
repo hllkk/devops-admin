@@ -1,6 +1,7 @@
 package initialize
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 
@@ -37,6 +38,12 @@ func (fs justFilesFilesystem) Open(name string) (http.File, error) {
 
 func Routers() *gin.Engine {
 	Router := gin.New()
+	// SetTrustedProxies:ClientIP() 解析 X-Forwarded-For 时仅信任此处配置的反代 CIDR。
+	// 空/nil → 仅信任直连 peer(ClientIP 返回 RemoteAddr,忽略 XFF,最严格);反代部署须显式配置 CIDR,
+	// 否则 ClientIP 全是反代 IP,限流/登录日志/安全锁定 key 失真。须在任何中间件前设置。
+	if err := Router.SetTrustedProxies(global.OPS_CONFIG.System.TrustedProxies); err != nil {
+		panic(fmt.Errorf("SetTrustedProxies 失败: %w", err))
+	}
 	// RequestMeta 必须最先：保证 panic 日志与 X-Request-Id 响应头都带 request_id
 	Router.Use(middleware.RequestMeta())
 	// 使用自定义的 Recovery 中间件，记录 panic 并入库
@@ -109,7 +116,7 @@ func Routers() *gin.Engine {
 		systemRouter.InitLoginLogRouter(PrivateGroup) // 登录日志(/log/loginlog/*)
 		systemRouter.InitOperLogRouter(PrivateGroup)  // 操作日志(/log/operlog/*)
 		systemRouter.InitNoticeRouter(PrivateGroup)   // 通知公告(/system/notice/*)
-		systemRouter.InitSettingRouter(PrivateGroup) // 系统设置(/system/setting GET/PUT)
+		systemRouter.InitSettingRouter(PrivateGroup)  // 系统设置(/system/setting GET/PUT)
 	}
 
 	{
