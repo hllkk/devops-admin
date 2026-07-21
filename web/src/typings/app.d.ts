@@ -792,6 +792,35 @@ declare namespace App {
             tabLdapConnection: string;
             tabLdapAttrMap: string;
             tabLdapUserPolicy: string;
+            // 网盘配置
+            diskMaxUploadSize: string;
+            diskStorageQuota: string;
+            diskAllowedExtensions: string;
+            diskAllowedExtensionsTip: string;
+            diskBlockedExtensions: string;
+            diskBlockedExtensionsTip: string;
+            diskRecycleBinRetentionDays: string;
+            diskUnitMB: string;
+            diskUnitGB: string;
+            diskUnitTB: string;
+            diskName: string;
+            diskNamePlaceholder: string;
+            diskLogo: string;
+            diskLogoPlaceholder: string;
+            diskSectionOnlyOffice: string;
+            diskOnlyOfficeEnabled: string;
+            diskOnlyOfficeServerUrl: string;
+            diskOnlyOfficeServerUrlPlaceholder: string;
+            diskOnlyOfficeServerUrlTip: string;
+            diskOnlyOfficeTokenSecret: string;
+            diskOnlyOfficeTokenSecretPlaceholder: string;
+            diskOnlyOfficeTokenSecretTip: string;
+            diskOnlyOfficeCallbackUrl: string;
+            diskOnlyOfficeCallbackUrlPlaceholder: string;
+            diskOnlyOfficeCallbackUrlTip: string;
+            tabDiskBasic: string;
+            tabDiskDisplay: string;
+            tabDiskOnlyOffice: string;
             // 通知配置
             notifyEmailEnabled: string;
             notifyEmailHost: string;

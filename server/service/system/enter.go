@@ -10,6 +10,7 @@ type ServiceGroup struct {
 	GeneralConfigService
 	LdapConfigService
 	NotifyConfigService
+	DiskConfigService
 	CaptchaService
 	UserService
 	LoginLogService

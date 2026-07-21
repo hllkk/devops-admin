@@ -8,7 +8,7 @@ import (
 
 type SettingService struct{}
 
-// Get 聚合读取 {general, security, ldap, notify}:分别从四张单行配置表读取,拼装为前端 Api.System.Setting
+// Get 聚合读取 {general, security, ldap, disk, notify}:分别从各单行配置表读取,拼装为前端 Api.System.Setting
 func (s *SettingService) Get(ctx context.Context) (systemReq.SettingConfig, error) {
 	general, err := (&GeneralConfigService{}).Get(ctx)
 	if err != nil {
@@ -22,11 +22,15 @@ func (s *SettingService) Get(ctx context.Context) (systemReq.SettingConfig, erro
 	if err != nil {
 		return systemReq.SettingConfig{}, err
 	}
+	disk, err := (&DiskConfigService{}).Get(ctx)
+	if err != nil {
+		return systemReq.SettingConfig{}, err
+	}
 	notify, err := (&NotifyConfigService{}).Get(ctx)
 	if err != nil {
 		return systemReq.SettingConfig{}, err
 	}
-	return systemReq.SettingConfig{General: &general, Security: &security, Ldap: &ldap, Notify: &notify}, nil
+	return systemReq.SettingConfig{General: &general, Security: &security, Ldap: &ldap, Disk: &disk, Notify: &notify}, nil
 }
 
 // Set 聚合保存:按段落非空分发到对应配置表,各自刷内存缓存。
@@ -44,6 +48,11 @@ func (s *SettingService) Set(ctx context.Context, req systemReq.SettingConfig) e
 	}
 	if req.Ldap != nil {
 		if err := (&LdapConfigService{}).Set(ctx, *req.Ldap); err != nil {
+			return err
+		}
+	}
+	if req.Disk != nil {
+		if err := (&DiskConfigService{}).Set(ctx, *req.Disk); err != nil {
 			return err
 		}
 	}

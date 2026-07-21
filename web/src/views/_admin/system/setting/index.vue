@@ -6,6 +6,7 @@ import SettingMenu from './modules/setting-menu.vue';
 import GeneralSetting from './modules/general-setting.vue';
 import SecuritySetting from './modules/security-setting.vue';
 import LdapSetting from './modules/ldap-setting.vue';
+import DiskSetting from './modules/disk-setting.vue';
 import NotifySetting from './modules/notify-setting.vue';
 import { useAuth } from '@/hooks/business/auth';
 import { fetchGetSetting, fetchUpdateSetting } from '@/service/api/system/setting';
@@ -102,6 +103,23 @@ const NOTIFY_DEFAULTS: Api.System.NotifySettingConfig = {
   webhookSecret: ''
 };
 
+/** 网盘配置默认值(对齐后端 DefaultDiskConfig) */
+const DISK_DEFAULTS: Api.System.DiskSettingConfig = {
+  maxUploadSize: 500,
+  maxUploadSizeUnit: 'MB',
+  storageQuota: 10,
+  storageQuotaUnit: 'GB',
+  allowedExtensions: '',
+  blockedExtensions: '',
+  recycleBinRetentionDays: 30,
+  diskName: '',
+  diskLogo: '',
+  onlyOfficeEnabled: false,
+  onlyOfficeServerUrl: '',
+  onlyOfficeTokenSecret: '',
+  onlyOfficeCallbackUrl: ''
+};
+
 const activeKey = ref<SettingKey>('general');
 const isMobile = computed(() => useAppStore().isMobile);
 
@@ -109,11 +127,13 @@ const config = ref<{
   general: Api.System.GeneralSettingConfig;
   security: Api.System.SecuritySettingConfig;
   ldap: Api.System.LdapSettingConfig;
+  disk: Api.System.DiskSettingConfig;
   notify: Api.System.NotifySettingConfig;
 }>({
   general: { ...GENERAL_DEFAULTS },
   security: { ...SECURITY_DEFAULTS },
   ldap: { ...LDAP_DEFAULTS },
+  disk: { ...DISK_DEFAULTS },
   notify: { ...NOTIFY_DEFAULTS }
 });
 
@@ -168,6 +188,7 @@ async function loadConfig() {
   config.value.general = mergeConfig(GENERAL_DEFAULTS, data?.general);
   config.value.security = mergeConfig(SECURITY_DEFAULTS, data?.security);
   config.value.ldap = mergeConfig(LDAP_DEFAULTS, data?.ldap);
+  config.value.disk = mergeConfig(DISK_DEFAULTS, data?.disk);
   config.value.notify = mergeConfig(NOTIFY_DEFAULTS, data?.notify);
 }
 
@@ -177,6 +198,7 @@ async function handleSave() {
     general: { ...config.value.general },
     security: { ...config.value.security },
     ldap: { ...config.value.ldap },
+    disk: { ...config.value.disk },
     notify: { ...config.value.notify }
   });
   if (error) {
@@ -211,6 +233,7 @@ onMounted(() => {
           <GeneralSetting v-if="activeKey === 'general'" v-model:config="config.general" />
           <SecuritySetting v-else-if="activeKey === 'security'" v-model:security-config="config.security" />
           <LdapSetting v-else-if="activeKey === 'ldap'" v-model:config="config.ldap" />
+          <DiskSetting v-else-if="activeKey === 'disk'" v-model:config="config.disk" />
           <NotifySetting v-else-if="activeKey === 'notify'" v-model:config="config.notify" />
         </div>
       </NCard>
@@ -234,6 +257,7 @@ onMounted(() => {
             <GeneralSetting v-if="activeKey === 'general'" v-model:config="config.general" />
             <SecuritySetting v-else-if="activeKey === 'security'" v-model:security-config="config.security" />
             <LdapSetting v-else-if="activeKey === 'ldap'" v-model:config="config.ldap" />
+            <DiskSetting v-else-if="activeKey === 'disk'" v-model:config="config.disk" />
             <NotifySetting v-else-if="activeKey === 'notify'" v-model:config="config.notify" />
           </div>
         </NCard>

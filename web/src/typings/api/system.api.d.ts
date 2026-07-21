@@ -577,11 +577,42 @@ declare namespace Api {
       webhookSecret: string;
     };
 
+    /** 网盘配置：对齐后端 SysDiskConfig */
+    type DiskSettingConfig = {
+      /** 最大上传大小（数值） */
+      maxUploadSize: number;
+      /** 上传大小单位：MB / GB / TB */
+      maxUploadSizeUnit: string;
+      /** 默认存储配额（数值） */
+      storageQuota: number;
+      /** 配额单位：MB / GB / TB */
+      storageQuotaUnit: string;
+      /** 允许上传扩展名（逗号分隔，空=允许全部） */
+      allowedExtensions: string;
+      /** 禁止上传扩展名（逗号分隔，优先级高于允许） */
+      blockedExtensions: string;
+      /** 回收站自动清理天数 */
+      recycleBinRetentionDays: number;
+      /** 网盘名称 */
+      diskName: string;
+      /** Logo URL */
+      diskLogo: string;
+      /** 启用 OnlyOffice */
+      onlyOfficeEnabled: boolean;
+      /** Document Server 地址 */
+      onlyOfficeServerUrl: string;
+      /** JWT 签名密钥 */
+      onlyOfficeTokenSecret: string;
+      /** 回调地址（OnlyOffice 容器可访问的后端地址） */
+      onlyOfficeCallbackUrl: string;
+    };
+
     /** 系统设置：聚合配置（GET/PUT /system/setting 的请求与响应体） */
     type Setting = {
       general?: GeneralSettingConfig;
       security?: SecuritySettingConfig;
       ldap?: LdapSettingConfig;
+      disk?: DiskSettingConfig;
       notify?: NotifySettingConfig;
     };
 

@@ -10,6 +10,7 @@ type SettingConfig struct {
 	General  *system.SysGeneralConfig  `json:"general,omitempty"`
 	Security *system.SysSecurityConfig `json:"security,omitempty"`
 	Ldap     *system.SysLdapConfig     `json:"ldap,omitempty"`
+	Disk     *system.SysDiskConfig     `json:"disk,omitempty"`
 	Notify   *system.SysNotifyConfig   `json:"notify,omitempty"`
 }
 
