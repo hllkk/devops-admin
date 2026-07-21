@@ -69,7 +69,8 @@ hua-wei-obs:
     access-key: you-access-key
     secret-key: you-secret-key
 jwt:
-    signing-key: 35fd896d-e1e9-4020-a6e9-a2fb66e7c42a
+    # 签名密钥:留空走环境变量 OPS_JWT_SIGNING_KEY 覆盖。生产(GIN_MODE=release)启动校验拒绝空值/已泄露值。
+    signing-key: ""
     expires-time: 7d
     buffer-time: 1d
     issuer: devops-admin
