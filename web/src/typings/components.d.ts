@@ -185,6 +185,7 @@ declare global {
   const FileUpload: typeof import('./../components/custom/file-upload.vue')['default']
   const FormTip: typeof import('./../components/custom/form-tip.vue')['default']
   const FullScreen: typeof import('./../components/common/full-screen.vue')['default']
+  const 'IconAntDesign:dingtalkCircleFilled': typeof import('~icons/ant-design/dingtalk-circle-filled')['default']
   const IconAntDesignEnterOutlined: typeof import('~icons/ant-design/enter-outlined')['default']
   const IconAntDesignReloadOutlined: typeof import('~icons/ant-design/reload-outlined')['default']
   const IconAntDesignSettingOutlined: typeof import('~icons/ant-design/setting-outlined')['default']

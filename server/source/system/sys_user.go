@@ -109,7 +109,7 @@ func (i *initUser) InitializeData(ctx context.Context) (next context.Context, er
 			NickName:          "超级管理员",
 			Phonenumber:       "13666666666",
 			Email:             "super@example.com",
-			Avatar:            "https://minio.xlsea.cn/ruoyi/2026/01/30/3021f4d908ff44d6b42f8e8616126734.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20260717T074418Z&X-Amz-SignedHeaders=host&X-Amz-Credential=fCUgpKZtsmLNuaHERD4v%2F20260717%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Expires=120&X-Amz-Signature=d1eacaaa8a06b81f60e8445ee5c224dd75d29297326ce3fc41aca630623973a3",
+			Avatar:            "https://vue3.baiwumm.com/static/image/2024-07/cc9e77ee-cf84-48e8-a9d0-dc3e9d21224c.jpeg",
 			RoleId:            superRoleID, // 主角色(登录链路 claims 用)
 		},
 		{
@@ -120,7 +120,7 @@ func (i *initUser) InitializeData(ctx context.Context) (next context.Context, er
 			NickName:          "系统管理员",
 			Phonenumber:       "13777777777",
 			Email:             "admin@example.com",
-			Avatar:            "https://vue3.baiwumm.com/static/image/2024-07/cc9e77ee-cf84-48e8-a9d0-dc3e9d21224c.jpeg",
+			Avatar:            "https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif?imageView2/1/w/80/h/80",
 			RoleId:            adminRoleID, // 主角色(登录链路 claims 用)
 		},
 		{
@@ -131,7 +131,7 @@ func (i *initUser) InitializeData(ctx context.Context) (next context.Context, er
 			NickName:          "普通用户",
 			Phonenumber:       "13888888888",
 			Email:             "user@example.com",
-			Avatar:            "https://vue3.baiwumm.com/static/image/2024-07/cc9e77ee-cf84-48e8-a9d0-dc3e9d21224c.jpeg",
+			Avatar:            "https://img2.baidu.com/it/u=1978192862,2048448374&fm=253&fmt=auto&app=138&f=JPEG?w=504&h=500",
 			RoleId:            userRoleID, // 主角色(登录链路 claims 用)
 		},
 	}
