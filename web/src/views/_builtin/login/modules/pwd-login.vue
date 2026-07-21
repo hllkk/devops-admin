@@ -225,7 +225,7 @@ async function handleSocialLogin(type: Api.System.SocialSource) {
       </NButton>
       <NButton v-if="systemStore.setting?.githubEnabled" class="flex-1 min-w-100px" @click="handleSocialLogin('github')">
         <template #icon>
-          <icon-mdi-github class="color-#010409" />
+          <icon-mdi-github class="color-#010409 dark:color-white" />
         </template>
         <span class="ml-6px">GitHub</span>
       </NButton>
