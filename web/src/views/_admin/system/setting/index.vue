@@ -16,7 +16,7 @@ const { t } = useI18n();
 const { hasAuth } = useAuth();
 const { loading, startLoading, endLoading } = useLoading();
 
-type SettingKey = 'general' | 'security';
+type SettingKey = 'general' | 'security' | 'ldap' | 'disk' | 'notify' | 'auth';
 
 interface SettingMenuItem {
   key: SettingKey;
@@ -25,14 +25,12 @@ interface SettingMenuItem {
   icon: string;
 }
 
-/** 常规配置默认值(验证码/账户默认/日志清理 的字段后端仍在 SysGeneralConfig,账户默认与日志清理的渲染已迁移至安全配置 tab) */
+/** 常规配置默认值(系统信息 + 日志清理,字段均在 SysGeneralConfig) */
 const GENERAL_DEFAULTS: Api.System.GeneralSettingConfig = {
   systemName: 'devops-admin',
   systemDescription: '企业运维管理平台',
   logoUrl: '',
   faviconUrl: '',
-  userDefaultPassword: '',
-  userDefaultRole: null,
   loginLogRetentionDays: 90,
   operationLogRetentionDays: 90
 };
@@ -88,13 +86,37 @@ const menuItems: SettingMenuItem[] = [
     key: 'general',
     label: t('page.system.setting.general'),
     desc: t('page.system.setting.generalDesc'),
-    icon: 'mdi:cog-outline'
+    icon: 'fluent-emoji:pushpin'
   },
   {
     key: 'security',
     label: t('page.system.setting.security'),
     desc: t('page.system.setting.securityDesc'),
-    icon: 'mdi:shield-check-outline'
+    icon: 'fluent-emoji:locked'
+  },
+  {
+    key: 'ldap',
+    label: t('page.system.setting.ldap'),
+    desc: t('page.system.setting.ldapDesc'),
+    icon: 'fluent-emoji-flat:globe-with-meridians'
+  },
+  {
+    key: 'disk',
+    label: t('page.system.setting.disk'),
+    desc: t('page.system.setting.diskDesc'),
+    icon: 'fluent-emoji-flat:floppy-disk'
+  },
+  {
+    key: 'notify',
+    label: t('page.system.setting.notify'),
+    desc: t('page.system.setting.notifyDesc'),
+    icon: 'fluent-emoji-flat:loudspeaker'
+  },
+  {
+    key: 'auth',
+    label: t('page.system.setting.auth'),
+    desc: t('page.system.setting.authDesc'),
+    icon: 'fluent-emoji-flat:key'
   }
 ];
 
@@ -146,7 +168,7 @@ onMounted(() => {
         </div>
         <div class="overflow-auto setting-mobile-content">
           <GeneralSetting v-if="activeKey === 'general'" v-model:config="config.general" />
-          <SecuritySetting v-else-if="activeKey === 'security'" v-model:general-config="config.general" v-model:security-config="config.security" />
+          <SecuritySetting v-else-if="activeKey === 'security'" v-model:security-config="config.security" />
         </div>
       </NCard>
     </template>
@@ -167,7 +189,7 @@ onMounted(() => {
           </template>
           <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1">
             <GeneralSetting v-if="activeKey === 'general'" v-model:config="config.general" />
-            <SecuritySetting v-else-if="activeKey === 'security'" v-model:general-config="config.general" v-model:security-config="config.security" />
+            <SecuritySetting v-else-if="activeKey === 'security'" v-model:security-config="config.security" />
           </div>
         </NCard>
       </div>

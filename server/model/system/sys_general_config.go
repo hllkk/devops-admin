@@ -11,8 +11,6 @@ type SysGeneralConfig struct {
 	SystemDescription         string `json:"systemDescription" gorm:"comment:系统描述"`
 	LogoUrl                   string `json:"logoUrl" gorm:"comment:Logo地址"`
 	FaviconUrl                string `json:"faviconUrl" gorm:"comment:Favicon地址"`
-	UserDefaultPassword       string `json:"userDefaultPassword" gorm:"comment:用户默认密码"`
-	UserDefaultRole           string `json:"userDefaultRole" gorm:"comment:用户默认角色"`
 	LoginLogRetentionDays     int    `json:"loginLogRetentionDays" gorm:"default:30;comment:登录日志保留天数"`
 	OperationLogRetentionDays int    `json:"operationLogRetentionDays" gorm:"default:30;comment:操作日志保留天数"`
 }

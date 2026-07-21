@@ -9,3 +9,20 @@ type SettingConfig struct {
 	General  *system.SysGeneralConfig  `json:"general,omitempty"`
 	Security *system.SysSecurityConfig `json:"security,omitempty"`
 }
+
+// PublicSetting 公开系统设置(GET /system/setting/public 响应体,登录页用,免鉴权脱敏)。
+// 只暴露无风险字段:常规配置的系统信息 + 安全配置的验证码段;不含密码策略/IP名单/限流/密码过期等。
+type PublicSetting struct {
+	// 系统信息(sys_general_config)
+	SystemName        string `json:"systemName"`
+	SystemDescription string `json:"systemDescription"`
+	LogoUrl           string `json:"logoUrl"`
+	FaviconUrl        string `json:"faviconUrl"`
+	// 验证码(sys_security_config.Captcha*,登录页验证码渲染用)
+	CaptchaEnabled bool   `json:"captchaEnabled"`
+	CaptchaType    string `json:"captchaType"`
+	CaptchaOpen    int    `json:"captchaOpen"`
+	KeyLong        int    `json:"keyLong"`
+	ImgWidth       int    `json:"imgWidth"`
+	ImgHeight      int    `json:"imgHeight"`
+}

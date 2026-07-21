@@ -24,5 +24,18 @@ const config = defineModel<Api.System.GeneralSettingConfig>('config', { required
         <img v-if="config.faviconUrl" :src="config.faviconUrl" alt="favicon" class="size-32px rounded-4px" />
       </div>
     </NFormItem>
+
+    <!-- 日志清理(字段落在 SysGeneralConfig) -->
+    <NDivider title-placement="left">{{ $t('page.system.setting.tabLog') }}</NDivider>
+    <NFormItem :label="$t('page.system.setting.loginLogRetentionDays')" path="loginLogRetentionDays">
+      <NInputNumber v-model:value="config.loginLogRetentionDays" :min="7" :max="365" class="max-w-200px">
+        <template #suffix>{{ $t('page.system.setting.unitDay') }}</template>
+      </NInputNumber>
+    </NFormItem>
+    <NFormItem :label="$t('page.system.setting.operationLogRetentionDays')" path="operationLogRetentionDays">
+      <NInputNumber v-model:value="config.operationLogRetentionDays" :min="7" :max="365" class="max-w-200px">
+        <template #suffix>{{ $t('page.system.setting.unitDay') }}</template>
+      </NInputNumber>
+    </NFormItem>
   </NForm>
 </template>

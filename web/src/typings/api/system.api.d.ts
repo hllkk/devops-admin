@@ -530,37 +530,31 @@ declare namespace Api {
       // 阶段二扩展：authentication / ldap / notify / disk
     };
 
-    /** 公开系统设置（登录页使用，脱敏） */
+    /** 公开系统设置（登录页使用，免鉴权脱敏：系统信息 + 验证码开关） */
     type PublicSetting = {
+      // 系统信息(sys_general_config)
       systemName: string;
       systemDescription: string;
       logoUrl: string;
       faviconUrl: string;
-      enableVerifyCode: boolean;
-      verifyCodeType?: string;
-      verifyCodeLen?: number;
-      verifyCodeExp?: number;
-      verifyCodeTokenExp?: number;
-      verifyInaccuracy?: number;
-      enableWecom?: boolean;
-      enableWechat?: boolean;
-      enableGitee?: boolean;
-      enableGithub?: boolean;
+      // 验证码(sys_security_config.Captcha*,登录页验证码渲染用)
+      captchaEnabled: boolean;
+      captchaType: string;
+      captchaOpen: number;
+      keyLong: number;
+      imgWidth: number;
+      imgHeight: number;
     };
 
-    /** 通用配置 */
+    /** 通用配置(系统信息 + 日志清理) */
     type GeneralSettingConfig = {
       systemName: string;
       systemDescription: string;
       logoUrl: string;
       faviconUrl: string;
-      /** 用户默认密码:后端落在 SysGeneralConfig,前端在「安全配置-账户默认」tab 渲染 */
-      userDefaultPassword: string;
-      /** 默认角色:后端落在 SysGeneralConfig,前端在「安全配置-账户默认」tab 渲染 */
-      userDefaultRole: string | null;
-      /** 登录日志保留天数:后端落在 SysGeneralConfig,前端在「安全配置-日志清理」tab 渲染 */
+      /** 登录日志保留天数 */
       loginLogRetentionDays: number;
-      /** 操作日志保留天数:后端落在 SysGeneralConfig,前端在「安全配置-日志清理」tab 渲染 */
+      /** 操作日志保留天数 */
       operationLogRetentionDays: number;
     };
 

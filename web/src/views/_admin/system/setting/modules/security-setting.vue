@@ -6,8 +6,6 @@ defineOptions({ name: 'SecuritySetting' });
 
 const { t } = useI18n();
 
-/** 账户默认 / 日志清理 字段后端落在 SysGeneralConfig,仅页面渲染迁移到安全页 */
-const generalConfig = defineModel<Api.System.GeneralSettingConfig>('generalConfig', { required: true });
 const securityConfig = defineModel<Api.System.SecuritySettingConfig>('securityConfig', { required: true });
 
 const captchaTypeOptions = computed(() => [
@@ -175,40 +173,6 @@ const isWhitelistMode = computed(() => securityConfig.value.ipValidationMode ===
             />
           </NFormItem>
         </template>
-      </NForm>
-    </NTabPane>
-
-    <!-- 账户默认 -->
-    <NTabPane name="account" :tab="t('page.system.setting.tabAccount')">
-      <NForm :model="generalConfig" label-placement="left" :label-width="160">
-        <NFormItem :label="$t('page.system.setting.userDefaultPassword')" path="userDefaultPassword">
-          <NInput
-            v-model:value="generalConfig.userDefaultPassword"
-            type="password"
-            show-password-on="click"
-            :placeholder="$t('page.system.setting.userDefaultPassword')"
-            class="max-w-400px"
-          />
-        </NFormItem>
-        <NFormItem :label="$t('page.system.setting.userDefaultRole')" path="userDefaultRole">
-          <NInput v-model:value="generalConfig.userDefaultRole" :placeholder="$t('page.system.setting.userDefaultRole')" class="max-w-400px" />
-        </NFormItem>
-      </NForm>
-    </NTabPane>
-
-    <!-- 日志清理 -->
-    <NTabPane name="log" :tab="t('page.system.setting.tabLog')">
-      <NForm :model="generalConfig" label-placement="left" :label-width="160">
-        <NFormItem :label="$t('page.system.setting.loginLogRetentionDays')" path="loginLogRetentionDays">
-          <NInputNumber v-model:value="generalConfig.loginLogRetentionDays" :min="7" :max="365" class="max-w-200px">
-            <template #suffix>{{ $t('page.system.setting.unitDay') }}</template>
-          </NInputNumber>
-        </NFormItem>
-        <NFormItem :label="$t('page.system.setting.operationLogRetentionDays')" path="operationLogRetentionDays">
-          <NInputNumber v-model:value="generalConfig.operationLogRetentionDays" :min="7" :max="365" class="max-w-200px">
-            <template #suffix>{{ $t('page.system.setting.unitDay') }}</template>
-          </NInputNumber>
-        </NFormItem>
       </NForm>
     </NTabPane>
   </NTabs>

@@ -1,6 +1,17 @@
+<script setup lang="ts">
+import { computed } from 'vue';
+import { useSystemStore } from '@/store/modules/system';
+
+// 常规配置 logoUrl 非空时优先用图片,否则用内置 SVG
+const systemStore = useSystemStore();
+const logoUrl = computed(() => systemStore.setting?.logoUrl);
+</script>
+
 <template>
   <div class="app-logo">
+    <img v-if="logoUrl" :src="logoUrl" alt="logo" class="h-full w-full object-contain" />
     <svg
+      v-else
       width="100%"
       height="100%"
       version="1.1"

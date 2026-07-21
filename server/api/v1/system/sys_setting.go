@@ -47,3 +47,14 @@ func (s *SettingApi) UpdateSetting(c *gin.Context) {
 	}
 	response.OkWithDetailed(true, "保存成功", c)
 }
+
+// GetPublicSetting
+// @Tags      SysSetting
+// @Summary   获取公开系统设置(登录页,免鉴权)
+// @Produce   application/json
+// @Success   200  {object}  response.Response{data=systemReq.PublicSetting,msg=string}
+// @Router    /system/setting/public [get]
+func (s *SettingApi) GetPublicSetting(c *gin.Context) {
+	data := settingService.GetPublic(c.Request.Context())
+	response.OkWithDetailed(data, "获取成功", c)
+}

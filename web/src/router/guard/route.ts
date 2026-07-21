@@ -2,6 +2,7 @@ import type { LocationQueryRaw, RouteLocationNormalized, RouteLocationRaw, Route
 import type { RouteKey, RoutePath } from '@elegant-router/types';
 import { useAuthStore } from '@/store/modules/auth';
 import { useRouteStore } from '@/store/modules/route';
+import { useSystemStore } from '@/store/modules/system';
 
 import { getRouteName } from '@/router/elegant/transform';
 import { fetchCheckDB } from '@/service/api';
@@ -41,6 +42,9 @@ export function resetSystemInitCheck() {
  */
 export function createRouteGuard(router: Router) {
   router.beforeEach(async (to, from) => {
+    // 拉取公开系统配置(免鉴权,幂等,不阻塞导航):登录页与全局品牌的标题/logo/favicon 依赖此数据
+    useSystemStore().init();
+
     const location = await initRoute(to);
 
     if (location) {

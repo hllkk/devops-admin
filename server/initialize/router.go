@@ -116,7 +116,7 @@ func Routers() *gin.Engine {
 		systemRouter.InitLoginLogRouter(PrivateGroup) // 登录日志(/log/loginlog/*)
 		systemRouter.InitOperLogRouter(PrivateGroup)  // 操作日志(/log/operlog/*)
 		systemRouter.InitNoticeRouter(PrivateGroup)   // 通知公告(/system/notice/*)
-		systemRouter.InitSettingRouter(PrivateGroup)  // 系统设置(/system/setting GET/PUT)
+		systemRouter.InitSettingRouter(PrivateGroup, PublicGroup) // 系统设置(/system/setting GET/PUT + /system/setting/public)
 	}
 
 	{
