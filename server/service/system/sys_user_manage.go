@@ -77,6 +77,9 @@ func (s *UserService) Create(ctx context.Context, req systemReq.UserOperateParam
 	if req.Password == "" {
 		return errors.New("密码不能为空")
 	}
+	if err := utils.ValidatePasswordComplexity(req.Password, (&SecurityConfigService{}).Current(ctx)); err != nil {
+		return err
+	}
 	var cnt int64
 	if err := global.OPS_DB.WithContext(ctx).Model(&system.SysUser{}).Where("user_name = ?", req.UserName).Count(&cnt).Error; err != nil {
 		return err
@@ -137,6 +140,9 @@ func (s *UserService) Update(ctx context.Context, req systemReq.UserOperateParam
 	}
 	changePwd := req.Password != ""
 	if changePwd {
+		if err := utils.ValidatePasswordComplexity(req.Password, (&SecurityConfigService{}).Current(ctx)); err != nil {
+			return err
+		}
 		updates["password"] = utils.BcryptHash(req.Password)
 	}
 	roleIds := toInt64Slice(req.RoleIds)
@@ -214,6 +220,9 @@ func (s *UserService) ResetPwd(ctx context.Context, req systemReq.ResetUserPwdPa
 	}
 	if req.Password == "" {
 		return errors.New("密码不能为空")
+	}
+	if err := utils.ValidatePasswordComplexity(req.Password, (&SecurityConfigService{}).Current(ctx)); err != nil {
+		return err
 	}
 	return global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Model(&system.SysUser{}).Where("id = ?", userId).
