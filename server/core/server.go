@@ -33,6 +33,7 @@ func RunServer() {
 	if global.OPS_DB != nil {
 		system.LoadAll(context.Background())
 		(&system.SecurityConfigService{}).LoadAll(context.Background())
+		(&system.GeneralConfigService{}).LoadAll(context.Background())
 	}
 
 	Router := initialize.Routers()

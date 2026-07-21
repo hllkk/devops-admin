@@ -23,10 +23,17 @@
 - IP 校验：**新增「访问控制」独立 tab**（不并入限流/失败锁定）。
 - 验证码 tab 用后端 Captcha* 段（非 general 的 verifyCode* 平移）。
 
-## 待办（本次未做）
+## 后端聚合接口落地（2026-07-20，方案 A）
 
-- 后端 /system/setting 聚合接口（GET/PUT）尚未实现，前端 fetchGetSetting/fetchUpdateSetting 当前会 404；后端实现时 service 需整合 SysGeneralConfig + SysSecurityConfig → 前端 { general, security }，注意：账户默认/日志清理字段属 SysGeneralConfig、验证码字段属 SysSecurityConfig。
-- 后端 sys_security_config.go 注释"Captcha*/Limit*/PwdExpire* 前端不直接消费"已过时（前端现已消费），注释待订正。
+- 新增 GeneralConfigService（Get/Set/Current/LoadAll + atomic 缓存 + DefaultGeneralConfig 兜底首行），对齐 SecurityConfigService 形态；core/server.go 启动加载。
+- 新增薄 SettingService 聚合层（Get 读两表拼 {general,security}、Set 按段非空分发两表各自刷缓存；非跨表事务）。
+- 新增 SettingApi（GetSetting/UpdateSetting）+ SettingRouter（挂 PrivateGroup，GET/PUT /system/setting）；注册到三处 enter.go + initialize/router.go 调用；request DTO model/system/request/sys_setting.go（SettingConfig）。
+- 订正 sys_security_config.go 注释（Captcha*/Limit*/PwdExpire* 前端现已消费）。go build / go vet 通过，前端 fetchGetSetting/fetchUpdateSetting 现可对接。
+
+## 仍未做
+
+- /system/setting/public（登录页脱敏 PublicSetting）：验证码字段需整合 Captcha* ↔ verifyCode*，单独设计，本次不做。
+- SysGeneralConfig 仍保留 verifyCode* 字段（model 未动），聚合接口 general 段会返回，前端 mergeConfig 忽略多余字段。
 
 ## 关联
 

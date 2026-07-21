@@ -14,6 +14,7 @@ type ApiGroup struct {
 	LoginLogApi
 	OperLogApi
 	NoticeApi
+	SettingApi
 }
 
 var (
@@ -30,4 +31,5 @@ var (
 	roleService           = service.ServiceGroupApp.SystemServiceGroup.RoleService
 	operLogService        = service.ServiceGroupApp.SystemServiceGroup.SysOperLogService
 	noticeService         = service.ServiceGroupApp.SystemServiceGroup.NoticeService
+	settingService        = service.ServiceGroupApp.SystemServiceGroup.SettingService
 )

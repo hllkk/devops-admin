@@ -7,6 +7,7 @@ type ServiceGroup struct {
 	DataScopeService
 	InitDBService
 	SecurityConfigService
+	GeneralConfigService
 	CaptchaService
 	UserService
 	LoginLogService
@@ -17,4 +18,5 @@ type ServiceGroup struct {
 	MenuService
 	RoleService
 	NoticeService
+	SettingService
 }

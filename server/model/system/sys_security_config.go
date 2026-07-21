@@ -10,9 +10,9 @@ import (
 // SysSecurityConfig 安全配置(单行表 固定 id=1 启动加载入内存缓存 保存即热更新;对齐前端 SecuritySettingConfig)
 //
 // 字段对齐策略:
-//   - 密码策略/登录失败锁定/IP 校验 段的 json tag 严格对齐前端 SecuritySettingConfig
-//   - Captcha*/Limit*/PwdExpire* 段保留供登录链路(验证码生成/限流/密码过期)使用,前端不直接消费;
-//     前端 GeneralSettingConfig 的 verifyCode* 验证码配置落在 SysGeneralConfig,二者关系由 setting service 整合
+//   - 六段(验证码 Captcha*/密码复杂度 Password*/失败锁定 LoginFailLock*/访问控制 IpValidation*/限流 Limit*/密码过期 PwdExpire*)
+//     的 json tag 均对齐前端 SecuritySettingConfig,前端「安全配置」页 8 个 tab 直接消费
+//   - 登录链路(captcha/限流中间件/失败锁定/密码过期/密码复杂度校验)同样读这张表
 type SysSecurityConfig struct {
 	global.OPS_MODEL
 	// 验证码(登录链路验证码生成用,前端 general 段的 verifyCode* 落在 SysGeneralConfig)

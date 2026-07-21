@@ -16,6 +16,7 @@ type RouterGroup struct {
 	LoginLogRouter
 	OperLogRouter
 	NoticeRouter
+	SettingRouter
 }
 
 var (
@@ -30,4 +31,5 @@ var (
 	loginLogApi = v1.ApiGroupApp.SystemApiGroup.LoginLogApi
 	operLogApi  = v1.ApiGroupApp.SystemApiGroup.OperLogApi
 	noticeApi   = v1.ApiGroupApp.SystemApiGroup.NoticeApi
+	settingApi  = v1.ApiGroupApp.SystemApiGroup.SettingApi
 )
