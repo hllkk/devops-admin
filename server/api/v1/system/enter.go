@@ -20,6 +20,7 @@ type ApiGroup struct {
 var (
 	initDBService         = service.ServiceGroupApp.SystemServiceGroup.InitDBService
 	securityConfigService = service.ServiceGroupApp.SystemServiceGroup.SecurityConfigService
+	ldapConfigService     = service.ServiceGroupApp.SystemServiceGroup.LdapConfigService
 	userService           = service.ServiceGroupApp.SystemServiceGroup.UserService
 	loginLogService       = service.ServiceGroupApp.SystemServiceGroup.LoginLogService
 	captchaService        = service.ServiceGroupApp.SystemServiceGroup.CaptchaService

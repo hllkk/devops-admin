@@ -34,6 +34,7 @@ func RunServer() {
 		system.LoadAll(context.Background())
 		(&system.SecurityConfigService{}).LoadAll(context.Background())
 		(&system.GeneralConfigService{}).LoadAll(context.Background())
+		(&system.LdapConfigService{}).LoadAll(context.Background())
 	}
 
 	Router := initialize.Routers()

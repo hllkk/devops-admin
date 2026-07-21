@@ -5,6 +5,7 @@ import { useLoading } from '@sa/hooks';
 import SettingMenu from './modules/setting-menu.vue';
 import GeneralSetting from './modules/general-setting.vue';
 import SecuritySetting from './modules/security-setting.vue';
+import LdapSetting from './modules/ldap-setting.vue';
 import { useAuth } from '@/hooks/business/auth';
 import { fetchGetSetting, fetchUpdateSetting } from '@/service/api/system/setting';
 import { useAppStore } from '@/store/modules/app/index.js';
@@ -69,15 +70,33 @@ const SECURITY_DEFAULTS: Api.System.SecuritySettingConfig = {
   pwdExpireDays: 90
 };
 
+/** LDAP 配置默认值(对齐后端 DefaultLdapConfig) */
+const LDAP_DEFAULTS: Api.System.LdapSettingConfig = {
+  enabled: false,
+  host: 'localhost',
+  port: 389,
+  useSSL: false,
+  bindDN: '',
+  bindPass: '',
+  baseDN: '',
+  filter: '(uid=%s)',
+  attrUsername: 'uid',
+  attrNickname: 'cn',
+  attrEmail: 'mail',
+  autoCreate: false
+};
+
 const activeKey = ref<SettingKey>('general');
 const isMobile = computed(() => useAppStore().isMobile);
 
 const config = ref<{
   general: Api.System.GeneralSettingConfig;
   security: Api.System.SecuritySettingConfig;
+  ldap: Api.System.LdapSettingConfig;
 }>({
   general: { ...GENERAL_DEFAULTS },
-  security: { ...SECURITY_DEFAULTS }
+  security: { ...SECURITY_DEFAULTS },
+  ldap: { ...LDAP_DEFAULTS }
 });
 
 /** 菜单项统一定义，同时传给 setting-menu 和 currentTitle。computed 确保切换语言时标签/描述联动更新 */
@@ -130,13 +149,15 @@ async function loadConfig() {
   }
   config.value.general = mergeConfig(GENERAL_DEFAULTS, data?.general);
   config.value.security = mergeConfig(SECURITY_DEFAULTS, data?.security);
+  config.value.ldap = mergeConfig(LDAP_DEFAULTS, data?.ldap);
 }
 
 async function handleSave() {
   startLoading();
   const { error } = await fetchUpdateSetting({
     general: { ...config.value.general },
-    security: { ...config.value.security }
+    security: { ...config.value.security },
+    ldap: { ...config.value.ldap }
   });
   if (error) {
     window.$message?.error(t('page.system.setting.saveFail'));
@@ -169,6 +190,7 @@ onMounted(() => {
         <div class="overflow-auto setting-mobile-content">
           <GeneralSetting v-if="activeKey === 'general'" v-model:config="config.general" />
           <SecuritySetting v-else-if="activeKey === 'security'" v-model:security-config="config.security" />
+          <LdapSetting v-else-if="activeKey === 'ldap'" v-model:config="config.ldap" />
         </div>
       </NCard>
     </template>
@@ -190,6 +212,7 @@ onMounted(() => {
           <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1">
             <GeneralSetting v-if="activeKey === 'general'" v-model:config="config.general" />
             <SecuritySetting v-else-if="activeKey === 'security'" v-model:security-config="config.security" />
+            <LdapSetting v-else-if="activeKey === 'ldap'" v-model:config="config.ldap" />
           </div>
         </NCard>
       </div>

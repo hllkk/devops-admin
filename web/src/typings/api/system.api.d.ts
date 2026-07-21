@@ -523,11 +523,40 @@ declare namespace Api {
       createByName: string;
     }>;
 
+    /** LDAP 配置：对齐后端 SysLdapConfig */
+    type LdapSettingConfig = {
+      /** 是否启用 LDAP */
+      enabled: boolean;
+      /** 服务器地址 */
+      host: string;
+      /** 端口 */
+      port: number;
+      /** 是否 LDAPS */
+      useSSL: boolean;
+      /** 管理员绑定 DN */
+      bindDN: string;
+      /** 管理员绑定密码 */
+      bindPass: string;
+      /** 搜索 Base DN */
+      baseDN: string;
+      /** 用户过滤器，%s 替换为登录用户名 */
+      filter: string;
+      /** 用户名属性 */
+      attrUsername: string;
+      /** 昵称属性 */
+      attrNickname: string;
+      /** 邮箱属性 */
+      attrEmail: string;
+      /** 自动创建本地用户 */
+      autoCreate: boolean;
+    };
+
     /** 系统设置：聚合配置（GET/PUT /system/setting 的请求与响应体） */
     type Setting = {
       general?: GeneralSettingConfig;
       security?: SecuritySettingConfig;
-      // 阶段二扩展：authentication / ldap / notify / disk
+      ldap?: LdapSettingConfig;
+      // 阶段二扩展：notify / disk
     };
 
     /** 公开系统设置（登录页使用，免鉴权脱敏：系统信息 + 验证码开关） */
