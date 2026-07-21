@@ -11,6 +11,7 @@ type ServiceGroup struct {
 	LdapConfigService
 	NotifyConfigService
 	DiskConfigService
+	AuthConfigService
 	CaptchaService
 	UserService
 	LoginLogService

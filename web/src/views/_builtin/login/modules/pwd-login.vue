@@ -7,6 +7,7 @@ import 'go-captcha-vue/dist/style.css';
 import { fetchCaptcha } from '@/service/api';
 import { fetchSocialAuthBinding } from '@/service/api/system';
 import { useAuthStore } from '@/store/modules/auth';
+import { useSystemStore } from '@/store/modules/system';
 import { useRouterPush } from '@/hooks/common/router';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
 import { localStg } from '@/utils/storage';
@@ -20,11 +21,11 @@ defineOptions({
 });
 
 const authStore = useAuthStore();
+const systemStore = useSystemStore();
 const { toggleLoginModule } = useRouterPush();
 const { formRef, validate } = useNaiveForm();
 const { loading: captchaLoading, startLoading: startCaptchaLoading, endLoading: endCaptchaLoading } = useLoading();
 
-const registerEnabled = ref<boolean>(false);
 const remberMe = ref<boolean>(false);
 
 // 仅开发模式预填初始账号便于联调；生产构建（import.meta.env.DEV=false）经死代码消除后为空，避免登录页预填弱口令
@@ -185,35 +186,54 @@ async function handleSocialLogin(type: Api.System.SocialSource) {
       <NSpace vertical :size="12" class="mb-8px">
         <div class="mx-6px mb-8px flex-y-center justify-between">
           <NCheckbox v-model:checked="remberMe" size="large">{{ $t('page.login.pwdLogin.rememberMe') }}</NCheckbox>
-          <NA type="primary" class="text-18px" @click="toggleLoginModule('reset-pwd')">
+          <NA v-if="systemStore.isResetPwdEnabled" type="primary" class="text-18px" @click="toggleLoginModule('reset-pwd')">
             {{ $t('page.login.pwdLogin.forgetPassword') }}
           </NA>
+          <span v-else class="text-18px" /> <!-- 占位保持布局对齐 -->
         </div>
         <NButton type="primary" size="large" block :loading="authStore.loginLoading" @click="handleSubmit">
           {{ captchaEnabled && !captchaVerified ? $t('page.login.captcha.loginWithCaptcha') : $t('common.login') }}
         </NButton>
-        <NButton v-if="registerEnabled" size="large" block @click="toggleLoginModule('register')">
+        <NButton v-if="systemStore.isRegisterEnabled" size="large" block @click="toggleLoginModule('register')">
           {{ $t('page.login.common.register') }}
         </NButton>
       </NSpace>
     </NForm>
 
-    <NDivider>
+    <NDivider v-if="systemStore.hasAnyThirdPartyLogin">
       <div class="color-#858585">{{ $t('page.login.pwdLogin.otherAccountLogin') }}</div>
     </NDivider>
 
-    <div class="w-full flex-y-center gap-16px">
-      <NButton class="flex-1" @click="handleSocialLogin('gitee')">
+    <div v-if="systemStore.hasAnyThirdPartyLogin" class="w-full flex flex-wrap justify-center gap-16px">
+      <NButton v-if="systemStore.setting?.wecomEnabled" class="flex-1 min-w-100px" @click="handleSocialLogin('wecom')">
+        <template #icon>
+          <icon-tdesign-logo-wecom class="color-#2B7EF9" />
+        </template>
+        <span class="ml-6px">WeCom</span>
+      </NButton>
+      <NButton v-if="systemStore.setting?.wechatEnabled" class="flex-1 min-w-100px" @click="handleSocialLogin('wechat_open')">
+        <template #icon>
+          <icon-mdi-wechat class="color-#07C160" />
+        </template>
+        <span class="ml-6px">WeChat</span>
+      </NButton>
+      <NButton v-if="systemStore.setting?.giteeEnabled" class="flex-1 min-w-100px" @click="handleSocialLogin('gitee')">
         <template #icon>
           <icon-simple-icons-gitee class="color-#c71d23" />
         </template>
         <span class="ml-6px">Gitee</span>
       </NButton>
-      <NButton class="flex-1" @click="handleSocialLogin('github')">
+      <NButton v-if="systemStore.setting?.githubEnabled" class="flex-1 min-w-100px" @click="handleSocialLogin('github')">
         <template #icon>
           <icon-mdi-github class="color-#010409" />
         </template>
         <span class="ml-6px">GitHub</span>
+      </NButton>
+      <NButton v-if="systemStore.setting?.dingtalkEnabled" class="flex-1 min-w-100px" @click="handleSocialLogin('dingtalk')">
+        <template #icon>
+          <icon-ant-design:dingtalk-circle-filled class="color-#0089FF" />
+        </template>
+        <span class="ml-6px">DingTalk</span>
       </NButton>
     </div>
 

@@ -32,7 +32,7 @@ func (s *SettingApi) GetSetting(c *gin.Context) {
 // @Summary   更新系统设置(管理员)
 // @Accept    application/json
 // @Produce   application/json
-// @Param     data  body  systemReq.SettingConfig  true  "系统设置(general/security/ldap/notify 任一可选)"
+// @Param     data  body  systemReq.SettingConfig  true  "系统设置(general/security/ldap/disk/notify/auth 任一可选)"
 // @Success   200   {object}  response.Response{data=bool,msg=string}
 // @Router    /system/setting [put]
 func (s *SettingApi) UpdateSetting(c *gin.Context) {

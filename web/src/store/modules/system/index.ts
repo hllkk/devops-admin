@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 import { SetupStoreId } from '@/enum';
 import { fetchGetPublicSetting } from '@/service/api/system/setting';
@@ -41,5 +41,16 @@ export const useSystemStore = defineStore(SetupStoreId.System, () => {
     }
   }
 
-  return { setting, init };
+  /** 是否有任意第三方登录已启用 */
+  const hasAnyThirdPartyLogin = computed(() =>
+    Boolean(setting.value?.wecomEnabled || setting.value?.wechatEnabled || setting.value?.giteeEnabled || setting.value?.githubEnabled || setting.value?.dingtalkEnabled)
+  );
+
+  /** 是否开放注册 */
+  const isRegisterEnabled = computed(() => Boolean(setting.value?.registerEnabled));
+
+  /** 是否开放找回密码 */
+  const isResetPwdEnabled = computed(() => Boolean(setting.value?.resetPwdEnabled));
+
+  return { setting, init, hasAnyThirdPartyLogin, isRegisterEnabled, isResetPwdEnabled };
 });

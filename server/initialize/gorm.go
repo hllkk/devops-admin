@@ -61,6 +61,7 @@ func RegisterTables() {
 		system.SysGeneralConfig{},
 		system.SysLdapConfig{},
 		system.SysNotifyConfig{},
+		system.SysAuthConfig{},
 
 		media.MediaUpload{},
 		media.MediaUploadChunk{},

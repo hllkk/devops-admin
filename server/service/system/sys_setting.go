@@ -30,7 +30,11 @@ func (s *SettingService) Get(ctx context.Context) (systemReq.SettingConfig, erro
 	if err != nil {
 		return systemReq.SettingConfig{}, err
 	}
-	return systemReq.SettingConfig{General: &general, Security: &security, Ldap: &ldap, Disk: &disk, Notify: &notify}, nil
+	auth, err := (&AuthConfigService{}).Get(ctx)
+	if err != nil {
+		return systemReq.SettingConfig{}, err
+	}
+	return systemReq.SettingConfig{General: &general, Security: &security, Ldap: &ldap, Disk: &disk, Notify: &notify, Auth: &auth}, nil
 }
 
 // Set 聚合保存:按段落非空分发到对应配置表,各自刷内存缓存。
@@ -61,6 +65,11 @@ func (s *SettingService) Set(ctx context.Context, req systemReq.SettingConfig) e
 			return err
 		}
 	}
+	if req.Auth != nil {
+		if err := (&AuthConfigService{}).Set(ctx, *req.Auth); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -69,6 +78,7 @@ func (s *SettingService) Set(ctx context.Context, req systemReq.SettingConfig) e
 func (s *SettingService) GetPublic(ctx context.Context) systemReq.PublicSetting {
 	general := (&GeneralConfigService{}).Current(ctx)
 	security := (&SecurityConfigService{}).Current(ctx)
+	auth := (&AuthConfigService{}).Current(ctx)
 	return systemReq.PublicSetting{
 		SystemName:        general.SystemName,
 		SystemDescription: general.SystemDescription,
@@ -80,5 +90,12 @@ func (s *SettingService) GetPublic(ctx context.Context) systemReq.PublicSetting 
 		KeyLong:           security.KeyLong,
 		ImgWidth:          security.ImgWidth,
 		ImgHeight:         security.ImgHeight,
+		RegisterEnabled:   auth.RegisterEnabled,
+		ResetPwdEnabled:   auth.ResetPwdEnabled,
+		WecomEnabled:      auth.WecomEnabled,
+		WechatEnabled:     auth.WechatEnabled,
+		GiteeEnabled:      auth.GiteeEnabled,
+		GithubEnabled:     auth.GithubEnabled,
+		DingtalkEnabled:   auth.DingtalkEnabled,
 	}
 }

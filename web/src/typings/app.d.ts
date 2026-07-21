@@ -749,6 +749,7 @@ declare namespace App {
             tabExpire: string;
             tabAccess: string;
             tabAccount: string;
+            tabGeneral: string;
             tabLog: string;
             tabLdap: string;
             tabDisk: string;
@@ -851,6 +852,25 @@ declare namespace App {
             notifyWebhookSecretPlaceholder: string;
             tabNotifyEmail: string;
             tabNotifyWebhook: string;
+            // 认证配置
+            tabAccountFunction: string;
+            tabAuthWecom: string;
+            tabAuthWechat: string;
+            tabAuthGitee: string;
+            tabAuthGithub: string;
+            tabAuthDingtalk: string;
+            authRegisterEnabled: string;
+            authRegisterEnabledTip: string;
+            authResetPwdEnabled: string;
+            authResetPwdEnabledTip: string;
+            authOAuthEnabled: string;
+            authOAuthClientId: string;
+            authOAuthClientIdPlaceholder: string;
+            authOAuthClientSecret: string;
+            authOAuthClientSecretPlaceholder: string;
+            authOAuthCallbackUrl: string;
+            authOAuthCallbackUrlPlaceholder: string;
+            authOAuthCallbackUrlTip: string;
           };
           role: {
             title: string;

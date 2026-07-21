@@ -607,6 +607,39 @@ declare namespace Api {
       onlyOfficeCallbackUrl: string;
     };
 
+    /** 认证配置：第三方登录 OAuth2 + 账号功能，对齐后端 SysAuthConfig */
+    type AuthSettingConfig = {
+      /** 是否开放注册 */
+      registerEnabled: boolean;
+      /** 是否开放找回密码 */
+      resetPwdEnabled: boolean;
+      /** 企业微信 */
+      wecomEnabled: boolean;
+      wecomClientId: string;
+      wecomClientSecret: string;
+      wecomCallbackUrl: string;
+      /** 微信开放平台 */
+      wechatEnabled: boolean;
+      wechatClientId: string;
+      wechatClientSecret: string;
+      wechatCallbackUrl: string;
+      /** Gitee */
+      giteeEnabled: boolean;
+      giteeClientId: string;
+      giteeClientSecret: string;
+      giteeCallbackUrl: string;
+      /** GitHub */
+      githubEnabled: boolean;
+      githubClientId: string;
+      githubClientSecret: string;
+      githubCallbackUrl: string;
+      /** 钉钉 */
+      dingtalkEnabled: boolean;
+      dingtalkClientId: string;
+      dingtalkClientSecret: string;
+      dingtalkCallbackUrl: string;
+    };
+
     /** 系统设置：聚合配置（GET/PUT /system/setting 的请求与响应体） */
     type Setting = {
       general?: GeneralSettingConfig;
@@ -614,6 +647,7 @@ declare namespace Api {
       ldap?: LdapSettingConfig;
       disk?: DiskSettingConfig;
       notify?: NotifySettingConfig;
+      auth?: AuthSettingConfig;
     };
 
     /** 公开系统设置（登录页使用，免鉴权脱敏：系统信息 + 验证码开关） */
@@ -630,6 +664,14 @@ declare namespace Api {
       keyLong: number;
       imgWidth: number;
       imgHeight: number;
+      // 认证公开字段(仅开关，不含密钥)
+      registerEnabled: boolean;
+      resetPwdEnabled: boolean;
+      wecomEnabled: boolean;
+      wechatEnabled: boolean;
+      giteeEnabled: boolean;
+      githubEnabled: boolean;
+      dingtalkEnabled: boolean;
     };
 
     /** 通用配置(系统信息 + 日志清理) */

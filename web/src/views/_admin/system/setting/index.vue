@@ -8,6 +8,7 @@ import SecuritySetting from './modules/security-setting.vue';
 import LdapSetting from './modules/ldap-setting.vue';
 import DiskSetting from './modules/disk-setting.vue';
 import NotifySetting from './modules/notify-setting.vue';
+import AuthSetting from './modules/auth-setting.vue';
 import { useAuth } from '@/hooks/business/auth';
 import { fetchGetSetting, fetchUpdateSetting } from '@/service/api/system/setting';
 import { useAppStore } from '@/store/modules/app/index.js';
@@ -120,6 +121,32 @@ const DISK_DEFAULTS: Api.System.DiskSettingConfig = {
   onlyOfficeCallbackUrl: ''
 };
 
+/** 认证配置默认值(对齐后端 SysAuthConfig) */
+const AUTH_DEFAULTS: Api.System.AuthSettingConfig = {
+  registerEnabled: false,
+  resetPwdEnabled: false,
+  wecomEnabled: false,
+  wecomClientId: '',
+  wecomClientSecret: '',
+  wecomCallbackUrl: '',
+  wechatEnabled: false,
+  wechatClientId: '',
+  wechatClientSecret: '',
+  wechatCallbackUrl: '',
+  giteeEnabled: false,
+  giteeClientId: '',
+  giteeClientSecret: '',
+  giteeCallbackUrl: '',
+  githubEnabled: false,
+  githubClientId: '',
+  githubClientSecret: '',
+  githubCallbackUrl: '',
+  dingtalkEnabled: false,
+  dingtalkClientId: '',
+  dingtalkClientSecret: '',
+  dingtalkCallbackUrl: ''
+};
+
 const activeKey = ref<SettingKey>('general');
 const isMobile = computed(() => useAppStore().isMobile);
 
@@ -129,12 +156,14 @@ const config = ref<{
   ldap: Api.System.LdapSettingConfig;
   disk: Api.System.DiskSettingConfig;
   notify: Api.System.NotifySettingConfig;
+  auth: Api.System.AuthSettingConfig;
 }>({
   general: { ...GENERAL_DEFAULTS },
   security: { ...SECURITY_DEFAULTS },
   ldap: { ...LDAP_DEFAULTS },
   disk: { ...DISK_DEFAULTS },
-  notify: { ...NOTIFY_DEFAULTS }
+  notify: { ...NOTIFY_DEFAULTS },
+  auth: { ...AUTH_DEFAULTS }
 });
 
 /** 菜单项统一定义，同时传给 setting-menu 和 currentTitle。computed 确保切换语言时标签/描述联动更新 */
@@ -190,6 +219,7 @@ async function loadConfig() {
   config.value.ldap = mergeConfig(LDAP_DEFAULTS, data?.ldap);
   config.value.disk = mergeConfig(DISK_DEFAULTS, data?.disk);
   config.value.notify = mergeConfig(NOTIFY_DEFAULTS, data?.notify);
+  config.value.auth = mergeConfig(AUTH_DEFAULTS, data?.auth);
 }
 
 async function handleSave() {
@@ -199,7 +229,8 @@ async function handleSave() {
     security: { ...config.value.security },
     ldap: { ...config.value.ldap },
     disk: { ...config.value.disk },
-    notify: { ...config.value.notify }
+    notify: { ...config.value.notify },
+    auth: { ...config.value.auth }
   });
   if (error) {
     window.$message?.error(t('page.system.setting.saveFail'));
@@ -235,6 +266,7 @@ onMounted(() => {
           <LdapSetting v-else-if="activeKey === 'ldap'" v-model:config="config.ldap" />
           <DiskSetting v-else-if="activeKey === 'disk'" v-model:config="config.disk" />
           <NotifySetting v-else-if="activeKey === 'notify'" v-model:config="config.notify" />
+          <AuthSetting v-else-if="activeKey === 'auth'" v-model:config="config.auth" />
         </div>
       </NCard>
     </template>
@@ -259,6 +291,7 @@ onMounted(() => {
             <LdapSetting v-else-if="activeKey === 'ldap'" v-model:config="config.ldap" />
             <DiskSetting v-else-if="activeKey === 'disk'" v-model:config="config.disk" />
             <NotifySetting v-else-if="activeKey === 'notify'" v-model:config="config.notify" />
+            <AuthSetting v-else-if="activeKey === 'auth'" v-model:config="config.auth" />
           </div>
         </NCard>
       </div>

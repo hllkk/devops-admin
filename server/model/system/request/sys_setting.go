@@ -12,6 +12,7 @@ type SettingConfig struct {
 	Ldap     *system.SysLdapConfig     `json:"ldap,omitempty"`
 	Disk     *system.SysDiskConfig     `json:"disk,omitempty"`
 	Notify   *system.SysNotifyConfig   `json:"notify,omitempty"`
+	Auth     *system.SysAuthConfig     `json:"auth,omitempty"`
 }
 
 // TestEmailReq 测试邮件发送请求(POST /system/setting/notify/test-email)
@@ -41,4 +42,12 @@ type PublicSetting struct {
 	KeyLong        int    `json:"keyLong"`
 	ImgWidth       int    `json:"imgWidth"`
 	ImgHeight      int    `json:"imgHeight"`
+	// 认证公开字段（仅公开开关，不暴露密钥）
+	RegisterEnabled  bool `json:"registerEnabled"`
+	ResetPwdEnabled  bool `json:"resetPwdEnabled"`
+	WecomEnabled     bool `json:"wecomEnabled"`
+	WechatEnabled    bool `json:"wechatEnabled"`
+	GiteeEnabled     bool `json:"giteeEnabled"`
+	GithubEnabled    bool `json:"githubEnabled"`
+	DingtalkEnabled  bool `json:"dingtalkEnabled"`
 }
