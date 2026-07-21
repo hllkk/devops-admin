@@ -551,12 +551,38 @@ declare namespace Api {
       autoCreate: boolean;
     };
 
+    /** 通知配置：邮件通知 + Webhook，对齐后端 SysNotifyConfig */
+    type NotifySettingConfig = {
+      /** 启用邮件通知 */
+      emailEnabled: boolean;
+      /** SMTP 服务器地址 */
+      emailHost: string;
+      /** SMTP 端口 */
+      emailPort: number;
+      /** SMTP 认证用户名 */
+      emailUsername: string;
+      /** SMTP 认证密码 */
+      emailPassword: string;
+      /** 发件人邮箱地址 */
+      emailFromAddr: string;
+      /** 发件人显示名称 */
+      emailFromName: string;
+      /** 加密方式：none / ssl / starttls */
+      emailSSLMode: string;
+      /** 启用 Webhook 通知 */
+      webhookEnabled: boolean;
+      /** Webhook 推送地址 */
+      webhookUrl: string;
+      /** Webhook 签名密钥（可选） */
+      webhookSecret: string;
+    };
+
     /** 系统设置：聚合配置（GET/PUT /system/setting 的请求与响应体） */
     type Setting = {
       general?: GeneralSettingConfig;
       security?: SecuritySettingConfig;
       ldap?: LdapSettingConfig;
-      // 阶段二扩展：notify / disk
+      notify?: NotifySettingConfig;
     };
 
     /** 公开系统设置（登录页使用，免鉴权脱敏：系统信息 + 验证码开关） */

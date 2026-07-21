@@ -24,3 +24,21 @@ export function fetchUpdateSetting(data: Api.System.Setting) {
     data
   });
 }
+
+/** 发送测试邮件（使用当前表单值，无需先保存） */
+export function fetchTestEmail(data: {
+  emailHost: string;
+  emailPort: number;
+  emailUsername: string;
+  emailPassword: string;
+  emailFromAddr: string;
+  emailFromName: string;
+  emailSSLMode: string;
+  testTo: string;
+}) {
+  return request<boolean>({
+    url: '/system/setting/notify/test-email',
+    method: 'post',
+    data
+  });
+}

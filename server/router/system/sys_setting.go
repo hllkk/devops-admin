@@ -10,8 +10,12 @@ type SettingRouter struct{}
 func (s *SettingRouter) InitSettingRouter(Router, PublicRouter *gin.RouterGroup) {
 	settingRouter := Router.Group("system/setting")
 	{
-		settingRouter.GET("", settingApi.GetSetting)    // 获取系统设置(聚合 general+security)
+		settingRouter.GET("", settingApi.GetSetting)    // 获取系统设置(聚合 general+security+ldap+notify)
 		settingRouter.PUT("", settingApi.UpdateSetting) // 更新系统设置(聚合保存)
+	}
+	notifyRouter := Router.Group("system/setting/notify")
+	{
+		notifyRouter.POST("test-email", settingApi.TestEmail) // 发送测试邮件(使用当前表单值)
 	}
 	publicSetting := PublicRouter.Group("system/setting")
 	{

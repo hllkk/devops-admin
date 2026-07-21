@@ -6,6 +6,7 @@ import SettingMenu from './modules/setting-menu.vue';
 import GeneralSetting from './modules/general-setting.vue';
 import SecuritySetting from './modules/security-setting.vue';
 import LdapSetting from './modules/ldap-setting.vue';
+import NotifySetting from './modules/notify-setting.vue';
 import { useAuth } from '@/hooks/business/auth';
 import { fetchGetSetting, fetchUpdateSetting } from '@/service/api/system/setting';
 import { useAppStore } from '@/store/modules/app/index.js';
@@ -86,6 +87,21 @@ const LDAP_DEFAULTS: Api.System.LdapSettingConfig = {
   autoCreate: false
 };
 
+/** 通知配置默认值(对齐后端 DefaultNotifyConfig) */
+const NOTIFY_DEFAULTS: Api.System.NotifySettingConfig = {
+  emailEnabled: false,
+  emailHost: '',
+  emailPort: 465,
+  emailUsername: '',
+  emailPassword: '',
+  emailFromAddr: '',
+  emailFromName: '',
+  emailSSLMode: 'ssl',
+  webhookEnabled: false,
+  webhookUrl: '',
+  webhookSecret: ''
+};
+
 const activeKey = ref<SettingKey>('general');
 const isMobile = computed(() => useAppStore().isMobile);
 
@@ -93,10 +109,12 @@ const config = ref<{
   general: Api.System.GeneralSettingConfig;
   security: Api.System.SecuritySettingConfig;
   ldap: Api.System.LdapSettingConfig;
+  notify: Api.System.NotifySettingConfig;
 }>({
   general: { ...GENERAL_DEFAULTS },
   security: { ...SECURITY_DEFAULTS },
-  ldap: { ...LDAP_DEFAULTS }
+  ldap: { ...LDAP_DEFAULTS },
+  notify: { ...NOTIFY_DEFAULTS }
 });
 
 /** 菜单项统一定义，同时传给 setting-menu 和 currentTitle。computed 确保切换语言时标签/描述联动更新 */
@@ -150,6 +168,7 @@ async function loadConfig() {
   config.value.general = mergeConfig(GENERAL_DEFAULTS, data?.general);
   config.value.security = mergeConfig(SECURITY_DEFAULTS, data?.security);
   config.value.ldap = mergeConfig(LDAP_DEFAULTS, data?.ldap);
+  config.value.notify = mergeConfig(NOTIFY_DEFAULTS, data?.notify);
 }
 
 async function handleSave() {
@@ -157,7 +176,8 @@ async function handleSave() {
   const { error } = await fetchUpdateSetting({
     general: { ...config.value.general },
     security: { ...config.value.security },
-    ldap: { ...config.value.ldap }
+    ldap: { ...config.value.ldap },
+    notify: { ...config.value.notify }
   });
   if (error) {
     window.$message?.error(t('page.system.setting.saveFail'));
@@ -191,6 +211,7 @@ onMounted(() => {
           <GeneralSetting v-if="activeKey === 'general'" v-model:config="config.general" />
           <SecuritySetting v-else-if="activeKey === 'security'" v-model:security-config="config.security" />
           <LdapSetting v-else-if="activeKey === 'ldap'" v-model:config="config.ldap" />
+          <NotifySetting v-else-if="activeKey === 'notify'" v-model:config="config.notify" />
         </div>
       </NCard>
     </template>
@@ -213,6 +234,7 @@ onMounted(() => {
             <GeneralSetting v-if="activeKey === 'general'" v-model:config="config.general" />
             <SecuritySetting v-else-if="activeKey === 'security'" v-model:security-config="config.security" />
             <LdapSetting v-else-if="activeKey === 'ldap'" v-model:config="config.ldap" />
+            <NotifySetting v-else-if="activeKey === 'notify'" v-model:config="config.notify" />
           </div>
         </NCard>
       </div>
