@@ -80,8 +80,8 @@ const config = ref<{
   security: { ...SECURITY_DEFAULTS }
 });
 
-/** 菜单项统一定义，同时传给 setting-menu 和 currentTitle */
-const menuItems: SettingMenuItem[] = [
+/** 菜单项统一定义，同时传给 setting-menu 和 currentTitle。computed 确保切换语言时标签/描述联动更新 */
+const menuItems = computed<SettingMenuItem[]>(() => [
   {
     key: 'general',
     label: t('page.system.setting.general'),
@@ -118,9 +118,9 @@ const menuItems: SettingMenuItem[] = [
     desc: t('page.system.setting.authDesc'),
     icon: 'fluent-emoji-flat:key'
   }
-];
+]);
 
-const currentTitle = computed(() => menuItems.find(i => i.key === activeKey.value)?.label ?? '');
+const currentTitle = computed(() => menuItems.value.find(i => i.key === activeKey.value)?.label ?? '');
 
 async function loadConfig() {
   const { data, error } = await fetchGetSetting();

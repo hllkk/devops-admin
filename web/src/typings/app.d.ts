@@ -692,6 +692,14 @@ declare namespace App {
             security: string;
             generalDesc: string;
             securityDesc: string;
+            ldap: string;
+            ldapDesc: string;
+            disk: string;
+            diskDesc: string;
+            notify: string;
+            notifyDesc: string;
+            auth: string;
+            authDesc: string;
             save: string;
             saveSuccess: string;
             saveFail: string;
@@ -742,6 +750,10 @@ declare namespace App {
             tabAccess: string;
             tabAccount: string;
             tabLog: string;
+            tabLdap: string;
+            tabDisk: string;
+            tabNotify: string;
+            tabAuth: string;
             captchaEnabled: string;
             captchaTypeLabel: string;
             captchaOpen: string;
