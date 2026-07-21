@@ -712,7 +712,7 @@ declare namespace App {
             logTitle: string;
             loginLogRetentionDays: string;
             operationLogRetentionDays: string;
-            captchaType: { click: string; slide: string; dragdrop: string; rotate: string };
+            captchaType: { image: string; click: string; slide: string; dragdrop: string; rotate: string };
             passwordTitle: string;
             passwordMinLength: string;
             passwordRequireUppercase: string;
@@ -732,6 +732,29 @@ declare namespace App {
             unitDay: string;
             unitChar: string;
             unitPixel: string;
+            unitSecond: string;
+            unitTimes: string;
+            tabCaptcha: string;
+            tabPassword: string;
+            tabLimit: string;
+            tabLock: string;
+            tabExpire: string;
+            tabAccess: string;
+            tabAccount: string;
+            tabLog: string;
+            captchaEnabled: string;
+            captchaTypeLabel: string;
+            captchaOpen: string;
+            captchaTimeout: string;
+            captchaTolerance: string;
+            keyLong: string;
+            imgWidth: string;
+            imgHeight: string;
+            limitEnable: string;
+            limitWindow: string;
+            limitCount: string;
+            pwdExpireEnable: string;
+            pwdExpireDays: string;
           };
           role: {
             title: string;

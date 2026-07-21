@@ -554,31 +554,48 @@ declare namespace Api {
       systemDescription: string;
       logoUrl: string;
       faviconUrl: string;
+      /** 用户默认密码:后端落在 SysGeneralConfig,前端在「安全配置-账户默认」tab 渲染 */
       userDefaultPassword: string;
+      /** 默认角色:后端落在 SysGeneralConfig,前端在「安全配置-账户默认」tab 渲染 */
       userDefaultRole: string | null;
-      enableVerifyCode: boolean;
-      verifyCodeType: string;
-      verifyCodeLen: number;
-      verifyCodeExp: number;
-      verifyCodeTokenExp: number;
-      verifyInaccuracy: number;
+      /** 登录日志保留天数:后端落在 SysGeneralConfig,前端在「安全配置-日志清理」tab 渲染 */
       loginLogRetentionDays: number;
+      /** 操作日志保留天数:后端落在 SysGeneralConfig,前端在「安全配置-日志清理」tab 渲染 */
       operationLogRetentionDays: number;
     };
 
-    /** 安全配置 */
+    /** 安全配置:对齐后端 SysSecurityConfig 六段字段 */
     type SecuritySettingConfig = {
+      // 验证码(Captcha*):登录链路验证码生成用
+      captchaEnabled: boolean;
+      captchaType: string;
+      captchaOpen: number;
+      captchaTimeout: number;
+      captchaTolerance: number;
+      keyLong: number;
+      imgWidth: number;
+      imgHeight: number;
+      // 密码复杂度(Password*)
       passwordMinLength: number;
       passwordRequireUppercase: boolean;
       passwordRequireLowercase: boolean;
       passwordRequireDigit: boolean;
       passwordRequireSpecial: boolean;
+      // 登录失败锁定(LoginFailLock*)
       loginFailLockCount: number;
       loginFailLockTime: number;
+      // 访问控制 - IP 校验(IpValidation*)
       ipValidationEnabled: boolean;
       ipValidationMode: string;
       ipBlacklist: string;
       ipWhitelist: string;
+      // 限流(Limit*)
+      limitEnable: boolean;
+      limitWindow: number;
+      limitCount: number;
+      // 密码过期(PwdExpire*)
+      pwdExpireEnable: boolean;
+      pwdExpireDays: number;
     };
   }
 }

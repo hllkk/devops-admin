@@ -25,7 +25,7 @@ interface SettingMenuItem {
   icon: string;
 }
 
-/** 常规配置默认值 */
+/** 常规配置默认值(验证码/账户默认/日志清理 的字段后端仍在 SysGeneralConfig,账户默认与日志清理的渲染已迁移至安全配置 tab) */
 const GENERAL_DEFAULTS: Api.System.GeneralSettingConfig = {
   systemName: 'devops-admin',
   systemDescription: '企业运维管理平台',
@@ -33,29 +33,42 @@ const GENERAL_DEFAULTS: Api.System.GeneralSettingConfig = {
   faviconUrl: '',
   userDefaultPassword: '',
   userDefaultRole: null,
-  enableVerifyCode: false,
-  verifyCodeType: 'click',
-  verifyCodeLen: 4,
-  verifyCodeExp: 5,
-  verifyCodeTokenExp: 5,
-  verifyInaccuracy: 40,
   loginLogRetentionDays: 90,
   operationLogRetentionDays: 90
 };
 
-/** 安全配置默认值 */
+/** 安全配置默认值(对齐后端 SysSecurityConfig 的 gorm default 与 DefaultSecurityConfig) */
 const SECURITY_DEFAULTS: Api.System.SecuritySettingConfig = {
+  // 验证码 Captcha*
+  captchaEnabled: true,
+  captchaType: 'click',
+  captchaOpen: 0,
+  captchaTimeout: 3600,
+  captchaTolerance: 5,
+  keyLong: 6,
+  imgWidth: 240,
+  imgHeight: 80,
+  // 密码复杂度 Password*
   passwordMinLength: 8,
   passwordRequireUppercase: false,
-  passwordRequireLowercase: true,
-  passwordRequireDigit: true,
-  passwordRequireSpecial: true,
+  passwordRequireLowercase: false,
+  passwordRequireDigit: false,
+  passwordRequireSpecial: false,
+  // 登录失败锁定 LoginFailLock*
   loginFailLockCount: 5,
   loginFailLockTime: 30,
+  // 访问控制 IpValidation*
   ipValidationEnabled: false,
   ipValidationMode: 'blacklist',
   ipBlacklist: '',
-  ipWhitelist: ''
+  ipWhitelist: '',
+  // 限流 Limit*
+  limitEnable: false,
+  limitWindow: 60,
+  limitCount: 30,
+  // 密码过期 PwdExpire*
+  pwdExpireEnable: false,
+  pwdExpireDays: 90
 };
 
 const activeKey = ref<SettingKey>('general');
@@ -133,7 +146,7 @@ onMounted(() => {
         </div>
         <div class="overflow-auto setting-mobile-content">
           <GeneralSetting v-if="activeKey === 'general'" v-model:config="config.general" />
-          <SecuritySetting v-else-if="activeKey === 'security'" v-model:config="config.security" />
+          <SecuritySetting v-else-if="activeKey === 'security'" v-model:general-config="config.general" v-model:security-config="config.security" />
         </div>
       </NCard>
     </template>
@@ -154,7 +167,7 @@ onMounted(() => {
           </template>
           <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1">
             <GeneralSetting v-if="activeKey === 'general'" v-model:config="config.general" />
-            <SecuritySetting v-else-if="activeKey === 'security'" v-model:config="config.security" />
+            <SecuritySetting v-else-if="activeKey === 'security'" v-model:general-config="config.general" v-model:security-config="config.security" />
           </div>
         </NCard>
       </div>
