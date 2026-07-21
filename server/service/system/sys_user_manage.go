@@ -233,6 +233,35 @@ func (s *UserService) ResetPwd(ctx context.Context, req systemReq.ResetUserPwdPa
 	})
 }
 
+// ChangeMyPassword 当前用户自助改密(密码过期强制改密场景的唯一入口)。
+// 流程:校验旧密码 → 新旧不同 → 复杂度校验 → bcrypt 新密码 → 刷 PasswordUpdatedAt。
+// Preload Roles 以保证 GetSuperAdmin 正确(超管改密重发 token 需 SuperAdmin=true)。
+// 返回带 Roles 的 user,供 handler 重发 MustChangePwd=false token。
+func (s *UserService) ChangeMyPassword(ctx context.Context, userId int64, oldPwd, newPwd string) (system.SysUser, error) {
+	var u system.SysUser
+	if err := global.OPS_DB.WithContext(ctx).Preload("Roles").Where("id = ?", userId).First(&u).Error; err != nil {
+		return u, errors.New("用户不存在")
+	}
+	if !utils.BcryptCheck(oldPwd, u.Password) {
+		return u, errors.New("旧密码错误")
+	}
+	if oldPwd == newPwd {
+		return u, errors.New("新密码不能与旧密码相同")
+	}
+	if err := utils.ValidatePasswordComplexity(newPwd, (&SecurityConfigService{}).Current(ctx)); err != nil {
+		return u, err
+	}
+	now := time.Now()
+	return u, global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&system.SysUser{}).Where("id = ?", userId).
+			Update("password", utils.BcryptHash(newPwd)).Error; err != nil {
+			return err
+		}
+		return tx.Model(&system.SysUser{}).Where("id = ?", userId).
+			Update("password_updated_at", now).Error
+	})
+}
+
 // saveUserRoles 全量替换用户角色(删后批量插 sys_user_role)。
 func saveUserRoles(tx *gorm.DB, userId int64, roleIds []int64) error {
 	if err := tx.Where("sys_user_id = ?", userId).Delete(&system.SysUserRole{}).Error; err != nil {

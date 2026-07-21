@@ -8,11 +8,12 @@ import (
 	systemReq "github.com/hllkk/devops-admin/server/model/system/request"
 )
 
-// mustChangePwdAllowList 强制改密状态下允许访问的接口后缀
+// mustChangePwdAllowList 强制改密状态下允许访问的接口后缀(路径以这些后缀结尾才放行,其余 403)。
+// /auth/getUserInfo:前端读登录态; /auth/logout:允许登出避免死锁; /system/user/profile/updatePwd:唯一改密入口。
 var mustChangePwdAllowList = []string{
-	"/user/changePassword",
-	"/user/getUserInfo",
-	"/jwt/jsonInBlacklist",
+	"/auth/getUserInfo",
+	"/auth/logout",
+	"/system/user/profile/updatePwd",
 }
 
 // MustChangePwdGuard 当 jwt 携带 MustChangePwd=true 时 仅放行改密/用户信息/登出 其余 403

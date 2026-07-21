@@ -17,9 +17,9 @@ type Register struct {
 	Username    string  `json:"username" form:"username"`
 	NickName    string  `json:"nickName" form:"nickName"`
 	Password    string  `json:"password" form:"password"`
-	RoleId      int64   `json:"roleId,string" form:"roleId"`       // 主角色 ID
-	RoleIds     []int64 `json:"roleIds" form:"roleIds"`             // 多角色
-	DeptId      int64   `json:"deptId,string" form:"deptId"`        // 主部门 ID
+	RoleId      int64   `json:"roleId,string" form:"roleId"` // 主角色 ID
+	RoleIds     []int64 `json:"roleIds" form:"roleIds"`      // 多角色
+	DeptId      int64   `json:"deptId,string" form:"deptId"` // 主部门 ID
 	Email       string  `json:"email" form:"email"`
 	Phonenumber string  `json:"phonenumber" form:"phonenumber"`
 }
@@ -35,12 +35,12 @@ type GetUserList struct {
 // deptId/userName/nickName/phonenumber 过滤;roleId>0 时 join sys_user_role。
 type UserSearch struct {
 	commonReq.PageInfo
-	DeptId      int64  `json:"deptId,string" form:"deptId"`      // 主部门ID(精确)
-	UserName    string `json:"userName" form:"userName"`         // 用户名(模糊)
-	NickName    string `json:"nickName" form:"nickName"`         // 昵称(模糊)
-	Phonenumber string `json:"phonenumber" form:"phonenumber"`   // 手机号(模糊)
-	Status      string `json:"status" form:"status"`             // 状态(精确 '0'正常/'1'停用)
-	RoleId      int64  `json:"roleId,string" form:"roleId"`      // 角色ID(精确,join sys_user_role)
+	DeptId      int64  `json:"deptId,string" form:"deptId"`    // 主部门ID(精确)
+	UserName    string `json:"userName" form:"userName"`       // 用户名(模糊)
+	NickName    string `json:"nickName" form:"nickName"`       // 昵称(模糊)
+	Phonenumber string `json:"phonenumber" form:"phonenumber"` // 手机号(模糊)
+	Status      string `json:"status" form:"status"`           // 状态(精确 '0'正常/'1'停用)
+	RoleId      int64  `json:"roleId,string" form:"roleId"`    // 角色ID(精确,join sys_user_role)
 }
 
 // UserOperateParams 用户新增/修改请求(对齐前端 Api.System.UserOperateParams)。
@@ -66,4 +66,11 @@ type UserOperateParams struct {
 type ResetUserPwdParams struct {
 	UserId   Int64String `json:"userId"`   // 用户ID
 	Password string      `json:"password"` // 新密码(明文)
+}
+
+// ChangeMyPasswordParams 当前用户自助修改密码(对齐前端 PUT /system/user/profile/updatePwd)。
+// oldPassword 二次确认身份(防会话劫持后改密);复杂度由 service 校验。明文传输,后端 bcrypt 存储。
+type ChangeMyPasswordParams struct {
+	OldPassword string `json:"oldPassword" binding:"required"` // 旧密码(明文,二次校验)
+	NewPassword string `json:"newPassword" binding:"required"` // 新密码(明文,复杂度由 service 校验)
 }

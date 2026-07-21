@@ -3,6 +3,7 @@ package system
 import (
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/hllkk/devops-admin/server/model/common/response"
@@ -188,6 +189,36 @@ func (a *UserApi) ResetUserPwd(c *gin.Context) {
 		return
 	}
 	response.OkWithDetailed(true, "重置成功", c)
+}
+
+// ChangeMyPassword
+// @Tags      SysUser
+// @Summary   当前用户修改密码(密码过期强制改密入口)
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  body  systemReq.ChangeMyPasswordParams  true  "旧密码 + 新密码"
+// @Success   200   {object}  response.Response{data=bool,msg=string}
+// @Router    /system/user/profile/updatePwd [put]
+func (a *UserApi) ChangeMyPassword(c *gin.Context) {
+	var req systemReq.ChangeMyPasswordParams
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	user, err := userService.ChangeMyPassword(c.Request.Context(), utils.GetUserID(c), req.OldPassword, req.NewPassword)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	// 改密成功后重发 MustChangePwd=false 的 token,否则用户仍带过期标记,继续被 guard 拦截。
+	token, claims, err := utils.LoginTokenWithExpire(&user, false)
+	if err != nil {
+		response.FailWithMessage("密码已修改,但下发新 token 失败,请重新登录", c)
+		return
+	}
+	expire := int(claims.RegisteredClaims.ExpiresAt.Unix() - time.Now().Unix())
+	utils.SetToken(c, token, expire)
+	response.OkWithDetailed(true, "密码修改成功", c)
 }
 
 // BatchDeleteUser
