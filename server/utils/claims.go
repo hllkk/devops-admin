@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -10,17 +11,29 @@ import (
 	"github.com/hllkk/devops-admin/server/utils/logger"
 )
 
+// RequestIsSecure 判定当前请求是否走 HTTPS。
+// 优先 c.Request.TLS(直连 HTTPS);其次 X-Forwarded-Proto: https(反代场景,#2 配置 TrustedProxies 后才可信)。
+func RequestIsSecure(c *gin.Context) bool {
+	if c.Request.TLS != nil {
+		return true
+	}
+	return c.GetHeader("X-Forwarded-Proto") == "https"
+}
+
 // ClearToken 清除 x-token cookie，domain 留空走 host-only（见 SetToken 说明）。
 func ClearToken(c *gin.Context) {
-	c.SetCookie("x-token", "", -1, "/", "", false, true)
+	c.SetSameSite(http.SameSiteLaxMode) // 防 CSRF;Lax 允许顶层导航携带,平衡外链跳转
+	c.SetCookie("x-token", "", -1, "/", "", RequestIsSecure(c), true)
 }
 
 // SetToken 登录成功后下发 x-token，走 httpOnly cookie。
 // domain 传空串即为 host-only cookie，由浏览器绑定到实际访问的 host；
 // 不再按 c.Request.Host 推断 domain：经反向代理或 vite proxy(changeOrigin) 转发时 Host 会被改写，
 // 误设 domain 会导致浏览器丢弃该 cookie（表现为登录成功但后续接口 401 未登录）。
+// secure 按 RequestIsSecure 动态设置(HTTPS 下带 Secure,防中间人窃听);SameSite=Lax 防 CSRF。
 func SetToken(c *gin.Context, token string, maxAge int) {
-	c.SetCookie("x-token", token, maxAge, "/", "", false, true)
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie("x-token", token, maxAge, "/", "", RequestIsSecure(c), true)
 }
 
 func GetToken(c *gin.Context) string {
