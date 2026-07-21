@@ -2,6 +2,7 @@ package initialize
 
 import (
 	"bufio"
+	"log"
 	"os"
 	"strings"
 
@@ -24,5 +25,11 @@ func OtherInit() {
 		scanner := bufio.NewScanner(file)
 		scanner.Scan()
 		global.OPS_CONFIG.AutoCode.Module = strings.TrimPrefix(scanner.Text(), "module ")
+	}
+
+	// 加载 ip2region(登录/操作日志 IP→地点解析);失败仅告警不阻断,ParseIPLocation 将降级为"未知"。
+	// 此处 OPS_LOG 尚未初始化(main.go 中 Zap 在 OtherInit 之后),故用标准 log 输出到 stderr。
+	if err := utils.LoadIp2Region(global.OPS_CONFIG.System.Ip2RegionDbPath); err != nil {
+		log.Printf("[WARN] ip2region 初始化失败, IP 地点解析将降级为\"未知\": %v", err)
 	}
 }

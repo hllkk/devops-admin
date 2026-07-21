@@ -9,6 +9,7 @@ import (
 	"github.com/hllkk/devops-admin/server/global"
 	"github.com/hllkk/devops-admin/server/model/system"
 	systemReq "github.com/hllkk/devops-admin/server/model/system/request"
+	"github.com/hllkk/devops-admin/server/utils"
 	"github.com/hllkk/devops-admin/server/utils/logger"
 )
 
@@ -55,6 +56,10 @@ func (s *SysOperLogService) startWriter() {
 		for {
 			select {
 			case rec := <-operLogCh:
+				// 按 IP 反查操作地点(异步消费,不阻塞业务);调用方未传时补齐
+				if rec.OperLocation == "" && rec.OperIp != "" {
+					rec.OperLocation = utils.ParseIPLocation(rec.OperIp)
+				}
 				batch = append(batch, rec)
 				if len(batch) >= 100 {
 					flush()

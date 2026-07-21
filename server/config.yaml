@@ -232,6 +232,7 @@ system:
     trusted-proxies:
       - "::1/128" # 同机反代(Vite dev proxy / Nginx)走 IPv6 回环连后端
       - "127.0.0.1/32" # 同机反代走 IPv4 回环连后端
+    ip2region-db-path: "resource/ip2region.xdb" # 登录/操作日志 IP 地点解析库(相对 server 运行目录;空=内置默认 resource/ip2region.xdb)
 tencent-cos:
     bucket: xxxxx-10005608
     region: ap-shanghai

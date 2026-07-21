@@ -8,6 +8,7 @@ import (
 	"github.com/hllkk/devops-admin/server/global"
 	"github.com/hllkk/devops-admin/server/model/system"
 	systemReq "github.com/hllkk/devops-admin/server/model/system/request"
+	"github.com/hllkk/devops-admin/server/utils"
 )
 
 type LoginLogService struct{}
@@ -16,6 +17,10 @@ type LoginLogService struct{}
 func (s *LoginLogService) CreateLoginLog(ctx context.Context, log system.SysLoginLog) error {
 	if log.LoginTime.IsZero() {
 		log.LoginTime = time.Now()
+	}
+	// 调用方未显式传入时,按 IP 反查登录地点统一补齐(登录成功/失败等分支自动覆盖)
+	if log.LoginLocation == "" && log.Ipaddr != "" {
+		log.LoginLocation = utils.ParseIPLocation(log.Ipaddr)
 	}
 	return global.OPS_DB.WithContext(ctx).Create(&log).Error
 }

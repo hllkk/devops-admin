@@ -14,4 +14,5 @@ type System struct {
 	DisableAutoMigrate bool     `mapstructure:"disable-auto-migrate" json:"disable-auto-migrate" yaml:"disable-auto-migrate"` // 自动迁移数据库表结构，生产环境建议设为false，手动迁移
 	WorkerID           int      `mapstructure:"worker-id" json:"worker-id" yaml:"worker-id"`                                  // 雪花算法工作节点ID(0-63),多副本部署时各实例必须唯一
 	TrustedProxies     []string `mapstructure:"trusted-proxies" json:"trusted-proxies" yaml:"trusted-proxies"`                // 受信任反代 CIDR(空=仅信任直连 peer,ClientIP 忽略 X-Forwarded-For;反代部署须显式配置)
+	Ip2RegionDbPath    string   `mapstructure:"ip2region-db-path" json:"ip2region-db-path" yaml:"ip2region-db-path"`           // ip2region xdb 路径(登录/操作日志 IP→地点;空=resource/ip2region.xdb)
 }
