@@ -93,7 +93,7 @@ func (i *initDict) InitializeData(ctx context.Context) (next context.Context, er
 		{DictSort: 7, DictLabel: "dict.sys_oper_type.force", DictValue: "7", DictType: "sys_oper_type", ListClass: "error", Remark: "强退操作"},
 		{DictSort: 8, DictLabel: "dict.sys_oper_type.gencode", DictValue: "8", DictType: "sys_oper_type", ListClass: "warning", Remark: "生成操作"},
 		{DictSort: 9, DictLabel: "dict.sys_oper_type.clean", DictValue: "9", DictType: "sys_oper_type", ListClass: "error", Remark: "清空操作"},
-		{DictSort: 10, DictLabel: "dict.sys_oper_type.other", DictValue: "10", DictType: "sys_oper_type", ListClass: "info", Remark: "其他操作"},
+		{DictSort: 10, DictLabel: "dict.sys_oper_type.other", DictValue: "0", DictType: "sys_oper_type", ListClass: "info", Remark: "其他操作"},
 		{DictSort: 1, DictLabel: "dict.sys_show_hide.show", DictValue: "0", DictType: "sys_show_hide", ListClass: "primary", IsDefault: "Y", Remark: "显示菜单"},
 		{DictSort: 2, DictLabel: "dict.sys_show_hide.hide", DictValue: "1", DictType: "sys_show_hide", ListClass: "error", IsDefault: "N", Remark: "隐藏菜单"},
 		{DictSort: 1, DictLabel: "dict.sys_user_sex.male", DictValue: "0", DictType: "sys_user_sex", IsDefault: "Y", Remark: "性别男"},
