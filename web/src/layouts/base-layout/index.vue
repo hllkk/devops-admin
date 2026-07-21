@@ -11,6 +11,7 @@ import GlobalContent from '../modules/global-content/index.vue';
 import GlobalFooter from '../modules/global-footer/index.vue';
 import ThemeDrawer from '../modules/theme-drawer/index.vue';
 import { provideMixMenuContext } from '../modules/global-menu/context';
+import { getServiceBaseURL } from '@/utils/service';
 import { initWebSocket } from '@/utils/websocket';
 import { initSSE } from '@/utils/sse';
 
@@ -118,9 +119,14 @@ function getSiderAndCollapsedWidth(isCollapsed: boolean) {
 }
 
 onMounted(() => {
+  // baseURL 与普通 axios 请求同源：dev proxy 模式为 /proxy-default，构建模式为 VITE_SERVICE_BASE_URL。
+  // 不要直接引用 VITE_APP_BASE_API（项目未定义该变量，会拼出 "undefined/resource/sse"）。
+  const isHttpProxy = import.meta.env.DEV && import.meta.env.VITE_HTTP_PROXY === 'Y';
+  const { baseURL } = getServiceBaseURL(import.meta.env, isHttpProxy);
+
   const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-  initWebSocket(`${protocol + window.location.host + import.meta.env.VITE_APP_BASE_API}/resource/websocket`);
-  initSSE(`${import.meta.env.VITE_APP_BASE_API}/resource/sse`);
+  initWebSocket(`${protocol}${window.location.host}${baseURL}/resource/websocket`);
+  initSSE(`${baseURL}/resource/sse`);
 });
 </script>
 

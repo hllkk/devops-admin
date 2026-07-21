@@ -2,6 +2,7 @@ import { reactive } from 'vue';
 import { defineStore } from 'pinia';
 import { SetupStoreId } from '@/enum';
 import { fetchGetUnreadNotice, fetchMarkNoticeRead } from '@/service/api/system/notice';
+import { stripHtml } from '@/utils/common';
 
 interface NoticeItem {
   noticeId?: number;
@@ -55,7 +56,7 @@ export const useNoticeStore = defineStore(SetupStoreId.Notice, () => {
     state.notices = rows.map(r => ({
       noticeId: r.noticeId !== undefined ? Number(r.noticeId) : undefined,
       title: r.noticeTitle,
-      message: r.noticeContent,
+      message: stripHtml(r.noticeContent),
       read: !!r.readAt,
       time: r.createTime ?? ''
     }));

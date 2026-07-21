@@ -227,3 +227,17 @@ export function arraysEqualSet(arr1: Array<any>, arr2: Array<any>) {
     [...arr1].sort().join() === [...arr2].sort().join()
   );
 }
+
+/**
+ * 把富文本 HTML 转成纯文本，用于通知铃铛等单行预览场景
+ *
+ * 用 DOMParser 解析后取 textContent：自动去除标签、解码 HTML 实体（&amp; 等），
+ * 且不会执行脚本/加载资源，比 innerHTML 安全；连续空白压成单空格便于单行展示。
+ *
+ * @param html 富文本字符串（如 wang-editor 产出的 "<p>test01</p>"）
+ */
+export function stripHtml(html?: string | null): string {
+  if (!html) return '';
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  return doc.body.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+}

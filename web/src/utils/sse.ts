@@ -1,6 +1,7 @@
 import { watch } from 'vue';
 import { useEventSource } from '@vueuse/core';
 import { useNoticeStore } from '@/store/modules/notice';
+import { stripHtml } from '@/utils/common';
 
 /**
  * 初始化 SSE(鉴权走 httpOnly cookie x-token,EventSource 同源/withCredentials 自动携带)
@@ -54,7 +55,12 @@ export const initSSE = (url: string) => {
     }
     const isAlert = payload.type === 'timedTask:alert' || payload.taskId !== undefined;
     const title = payload.noticeTitle || (isAlert ? '定时任务告警' : '消息');
-    const content = payload.noticeContent || (isAlert ? `${payload.name ?? ''}:${payload.error ?? ''}` : '');
+    // 公告内容是富文本 HTML，预览/弹窗统一转纯文本，避免铃铛里看到 "<p>...</p>" 字面量
+    const content = payload.noticeContent
+      ? stripHtml(payload.noticeContent)
+      : isAlert
+        ? `${payload.name ?? ''}:${payload.error ?? ''}`
+        : '';
     useNoticeStore().addNotice({
       noticeId: payload.noticeId,
       title,
