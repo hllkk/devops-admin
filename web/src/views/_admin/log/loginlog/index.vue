@@ -201,7 +201,7 @@ async function view(infoId: CommonType.IdType) {
 }
 
 async function handleExport() {
-  download('/monitor/loginlog/export', searchParams.value, `${$t('page.log.loginlog.exportFileName')}_${new Date().getTime()}.xlsx`);
+  download('/log/loginlog/export', searchParams.value, `${$t('page.log.loginlog.exportFileName')}_${new Date().getTime()}.xlsx`);
 }
 
 async function handleCleanLoginLog() {

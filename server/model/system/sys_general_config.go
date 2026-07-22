@@ -13,6 +13,7 @@ type SysGeneralConfig struct {
 	FaviconUrl                string `json:"faviconUrl" gorm:"comment:Favicon地址"`
 	LoginLogRetentionDays     int    `json:"loginLogRetentionDays" gorm:"default:30;comment:登录日志保留天数"`
 	OperationLogRetentionDays int    `json:"operationLogRetentionDays" gorm:"default:30;comment:操作日志保留天数"`
+	DefaultPassword           string `json:"defaultPassword" gorm:"default:User@1234;comment:导入/重置用户的默认密码(建议满足密码复杂度)"` // 导入新建/复活用户的初始密码;首登强制改密
 }
 
 func (SysGeneralConfig) TableName() string {
@@ -26,5 +27,6 @@ func DefaultGeneralConfig() SysGeneralConfig {
 		SystemDescription:         "DevOps 管理平台",
 		LoginLogRetentionDays:     30,
 		OperationLogRetentionDays: 30,
+		DefaultPassword:           "User@1234",
 	}
 }

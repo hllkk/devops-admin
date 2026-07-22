@@ -8,6 +8,7 @@ import (
 	"github.com/hllkk/devops-admin/server/model/common/response"
 	systemReq "github.com/hllkk/devops-admin/server/model/system/request"
 	"github.com/hllkk/devops-admin/server/utils"
+	"github.com/hllkk/devops-admin/server/utils/excel"
 	"github.com/hllkk/devops-admin/server/utils/logger"
 )
 
@@ -243,4 +244,52 @@ func (d *DictApi) BatchDeleteDictData(c *gin.Context) {
 		return
 	}
 	response.OkWithDetailed(true, "删除成功", c)
+}
+
+// ExportDictType
+// @Tags      SysDictType
+// @Summary   导出字典类型(Excel)
+// @Router    /system/dict/type/export [post]
+func (d *DictApi) ExportDictType(c *gin.Context) {
+	var q systemReq.DictTypeSearch
+	if err := c.ShouldBind(&q); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	list, err := dictTypeService.ExportDictTypeList(c.Request.Context(), q)
+	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("biz").Err(err).Error("导出字典类型失败")
+		response.FailWithMessage("导出失败", c)
+		return
+	}
+	buf, err := excel.Export(list, dictTypeHeaders, "字典类型")
+	if err != nil {
+		response.FailWithMessage("导出失败", c)
+		return
+	}
+	writeXlsx(c, "字典类型", buf)
+}
+
+// ExportDictData
+// @Tags      SysDictData
+// @Summary   导出字典数据(Excel)
+// @Router    /system/dict/data/export [post]
+func (d *DictApi) ExportDictData(c *gin.Context) {
+	var q systemReq.DictDataSearch
+	if err := c.ShouldBind(&q); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	list, err := dictDataService.ExportDictDataList(c.Request.Context(), q)
+	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("biz").Err(err).Error("导出字典数据失败")
+		response.FailWithMessage("导出失败", c)
+		return
+	}
+	buf, err := excel.Export(list, dictDataHeaders, "字典数据")
+	if err != nil {
+		response.FailWithMessage("导出失败", c)
+		return
+	}
+	writeXlsx(c, "字典数据", buf)
 }

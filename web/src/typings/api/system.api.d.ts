@@ -688,6 +688,8 @@ declare namespace Api {
       loginLogRetentionDays: number;
       /** 操作日志保留天数 */
       operationLogRetentionDays: number;
+      /** 导入/重置用户的默认密码 */
+      defaultPassword: string;
     };
 
     /** 安全配置:对齐后端 SysSecurityConfig 六段字段 */

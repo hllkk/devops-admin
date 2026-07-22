@@ -13,6 +13,7 @@ func (o *OperLogRouter) InitOperLogRouter(Router *gin.RouterGroup) {
 	operLogRouter := Router.Group("log/operlog")
 	{
 		operLogRouter.GET("list", operLogApi.GetOperLogList)        // 分页获取操作日志列表
+		operLogRouter.POST("export", operLogApi.ExportOperLog)     // 导出操作日志(Excel)
 		operLogRouter.DELETE(":ids", operLogApi.BatchDeleteOperLog) // 批量删除操作日志
 		operLogRouter.DELETE("clean", operLogApi.CleanOperLog)      // 清空操作日志
 	}

@@ -1,6 +1,7 @@
 package system
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/hllkk/devops-admin/server/model/common/response"
 	systemReq "github.com/hllkk/devops-admin/server/model/system/request"
 	"github.com/hllkk/devops-admin/server/utils"
+	"github.com/hllkk/devops-admin/server/utils/excel"
 	"github.com/hllkk/devops-admin/server/utils/logger"
 )
 
@@ -47,6 +49,80 @@ func (a *UserApi) GetUserList(c *gin.Context) {
 		PageNum:  q.PageNum,
 		PageSize: q.PageSize,
 	}, "获取成功", c)
+}
+
+// ExportUser
+// @Tags      SysUser
+// @Summary   导出用户(按列表查询条件,Excel)
+// @Produce   application/octet-stream
+// @Param     userName     query  string  false  "用户名(模糊)"
+// @Param     nickName     query  string  false  "昵称(模糊)"
+// @Param     phonenumber  query  string  false  "手机号(模糊)"
+// @Param     status       query  string  false  "状态(0正常 1停用)"
+// @Param     deptId       query  int     false  "主部门ID"
+// @Param     roleId       query  int     false  "角色ID"
+// @Router    /system/user/export [post]
+func (a *UserApi) ExportUser(c *gin.Context) {
+	// 前端 useDownload 以 application/x-www-form-urlencoded 提交,用 ShouldBind 绑定表单体
+	var q systemReq.UserSearch
+	if err := c.ShouldBind(&q); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	list, err := userService.ExportList(c.Request.Context(), q)
+	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("biz").Err(err).Error("导出用户失败")
+		response.FailWithMessage("导出失败", c)
+		return
+	}
+	buf, err := excel.Export(list, userHeaders, "用户")
+	if err != nil {
+		response.FailWithMessage("导出失败", c)
+		return
+	}
+	writeXlsx(c, "用户列表", buf)
+}
+
+// ImportTemplate
+// @Tags      SysUser
+// @Summary   下载用户导入模板(仅表头的 xlsx)
+// @Router    /system/user/importTemplate [post]
+func (a *UserApi) ImportTemplate(c *gin.Context) {
+	buf, err := excel.ExportTemplate(userImportHeaders, "用户")
+	if err != nil {
+		response.FailWithMessage("生成模板失败", c)
+		return
+	}
+	writeXlsx(c, "用户导入模板", buf)
+}
+
+// ImportUser
+// @Tags      SysUser
+// @Summary   导入用户(Excel)
+// @Accept    multipart/form-data
+// @Param     file            formData  file  true   "xlsx 文件"
+// @Param     updateSupport   formData  bool  false  "是否更新已存在用户"
+// @Success   200  {object}  response.Response{msg=string}
+// @Router    /system/user/importData [post]
+func (a *UserApi) ImportUser(c *gin.Context) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		response.FailWithMessage("文件获取失败", c)
+		return
+	}
+	rows, err := excel.Parse(file, userImportHeaders)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	updateSupport := c.PostForm("updateSupport") == "true"
+	insert, updateCnt, skip, failCnt, failMsgs := userService.ImportUsers(c.Request.Context(), rows, updateSupport, utils.GetUserID(c))
+	// 汇总信息回写 msg,前端 UserImportModal 以 v-html 渲染(失败明细逐行 <br> 拼接)
+	msg := fmt.Sprintf("导入完成:新增 %d,更新 %d,跳过 %d,失败 %d", insert, updateCnt, skip, failCnt)
+	if len(failMsgs) > 0 {
+		msg += "<br>" + strings.Join(failMsgs, "<br>")
+	}
+	response.OkWithMessage(msg, c)
 }
 
 // GetDeptUserList

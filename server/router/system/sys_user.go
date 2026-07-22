@@ -33,6 +33,9 @@ func (s *UserRouter) InitUserRouter(Router *gin.RouterGroup) {
 	systemUserRouter := Router.Group("system/user")
 	{
 		systemUserRouter.GET("list", userApi.GetUserList)                   // 用户分页列表
+		systemUserRouter.POST("export", userApi.ExportUser)                 // 导出用户(Excel)
+		systemUserRouter.POST("importTemplate", userApi.ImportTemplate)     // 下载用户导入模板
+		systemUserRouter.POST("importData", userApi.ImportUser)             // 导入用户(Excel)
 		systemUserRouter.GET("list/dept/:deptId", userApi.GetDeptUserList)  // 部门下用户(负责人选择用)
 		systemUserRouter.GET("deptTree", userApi.GetDeptTree)               // 部门树(复用部门模块)
 		systemUserRouter.GET(":userId", userApi.GetUserDetail)              // 用户详情

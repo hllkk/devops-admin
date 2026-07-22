@@ -235,3 +235,19 @@ func toInt64Slice(ids []systemReq.Int64String) []int64 {
 	}
 	return out
 }
+
+// ExportRoleList 按列表查询条件导出角色(全量,不分页;过滤条件与 GetRoleList 一致,加导出上限)。
+func (s *RoleService) ExportRoleList(ctx context.Context, q systemReq.RoleSearch) (list []system.SysRole, err error) {
+	db := global.OPS_DB.WithContext(ctx).Model(&system.SysRole{})
+	if q.RoleName != "" {
+		db = db.Where("role_name LIKE ?", "%"+q.RoleName+"%")
+	}
+	if q.RoleKey != "" {
+		db = db.Where("role_key LIKE ?", "%"+q.RoleKey+"%")
+	}
+	if q.Status != "" {
+		db = db.Where("status = ?", q.Status)
+	}
+	err = db.Order(roleOrder).Limit(ExportMaxRows).Find(&list).Error
+	return
+}

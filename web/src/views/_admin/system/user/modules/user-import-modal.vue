@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { h, ref, watch } from 'vue';
 import type { UploadFileInfo } from 'naive-ui';
-import { getToken } from '@/store/modules/auth/shared';
 import { useDownload } from '@/hooks/business/download';
 import { getServiceBaseURL } from '@/utils/service';
 import type FileUpload from '@/components/custom/file-upload.vue';
@@ -17,10 +16,13 @@ interface Emits {
 
 const { download } = useDownload();
 
-const { baseURL } = getServiceBaseURL(import.meta.env, false);
+// DEV 走 Vite proxy(/proxy-default)同源访问后端,避免直连 VITE_SERVICE_BASE_URL 跨域触发 CORS;
+// 生产用配置的 baseURL(与普通 axios 请求一致,靠 Nginx 反代同源)。与 useDownload 保持同一策略。
+const isHttpProxy = import.meta.env.DEV && import.meta.env.VITE_HTTP_PROXY === 'Y';
+const { baseURL } = getServiceBaseURL(import.meta.env, isHttpProxy);
 
+// Cookie 鉴权模式:token 走 httpOnly cookie,由 NUpload with-credentials 自动携带。
 const headers: Record<string, string> = {
-  Authorization: `Bearer ${getToken()}`,
   clientid: import.meta.env.VITE_APP_CLIENT_ID!
 };
 
@@ -114,6 +116,7 @@ watch(visible, () => {
       v-model:file-list="fileList"
       :action="`${baseURL}/system/user/importData`"
       :headers="headers"
+      :with-credentials="true"
       :data="data"
       :max="1"
       :file-size="50"

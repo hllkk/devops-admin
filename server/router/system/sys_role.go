@@ -12,6 +12,7 @@ func (r *RoleRouter) InitRoleRouter(Router *gin.RouterGroup) {
 	roleRouter := Router.Group("system/role")
 	{
 		roleRouter.GET("list", roleApi.GetRoleList)                            // 角色列表
+		roleRouter.POST("export", roleApi.ExportRole)                         // 导出角色(Excel)
 		roleRouter.GET("authUser/allocatedList", roleApi.GetAllocatedUserList) // 角色已分配用户
 		roleRouter.POST("", roleApi.CreateRole)                                // 新增角色(含分配菜单)
 		roleRouter.PUT("", roleApi.UpdateRole)                                 // 修改角色(全量替换菜单)

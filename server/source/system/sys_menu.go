@@ -166,7 +166,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			MenuType:  "C",
 			Path:      "system/dict",
 			Component: "_admin/system/dict/index",
-			Icon:      "local-icon-dict",
+			Icon:      "streamline-ultimate:book-open-bookmark",
 			Visible:   "0",
 			OrderNum:  6,
 		},

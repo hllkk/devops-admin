@@ -187,7 +187,7 @@ export const generatedRoutes: GeneratedRoute[] = [
         meta: {
           title: 'system_dict',
           i18nKey: 'route.system_dict',
-          localIcon: 'menu-dict',
+          icon: 'streamline-ultimate:book-open-bookmark',
           order: 6
         }
       },

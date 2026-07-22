@@ -36,7 +36,8 @@ const GENERAL_DEFAULTS: Api.System.GeneralSettingConfig = {
   logoUrl: '',
   faviconUrl: '',
   loginLogRetentionDays: 90,
-  operationLogRetentionDays: 90
+  operationLogRetentionDays: 90,
+  defaultPassword: 'User@1234'
 };
 
 /** 安全配置默认值(对齐后端 SysSecurityConfig 的 gorm default 与 DefaultSecurityConfig) */

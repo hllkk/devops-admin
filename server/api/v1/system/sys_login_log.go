@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/hllkk/devops-admin/server/model/common/response"
 	systemReq "github.com/hllkk/devops-admin/server/model/system/request"
+	"github.com/hllkk/devops-admin/server/utils/excel"
 	"github.com/hllkk/devops-admin/server/utils/logger"
 )
 
@@ -99,4 +100,28 @@ func (l *LoginLogApi) UnlockLoginLog(c *gin.Context) {
 		return
 	}
 	response.OkWithDetailed(true, "解锁成功", c)
+}
+
+// ExportLoginLog
+// @Tags      SysLoginLog
+// @Summary   导出登录日志(Excel)
+// @Router    /log/loginlog/export [post]
+func (l *LoginLogApi) ExportLoginLog(c *gin.Context) {
+	var q systemReq.LoginLogSearch
+	if err := c.ShouldBind(&q); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	list, err := loginLogService.ExportLoginLogList(c.Request.Context(), q)
+	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("biz").Err(err).Error("导出登录日志失败")
+		response.FailWithMessage("导出失败", c)
+		return
+	}
+	buf, err := excel.Export(list, loginLogHeaders, "登录日志")
+	if err != nil {
+		response.FailWithMessage("导出失败", c)
+		return
+	}
+	writeXlsx(c, "登录日志", buf)
 }

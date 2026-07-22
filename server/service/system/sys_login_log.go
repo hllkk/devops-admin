@@ -69,3 +69,19 @@ func (s *LoginLogService) UnlockLoginLog(ctx context.Context, username string) e
 	ClearLoginFail(ctx, username)
 	return nil
 }
+
+// ExportLoginLogList 按条件导出登录日志(全量,不分页;条件与 GetLoginLogList 一致,加导出上限)。
+func (s *LoginLogService) ExportLoginLogList(ctx context.Context, q systemReq.LoginLogSearch) (list []system.SysLoginLog, err error) {
+	db := global.OPS_DB.WithContext(ctx).Model(&system.SysLoginLog{})
+	if q.UserName != "" {
+		db = db.Where("user_name LIKE ?", "%"+q.UserName+"%")
+	}
+	if q.Ipaddr != "" {
+		db = db.Where("ipaddr LIKE ?", "%"+q.Ipaddr+"%")
+	}
+	if q.Status != "" {
+		db = db.Where("status = ?", q.Status)
+	}
+	err = db.Order("info_id DESC").Limit(ExportMaxRows).Find(&list).Error
+	return
+}

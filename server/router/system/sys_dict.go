@@ -12,6 +12,7 @@ func (d *DictRouter) InitDictRouter(Router *gin.RouterGroup) {
 	dictTypeRouter := Router.Group("system/dict/type")
 	{
 		dictTypeRouter.GET("list", dictApi.GetDictTypeList)           // 分页获取字典类型列表
+		dictTypeRouter.POST("export", dictApi.ExportDictType)        // 导出字典类型(Excel)
 		dictTypeRouter.GET("optionselect", dictApi.GetDictTypeOption) // 获取字典类型选择框列表
 		dictTypeRouter.POST("", dictApi.CreateDictType)               // 新增字典类型
 		dictTypeRouter.PUT("", dictApi.UpdateDictType)                // 修改字典类型
@@ -20,6 +21,7 @@ func (d *DictRouter) InitDictRouter(Router *gin.RouterGroup) {
 	dictDataRouter := Router.Group("system/dict/data")
 	{
 		dictDataRouter.GET("list", dictApi.GetDictDataList)              // 分页获取字典数据列表
+		dictDataRouter.POST("export", dictApi.ExportDictData)            // 导出字典数据(Excel)
 		dictDataRouter.GET("type/:dictType", dictApi.GetDictDataByType)  // 按字典类型查字典数据(DictTag 渲染用)
 		dictDataRouter.POST("", dictApi.CreateDictData)                  // 新增字典数据
 		dictDataRouter.PUT("", dictApi.UpdateDictData)                   // 修改字典数据

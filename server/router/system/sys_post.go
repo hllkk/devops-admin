@@ -12,6 +12,7 @@ func (p *PostRouter) InitPostRouter(Router *gin.RouterGroup) {
 	postRouter := Router.Group("system/post")
 	{
 		postRouter.GET("list", postApi.GetPostList)           // 分页获取岗位列表
+		postRouter.POST("export", postApi.ExportPost)         // 导出岗位(Excel)
 		postRouter.GET("optionselect", postApi.GetPostOption) // 获取岗位选择框列表
 		postRouter.GET("deptTree", postApi.GetPostDeptTree)   // 获取岗位页部门树
 		postRouter.POST("", postApi.CreatePost)               // 新增岗位

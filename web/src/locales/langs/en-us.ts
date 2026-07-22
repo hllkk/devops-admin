@@ -521,6 +521,8 @@ const local: App.I18n.Schema = {
         systemDescription: 'System Description',
         logoUrl: 'Logo URL',
         faviconUrl: 'Favicon URL',
+        defaultPassword: 'Default Password',
+        defaultPasswordPlaceholder: 'Initial password for importing/resetting users; should meet password complexity',
         userDefaultPassword: 'Default User Password',
         userDefaultRole: 'Default Role',
         captchaTitle: 'Captcha',

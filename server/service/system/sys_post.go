@@ -130,3 +130,24 @@ func (s *PostService) GetPostOptionList(ctx context.Context, deptId int64) (list
 	return
 }
 
+// ExportPostList 按列表查询条件导出岗位(全量,不分页;过滤条件与 GetPostList 一致,加导出上限)。
+func (s *PostService) ExportPostList(ctx context.Context, q systemReq.PostSearch) (list []system.SysPost, err error) {
+	db := global.OPS_DB.WithContext(ctx).Model(&system.SysPost{})
+	if q.PostCode != "" {
+		db = db.Where("post_code LIKE ?", "%"+q.PostCode+"%")
+	}
+	if q.PostName != "" {
+		db = db.Where("post_name LIKE ?", "%"+q.PostName+"%")
+	}
+	if q.Status != "" {
+		db = db.Where("status = ?", q.Status)
+	}
+	if q.BelongDeptId > 0 {
+		db = db.Where("dept_id = ?", q.BelongDeptId)
+	} else if q.DeptId > 0 {
+		db = db.Where("dept_id = ?", q.DeptId)
+	}
+	err = db.Order(postOrder).Limit(ExportMaxRows).Find(&list).Error
+	return
+}
+

@@ -195,3 +195,29 @@ func (s *DictDataService) GetDictDataByType(ctx context.Context, dictType string
 	err = global.OPS_DB.WithContext(ctx).Where("dict_type = ?", dictType).Order(dictDataOrder).Find(&list).Error
 	return
 }
+
+// ExportDictTypeList 按条件导出字典类型(全量,不分页;条件与 GetDictTypeList 一致,加导出上限)。
+func (s *DictTypeService) ExportDictTypeList(ctx context.Context, q systemReq.DictTypeSearch) (list []system.SysDictType, err error) {
+	db := global.OPS_DB.WithContext(ctx).Model(&system.SysDictType{})
+	if q.DictName != "" {
+		db = db.Where("dict_name LIKE ?", "%"+q.DictName+"%")
+	}
+	if q.DictType != "" {
+		db = db.Where("dict_type LIKE ?", "%"+q.DictType+"%")
+	}
+	err = db.Order("dict_id DESC").Limit(ExportMaxRows).Find(&list).Error
+	return
+}
+
+// ExportDictDataList 按条件导出字典数据(全量,不分页;条件与 GetDictDataList 一致,加导出上限)。
+func (s *DictDataService) ExportDictDataList(ctx context.Context, q systemReq.DictDataSearch) (list []system.SysDictData, err error) {
+	db := global.OPS_DB.WithContext(ctx).Model(&system.SysDictData{})
+	if q.DictLabel != "" {
+		db = db.Where("dict_label LIKE ?", "%"+q.DictLabel+"%")
+	}
+	if q.DictType != "" {
+		db = db.Where("dict_type = ?", q.DictType)
+	}
+	err = db.Order(dictDataOrder).Limit(ExportMaxRows).Find(&list).Error
+	return
+}

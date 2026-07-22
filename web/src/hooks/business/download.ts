@@ -1,6 +1,5 @@
 import StreamSaver from 'streamsaver';
 import { errorCodeRecord } from '@/constants/common';
-import { localStg } from '@/utils/storage';
 import { getServiceBaseURL } from '@/utils/service';
 import { transformToURLSearchParams } from '@/utils/common';
 
@@ -22,9 +21,8 @@ export function useDownload() {
     return protocol === 'https' || hostname === 'localhost' || hostname === '127.0.0.1';
   };
 
-  /** 获取通用请求头 */
+  /** 获取通用请求头(Cookie 鉴权模式:token 走 httpOnly cookie,由 fetch credentials:'include' 自动携带,不下发 Authorization) */
   const getCommonHeaders = (contentType = 'application/octet-stream') => ({
-    Authorization: `Bearer ${localStg.get('token')}`,
     Clientid: import.meta.env.VITE_APP_CLIENT_ID!,
     'Content-Type': contentType
   });
@@ -100,7 +98,8 @@ export function useDownload() {
     try {
       const requestOptions: RequestInit = {
         method,
-        headers: getCommonHeaders(contentType)
+        headers: getCommonHeaders(contentType),
+        credentials: 'include'
       };
 
       if (method === 'POST' && params) {

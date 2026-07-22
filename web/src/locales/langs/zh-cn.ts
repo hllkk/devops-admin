@@ -517,6 +517,8 @@ const local: App.I18n.Schema = {
         systemDescription: '系统描述',
         logoUrl: 'Logo 地址',
         faviconUrl: 'Favicon 地址',
+        defaultPassword: '默认密码',
+        defaultPasswordPlaceholder: '导入/重置用户的初始密码,建议满足密码复杂度',
         userDefaultPassword: '用户默认密码',
         userDefaultRole: '默认角色',
         captchaTitle: '验证码配置',

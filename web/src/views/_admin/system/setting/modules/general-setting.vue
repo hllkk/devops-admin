@@ -27,6 +27,15 @@ const config = defineModel<Api.System.GeneralSettingConfig>('config', { required
             <img v-if="config.faviconUrl" :src="config.faviconUrl" alt="favicon" class="size-32px rounded-4px" />
           </div>
         </NFormItem>
+        <NFormItem :label="$t('page.system.setting.defaultPassword')" path="defaultPassword">
+          <NInput
+            v-model:value="config.defaultPassword"
+            type="password"
+            show-password-on="click"
+            :placeholder="$t('page.system.setting.defaultPasswordPlaceholder')"
+            class="max-w-400px"
+          />
+        </NFormItem>
       </NForm>
     </NTabPane>
 

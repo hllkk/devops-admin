@@ -154,7 +154,7 @@ async function view(operId: CommonType.IdType) {
 }
 
 async function handleExport() {
-  download('/monitor/operlog/export', searchParams.value, `${$t('page.log.operlog.exportFileName')}_${new Date().getTime()}.xlsx`);
+  download('/log/operlog/export', searchParams.value, `${$t('page.log.operlog.exportFileName')}_${new Date().getTime()}.xlsx`);
 }
 
 async function handleCleanOperLog() {

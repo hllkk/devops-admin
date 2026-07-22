@@ -9,7 +9,8 @@ body,
   text-autospace: normal;
 }
 
-/* NDataTable flex-height 模式空数据居中 */
+/* NDataTable flex-height */
+.n-data-table--flex-height
 .n-data-table--flex-height .n-data-table-base-table-body {
   flex: 1 !important;
   min-height: 0 !important;

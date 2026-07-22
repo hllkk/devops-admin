@@ -8,6 +8,7 @@ import (
 	"github.com/hllkk/devops-admin/server/model/common/response"
 	systemReq "github.com/hllkk/devops-admin/server/model/system/request"
 	"github.com/hllkk/devops-admin/server/utils"
+	"github.com/hllkk/devops-admin/server/utils/excel"
 	"github.com/hllkk/devops-admin/server/utils/logger"
 )
 
@@ -150,4 +151,28 @@ func (p *PostApi) GetPostDeptTree(c *gin.Context) {
 		return
 	}
 	response.OkWithDetailed(tree, "获取成功", c)
+}
+
+// ExportPost
+// @Tags      SysPost
+// @Summary   导出岗位(Excel)
+// @Router    /system/post/export [post]
+func (p *PostApi) ExportPost(c *gin.Context) {
+	var q systemReq.PostSearch
+	if err := c.ShouldBind(&q); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	list, err := postService.ExportPostList(c.Request.Context(), q)
+	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("biz").Err(err).Error("导出岗位失败")
+		response.FailWithMessage("导出失败", c)
+		return
+	}
+	buf, err := excel.Export(list, postHeaders, "岗位")
+	if err != nil {
+		response.FailWithMessage("导出失败", c)
+		return
+	}
+	writeXlsx(c, "岗位列表", buf)
 }

@@ -13,6 +13,7 @@ func (l *LoginLogRouter) InitLoginLogRouter(Router *gin.RouterGroup) {
 	loginLogRouter := Router.Group("log/loginlog")
 	{
 		loginLogRouter.GET("list", loginLogApi.GetLoginLogList)            // 分页获取登录日志列表
+		loginLogRouter.POST("export", loginLogApi.ExportLoginLog)          // 导出登录日志(Excel)
 		loginLogRouter.GET("unlock/:username", loginLogApi.UnlockLoginLog) // 解锁账号(清失败计数与锁)
 		loginLogRouter.DELETE(":ids", loginLogApi.BatchDeleteLoginLog)     // 批量删除登录日志
 		loginLogRouter.DELETE("clean", loginLogApi.CleanLoginLog)          // 清空登录日志

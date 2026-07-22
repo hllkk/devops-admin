@@ -118,3 +118,28 @@ func (s *SysOperLogService) DeleteOperLog(ctx context.Context, ids []int64) erro
 func (s *SysOperLogService) CleanOperLog(ctx context.Context) error {
 	return global.OPS_DB.WithContext(ctx).Unscoped().Where("1 = 1").Delete(&system.SysOperLog{}).Error
 }
+
+// ExportOperLogList 按条件导出操作日志(全量,不分页;条件与 GetOperLogList 一致,含 operTime 时间范围,加导出上限)。
+func (s *SysOperLogService) ExportOperLogList(ctx context.Context, q systemReq.OperLogSearch) (list []system.SysOperLog, err error) {
+	db := global.OPS_DB.WithContext(ctx).Model(&system.SysOperLog{})
+	if q.Title != "" {
+		db = db.Where("title LIKE ?", "%"+q.Title+"%")
+	}
+	if q.BusinessType != "" {
+		db = db.Where("business_type = ?", q.BusinessType)
+	}
+	if q.OperName != "" {
+		db = db.Where("oper_name LIKE ?", "%"+q.OperName+"%")
+	}
+	if q.OperIp != "" {
+		db = db.Where("oper_ip LIKE ?", "%"+q.OperIp+"%")
+	}
+	if q.Status != "" {
+		db = db.Where("status = ?", q.Status)
+	}
+	if q.BeginTime != "" && q.EndTime != "" {
+		db = db.Where("oper_time BETWEEN ? AND ?", q.BeginTime, q.EndTime)
+	}
+	err = db.Order("oper_id DESC").Limit(ExportMaxRows).Find(&list).Error
+	return
+}

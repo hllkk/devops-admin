@@ -8,6 +8,7 @@ import (
 	"github.com/hllkk/devops-admin/server/model/common/response"
 	systemReq "github.com/hllkk/devops-admin/server/model/system/request"
 	"github.com/hllkk/devops-admin/server/utils"
+	"github.com/hllkk/devops-admin/server/utils/excel"
 	"github.com/hllkk/devops-admin/server/utils/logger"
 )
 
@@ -232,4 +233,28 @@ func parseUserIds(raw string, c *gin.Context) ([]int64, bool) {
 		ids = append(ids, n)
 	}
 	return ids, true
+}
+
+// ExportRole
+// @Tags      SysRole
+// @Summary   导出角色(Excel)
+// @Router    /system/role/export [post]
+func (a *RoleApi) ExportRole(c *gin.Context) {
+	var q systemReq.RoleSearch
+	if err := c.ShouldBind(&q); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	list, err := roleService.ExportRoleList(c.Request.Context(), q)
+	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("biz").Err(err).Error("导出角色失败")
+		response.FailWithMessage("导出失败", c)
+		return
+	}
+	buf, err := excel.Export(list, roleHeaders, "角色")
+	if err != nil {
+		response.FailWithMessage("导出失败", c)
+		return
+	}
+	writeXlsx(c, "角色列表", buf)
 }

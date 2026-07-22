@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/hllkk/devops-admin/server/model/common/response"
 	systemReq "github.com/hllkk/devops-admin/server/model/system/request"
+	"github.com/hllkk/devops-admin/server/utils/excel"
 	"github.com/hllkk/devops-admin/server/utils/logger"
 )
 
@@ -92,4 +93,31 @@ func (o *OperLogApi) CleanOperLog(c *gin.Context) {
 		return
 	}
 	response.OkWithDetailed(true, "清空成功", c)
+}
+
+// ExportOperLog
+// @Tags      SysOperLog
+// @Summary   导出操作日志(Excel)
+// @Router    /log/operlog/export [post]
+func (o *OperLogApi) ExportOperLog(c *gin.Context) {
+	var q systemReq.OperLogSearch
+	if err := c.ShouldBind(&q); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	// 与 GetOperLogList 一致:bracket 形式 params[beginTime/endTime] 经表单体传输,由显式取值赋给 BeginTime/EndTime
+	q.BeginTime = c.PostForm("params[beginTime]")
+	q.EndTime = c.PostForm("params[endTime]")
+	list, err := operLogService.ExportOperLogList(c.Request.Context(), q)
+	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("biz").Err(err).Error("导出操作日志失败")
+		response.FailWithMessage("导出失败", c)
+		return
+	}
+	buf, err := excel.Export(list, operLogHeaders, "操作日志")
+	if err != nil {
+		response.FailWithMessage("导出失败", c)
+		return
+	}
+	writeXlsx(c, "操作日志", buf)
 }
