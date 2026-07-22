@@ -46,6 +46,7 @@ func (i *initSetting) MigrateTable(ctx context.Context) (context.Context, error)
 		&sysModel.SysAuthConfig{},
 		&sysModel.SysNotice{},
 		&sysModel.SysNoticeRecord{},
+		&sysModel.SysError{},
 	)
 }
 

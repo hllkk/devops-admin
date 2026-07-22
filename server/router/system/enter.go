@@ -17,6 +17,7 @@ type RouterGroup struct {
 	OperLogRouter
 	NoticeRouter
 	SettingRouter
+	SysErrorRouter
 }
 
 var (
@@ -32,4 +33,5 @@ var (
 	operLogApi  = v1.ApiGroupApp.SystemApiGroup.OperLogApi
 	noticeApi   = v1.ApiGroupApp.SystemApiGroup.NoticeApi
 	settingApi  = v1.ApiGroupApp.SystemApiGroup.SettingApi
+	sysErrorApi = v1.ApiGroupApp.SystemApiGroup.SysErrorApi
 )

@@ -11,6 +11,7 @@ import (
 	"github.com/hllkk/devops-admin/server/model/system"
 	"github.com/hllkk/devops-admin/server/service"
 	astutil "github.com/hllkk/devops-admin/server/utils/ast"
+	"github.com/hllkk/devops-admin/server/utils/logger"
 	"github.com/hllkk/devops-admin/server/utils/stacktrace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -83,17 +84,23 @@ func (z *ZapCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 		// 生成基础信息
 		info := entry.Message
 
-		// 提取 zap.Error(err) 内容
+		// 提取 zap.Error(err) 内容与 request_id/trace_id（builder.assemble 已注入这两个字段）
 		var errStr string
+		var reqID, traceID string
 		for i := 0; i < len(fields); i++ {
 			f := fields[i]
-			if f.Type == zapcore.ErrorType || f.Key == "error" || f.Key == "err" {
+			if f.Key == logger.FieldRequestID && f.String != "" {
+				reqID = f.String
+			}
+			if f.Key == logger.FieldTraceID && f.String != "" {
+				traceID = f.String
+			}
+			if errStr == "" && (f.Type == zapcore.ErrorType || f.Key == "error" || f.Key == "err") {
 				if f.Interface != nil {
 					errStr = fmt.Sprintf("%v", f.Interface)
 				} else if f.String != "" {
 					errStr = f.String
 				}
-				break
 			}
 		}
 		if errStr != "" {
@@ -121,9 +128,11 @@ func (z *ZapCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 		// 使用后台上下文，避免依赖 gin.Context
 		ctx := context.Background()
 		_ = service.ServiceGroupApp.SystemServiceGroup.SysErrorService.CreateSysError(ctx, &system.SysError{
-			Form:  &form,
-			Info:  &info,
-			Level: level,
+			Form:      &form,
+			Info:      &info,
+			Level:     level,
+			RequestID: reqID,
+			TraceID:   traceID,
 		})
 	}
 	return err

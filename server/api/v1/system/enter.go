@@ -15,15 +15,16 @@ type ApiGroup struct {
 	OperLogApi
 	NoticeApi
 	SettingApi
+	SysErrorApi
 }
 
 var (
 	initDBService         = service.ServiceGroupApp.SystemServiceGroup.InitDBService
 	securityConfigService = service.ServiceGroupApp.SystemServiceGroup.SecurityConfigService
-	ldapConfigService      = service.ServiceGroupApp.SystemServiceGroup.LdapConfigService
-	diskConfigService      = service.ServiceGroupApp.SystemServiceGroup.DiskConfigService
-	notifyConfigService    = service.ServiceGroupApp.SystemServiceGroup.NotifyConfigService
-	userService            = service.ServiceGroupApp.SystemServiceGroup.UserService
+	ldapConfigService     = service.ServiceGroupApp.SystemServiceGroup.LdapConfigService
+	diskConfigService     = service.ServiceGroupApp.SystemServiceGroup.DiskConfigService
+	notifyConfigService   = service.ServiceGroupApp.SystemServiceGroup.NotifyConfigService
+	userService           = service.ServiceGroupApp.SystemServiceGroup.UserService
 	loginLogService       = service.ServiceGroupApp.SystemServiceGroup.LoginLogService
 	captchaService        = service.ServiceGroupApp.SystemServiceGroup.CaptchaService
 	dictTypeService       = service.ServiceGroupApp.SystemServiceGroup.DictTypeService
@@ -35,4 +36,5 @@ var (
 	operLogService        = service.ServiceGroupApp.SystemServiceGroup.SysOperLogService
 	noticeService         = service.ServiceGroupApp.SystemServiceGroup.NoticeService
 	settingService        = service.ServiceGroupApp.SystemServiceGroup.SettingService
+	sysErrorService       = service.ServiceGroupApp.SystemServiceGroup.SysErrorService
 )
