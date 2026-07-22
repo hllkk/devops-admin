@@ -18,10 +18,10 @@ type SysTimedTaskLogSearch struct {
 }
 
 type ToggleTimedTask struct {
-	ID      uint `json:"ID" binding:"required"`
+	ID      uint `json:"ID,string" binding:"required"`
 	Enabled bool `json:"enabled"`
 }
 
 type TriggerTimedTask struct {
-	ID uint `json:"ID" binding:"required"`
+	ID uint `json:"ID,string" binding:"required"`
 }

@@ -976,7 +976,7 @@ const local: App.I18n.Schema = {
           methodName: 'Select registered method',
           httpUrl: 'https://example.com/hook',
           httpBody: 'Request body',
-          httpHeader: '{"Authorization":"Bearer xxx"}; leave empty to skip'
+          httpHeader: "{'{\"Authorization\":\"Bearer xxx\"}'}; leave empty to skip"
         },
         form: {
           name: { required: 'Please enter task name', invalid: 'Task name is required' },

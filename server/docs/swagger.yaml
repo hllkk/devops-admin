@@ -448,7 +448,7 @@ definitions:
   request.ToggleTimedTask:
     properties:
       ID:
-        type: integer
+        type: string
       enabled:
         type: boolean
     required:
@@ -457,7 +457,7 @@ definitions:
   request.TriggerTimedTask:
     properties:
       ID:
-        type: integer
+        type: string
     required:
     - ID
     type: object

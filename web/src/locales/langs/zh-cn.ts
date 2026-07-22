@@ -972,7 +972,7 @@ const local: App.I18n.Schema = {
           methodName: '选择已注册方法',
           httpUrl: 'https://example.com/hook',
           httpBody: '请求体原文',
-          httpHeader: '{"Authorization":"Bearer xxx"}; 留空则不加'
+          httpHeader: "{'{\"Authorization\":\"Bearer xxx\"}'}; 留空则不加"
         },
         form: {
           name: { required: '请输入任务名', invalid: '任务名不能为空' },

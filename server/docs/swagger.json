@@ -5224,7 +5224,7 @@
             ],
             "properties": {
                 "ID": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "enabled": {
                     "type": "boolean"
@@ -5238,7 +5238,7 @@
             ],
             "properties": {
                 "ID": {
-                    "type": "integer"
+                    "type": "string"
                 }
             }
         },

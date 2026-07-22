@@ -22,6 +22,7 @@
 > **当前状态（2026-07-16）**：`utils/snowflake` 与 `ops:snowflake_id` 回调**尚未落地**，`OPS_DB` 赋值点未注册该回调，现阶段主键走 **DB 自增**；新建模型须显式声明主键列。雪花链路待重建（历史设计见 `aiDoc/memory/business/snowflake-id-generator.md`）。
 
 - **传输格式**：JSON 中 ID 一律以**字符串**传输（Go 端 `json:"...,string"`，如 `json:"userId,string"` / `json:"id,string"`），规避 JS `Number` 仅能安全表示到 2^53 的精度丢失（雪花 ID 通常 18~19 位十进制）。
+- **请求入参结构体同样要带 `,string`**：`model/.../request/` 下接收实体主键 ID 的入参结构体（如 `TriggerTimedTask.ID`、`ToggleTimedTask.ID`），json tag 必须同样写 `json:"...,string"`，与模型主键的传输格式对齐。漏写时前端按字符串传 ID 会被 `encoding/json` 拒绝：`json: cannot unmarshal string into Go struct field ... of type uint/int64`。主键的字符串传输是**全链路约定**（模型 + 请求入参 + 响应），不只作用于模型结构体本身。
 - **前端约束**：所有 ID 字段一律按 `string` 收发，**禁止当 number 做数值运算或比较**；需要排序/比较时转 BigInt。
 - **显式 ID 不被覆盖**：创建时若已指定主键，回调不会覆盖（雪花落地后生效）。
 

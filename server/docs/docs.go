@@ -5232,7 +5232,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "ID": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "enabled": {
                     "type": "boolean"
@@ -5246,7 +5246,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "ID": {
-                    "type": "integer"
+                    "type": "string"
                 }
             }
         },
