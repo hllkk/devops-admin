@@ -958,7 +958,7 @@ const local: App.I18n.Schema = {
         addTimer: '新增定时任务',
         editTimer: '编辑定时任务',
         params: '参数(JSON)',
-        paramsPlaceholder: '自由 JSON, 由方法自行解析, 如 {"days": 30}; 留空则不传',
+        paramsPlaceholder: "自由 JSON, 由方法自行解析, 如 {'{\"days\": 30}'}; 留空则不传",
         specPreset: '常用模板',
         specHint: '合法性由后端校验；保存失败时错误会回显',
         deleteConfirm: '确认删除该任务？',
@@ -968,7 +968,7 @@ const local: App.I18n.Schema = {
         placeholder: {
           name: '搜索任务名',
           executorType: '请选择执行器类型',
-          spec: '如 @daily 或 */30 * * * *',
+          spec: "如 {'@'}daily 或 */30 * * * *",
           methodName: '选择已注册方法',
           httpUrl: 'https://example.com/hook',
           httpBody: '请求体原文',

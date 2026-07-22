@@ -52,7 +52,7 @@ export const useNoticeStore = defineStore(SetupStoreId.Notice, () => {
   const fetchUnread = async () => {
     const { data, error } = await fetchGetUnreadNotice({ pageNum: 1, pageSize: 50, onlyUnread: true });
     if (error || !data) return;
-    const rows = data.rows as (Api.System.Notice & { readAt?: string })[];
+    const rows = (data.rows ?? []) as (Api.System.Notice & { readAt?: string })[];
     state.notices = rows.map(r => ({
       noticeId: r.noticeId !== undefined ? Number(r.noticeId) : undefined,
       title: r.noticeTitle,

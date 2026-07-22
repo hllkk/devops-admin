@@ -29,7 +29,7 @@ const searchParams = ref<Api.System.SysTimedTaskSearchParams>({
 /** 构建干净查询参数: 剔除 null/空字符串, 避免 axios 将 null 序列化为空字符串传给后端,
  *  防止 Gin 把 enabled= 空字符串绑定为 *bool=false, 导致误过滤 enabled=true 的任务 */
 function buildCleanParams(): Api.System.SysTimedTaskSearchParams {
-  const p: Record<string, any> = {
+  const p: Partial<Api.System.SysTimedTaskSearchParams> = {
     pageNum: searchParams.value.pageNum,
     pageSize: searchParams.value.pageSize
   };
@@ -38,7 +38,7 @@ function buildCleanParams(): Api.System.SysTimedTaskSearchParams {
   if (searchParams.value.enabled !== null && searchParams.value.enabled !== undefined) {
     p.enabled = searchParams.value.enabled;
   }
-  return p as Api.System.SysTimedTaskSearchParams;
+  return p;
 }
 
 const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagination, scrollX } =
@@ -201,14 +201,14 @@ const { drawerVisible, operateType, editingData, handleAdd, handleEdit, checkedR
 
 async function handleBatchDelete() {
   for (const id of checkedRowKeys.value) {
-    const { error } = await fetchDeleteTimedTask({ ID: Number(id) });
+    const { error } = await fetchDeleteTimedTask({ ID: String(id) });
     if (error) return;
   }
   onBatchDeleted();
 }
 
 async function handleDelete(id: CommonType.IdType) {
-  const { error } = await fetchDeleteTimedTask({ ID: Number(id) });
+  const { error } = await fetchDeleteTimedTask({ ID: String(id) });
   if (error) return;
   onDeleted();
 }
@@ -217,15 +217,15 @@ async function edit(id: CommonType.IdType) {
   handleEdit(id);
 }
 
-async function handleToggle(row: any, enabled: boolean) {
-  const { error } = await fetchToggleTimedTask({ ID: Number(row.id), enabled });
+async function handleToggle(row: Api.System.SysTimedTask, enabled: boolean) {
+  const { error } = await fetchToggleTimedTask({ ID: String(row.id), enabled });
   if (error) return;
   window.$message?.success(enabled ? $t('page.system.timer.toggleSuccessOn') : $t('page.system.timer.toggleSuccessOff'));
   getData();
 }
 
-async function handleTrigger(row: any) {
-  const { error } = await fetchTriggerTimedTask({ ID: Number(row.id) });
+async function handleTrigger(row: Api.System.SysTimedTask) {
+  const { error } = await fetchTriggerTimedTask({ ID: String(row.id) });
   if (error) return;
   window.$message?.success($t('page.system.timer.triggerSuccess'));
 }
@@ -235,7 +235,7 @@ const logDrawerVisible = ref(false);
 const logTaskId = ref(0);
 const logTaskName = ref('');
 
-function openLogs(row: any) {
+function openLogs(row: Api.System.SysTimedTask) {
   logTaskId.value = Number(row.id);
   logTaskName.value = row.name;
   logDrawerVisible.value = true;
@@ -249,7 +249,7 @@ function handleResetSearch() {
 <template>
   <div class="h-full flex-col-stretch gap-12px overflow-hidden lt-sm:overflow-auto">
     <TimerSearch v-model:model="searchParams" @reset="handleResetSearch" @search="getDataByPage" />
-    <NCard :title="$t('page.system.timer.title')" :bordered="false" size="small" class="card-wrapper sm:flex-1-hidden">
+    <NCard :title="$t('page.system.timer.listTitle')" :bordered="false" size="small" class="card-wrapper sm:flex-1-hidden">
       <template #header-extra>
         <TableHeaderOperation
           v-model:columns="columnChecks"
@@ -272,14 +272,14 @@ function handleResetSearch() {
         :scroll-x="scrollX"
         :loading="loading"
         remote
-        :row-key="(row: any) => row.id"
+        :row-key="row => row.id"
         :pagination="mobilePagination"
         class="sm:h-full"
       />
       <TimerOperateDrawer
         v-model:visible="drawerVisible"
         :operate-type="operateType"
-        :row-data="editingData as any"
+        :row-data="editingData"
         @submitted="getData"
       />
       <TimerLogDrawer

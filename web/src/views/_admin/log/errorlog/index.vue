@@ -268,7 +268,7 @@ async function handleBatchDelete() {
         :scroll-x="scrollX"
         :loading="loading"
         remote
-        :row-key="(row: Api.Log.ErrorLog) => row.id"
+        :row-key="row => row.id"
         :pagination="mobilePagination"
         class="sm:h-full"
       />

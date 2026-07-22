@@ -10,7 +10,7 @@ export function fetchGetTimedTaskList(params?: Api.System.SysTimedTaskSearchPara
 }
 
 /** 创建定时任务 */
-export function fetchCreateTimedTask(data: any) {
+export function fetchCreateTimedTask(data: Api.System.SysTimedTaskOperateParams) {
   return request<boolean>({
     url: '/timedTask/createTimedTask',
     method: 'post',
@@ -19,7 +19,7 @@ export function fetchCreateTimedTask(data: any) {
 }
 
 /** 更新定时任务 */
-export function fetchUpdateTimedTask(data: any) {
+export function fetchUpdateTimedTask(data: Api.System.SysTimedTaskOperateParams) {
   return request<boolean>({
     url: '/timedTask/updateTimedTask',
     method: 'put',
@@ -28,7 +28,7 @@ export function fetchUpdateTimedTask(data: any) {
 }
 
 /** 删除定时任务 */
-export function fetchDeleteTimedTask(data: { ID: number }) {
+export function fetchDeleteTimedTask(data: { ID: string }) {
   return request<boolean>({
     url: '/timedTask/deleteTimedTask',
     method: 'delete',
@@ -37,7 +37,7 @@ export function fetchDeleteTimedTask(data: { ID: number }) {
 }
 
 /** 启用/停用定时任务 */
-export function fetchToggleTimedTask(data: { ID: number; enabled: boolean }) {
+export function fetchToggleTimedTask(data: { ID: string; enabled: boolean }) {
   return request<boolean>({
     url: '/timedTask/toggleTimedTask',
     method: 'post',
@@ -46,7 +46,7 @@ export function fetchToggleTimedTask(data: { ID: number; enabled: boolean }) {
 }
 
 /** 手动触发定时任务 */
-export function fetchTriggerTimedTask(data: { ID: number }) {
+export function fetchTriggerTimedTask(data: { ID: string }) {
   return request<boolean>({
     url: '/timedTask/triggerTimedTask',
     method: 'post',

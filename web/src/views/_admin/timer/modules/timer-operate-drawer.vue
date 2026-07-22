@@ -38,7 +38,7 @@ const title = computed(() => {
 });
 
 type Model = {
-  ID: number;
+  ID: string;
   name: string;
   description: string;
   spec: string;
@@ -59,7 +59,7 @@ const methodOptions = ref<Api.System.RegisteredMethod[]>([]);
 
 function createDefaultModel(): Model {
   return {
-    ID: 0,
+    ID: '0',
     name: '',
     description: '',
     spec: '',
@@ -107,7 +107,7 @@ function handleUpdateModelWhenEdit() {
   if (props.operateType === 'edit' && props.rowData) {
     const row = props.rowData;
     Object.assign(model.value, {
-      ID: Number(row.id),
+      ID: row.id,
       name: row.name,
       description: row.description || '',
       spec: row.spec,
@@ -129,7 +129,7 @@ function closeDrawer() {
   visible.value = false;
 }
 
-function parseJsonField(text: string, label: string): { ok: boolean; value: any } {
+function parseJsonField(text: string, label: string): { ok: boolean; value: Record<string, unknown> | null } {
   if (!text || !text.trim()) return { ok: true, value: null };
   try {
     return { ok: true, value: JSON.parse(text) };

@@ -738,15 +738,23 @@ declare namespace Api {
       withSeconds: boolean;
       executorType: TimedTaskExecutorType;
       methodName: string;
-      params: Record<string, any> | null;
+      params: Record<string, unknown> | null;
       httpUrl: string;
       httpMethod: string;
-      httpHeader: Record<string, any> | null;
+      httpHeader: Record<string, unknown> | null;
       httpBody: string;
       httpAllowPrivate: boolean;
       enabled: boolean;
       nextRunAt: string | null;
     }>;
+
+    /** 定时任务创建/更新参数 */
+    type SysTimedTaskOperateParams = CommonType.RecordNullable<
+      Pick<
+        SysTimedTask,
+        'id' | 'name' | 'description' | 'spec' | 'withSeconds' | 'executorType' | 'methodName' | 'params' | 'httpUrl' | 'httpMethod' | 'httpHeader' | 'httpBody' | 'httpAllowPrivate' | 'enabled'
+      >
+    >;
 
     /** 定时任务搜索参数 */
     type SysTimedTaskSearchParams = CommonType.RecordNullable<

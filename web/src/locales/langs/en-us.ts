@@ -962,7 +962,7 @@ const local: App.I18n.Schema = {
         addTimer: 'Add Timed Task',
         editTimer: 'Edit Timed Task',
         params: 'Params(JSON)',
-        paramsPlaceholder: 'Free JSON, parsed by method, e.g. {"days": 30}; leave empty to skip',
+        paramsPlaceholder: "Free JSON, parsed by method, e.g. {'{\"days\": 30}'}; leave empty to skip",
         specPreset: 'Presets',
         specHint: 'Syntax validated by backend; errors are shown on save failure',
         deleteConfirm: 'Confirm delete this task?',
@@ -972,7 +972,7 @@ const local: App.I18n.Schema = {
         placeholder: {
           name: 'Search task name',
           executorType: 'Select executor type',
-          spec: 'e.g. @daily or */30 * * * *',
+          spec: "e.g. {'@'}daily or */30 * * * *",
           methodName: 'Select registered method',
           httpUrl: 'https://example.com/hook',
           httpBody: 'Request body',
