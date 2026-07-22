@@ -16,6 +16,7 @@ type ApiGroup struct {
 	NoticeApi
 	SettingApi
 	SysErrorApi
+	TimedTaskApi
 }
 
 var (
@@ -37,4 +38,5 @@ var (
 	noticeService         = service.ServiceGroupApp.SystemServiceGroup.NoticeService
 	settingService        = service.ServiceGroupApp.SystemServiceGroup.SettingService
 	sysErrorService       = service.ServiceGroupApp.SystemServiceGroup.SysErrorService
+	timedTaskService      = service.ServiceGroupApp.SystemServiceGroup.TimedTaskService
 )

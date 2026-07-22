@@ -18,6 +18,7 @@ type RouterGroup struct {
 	NoticeRouter
 	SettingRouter
 	SysErrorRouter
+	TimedTaskRouter
 }
 
 var (
@@ -34,4 +35,5 @@ var (
 	noticeApi   = v1.ApiGroupApp.SystemApiGroup.NoticeApi
 	settingApi  = v1.ApiGroupApp.SystemApiGroup.SettingApi
 	sysErrorApi = v1.ApiGroupApp.SystemApiGroup.SysErrorApi
+	timedTaskApi = v1.ApiGroupApp.SystemApiGroup.TimedTaskApi
 )

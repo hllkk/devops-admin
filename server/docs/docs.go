@@ -15,27 +15,26 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/auth/captcha": {
+        "/base/captcha": {
             "get": {
-                "description": "按触发策略决定是否返回验证码：captchaEnabled=false 表示当前无需验证码；为 true 时返回 type/captchaId 与对应图片。type=image 为传统图形验证码，click/slide/rotate 为 go-captcha 行为验证码。",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Auth"
+                    "Base"
                 ],
-                "summary": "生成验证码",
+                "summary": "生成验证码(go-captcha 行为验证)",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "用户名(阈值模式下用于判断账号是否触发验证码)",
+                        "description": "用户名(触发阈值判断)",
                         "name": "username",
                         "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "captchaEnabled/type/captchaId/masterImage/tileImage/thumbImage",
+                        "description": "OK",
                         "schema": {
                             "allOf": [
                                 {
@@ -46,6 +45,51 @@ const docTemplate = `{
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/system.CaptchaResult"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/base/login": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Base"
+                ],
+                "summary": "用户登录",
+                "parameters": [
+                    {
+                        "description": "用户名, 密码, 验证码",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.Login"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.LoginResponse"
                                         },
                                         "msg": {
                                             "type": "string"
@@ -218,9 +262,4357 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/log/loginlog/clean": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysLoginLog"
+                ],
+                "summary": "清空登录日志",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/log/loginlog/export": {
+            "post": {
+                "tags": [
+                    "SysLoginLog"
+                ],
+                "summary": "导出登录日志(Excel)",
+                "responses": {}
+            }
+        },
+        "/log/loginlog/list": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysLoginLog"
+                ],
+                "summary": "分页获取登录日志列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户账号(模糊匹配)",
+                        "name": "userName",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "登录IP(模糊匹配)",
+                        "name": "ipaddr",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "登录状态(0成功 1失败)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "pageNum",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页大小",
+                        "name": "pageSize",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.PageResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "rows": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/system.SysLoginLog"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/log/loginlog/unlock/{username}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysLoginLog"
+                ],
+                "summary": "解锁账号(清除登录失败计数与锁)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户账号",
+                        "name": "username",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/log/loginlog/{ids}": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysLoginLog"
+                ],
+                "summary": "批量删除登录日志",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "登录日志ID列表(逗号分隔)",
+                        "name": "ids",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/log/operlog/clean": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysOperLog"
+                ],
+                "summary": "清空操作日志",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/log/operlog/export": {
+            "post": {
+                "tags": [
+                    "SysOperLog"
+                ],
+                "summary": "导出操作日志(Excel)",
+                "responses": {}
+            }
+        },
+        "/log/operlog/list": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysOperLog"
+                ],
+                "summary": "分页获取操作日志列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "系统模块(模糊匹配)",
+                        "name": "title",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "操作类型(0~9)",
+                        "name": "businessType",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "操作人员(模糊匹配)",
+                        "name": "operName",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "操作IP(模糊匹配)",
+                        "name": "operIp",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "操作状态(0正常 1异常)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "开始时间(yyyy-MM-dd HH:mm:ss)",
+                        "name": "params[beginTime]",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束时间(yyyy-MM-dd HH:mm:ss)",
+                        "name": "params[endTime]",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "pageNum",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页大小",
+                        "name": "pageSize",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.PageResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "rows": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/system.SysOperLog"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/log/operlog/{ids}": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysOperLog"
+                ],
+                "summary": "批量删除操作日志",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "操作日志ID列表(逗号分隔)",
+                        "name": "ids",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/log/sysError/createSysError": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysError"
+                ],
+                "summary": "创建错误日志",
+                "parameters": [
+                    {
+                        "description": "错误日志",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/system.SysError"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/log/sysError/deleteSysError": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysError"
+                ],
+                "summary": "删除错误日志",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "错误日志ID",
+                        "name": "ID",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/log/sysError/deleteSysErrorByIds": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysError"
+                ],
+                "summary": "批量删除错误日志",
+                "parameters": [
+                    {
+                        "description": "错误日志ID列表",
+                        "name": "ids",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/log/sysError/findSysError": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysError"
+                ],
+                "summary": "根据ID查询错误日志",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "错误日志ID",
+                        "name": "ID",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/system.SysError"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/log/sysError/getSysErrorList": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysError"
+                ],
+                "summary": "分页获取错误日志列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "pageNum",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页大小",
+                        "name": "pageSize",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "错误来源",
+                        "name": "form",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "错误内容(模糊)",
+                        "name": "info",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.PageResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "rows": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/system.SysError"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/log/sysError/getSysErrorSolution": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysError"
+                ],
+                "summary": "根据ID触发AI处理:标记为处理中,异步生成解决方案后改为处理完成",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "错误日志ID",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/log/sysError/updateSysError": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysError"
+                ],
+                "summary": "更新错误日志",
+                "parameters": [
+                    {
+                        "description": "错误日志",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/system.SysError"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/dept": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysDept"
+                ],
+                "summary": "修改部门",
+                "parameters": [
+                    {
+                        "description": "部门信息(含 deptId)",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.DeptOperateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysDept"
+                ],
+                "summary": "新增部门",
+                "parameters": [
+                    {
+                        "description": "部门信息",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.DeptOperateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/dept/list": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysDept"
+                ],
+                "summary": "获取部门列表(树形平表,前端组装树)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "部门名称(模糊匹配)",
+                        "name": "deptName",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "部门状态(精确 0正常1停用)",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/system.SysDepartment"
+                                            }
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/dept/list/exclude/{deptId}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysDept"
+                ],
+                "summary": "获取排除指定部门及其子部门的列表(选父级用)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "部门ID",
+                        "name": "deptId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/system.SysDepartment"
+                                            }
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/dept/optionselect": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysDept"
+                ],
+                "summary": "获取部门选择框列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/system.SysDepartment"
+                                            }
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/dept/{ids}": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysDept"
+                ],
+                "summary": "批量删除部门",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "部门ID列表(逗号分隔)",
+                        "name": "ids",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/dict/data": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysDictData"
+                ],
+                "summary": "修改字典数据",
+                "parameters": [
+                    {
+                        "description": "字典数据信息(含 dictCode)",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.DictDataOperateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysDictData"
+                ],
+                "summary": "新增字典数据",
+                "parameters": [
+                    {
+                        "description": "字典数据信息",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.DictDataOperateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/dict/data/export": {
+            "post": {
+                "tags": [
+                    "SysDictData"
+                ],
+                "summary": "导出字典数据(Excel)",
+                "responses": {}
+            }
+        },
+        "/system/dict/data/list": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysDictData"
+                ],
+                "summary": "分页获取字典数据列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "字典标签(模糊匹配)",
+                        "name": "dictLabel",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "字典类型(精确匹配)",
+                        "name": "dictType",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "pageNum",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页大小",
+                        "name": "pageSize",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.PageResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "rows": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/system.SysDictData"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/dict/data/type/{dictType}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysDictData"
+                ],
+                "summary": "按字典类型查字典数据",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "字典类型",
+                        "name": "dictType",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/system.SysDictData"
+                                            }
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/dict/data/{dictCodes}": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysDictData"
+                ],
+                "summary": "批量删除字典数据",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "字典编码列表(逗号分隔)",
+                        "name": "dictCodes",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/dict/type": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysDictType"
+                ],
+                "summary": "修改字典类型",
+                "parameters": [
+                    {
+                        "description": "字典类型信息(含 dictId)",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.DictTypeOperateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysDictType"
+                ],
+                "summary": "新增字典类型",
+                "parameters": [
+                    {
+                        "description": "字典类型信息",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.DictTypeOperateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/dict/type/export": {
+            "post": {
+                "tags": [
+                    "SysDictType"
+                ],
+                "summary": "导出字典类型(Excel)",
+                "responses": {}
+            }
+        },
+        "/system/dict/type/list": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysDictType"
+                ],
+                "summary": "分页获取字典类型列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "字典名称(模糊匹配)",
+                        "name": "dictName",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "字典类型(模糊匹配)",
+                        "name": "dictType",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "pageNum",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页大小",
+                        "name": "pageSize",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.PageResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "rows": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/system.SysDictType"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/dict/type/optionselect": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysDictType"
+                ],
+                "summary": "获取字典类型选择框列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/system.SysDictType"
+                                            }
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/dict/type/{ids}": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysDictType"
+                ],
+                "summary": "批量删除字典类型",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "字典类型ID列表(逗号分隔)",
+                        "name": "ids",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/menu": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysMenu"
+                ],
+                "summary": "修改菜单",
+                "parameters": [
+                    {
+                        "description": "菜单信息(含 menuId)",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.MenuOperateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysMenu"
+                ],
+                "summary": "新增菜单",
+                "parameters": [
+                    {
+                        "description": "菜单信息",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.MenuOperateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/menu/cascade/{menuIds}": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysMenu"
+                ],
+                "summary": "级联删除菜单(含子孙,清理角色关联)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "菜单ID列表(逗号分隔)",
+                        "name": "menuIds",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/menu/list": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysMenu"
+                ],
+                "summary": "获取菜单列表(树形平表,前端组装树)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "菜单名称(模糊匹配)",
+                        "name": "menuName",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "菜单状态(精确 0正常1停用)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "菜单类型(精确 M目录C菜单F按钮)",
+                        "name": "menuType",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "父菜单ID(精确,查按钮列表用)",
+                        "name": "parentId",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/system.SysMenu"
+                                            }
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/menu/roleMenuTreeselect/{roleId}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysMenu"
+                ],
+                "summary": "获取角色菜单权限树(角色分配菜单回显用)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "角色ID",
+                        "name": "roleId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/system.RoleMenuTreeSelect"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/menu/treeselect": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysMenu"
+                ],
+                "summary": "获取菜单树(已组装,树选择用)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/system.MenuTreeSelectNode"
+                                            }
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/menu/{menuId}": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysMenu"
+                ],
+                "summary": "删除菜单(存在子菜单或已分配角色时禁删)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "菜单ID",
+                        "name": "menuId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/notice": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysNotice"
+                ],
+                "summary": "修改通知公告",
+                "parameters": [
+                    {
+                        "description": "通知公告信息(含 noticeId)",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.NoticeOperateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysNotice"
+                ],
+                "summary": "新增通知公告",
+                "parameters": [
+                    {
+                        "description": "通知公告信息",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.NoticeOperateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/notice/list": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysNotice"
+                ],
+                "summary": "分页获取通知公告列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "公告标题(模糊匹配)",
+                        "name": "noticeTitle",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "公告类型(1通知 2公告)",
+                        "name": "noticeType",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "pageNum",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页大小",
+                        "name": "pageSize",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.PageResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "rows": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/system.SysNotice"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/notice/read": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysNotice"
+                ],
+                "summary": "标记通知已读(noticeIds 为空=全部已读)",
+                "parameters": [
+                    {
+                        "description": "通知ID列表(空=全部已读)",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.NoticeReadParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/notice/unread": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysNotice"
+                ],
+                "summary": "当前用户通知列表(未读/历史)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "pageNum",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页大小",
+                        "name": "pageSize",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "仅未读",
+                        "name": "onlyUnread",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.PageResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "rows": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/system.NoticeRecordVO"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/notice/{ids}": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysNotice"
+                ],
+                "summary": "批量删除通知公告",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "公告ID列表(逗号分隔)",
+                        "name": "ids",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/post": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysPost"
+                ],
+                "summary": "修改岗位",
+                "parameters": [
+                    {
+                        "description": "岗位信息(含 postId)",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.PostOperateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysPost"
+                ],
+                "summary": "新增岗位",
+                "parameters": [
+                    {
+                        "description": "岗位信息",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.PostOperateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/post/deptTree": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysPost"
+                ],
+                "summary": "获取岗位页部门树",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/system.DeptTreeNode"
+                                            }
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/post/export": {
+            "post": {
+                "tags": [
+                    "SysPost"
+                ],
+                "summary": "导出岗位(Excel)",
+                "responses": {}
+            }
+        },
+        "/system/post/list": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysPost"
+                ],
+                "summary": "分页获取岗位列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "岗位编码(模糊匹配)",
+                        "name": "postCode",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "岗位名称(模糊匹配)",
+                        "name": "postName",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "岗位状态(精确 0正常1停用)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "归属部门ID(左侧部门树点击过滤)",
+                        "name": "belongDeptId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "pageNum",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页大小",
+                        "name": "pageSize",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.PageResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "rows": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/system.SysPost"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/post/optionselect": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysPost"
+                ],
+                "summary": "获取岗位选择框列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "部门ID(限定该部门下启用岗位)",
+                        "name": "deptId",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/system.SysPost"
+                                            }
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/post/{ids}": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysPost"
+                ],
+                "summary": "批量删除岗位",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "岗位ID列表(逗号分隔)",
+                        "name": "ids",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/role": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysRole"
+                ],
+                "summary": "修改角色(全量替换分配菜单)",
+                "parameters": [
+                    {
+                        "description": "角色信息(含 roleId 与 menuIds)",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.RoleOperateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysRole"
+                ],
+                "summary": "新增角色(含分配菜单)",
+                "parameters": [
+                    {
+                        "description": "角色信息(含 menuIds)",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.RoleOperateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/role/authUser/allocatedList": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysRole"
+                ],
+                "summary": "获取角色已分配用户列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "角色ID",
+                        "name": "roleId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户名(模糊匹配)",
+                        "name": "userName",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "手机号(模糊匹配)",
+                        "name": "phonenumber",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "pageNum",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页大小",
+                        "name": "pageSize",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.PageResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "rows": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/system.SysUser"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/role/authUser/cancelAll": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysRole"
+                ],
+                "summary": "批量取消角色用户授权",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "角色ID",
+                        "name": "roleId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户ID列表(逗号分隔)",
+                        "name": "userIds",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/role/authUser/selectAll": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysRole"
+                ],
+                "summary": "批量给角色授权用户",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "角色ID",
+                        "name": "roleId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户ID列表(逗号分隔)",
+                        "name": "userIds",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/role/changeStatus": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysRole"
+                ],
+                "summary": "修改角色状态",
+                "parameters": [
+                    {
+                        "description": "角色信息(含 roleId 与 status)",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.RoleOperateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/role/export": {
+            "post": {
+                "tags": [
+                    "SysRole"
+                ],
+                "summary": "导出角色(Excel)",
+                "responses": {}
+            }
+        },
+        "/system/role/list": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysRole"
+                ],
+                "summary": "分页获取角色列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "角色名称(模糊匹配)",
+                        "name": "roleName",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "角色权限字符(模糊匹配)",
+                        "name": "roleKey",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "角色状态(精确 0正常1停用)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "pageNum",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页大小",
+                        "name": "pageSize",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.PageResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "rows": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/system.SysRole"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/role/{ids}": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysRole"
+                ],
+                "summary": "批量删除角色(已分配用户时禁删)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "角色ID列表(逗号分隔)",
+                        "name": "ids",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/setting": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysSetting"
+                ],
+                "summary": "获取系统设置(管理员)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/request.SettingConfig"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysSetting"
+                ],
+                "summary": "更新系统设置(管理员)",
+                "parameters": [
+                    {
+                        "description": "系统设置(general/security/ldap/disk/notify/auth 任一可选)",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.SettingConfig"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/setting/notify/test-email": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysSetting"
+                ],
+                "summary": "发送测试邮件(使用当前表单值,无需先保存)",
+                "parameters": [
+                    {
+                        "description": "邮件配置+收件人地址",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.TestEmailReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/setting/public": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysSetting"
+                ],
+                "summary": "获取公开系统设置(登录页,免鉴权)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/request.PublicSetting"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/user": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysUser"
+                ],
+                "summary": "修改用户(全量替换角色/岗位)",
+                "parameters": [
+                    {
+                        "description": "用户信息(含 userId、roleIds/postIds)",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.UserOperateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysUser"
+                ],
+                "summary": "新增用户(含分配角色/岗位)",
+                "parameters": [
+                    {
+                        "description": "用户信息(含 roleIds/postIds)",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.UserOperateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/user/changeStatus": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysUser"
+                ],
+                "summary": "修改用户状态",
+                "parameters": [
+                    {
+                        "description": "用户信息(含 userId 与 status)",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.UserOperateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/user/deptTree": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysUser"
+                ],
+                "summary": "获取用户页部门树(复用部门模块)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/system.DeptTreeNode"
+                                            }
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/user/export": {
+            "post": {
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "SysUser"
+                ],
+                "summary": "导出用户(按列表查询条件,Excel)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户名(模糊)",
+                        "name": "userName",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "昵称(模糊)",
+                        "name": "nickName",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "手机号(模糊)",
+                        "name": "phonenumber",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "状态(0正常 1停用)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "主部门ID",
+                        "name": "deptId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "角色ID",
+                        "name": "roleId",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/system/user/importData": {
+            "post": {
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "tags": [
+                    "SysUser"
+                ],
+                "summary": "导入用户(Excel)",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "xlsx 文件",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否更新已存在用户",
+                        "name": "updateSupport",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/user/importTemplate": {
+            "post": {
+                "tags": [
+                    "SysUser"
+                ],
+                "summary": "下载用户导入模板(仅表头的 xlsx)",
+                "responses": {}
+            }
+        },
+        "/system/user/list": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysUser"
+                ],
+                "summary": "分页获取用户列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "主部门ID(精确)",
+                        "name": "deptId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户名(模糊匹配)",
+                        "name": "userName",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "昵称(模糊匹配)",
+                        "name": "nickName",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "手机号(模糊匹配)",
+                        "name": "phonenumber",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "状态(精确 0正常1停用)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "角色ID(精确)",
+                        "name": "roleId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "pageNum",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页大小",
+                        "name": "pageSize",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.PageResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "rows": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/system.SysUser"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/user/list/dept/{deptId}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysUser"
+                ],
+                "summary": "获取部门下用户列表(部门负责人选择用)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "部门ID",
+                        "name": "deptId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/system.SysUser"
+                                            }
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/user/profile/updatePwd": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysUser"
+                ],
+                "summary": "当前用户修改密码(密码过期强制改密入口)",
+                "parameters": [
+                    {
+                        "description": "旧密码 + 新密码",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.ChangeMyPasswordParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/user/resetPwd": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysUser"
+                ],
+                "summary": "重置用户密码",
+                "parameters": [
+                    {
+                        "description": "用户ID + 新密码",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.ResetUserPwdParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/user/{userIds}": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysUser"
+                ],
+                "summary": "批量删除用户",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户ID列表(逗号分隔)",
+                        "name": "userIds",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/user/{userId}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysUser"
+                ],
+                "summary": "获取用户详情(postIds/roleIds/roles)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/system.UserInfo"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/timedTask/alertStream": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "text/event-stream"
+                ],
+                "tags": [
+                    "SysTimedTask"
+                ],
+                "summary": "订阅定时任务失败告警(SSE)",
+                "responses": {
+                    "200": {
+                        "description": "SSE 流",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/timedTask/createTimedTask": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysTimedTask"
+                ],
+                "summary": "创建定时任务",
+                "parameters": [
+                    {
+                        "description": "任务定义",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/system.SysTimedTask"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "创建成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/timedTask/deleteTimedTask": {
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysTimedTask"
+                ],
+                "summary": "删除定时任务",
+                "parameters": [
+                    {
+                        "description": "任务ID",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.TriggerTimedTask"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/timedTask/getRegisteredMethods": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysTimedTask"
+                ],
+                "summary": "获取已注册方法列表(供下拉选择)",
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": {
+                                                "type": "array",
+                                                "items": {
+                                                    "$ref": "#/definitions/task.TaskMeta"
+                                                }
+                                            }
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/timedTask/getTimedTaskList": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysTimedTask"
+                ],
+                "summary": "分页获取定时任务列表(含下次执行时间)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "任务名(模糊)",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "执行器类型 method/http",
+                        "name": "executorType",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否启用",
+                        "name": "enabled",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "pageNum",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页大小",
+                        "name": "pageSize",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.PageResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "rows": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/response.SysTimedTaskRow"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/timedTask/getTimedTaskLogList": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysTimedTask"
+                ],
+                "summary": "分页获取执行日志",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "任务ID",
+                        "name": "taskId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "状态 success/fail/timeout",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "pageNum",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页大小",
+                        "name": "pageSize",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.PageResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "rows": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/system.SysTimedTaskLog"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/timedTask/toggleTimedTask": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysTimedTask"
+                ],
+                "summary": "启用/停用定时任务",
+                "parameters": [
+                    {
+                        "description": "ID与目标状态",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.ToggleTimedTask"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "操作成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/timedTask/triggerTimedTask": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysTimedTask"
+                ],
+                "summary": "手动触发一次执行",
+                "parameters": [
+                    {
+                        "description": "任务ID",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.TriggerTimedTask"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "已触发",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/timedTask/updateTimedTask": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysTimedTask"
+                ],
+                "summary": "更新定时任务",
+                "parameters": [
+                    {
+                        "description": "任务定义(含ID)",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/system.SysTimedTask"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/user/admin_register": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysUser"
+                ],
+                "summary": "用户注册账号",
+                "parameters": [
+                    {
+                        "description": "用户名, 昵称, 密码, 角色ID",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.Register"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.SysUserResponse"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/user/getUserList": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysUser"
+                ],
+                "summary": "分页获取用户列表",
+                "parameters": [
+                    {
+                        "description": "页码, 每页大小",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.GetUserList"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.PageResult"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "request.ChangeMyPasswordParams": {
+            "type": "object",
+            "required": [
+                "newPassword",
+                "oldPassword"
+            ],
+            "properties": {
+                "newPassword": {
+                    "description": "新密码(明文,复杂度由 service 校验)",
+                    "type": "string"
+                },
+                "oldPassword": {
+                    "description": "旧密码(明文,二次校验)",
+                    "type": "string"
+                }
+            }
+        },
         "request.DBConnTest": {
             "type": "object",
             "properties": {
@@ -244,6 +4636,135 @@ const docTemplate = `{
                 },
                 "template": {
                     "type": "string"
+                },
+                "userName": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.DeptOperateParams": {
+            "type": "object",
+            "properties": {
+                "deptCategory": {
+                    "description": "部门类别编码",
+                    "type": "string"
+                },
+                "deptId": {
+                    "description": "部门ID(新增时为空)",
+                    "type": "integer"
+                },
+                "deptName": {
+                    "description": "部门名称",
+                    "type": "string"
+                },
+                "email": {
+                    "description": "邮箱",
+                    "type": "string"
+                },
+                "leader": {
+                    "description": "负责人用户ID(可空)",
+                    "type": "integer"
+                },
+                "orderNum": {
+                    "description": "显示顺序",
+                    "type": "integer"
+                },
+                "parentId": {
+                    "description": "父部门ID(空/0=顶层)",
+                    "type": "integer"
+                },
+                "phone": {
+                    "description": "联系电话",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "部门状态('0'正常/'1'停用)",
+                    "type": "string"
+                }
+            }
+        },
+        "request.DictDataOperateParams": {
+            "type": "object",
+            "properties": {
+                "cssClass": {
+                    "description": "样式属性",
+                    "type": "string"
+                },
+                "dictCode": {
+                    "description": "字典编码(新增时为空)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "dictLabel": {
+                    "description": "字典标签",
+                    "type": "string"
+                },
+                "dictSort": {
+                    "description": "字典排序",
+                    "type": "integer"
+                },
+                "dictType": {
+                    "description": "字典类型(关联 sys_dict_type.dict_type)",
+                    "type": "string"
+                },
+                "dictValue": {
+                    "description": "字典键值",
+                    "type": "string"
+                },
+                "isDefault": {
+                    "description": "是否默认(Y/N)",
+                    "type": "string"
+                },
+                "listClass": {
+                    "description": "表格回显样式(NaiveUI ThemeColor)",
+                    "type": "string"
+                },
+                "remark": {
+                    "description": "备注",
+                    "type": "string"
+                }
+            }
+        },
+        "request.DictTypeOperateParams": {
+            "type": "object",
+            "properties": {
+                "dictId": {
+                    "description": "字典主键(新增时为空)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "dictName": {
+                    "description": "字典名称",
+                    "type": "string"
+                },
+                "dictType": {
+                    "description": "字典类型(唯一)",
+                    "type": "string"
+                },
+                "remark": {
+                    "description": "备注",
+                    "type": "string"
+                }
+            }
+        },
+        "request.GetUserList": {
+            "type": "object",
+            "properties": {
+                "deptId": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "keyword": {
+                    "description": "关键字",
+                    "type": "string"
+                },
+                "pageNum": {
+                    "description": "页码",
+                    "type": "integer"
+                },
+                "pageSize": {
+                    "description": "每页大小",
+                    "type": "integer"
                 },
                 "userName": {
                     "type": "string"
@@ -308,6 +4829,148 @@ const docTemplate = `{
                 }
             }
         },
+        "request.Login": {
+            "type": "object",
+            "properties": {
+                "captcha": {
+                    "description": "验证码答案(go-captcha 为 JSON 字符串)",
+                    "type": "string"
+                },
+                "captchaId": {
+                    "description": "验证码会话 ID",
+                    "type": "string"
+                },
+                "password": {
+                    "description": "密码(明文,传输层由网关/加密中间件保护)",
+                    "type": "string"
+                },
+                "username": {
+                    "description": "用户名",
+                    "type": "string"
+                }
+            }
+        },
+        "request.MenuOperateParams": {
+            "type": "object",
+            "properties": {
+                "component": {
+                    "description": "组件路径",
+                    "type": "string"
+                },
+                "icon": {
+                    "description": "菜单图标",
+                    "type": "string"
+                },
+                "isCache": {
+                    "description": "是否缓存 0缓存1不缓存",
+                    "type": "string"
+                },
+                "isFrame": {
+                    "description": "是否外链 0是1否2iframe",
+                    "type": "string"
+                },
+                "menuId": {
+                    "description": "菜单ID(新增时为空)",
+                    "type": "integer"
+                },
+                "menuName": {
+                    "description": "菜单名称",
+                    "type": "string"
+                },
+                "menuType": {
+                    "description": "菜单类型 M目录C菜单F按钮",
+                    "type": "string"
+                },
+                "orderNum": {
+                    "description": "显示顺序",
+                    "type": "integer"
+                },
+                "parentId": {
+                    "description": "父菜单ID(0=顶级)",
+                    "type": "integer"
+                },
+                "path": {
+                    "description": "路由地址",
+                    "type": "string"
+                },
+                "perms": {
+                    "description": "权限标识",
+                    "type": "string"
+                },
+                "queryParam": {
+                    "description": "路由参数",
+                    "type": "string"
+                },
+                "remark": {
+                    "description": "备注",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "菜单状态 0正常1停用",
+                    "type": "string"
+                },
+                "visible": {
+                    "description": "显示状态 0显示1隐藏",
+                    "type": "string"
+                }
+            }
+        },
+        "request.NoticeOperateParams": {
+            "type": "object",
+            "properties": {
+                "noticeContent": {
+                    "description": "公告内容",
+                    "type": "string"
+                },
+                "noticeId": {
+                    "description": "公告ID(新增时为空)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "noticeTitle": {
+                    "description": "公告标题",
+                    "type": "string"
+                },
+                "noticeType": {
+                    "description": "公告类型('1'通知 '2'公告)",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "公告状态('0'正常 '1'停用)",
+                    "type": "string"
+                },
+                "targetDeptIds": {
+                    "description": "指定部门含子部门(targetType=depts)",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "targetType": {
+                    "description": "投递范围:all/users/depts(公告强制 all)",
+                    "type": "string"
+                },
+                "targetUserIds": {
+                    "description": "指定用户(targetType=users)",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "request.NoticeReadParams": {
+            "type": "object",
+            "properties": {
+                "noticeIds": {
+                    "description": "通知ID列表(空=当前用户全部已读)",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
         "request.PingRedis": {
             "type": "object",
             "properties": {
@@ -322,6 +4985,358 @@ const docTemplate = `{
                 }
             }
         },
+        "request.PostOperateParams": {
+            "type": "object",
+            "properties": {
+                "deptId": {
+                    "description": "部门ID(必填,归属部门)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "postCategory": {
+                    "description": "岗位类别编码",
+                    "type": "string"
+                },
+                "postCode": {
+                    "description": "岗位编码(唯一)",
+                    "type": "string"
+                },
+                "postId": {
+                    "description": "岗位ID(新增时为空)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "postName": {
+                    "description": "岗位名称",
+                    "type": "string"
+                },
+                "postSort": {
+                    "description": "显示顺序",
+                    "type": "integer"
+                },
+                "remark": {
+                    "description": "备注",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "岗位状态('0'正常/'1'停用)",
+                    "type": "string"
+                }
+            }
+        },
+        "request.PublicSetting": {
+            "type": "object",
+            "properties": {
+                "captchaEnabled": {
+                    "description": "验证码(sys_security_config.Captcha*,登录页验证码渲染用)",
+                    "type": "boolean"
+                },
+                "captchaOpen": {
+                    "type": "integer"
+                },
+                "captchaType": {
+                    "type": "string"
+                },
+                "dingtalkEnabled": {
+                    "type": "boolean"
+                },
+                "faviconUrl": {
+                    "type": "string"
+                },
+                "giteeEnabled": {
+                    "type": "boolean"
+                },
+                "githubEnabled": {
+                    "type": "boolean"
+                },
+                "imgHeight": {
+                    "type": "integer"
+                },
+                "imgWidth": {
+                    "type": "integer"
+                },
+                "keyLong": {
+                    "type": "integer"
+                },
+                "logoUrl": {
+                    "type": "string"
+                },
+                "registerEnabled": {
+                    "description": "认证公开字段（仅公开开关，不暴露密钥）",
+                    "type": "boolean"
+                },
+                "resetPwdEnabled": {
+                    "type": "boolean"
+                },
+                "systemDescription": {
+                    "type": "string"
+                },
+                "systemName": {
+                    "description": "系统信息(sys_general_config)",
+                    "type": "string"
+                },
+                "wechatEnabled": {
+                    "type": "boolean"
+                },
+                "wecomEnabled": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "request.Register": {
+            "type": "object",
+            "properties": {
+                "deptId": {
+                    "description": "主部门 ID",
+                    "type": "string",
+                    "example": "0"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "nickName": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "phonenumber": {
+                    "type": "string"
+                },
+                "roleId": {
+                    "description": "主角色 ID",
+                    "type": "string",
+                    "example": "0"
+                },
+                "roleIds": {
+                    "description": "多角色",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.ResetUserPwdParams": {
+            "type": "object",
+            "properties": {
+                "password": {
+                    "description": "新密码(明文)",
+                    "type": "string"
+                },
+                "userId": {
+                    "description": "用户ID",
+                    "type": "integer"
+                }
+            }
+        },
+        "request.RoleOperateParams": {
+            "type": "object",
+            "properties": {
+                "menuCheckStrictly": {
+                    "description": "菜单树选择项是否关联显示",
+                    "type": "boolean"
+                },
+                "menuIds": {
+                    "description": "分配菜单ID(全量;叶子+半选父级)",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "remark": {
+                    "description": "备注",
+                    "type": "string"
+                },
+                "roleId": {
+                    "description": "角色ID(新增时为空)",
+                    "type": "integer"
+                },
+                "roleKey": {
+                    "description": "角色权限字符(唯一)",
+                    "type": "string"
+                },
+                "roleName": {
+                    "description": "角色名称",
+                    "type": "string"
+                },
+                "roleSort": {
+                    "description": "显示顺序",
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "角色状态('0'正常/'1'停用)",
+                    "type": "string"
+                }
+            }
+        },
+        "request.SettingConfig": {
+            "type": "object",
+            "properties": {
+                "auth": {
+                    "$ref": "#/definitions/system.SysAuthConfig"
+                },
+                "disk": {
+                    "$ref": "#/definitions/system.SysDiskConfig"
+                },
+                "general": {
+                    "$ref": "#/definitions/system.SysGeneralConfig"
+                },
+                "ldap": {
+                    "$ref": "#/definitions/system.SysLdapConfig"
+                },
+                "notify": {
+                    "$ref": "#/definitions/system.SysNotifyConfig"
+                },
+                "security": {
+                    "$ref": "#/definitions/system.SysSecurityConfig"
+                }
+            }
+        },
+        "request.TestEmailReq": {
+            "type": "object",
+            "properties": {
+                "emailFromAddr": {
+                    "type": "string"
+                },
+                "emailFromName": {
+                    "type": "string"
+                },
+                "emailHost": {
+                    "type": "string"
+                },
+                "emailPassword": {
+                    "type": "string"
+                },
+                "emailPort": {
+                    "type": "integer"
+                },
+                "emailSSLMode": {
+                    "type": "string"
+                },
+                "emailUsername": {
+                    "type": "string"
+                },
+                "testTo": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.ToggleTimedTask": {
+            "type": "object",
+            "required": [
+                "ID"
+            ],
+            "properties": {
+                "ID": {
+                    "type": "integer"
+                },
+                "enabled": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "request.TriggerTimedTask": {
+            "type": "object",
+            "required": [
+                "ID"
+            ],
+            "properties": {
+                "ID": {
+                    "type": "integer"
+                }
+            }
+        },
+        "request.UserOperateParams": {
+            "type": "object",
+            "properties": {
+                "deptId": {
+                    "description": "主部门ID",
+                    "type": "integer"
+                },
+                "email": {
+                    "description": "邮箱",
+                    "type": "string"
+                },
+                "nickName": {
+                    "description": "昵称",
+                    "type": "string"
+                },
+                "password": {
+                    "description": "密码(create 必填;update 空=不改)",
+                    "type": "string"
+                },
+                "phonenumber": {
+                    "description": "手机号",
+                    "type": "string"
+                },
+                "postIds": {
+                    "description": "岗位ID列表(全量替换)",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "remark": {
+                    "description": "备注",
+                    "type": "string"
+                },
+                "roleIds": {
+                    "description": "角色ID列表(全量替换)",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "sex": {
+                    "description": "性别 0男1女2未知",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "状态",
+                    "type": "string"
+                },
+                "userId": {
+                    "description": "用户ID(新增时为空)",
+                    "type": "integer"
+                },
+                "userName": {
+                    "description": "用户名(create 必填,唯一)",
+                    "type": "string"
+                }
+            }
+        },
+        "response.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "expiresAt": {
+                    "description": "access token 过期毫秒时间戳",
+                    "type": "integer"
+                },
+                "needChangePassword": {
+                    "description": "密码过期需强制修改",
+                    "type": "boolean"
+                }
+            }
+        },
+        "response.PageResult": {
+            "type": "object",
+            "properties": {
+                "pageNum": {
+                    "type": "integer"
+                },
+                "pageSize": {
+                    "type": "integer"
+                },
+                "rows": {},
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
         "response.Response": {
             "type": "object",
             "properties": {
@@ -331,6 +5346,74 @@ const docTemplate = `{
                 "data": {},
                 "msg": {
                     "type": "string"
+                }
+            }
+        },
+        "response.SysTimedTaskRow": {
+            "type": "object",
+            "properties": {
+                "createTime": {
+                    "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "executorType": {
+                    "type": "string"
+                },
+                "httpAllowPrivate": {
+                    "type": "boolean"
+                },
+                "httpBody": {
+                    "type": "string"
+                },
+                "httpHeader": {
+                    "type": "object"
+                },
+                "httpMethod": {
+                    "type": "string"
+                },
+                "httpUrl": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "主键(过渡保留,未改造系统表用)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "methodName": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "nextRunAt": {
+                    "description": "已调度(enabled)任务的下次执行时间; 未调度为 null",
+                    "type": "string"
+                },
+                "params": {
+                    "type": "object"
+                },
+                "spec": {
+                    "type": "string"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "withSeconds": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "response.SysUserResponse": {
+            "type": "object",
+            "properties": {
+                "user": {
+                    "$ref": "#/definitions/system.SysUser"
                 }
             }
         },
@@ -383,6 +5466,1416 @@ const docTemplate = `{
                 },
                 "type": {
                     "description": "image | click | slide | rotate",
+                    "type": "string"
+                }
+            }
+        },
+        "system.DeptTreeNode": {
+            "type": "object",
+            "properties": {
+                "children": {
+                    "description": "子部门",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/system.DeptTreeNode"
+                    }
+                },
+                "id": {
+                    "description": "部门ID(字符串,雪花 id 统一 string)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "label": {
+                    "description": "部门名称",
+                    "type": "string"
+                },
+                "parentId": {
+                    "description": "父部门ID(字符串)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "weight": {
+                    "description": "显示顺序(对应 SysDepartment.OrderNum)",
+                    "type": "integer"
+                }
+            }
+        },
+        "system.MenuTreeSelectNode": {
+            "type": "object",
+            "properties": {
+                "children": {
+                    "description": "子节点(内存组装;叶子节点省略)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/system.MenuTreeSelectNode"
+                    }
+                },
+                "icon": {
+                    "description": "菜单图标",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "菜单ID(对齐前端 IdType)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "label": {
+                    "description": "菜单名称(NTree label-field;可能为 i18n key 如 route.xxx)",
+                    "type": "string"
+                },
+                "menuType": {
+                    "description": "菜单类型 M目录C菜单F按钮(前端渲染区分)",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "菜单状态 0正常1停用(前端禁用标红)",
+                    "type": "string"
+                },
+                "visible": {
+                    "description": "显示状态 0显示1隐藏(前端隐藏标灰)",
+                    "type": "string"
+                }
+            }
+        },
+        "system.NoticeRecordVO": {
+            "type": "object",
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "noticeContent": {
+                    "type": "string"
+                },
+                "noticeId": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "noticeTitle": {
+                    "type": "string"
+                },
+                "noticeType": {
+                    "type": "string"
+                },
+                "readAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "system.RoleMenuTreeSelect": {
+            "type": "object",
+            "properties": {
+                "checkedKeys": {
+                    "description": "角色已分配菜单的叶子 ID",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "menus": {
+                    "description": "全部菜单树(精简 VO,后端组装)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/system.MenuTreeSelectNode"
+                    }
+                }
+            }
+        },
+        "system.SysAuthConfig": {
+            "type": "object",
+            "properties": {
+                "createTime": {
+                    "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
+                    "type": "string"
+                },
+                "dingtalkCallbackUrl": {
+                    "type": "string"
+                },
+                "dingtalkClientId": {
+                    "type": "string"
+                },
+                "dingtalkClientSecret": {
+                    "type": "string"
+                },
+                "dingtalkEnabled": {
+                    "description": "钉钉",
+                    "type": "boolean"
+                },
+                "giteeCallbackUrl": {
+                    "type": "string"
+                },
+                "giteeClientId": {
+                    "type": "string"
+                },
+                "giteeClientSecret": {
+                    "type": "string"
+                },
+                "giteeEnabled": {
+                    "description": "Gitee",
+                    "type": "boolean"
+                },
+                "githubCallbackUrl": {
+                    "type": "string"
+                },
+                "githubClientId": {
+                    "type": "string"
+                },
+                "githubClientSecret": {
+                    "type": "string"
+                },
+                "githubEnabled": {
+                    "description": "GitHub",
+                    "type": "boolean"
+                },
+                "id": {
+                    "description": "主键(过渡保留,未改造系统表用)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "registerEnabled": {
+                    "description": "账号功能",
+                    "type": "boolean"
+                },
+                "resetPwdEnabled": {
+                    "type": "boolean"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "wechatCallbackUrl": {
+                    "type": "string"
+                },
+                "wechatClientId": {
+                    "type": "string"
+                },
+                "wechatClientSecret": {
+                    "type": "string"
+                },
+                "wechatEnabled": {
+                    "description": "微信开放平台",
+                    "type": "boolean"
+                },
+                "wecomAgentId": {
+                    "type": "integer"
+                },
+                "wecomCallbackUrl": {
+                    "type": "string"
+                },
+                "wecomClientId": {
+                    "type": "string"
+                },
+                "wecomClientSecret": {
+                    "type": "string"
+                },
+                "wecomCorpId": {
+                    "type": "string"
+                },
+                "wecomDomainFileContent": {
+                    "type": "string"
+                },
+                "wecomDomainFileName": {
+                    "type": "string"
+                },
+                "wecomEnabled": {
+                    "description": "企业微信",
+                    "type": "boolean"
+                }
+            }
+        },
+        "system.SysDepartment": {
+            "type": "object",
+            "properties": {
+                "ancestors": {
+                    "description": "祖级链",
+                    "type": "string"
+                },
+                "children": {
+                    "description": "子部门(内存组装,不建列)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/system.SysDepartment"
+                    }
+                },
+                "createBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "createTime": {
+                    "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
+                    "type": "string"
+                },
+                "deptCategory": {
+                    "description": "部门类别编码",
+                    "type": "string"
+                },
+                "deptId": {
+                    "description": "部门ID(列名 dept_id)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "deptName": {
+                    "description": "部门名称",
+                    "type": "string"
+                },
+                "email": {
+                    "description": "邮箱(部门独立)",
+                    "type": "string"
+                },
+                "leader": {
+                    "description": "负责人(用户ID,对齐前端 number)",
+                    "type": "integer"
+                },
+                "namePath": {
+                    "description": "公司/部门全路径名(内存组装,不建列)",
+                    "type": "string"
+                },
+                "orderNum": {
+                    "description": "显示顺序",
+                    "type": "integer"
+                },
+                "parentId": {
+                    "description": "父部门ID(0为顶级)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "phone": {
+                    "description": "联系电话(部门独立)",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "部门状态(对齐前端 '0'/'1')",
+                    "type": "string"
+                },
+                "updateBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "updateTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "system.SysDictData": {
+            "type": "object",
+            "properties": {
+                "createBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "createTime": {
+                    "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
+                    "type": "string"
+                },
+                "cssClass": {
+                    "description": "样式属性(其他样式扩展)",
+                    "type": "string"
+                },
+                "dictCode": {
+                    "description": "字典编码",
+                    "type": "string",
+                    "example": "0"
+                },
+                "dictLabel": {
+                    "description": "字典标签",
+                    "type": "string"
+                },
+                "dictSort": {
+                    "description": "字典排序",
+                    "type": "integer"
+                },
+                "dictType": {
+                    "description": "字典类型(关联 sys_dict_type.dict_type)",
+                    "type": "string"
+                },
+                "dictValue": {
+                    "description": "字典键值",
+                    "type": "string"
+                },
+                "i18nKey": {
+                    "description": "多语言标识",
+                    "type": "string"
+                },
+                "isDefault": {
+                    "description": "是否默认(对齐前端 YesOrNoStatus)",
+                    "type": "string"
+                },
+                "isI18n": {
+                    "description": "是否多语言(可空)",
+                    "type": "boolean"
+                },
+                "listClass": {
+                    "description": "表格回显样式(NaiveUI ThemeColor)",
+                    "type": "string"
+                },
+                "remark": {
+                    "description": "备注",
+                    "type": "string"
+                },
+                "updateBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "updateTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "system.SysDictType": {
+            "type": "object",
+            "properties": {
+                "createBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "createTime": {
+                    "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
+                    "type": "string"
+                },
+                "dictId": {
+                    "description": "字典主键",
+                    "type": "string",
+                    "example": "0"
+                },
+                "dictName": {
+                    "description": "字典名称",
+                    "type": "string"
+                },
+                "dictType": {
+                    "description": "字典类型(唯一)",
+                    "type": "string"
+                },
+                "remark": {
+                    "description": "备注",
+                    "type": "string"
+                },
+                "updateBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "updateTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "system.SysDiskConfig": {
+            "type": "object",
+            "properties": {
+                "allowedExtensions": {
+                    "type": "string"
+                },
+                "blockedExtensions": {
+                    "type": "string"
+                },
+                "createTime": {
+                    "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
+                    "type": "string"
+                },
+                "diskLogo": {
+                    "type": "string"
+                },
+                "diskName": {
+                    "description": "展示配置",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "主键(过渡保留,未改造系统表用)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "maxUploadSize": {
+                    "description": "基础存储配置",
+                    "type": "number"
+                },
+                "maxUploadSizeUnit": {
+                    "type": "string"
+                },
+                "onlyOfficeCallbackUrl": {
+                    "type": "string"
+                },
+                "onlyOfficeEnabled": {
+                    "description": "OnlyOffice 协同编辑",
+                    "type": "boolean"
+                },
+                "onlyOfficeServerUrl": {
+                    "type": "string"
+                },
+                "onlyOfficeTokenSecret": {
+                    "type": "string"
+                },
+                "recycleBinRetentionDays": {
+                    "type": "integer"
+                },
+                "storageQuota": {
+                    "type": "number"
+                },
+                "storageQuotaUnit": {
+                    "type": "string"
+                },
+                "updateTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "system.SysError": {
+            "type": "object",
+            "required": [
+                "form"
+            ],
+            "properties": {
+                "createTime": {
+                    "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
+                    "type": "string"
+                },
+                "form": {
+                    "description": "错误来源",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "主键(过渡保留,未改造系统表用)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "info": {
+                    "description": "错误内容",
+                    "type": "string"
+                },
+                "level": {
+                    "type": "string"
+                },
+                "request_id": {
+                    "description": "请求ID",
+                    "type": "string"
+                },
+                "solution": {
+                    "description": "解决方案",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "处理状态：未处理/处理中/处理完成",
+                    "type": "string"
+                },
+                "trace_id": {
+                    "description": "链路ID,用于按 trace 串联日志与错误",
+                    "type": "string"
+                },
+                "updateTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "system.SysGeneralConfig": {
+            "type": "object",
+            "properties": {
+                "createTime": {
+                    "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
+                    "type": "string"
+                },
+                "defaultPassword": {
+                    "description": "导入新建/复活用户的初始密码;首登强制改密",
+                    "type": "string"
+                },
+                "faviconUrl": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "主键(过渡保留,未改造系统表用)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "loginLogRetentionDays": {
+                    "type": "integer"
+                },
+                "logoUrl": {
+                    "type": "string"
+                },
+                "operationLogRetentionDays": {
+                    "type": "integer"
+                },
+                "systemDescription": {
+                    "type": "string"
+                },
+                "systemName": {
+                    "type": "string"
+                },
+                "updateTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "system.SysLdapConfig": {
+            "type": "object",
+            "properties": {
+                "attrEmail": {
+                    "type": "string"
+                },
+                "attrNickname": {
+                    "type": "string"
+                },
+                "attrUsername": {
+                    "description": "属性映射",
+                    "type": "string"
+                },
+                "autoCreate": {
+                    "description": "用户策略",
+                    "type": "boolean"
+                },
+                "baseDN": {
+                    "type": "string"
+                },
+                "bindDN": {
+                    "type": "string"
+                },
+                "bindPass": {
+                    "type": "string"
+                },
+                "createTime": {
+                    "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
+                    "type": "string"
+                },
+                "enabled": {
+                    "description": "连接配置",
+                    "type": "boolean"
+                },
+                "filter": {
+                    "type": "string"
+                },
+                "host": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "主键(过渡保留,未改造系统表用)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "port": {
+                    "type": "integer"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "useSSL": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "system.SysLoginLog": {
+            "type": "object",
+            "properties": {
+                "browser": {
+                    "description": "浏览器类型",
+                    "type": "string"
+                },
+                "clientKey": {
+                    "description": "客户端",
+                    "type": "string"
+                },
+                "createBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "createTime": {
+                    "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
+                    "type": "string"
+                },
+                "deviceType": {
+                    "description": "设备类型(对齐前端 System.DeviceType)",
+                    "type": "string"
+                },
+                "infoId": {
+                    "description": "访问ID",
+                    "type": "string",
+                    "example": "0"
+                },
+                "ipaddr": {
+                    "description": "登录IP地址",
+                    "type": "string"
+                },
+                "loginLocation": {
+                    "description": "登录地点",
+                    "type": "string"
+                },
+                "loginTime": {
+                    "description": "访问时间(业务时间,区别于 createTime)",
+                    "type": "string"
+                },
+                "msg": {
+                    "description": "提示消息",
+                    "type": "string"
+                },
+                "os": {
+                    "description": "操作系统",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "登录状态(对齐前端 EnableStatus '0'/'1')",
+                    "type": "string"
+                },
+                "updateBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "userName": {
+                    "description": "用户账号",
+                    "type": "string"
+                }
+            }
+        },
+        "system.SysMenu": {
+            "type": "object",
+            "properties": {
+                "children": {
+                    "description": "子菜单(内存组装,不建列)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/system.SysMenu"
+                    }
+                },
+                "component": {
+                    "description": "组件路径",
+                    "type": "string"
+                },
+                "createBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "createTime": {
+                    "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
+                    "type": "string"
+                },
+                "icon": {
+                    "description": "菜单图标",
+                    "type": "string"
+                },
+                "isCache": {
+                    "description": "是否缓存",
+                    "type": "string"
+                },
+                "isFrame": {
+                    "description": "是否外链",
+                    "type": "string"
+                },
+                "menuId": {
+                    "description": "菜单ID",
+                    "type": "string",
+                    "example": "0"
+                },
+                "menuName": {
+                    "description": "菜单名称",
+                    "type": "string"
+                },
+                "menuType": {
+                    "description": "菜单类型",
+                    "type": "string"
+                },
+                "orderNum": {
+                    "description": "显示顺序",
+                    "type": "integer"
+                },
+                "parentId": {
+                    "description": "父菜单ID(0为顶级)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "parentName": {
+                    "description": "父菜单名称(内存组装,不建列)",
+                    "type": "string"
+                },
+                "path": {
+                    "description": "路由地址",
+                    "type": "string"
+                },
+                "perms": {
+                    "description": "权限标识",
+                    "type": "string"
+                },
+                "queryParam": {
+                    "description": "路由参数",
+                    "type": "string"
+                },
+                "remark": {
+                    "description": "备注",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "菜单状态(对齐前端 '0'/'1')",
+                    "type": "string"
+                },
+                "updateBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "visible": {
+                    "description": "显示状态",
+                    "type": "string"
+                }
+            }
+        },
+        "system.SysNotice": {
+            "type": "object",
+            "properties": {
+                "createBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "createByName": {
+                    "description": "创建者名称(内存组装,join sys_users 带出)",
+                    "type": "string"
+                },
+                "createTime": {
+                    "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
+                    "type": "string"
+                },
+                "noticeContent": {
+                    "description": "公告内容",
+                    "type": "string"
+                },
+                "noticeId": {
+                    "description": "公告ID",
+                    "type": "string",
+                    "example": "0"
+                },
+                "noticeTitle": {
+                    "description": "公告标题",
+                    "type": "string"
+                },
+                "noticeType": {
+                    "description": "公告类型(对齐前端 NoticeType '1'|'2')",
+                    "type": "string"
+                },
+                "remark": {
+                    "description": "备注",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "公告状态(对齐前端 '0'/'1')",
+                    "type": "string"
+                },
+                "updateBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "updateTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "system.SysNotifyConfig": {
+            "type": "object",
+            "properties": {
+                "createTime": {
+                    "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
+                    "type": "string"
+                },
+                "emailEnabled": {
+                    "description": "邮件通知",
+                    "type": "boolean"
+                },
+                "emailFromAddr": {
+                    "type": "string"
+                },
+                "emailFromName": {
+                    "type": "string"
+                },
+                "emailHost": {
+                    "type": "string"
+                },
+                "emailPassword": {
+                    "type": "string"
+                },
+                "emailPort": {
+                    "type": "integer"
+                },
+                "emailSSLMode": {
+                    "description": "none / ssl / starttls",
+                    "type": "string"
+                },
+                "emailUsername": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "主键(过渡保留,未改造系统表用)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "webhookEnabled": {
+                    "description": "Webhook",
+                    "type": "boolean"
+                },
+                "webhookSecret": {
+                    "type": "string"
+                },
+                "webhookUrl": {
+                    "type": "string"
+                }
+            }
+        },
+        "system.SysOperLog": {
+            "type": "object",
+            "properties": {
+                "businessType": {
+                    "description": "操作类型(对齐前端 BusinessType '0'~'9')",
+                    "type": "string"
+                },
+                "costTime": {
+                    "description": "消耗时间",
+                    "type": "integer"
+                },
+                "createBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "createTime": {
+                    "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
+                    "type": "string"
+                },
+                "deptName": {
+                    "description": "部门名称",
+                    "type": "string"
+                },
+                "errorMsg": {
+                    "description": "错误消息",
+                    "type": "string"
+                },
+                "jsonResult": {
+                    "description": "返回参数",
+                    "type": "string"
+                },
+                "method": {
+                    "description": "方法名称",
+                    "type": "string"
+                },
+                "operId": {
+                    "description": "日志主键",
+                    "type": "string",
+                    "example": "0"
+                },
+                "operIp": {
+                    "description": "操作IP",
+                    "type": "string"
+                },
+                "operLocation": {
+                    "description": "操作地点",
+                    "type": "string"
+                },
+                "operName": {
+                    "description": "操作人员",
+                    "type": "string"
+                },
+                "operParam": {
+                    "description": "请求参数",
+                    "type": "string"
+                },
+                "operTime": {
+                    "description": "操作时间(业务时间,区别于 createTime)",
+                    "type": "string"
+                },
+                "operUrl": {
+                    "description": "请求URL",
+                    "type": "string"
+                },
+                "operatorType": {
+                    "description": "操作类别(0其它 1后台用户 2手机端用户)",
+                    "type": "string"
+                },
+                "requestId": {
+                    "description": "以下为后端独有字段(前端 Api.Log.OperLog 暂未声明,保留用于与访问日志/链路追踪打通,便于排障扩展):",
+                    "type": "string"
+                },
+                "requestMethod": {
+                    "description": "请求方式(GET/POST...)",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "操作状态(对齐前端 EnableStatus '0'/'1')",
+                    "type": "string"
+                },
+                "title": {
+                    "description": "系统模块",
+                    "type": "string"
+                },
+                "traceId": {
+                    "description": "链路追踪ID",
+                    "type": "string"
+                },
+                "updateBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "updateTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "system.SysPost": {
+            "type": "object",
+            "properties": {
+                "createBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "createTime": {
+                    "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
+                    "type": "string"
+                },
+                "deptId": {
+                    "description": "部门ID(岗位归属部门)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "postCategory": {
+                    "description": "岗位类别编码",
+                    "type": "string"
+                },
+                "postCode": {
+                    "description": "岗位编码",
+                    "type": "string"
+                },
+                "postId": {
+                    "description": "岗位ID",
+                    "type": "string",
+                    "example": "0"
+                },
+                "postName": {
+                    "description": "岗位名称",
+                    "type": "string"
+                },
+                "postSort": {
+                    "description": "显示顺序",
+                    "type": "integer"
+                },
+                "remark": {
+                    "description": "备注",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "岗位状态(对齐前端 '0'/'1')",
+                    "type": "string"
+                },
+                "updateBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "updateTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "system.SysRole": {
+            "type": "object",
+            "properties": {
+                "createBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "createTime": {
+                    "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
+                    "type": "string"
+                },
+                "dataScope": {
+                    "description": "数据范围(后端数据权限,前端不直接消费)",
+                    "type": "integer"
+                },
+                "flag": {
+                    "description": "用户是否存在此角色标识(内存组装,默认不存在)",
+                    "type": "boolean"
+                },
+                "menuCheckStrictly": {
+                    "description": "菜单树选择项是否关联显示",
+                    "type": "boolean"
+                },
+                "remark": {
+                    "description": "备注",
+                    "type": "string"
+                },
+                "roleId": {
+                    "description": "角色ID(列名 role_id)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "roleKey": {
+                    "description": "角色权限字符串",
+                    "type": "string"
+                },
+                "roleName": {
+                    "description": "角色名称",
+                    "type": "string"
+                },
+                "roleSort": {
+                    "description": "显示顺序",
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "角色状态(对齐前端 '0'/'1')",
+                    "type": "string"
+                },
+                "superAdmin": {
+                    "description": "是否管理员",
+                    "type": "boolean"
+                },
+                "updateBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "updateTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "system.SysSecurityConfig": {
+            "type": "object",
+            "properties": {
+                "captchaEnabled": {
+                    "description": "验证码(登录链路验证码生成用,前端「安全配置-验证码」tab 直接消费本段)",
+                    "type": "boolean"
+                },
+                "captchaOpen": {
+                    "type": "integer"
+                },
+                "captchaTimeout": {
+                    "type": "integer"
+                },
+                "captchaTolerance": {
+                    "type": "integer"
+                },
+                "captchaType": {
+                    "type": "string"
+                },
+                "createTime": {
+                    "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "主键(过渡保留,未改造系统表用)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "imgHeight": {
+                    "type": "integer"
+                },
+                "imgWidth": {
+                    "type": "integer"
+                },
+                "ipBlacklist": {
+                    "type": "string"
+                },
+                "ipValidationEnabled": {
+                    "description": "IP 校验(对齐前端 SecuritySettingConfig.ipValidation*)",
+                    "type": "boolean"
+                },
+                "ipValidationMode": {
+                    "type": "string"
+                },
+                "ipWhitelist": {
+                    "type": "string"
+                },
+                "keyLong": {
+                    "type": "integer"
+                },
+                "limitCount": {
+                    "type": "integer"
+                },
+                "limitEnable": {
+                    "description": "限流(后端登录链路用,前端不直接消费)",
+                    "type": "boolean"
+                },
+                "limitWindow": {
+                    "type": "integer"
+                },
+                "loginFailLockCount": {
+                    "description": "登录失败锁定(对齐前端 SecuritySettingConfig.loginFailLock*)",
+                    "type": "integer"
+                },
+                "loginFailLockTime": {
+                    "type": "integer"
+                },
+                "passwordMinLength": {
+                    "description": "密码复杂度(对齐前端 SecuritySettingConfig.password*)",
+                    "type": "integer"
+                },
+                "passwordRequireDigit": {
+                    "type": "boolean"
+                },
+                "passwordRequireLowercase": {
+                    "type": "boolean"
+                },
+                "passwordRequireSpecial": {
+                    "type": "boolean"
+                },
+                "passwordRequireUppercase": {
+                    "type": "boolean"
+                },
+                "pwdExpireDays": {
+                    "type": "integer"
+                },
+                "pwdExpireEnable": {
+                    "description": "密码过期(后端登录链路用,前端不直接消费)",
+                    "type": "boolean"
+                },
+                "updateTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "system.SysTimedTask": {
+            "type": "object",
+            "properties": {
+                "createTime": {
+                    "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "executorType": {
+                    "type": "string"
+                },
+                "httpAllowPrivate": {
+                    "type": "boolean"
+                },
+                "httpBody": {
+                    "type": "string"
+                },
+                "httpHeader": {
+                    "type": "object"
+                },
+                "httpMethod": {
+                    "type": "string"
+                },
+                "httpUrl": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "主键(过渡保留,未改造系统表用)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "methodName": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "params": {
+                    "type": "object"
+                },
+                "spec": {
+                    "type": "string"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "withSeconds": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "system.SysTimedTaskLog": {
+            "type": "object",
+            "properties": {
+                "createTime": {
+                    "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
+                    "type": "string"
+                },
+                "durationMs": {
+                    "type": "integer"
+                },
+                "errorMsg": {
+                    "type": "string"
+                },
+                "finishedAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "主键(过渡保留,未改造系统表用)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "output": {
+                    "type": "string"
+                },
+                "startedAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "taskId": {
+                    "type": "integer"
+                },
+                "taskName": {
+                    "type": "string"
+                },
+                "triggerType": {
+                    "type": "string"
+                },
+                "updateTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "system.SysUser": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "description": "头像",
+                    "type": "string"
+                },
+                "createBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "createTime": {
+                    "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
+                    "type": "string"
+                },
+                "departments": {
+                    "description": "多部门归属(数据可见范围)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/system.SysDepartment"
+                    }
+                },
+                "dept": {
+                    "description": "主部门(belongs-to:DeptId→Dept.DeptId);form:\"-\" 防御 gin 绑定递归",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/system.SysDepartment"
+                        }
+                    ]
+                },
+                "deptId": {
+                    "description": "主部门ID",
+                    "type": "string",
+                    "example": "0"
+                },
+                "deptName": {
+                    "description": "部门名称(内存组装,列表展示)",
+                    "type": "string"
+                },
+                "email": {
+                    "description": "用户邮箱",
+                    "type": "string"
+                },
+                "loginDate": {
+                    "description": "最后登录时间",
+                    "type": "string"
+                },
+                "loginIp": {
+                    "description": "最后登录IP",
+                    "type": "string"
+                },
+                "nickName": {
+                    "description": "用户昵称",
+                    "type": "string"
+                },
+                "passwordUpdatedAt": {
+                    "description": "密码最后修改时间(密码过期判定)",
+                    "type": "string"
+                },
+                "phonenumber": {
+                    "description": "手机号(对齐前端 phonenumber)",
+                    "type": "string"
+                },
+                "posts": {
+                    "description": "多岗位",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/system.SysPost"
+                    }
+                },
+                "remark": {
+                    "description": "备注",
+                    "type": "string"
+                },
+                "roles": {
+                    "description": "多角色(join 列对齐 sys_user_id/sys_role_id)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/system.SysRole"
+                    }
+                },
+                "sex": {
+                    "description": "性别",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "帐号状态(对齐前端 '0'/'1')",
+                    "type": "string"
+                },
+                "superAdmin": {
+                    "description": "是否超管(内存组装,任一关联角色 SuperAdmin;前端列表超管保护依赖)",
+                    "type": "boolean"
+                },
+                "updateBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "userId": {
+                    "description": "用户ID(DB列复用id,雪花int64)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "userName": {
+                    "description": "用户登录名",
+                    "type": "string"
+                },
+                "userType": {
+                    "description": "用户类型",
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "用户UUID(登录链路)",
+                    "type": "string"
+                }
+            }
+        },
+        "system.UserInfo": {
+            "type": "object",
+            "properties": {
+                "postIds": {
+                    "description": "用户岗位 ID 列表(字符串)",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "roleIds": {
+                    "description": "用户角色 ID 列表(字符串)",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "roles": {
+                    "description": "用户角色列表(含 roleName/roleId 供下拉)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/system.SysRole"
+                    }
+                }
+            }
+        },
+        "task.TaskMeta": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
                     "type": "string"
                 }
             }
