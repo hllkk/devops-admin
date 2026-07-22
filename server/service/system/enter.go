@@ -23,4 +23,5 @@ type ServiceGroup struct {
 	RoleService
 	NoticeService
 	SettingService
+	AiService
 }

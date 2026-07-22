@@ -9,6 +9,12 @@ app:
     node: ""
     app-id: ""
     env: ""
+ai:
+    provider: ollama
+    ollama:
+        base-url: http://172.21.96.141:11434
+        model: qwen3.6:35b
+        timeout: 120
 autocode:
     web: web/src
     root: /home/devops-admin

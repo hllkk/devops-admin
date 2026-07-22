@@ -16,6 +16,7 @@ export const layouts: Record<RouteLayout, RouteComponent | (() => Promise<RouteC
 
 export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<RouteComponent>)> = {
   admin: () => import("@/views/_admin/admin/index.vue"),
+  log_errorlog: () => import("@/views/_admin/log/errorlog/index.vue"),
   log_loginlog: () => import("@/views/_admin/log/loginlog/index.vue"),
   log_operlog: () => import("@/views/_admin/log/operlog/index.vue"),
   system_dept: () => import("@/views/_admin/system/dept/index.vue"),

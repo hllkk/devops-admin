@@ -104,6 +104,15 @@ export const generatedRoutes: GeneratedRoute[] = [
     },
     children: [
       {
+        name: 'log_errorlog',
+        path: '/log/errorlog',
+        component: 'view.log_errorlog',
+        meta: {
+          title: 'log_errorlog',
+          i18nKey: 'route.log_errorlog'
+        }
+      },
+      {
         name: 'log_loginlog',
         path: '/log/loginlog',
         component: 'view.log_loginlog',

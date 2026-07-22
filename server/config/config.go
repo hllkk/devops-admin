@@ -27,6 +27,7 @@ type Server struct {
 	Cors         CORS            `mapstructure:"cors" json:"cors" yaml:"cors"`
 	MCP          MCP             `mapstructure:"mcp" json:"mcp" yaml:"mcp"`
 	App          App             `mapstructure:"app" json:"app" yaml:"app"`
+	Ai           Ai              `mapstructure:"ai" json:"ai" yaml:"ai"`
 	// Email        Email           `mapstructure:"email" json:"email" yaml:"email"`
 	// Excel        Excel           `mapstructure:"excel" json:"excel" yaml:"excel"`
 	// DiskList     []DiskList      `mapstructure:"disk-list" json:"disk-list" yaml:"disk-list"`

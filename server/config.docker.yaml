@@ -191,6 +191,14 @@ autocode:
     module: 'github.com/hllkk/devops-admin/server'
     ai-path: ""  # AI服务路径
 
+# ai configuration (ollama本地模型 或 external走autocode.ai-path)
+ai:
+    provider: ollama
+    ollama:
+        base-url: http://localhost:11434
+        model: qwen2.5:7b
+        timeout: 120
+
 # qiniu configuration (请自行七牛申请对应的 公钥 私钥 bucket 和 域名地址)
 qiniu:
     zone: ZoneHuaDong

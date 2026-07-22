@@ -26,6 +26,7 @@ declare module "@elegant-router/types" {
     "iframe-page": "/iframe-page/:url";
     "init": "/init";
     "log": "/log";
+    "log_errorlog": "/log/errorlog";
     "log_loginlog": "/log/loginlog";
     "log_operlog": "/log/operlog";
     "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat)?";
@@ -103,6 +104,7 @@ declare module "@elegant-router/types" {
   export type LastLevelRouteKey = Extract<
     RouteKey,
     | "admin"
+    | "log_errorlog"
     | "log_loginlog"
     | "log_operlog"
     | "system_dept"

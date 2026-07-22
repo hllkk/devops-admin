@@ -8,6 +8,7 @@ import (
 	"github.com/hllkk/devops-admin/server/model/common"
 	"github.com/hllkk/devops-admin/server/model/system"
 	systemReq "github.com/hllkk/devops-admin/server/model/system/request"
+	"github.com/hllkk/devops-admin/server/utils/logger"
 )
 
 type SysErrorService struct{}
@@ -99,9 +100,12 @@ func (sysErrorService *SysErrorService) GetSysErrorSolution(ctx context.Context,
 	go func(id string) {
 		// 查询当前错误信息用于生成方案
 		var se system.SysError
-		_ = global.OPS_DB.WithContext(bgCtx).Model(&system.SysError{}).Where("id = ?", id).First(&se).Error
+		if err := global.OPS_DB.WithContext(bgCtx).Model(&system.SysError{}).Where("id = ?", id).First(&se).Error; err != nil {
+			logger.Bg().Mod("biz").Err(err).Warn("AI处理: 查询错误日志失败")
+			_ = global.OPS_DB.WithContext(bgCtx).Model(&system.SysError{}).Where("id = ?", id).Update("status", "处理失败").Error
+			return
+		}
 
-		// 构造 LLM 请求参数，使用管家模式(butler)根据错误信息生成解决方案
 		var form, info string
 		if se.Form != nil {
 			form = *se.Form
@@ -110,20 +114,36 @@ func (sysErrorService *SysErrorService) GetSysErrorSolution(ctx context.Context,
 			info = *se.Info
 		}
 
-		llmReq := common.JSONMap{
-			"mode": "solution",
-			"info": info,
-			"form": form,
+		var solution string
+		var llmErr error
+		provider := global.OPS_CONFIG.Ai.Provider
+
+		if provider == "ollama" {
+			// 使用本地 Ollama 模型分析
+			solution, llmErr = (&AiService{}).AnalyzeError(bgCtx, form, info)
+		} else {
+			// external 或空值(向后兼容): 走原有 autocode.ai-path 代理路径
+			llmReq := common.JSONMap{
+				"mode": "solution",
+				"info": info,
+				"form": form,
+			}
+			if data, err := (&AutoCodeService{}).LLMAuto(bgCtx, llmReq); err == nil {
+				solution = fmt.Sprintf("%v", data.(map[string]interface{})["text"])
+			} else {
+				llmErr = err
+			}
 		}
 
-		// 调用服务层 LLMAuto，忽略错误但尽量写入方案
-		var solution string
-		if data, err := (&AutoCodeService{}).LLMAuto(bgCtx, llmReq); err == nil {
-			solution = fmt.Sprintf("%v", data.(map[string]interface{})["text"])
-			_ = global.OPS_DB.WithContext(bgCtx).Model(&system.SysError{}).Where("id = ?", id).Updates(map[string]interface{}{"status": "处理完成", "solution": solution}).Error
+		if llmErr == nil {
+			if err := global.OPS_DB.WithContext(bgCtx).Model(&system.SysError{}).Where("id = ?", id).Updates(map[string]interface{}{"status": "处理完成", "solution": solution}).Error; err != nil {
+				logger.Bg().Mod("biz").Err(err).Warn("AI处理: 写入解决方案失败")
+			}
 		} else {
-			// 即使生成失败也标记为完成，避免任务卡住
-			_ = global.OPS_DB.WithContext(bgCtx).Model(&system.SysError{}).Where("id = ?", id).Update("status", "处理失败").Error
+			logger.Bg().Mod("biz").Err(llmErr).Warn("AI处理: 生成解决方案失败")
+			if err := global.OPS_DB.WithContext(bgCtx).Model(&system.SysError{}).Where("id = ?", id).Update("status", "处理失败").Error; err != nil {
+				logger.Bg().Mod("biz").Err(err).Warn("AI处理: 更新失败状态失败")
+			}
 		}
 	}(ID)
 
