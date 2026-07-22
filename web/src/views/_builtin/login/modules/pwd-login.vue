@@ -39,8 +39,10 @@ const captchaEnabled = ref<boolean>(false); // 当前是否要求验证码（后
 const captchaType = ref<string>(''); // click | slide | rotate
 const captchaData = ref<Api.Auth.CaptchaResult>({ captchaEnabled: false });
 const captchaVerified = ref<boolean>(false); // 用户是否已通过本次验证码
-const showCaptcha = ref<boolean>(false); // 验证码弹窗
-// 当前验证码的用户答案（confirm 回调写入，提交登录时读取），无需响应式
+const showCaptcha = ref<boolean>(false); // 行为验证码弹窗（click/slide/rotate）
+// image 传统图形验证码：用户输入的图中字符（随登录一并提交，不走弹窗）
+const imageCaptcha = ref<string>('');
+// 当前行为验证码的用户答案（confirm 回调写入，提交登录时读取），无需响应式
 let captchaAnswer = '';
 
 type RuleKey = Extract<keyof Api.Auth.PwdLoginForm, 'username' | 'password'>;
@@ -74,6 +76,7 @@ async function getCaptcha(username?: string) {
   captchaEnabled.value = data?.captchaEnabled ?? false;
   captchaVerified.value = false;
   captchaAnswer = '';
+  imageCaptcha.value = '';
   if (captchaEnabled.value && data) {
     captchaType.value = data.type ?? '';
     captchaData.value = data;
@@ -83,7 +86,8 @@ async function getCaptcha(username?: string) {
 /** 提交登录，携带验证码会话 ID 与用户答案 */
 async function doLogin() {
   model.captchaId = captchaData.value.captchaId;
-  model.captcha = captchaVerified.value ? captchaAnswer : '';
+  // image=用户输入的图中字符；click/slide/rotate=confirm 回调序列化的坐标/角度
+  model.captcha = captchaType.value === 'image' ? imageCaptcha.value : captchaVerified.value ? captchaAnswer : '';
   try {
     await authStore.login(model);
   } catch {
@@ -104,8 +108,18 @@ async function handleSubmit() {
     localStg.remove('loginRember');
   }
   // 未验证时刷新验证码状态（带 username，确保阈值判断准确）
-  if (!captchaVerified.value) {
+  // image 走内联输入，无"已验证"概念，保留当前验证码图不重复拉取
+  if (!captchaVerified.value && captchaType.value !== 'image') {
     await getCaptcha(model.username);
+  }
+  // image 传统图形验证码：校验非空后随登录一并提交，不开行为验证弹窗
+  if (captchaEnabled.value && captchaType.value === 'image') {
+    if (!imageCaptcha.value.trim()) {
+      window.$message?.warning?.($t('page.login.captcha.imageRequired'));
+      return;
+    }
+    await doLogin();
+    return;
   }
   if (captchaEnabled.value && !captchaVerified.value) {
     showCaptcha.value = true;
@@ -183,6 +197,26 @@ async function handleSocialLogin(type: Api.System.SocialSource) {
           :placeholder="$t('page.login.common.passwordPlaceholder')"
         />
       </NFormItem>
+      <!-- image 传统字符图片验证码：内联输入框 + 可点击刷新的图片 -->
+      <NFormItem v-if="captchaEnabled && captchaType === 'image'">
+        <div class="flex w-full items-center gap-12px">
+          <NInput
+            v-model:value="imageCaptcha"
+            class="flex-1"
+            :placeholder="$t('page.login.captcha.imagePlaceholder')"
+            :maxlength="10"
+            @keyup.enter="() => !authStore.loginLoading && handleSubmit()"
+          />
+          <img
+            v-if="captchaData.masterImage"
+            :src="captchaData.masterImage"
+            class="h-42px w-auto cursor-pointer select-none rounded-4px border border-solid border-#e0e0e6 dark:border-#2d2d33"
+            :alt="$t('page.login.captcha.title')"
+            :title="$t('page.login.captcha.refresh')"
+            @click="onCaptchaRefresh"
+          />
+        </div>
+      </NFormItem>
       <NSpace vertical :size="12" class="mb-8px">
         <div class="mx-6px mb-8px flex-y-center justify-between">
           <NCheckbox v-model:checked="remberMe" size="large">{{ $t('page.login.pwdLogin.rememberMe') }}</NCheckbox>
@@ -192,7 +226,7 @@ async function handleSocialLogin(type: Api.System.SocialSource) {
           <span v-else class="text-18px" /> <!-- 占位保持布局对齐 -->
         </div>
         <NButton type="primary" size="large" block :loading="authStore.loginLoading" @click="handleSubmit">
-          {{ captchaEnabled && !captchaVerified ? $t('page.login.captcha.loginWithCaptcha') : $t('common.login') }}
+          {{ captchaEnabled && captchaType !== 'image' && !captchaVerified ? $t('page.login.captcha.loginWithCaptcha') : $t('common.login') }}
         </NButton>
         <NButton v-if="systemStore.isRegisterEnabled" size="large" block @click="toggleLoginModule('register')">
           {{ $t('page.login.common.register') }}

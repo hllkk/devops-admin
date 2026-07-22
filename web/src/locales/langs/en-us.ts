@@ -382,7 +382,10 @@ const local: App.I18n.Schema = {
         clickTitle: 'Click the text in order',
         slideTitle: 'Drag the slider to complete the puzzle',
         rotateTitle: 'Rotate the image to the correct direction',
-        loginWithCaptcha: 'Verify and Login'
+        loginWithCaptcha: 'Verify and Login',
+        imagePlaceholder: 'Enter characters in image',
+        imageRequired: 'Please enter the captcha',
+        refresh: 'Click to refresh'
       }
     },
     init: {

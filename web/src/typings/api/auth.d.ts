@@ -73,7 +73,7 @@ declare namespace Api {
     interface CaptchaResult {
       /** 当前是否要求验证码（false 时其余字段为空） */
       captchaEnabled: boolean;
-      /** 验证码类型：click | slide | rotate */
+      /** 验证码类型：image 传统字符图片 | click | slide | rotate 行为验证 */
       type?: string;
       /** 验证码会话 ID */
       captchaId?: string;

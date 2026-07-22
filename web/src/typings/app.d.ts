@@ -569,6 +569,9 @@ declare namespace App {
             slideTitle: string;
             rotateTitle: string;
             loginWithCaptcha: string;
+            imagePlaceholder: string;
+            imageRequired: string;
+            refresh: string;
           };
         };
         init: {

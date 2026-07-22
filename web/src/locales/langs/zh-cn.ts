@@ -378,7 +378,10 @@ const local: App.I18n.Schema = {
         clickTitle: '请按顺序点击图中文字',
         slideTitle: '请拖动滑块完成拼图',
         rotateTitle: '请旋转图片至正确方向',
-        loginWithCaptcha: '验证并登录'
+        loginWithCaptcha: '验证并登录',
+        imagePlaceholder: '请输入图中字符',
+        imageRequired: '请输入验证码',
+        refresh: '点击刷新'
       }
     },
     init: {
