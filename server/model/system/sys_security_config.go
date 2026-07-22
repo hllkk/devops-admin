@@ -21,7 +21,7 @@ type SysSecurityConfig struct {
 	CaptchaOpen      int    `json:"captchaOpen" gorm:"default:0;comment:错误N次后出验证码 0=每次都要"`
 	CaptchaTimeout   int    `json:"captchaTimeout" gorm:"default:3600;comment:防爆破计数缓存超时(秒)"`
 	CaptchaTolerance int    `json:"captchaTolerance" gorm:"default:5;comment:命中容差 click/slide像素 rotate角度"`
-	KeyLong          int    `json:"keyLong" gorm:"default:6;comment:image验证码长度/click文字点选字符数"`
+	KeyLong          int    `json:"keyLong" gorm:"default:4;comment:image验证码长度/click文字点选字符数"`
 	ImgWidth         int    `json:"imgWidth" gorm:"default:240;comment:验证码宽度"`
 	ImgHeight        int    `json:"imgHeight" gorm:"default:80;comment:验证码高度"`
 	// 密码复杂度(对齐前端 SecuritySettingConfig.password*)

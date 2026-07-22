@@ -7,8 +7,8 @@ import "github.com/hllkk/devops-admin/server/global"
 // 验证码配置统一落在 SysSecurityConfig.Captcha* 段,本表不含 verifyCode* 字段。
 type SysGeneralConfig struct {
 	global.OPS_MODEL
-	SystemName                string `json:"systemName" gorm:"comment:系统名称"`
-	SystemDescription         string `json:"systemDescription" gorm:"comment:系统描述"`
+	SystemName                string `json:"systemName" gorm:"default:DevOps Admin;comment:系统名称"`
+	SystemDescription         string `json:"systemDescription" gorm:"default:DevOps 管理平台;comment:系统描述"`
 	LogoUrl                   string `json:"logoUrl" gorm:"comment:Logo地址"`
 	FaviconUrl                string `json:"faviconUrl" gorm:"comment:Favicon地址"`
 	LoginLogRetentionDays     int    `json:"loginLogRetentionDays" gorm:"default:30;comment:登录日志保留天数"`

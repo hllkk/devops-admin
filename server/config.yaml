@@ -22,7 +22,7 @@ aws-s3:
     secret-id: your-secret-id
     secret-key: your-secret-key
     base-url: https://gin.vue.admin
-    path-prefix: github.com/flipped-aurora/gin-vue-admin/server
+    path-prefix: github.com/hllkk/devops-admin/server
     s3-force-path-style: false
     disable-ssl: false
 captcha:
@@ -69,7 +69,7 @@ hua-wei-obs:
     access-key: you-access-key
     secret-key: you-secret-key
 jwt:
-    signing-key: 769cb8fc-0eca-4512-aa38-13a8de8430ce
+    signing-key: 9bbb3704-e410-4273-91cc-7308b6c4ffca
     expires-time: 7d
     buffer-time: 1d
     issuer: devops-admin
@@ -230,19 +230,19 @@ system:
     disable-auto-migrate: false
     worker-id: 1
     trusted-proxies:
-      - "::1/128" # 同机反代(Vite dev proxy / Nginx)走 IPv6 回环连后端
-      - "127.0.0.1/32" # 同机反代走 IPv4 回环连后端
-    ip2region-db-path: "resource/ip2region.xdb" # 登录/操作日志 IP 地点解析库(相对 server 运行目录;空=内置默认 resource/ip2region.xdb)
+        - ::1/128
+        - 127.0.0.1/32
+    ip2region-db-path: resource/ip2region.xdb
 tencent-cos:
     bucket: xxxxx-10005608
     region: ap-shanghai
     secret-id: your-secret-id
     secret-key: your-secret-key
     base-url: https://gin.vue.admin
-    path-prefix: github.com/flipped-aurora/gin-vue-admin/server
+    path-prefix: github.com/hllkk/devops-admin/server
 zap:
     level: info
-    prefix: '[github.com/flipped-aurora/gin-vue-admin/server]'
+    prefix: '[github.com/hllkk/devops-admin/server]'
     format: console
     director: log
     encode-level: LowercaseColorLevelEncoder

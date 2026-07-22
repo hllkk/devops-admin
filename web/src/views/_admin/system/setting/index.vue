@@ -12,7 +12,6 @@ import AuthSetting from './modules/auth-setting.vue';
 import { useAuth } from '@/hooks/business/auth';
 import { fetchGetSetting, fetchUpdateSetting } from '@/service/api/system/setting';
 import { useAppStore } from '@/store/modules/app/index.js';
-import { mergeConfig } from '@/utils/common';
 
 defineOptions({ name: 'SystemSetting' });
 
@@ -29,130 +28,13 @@ interface SettingMenuItem {
   icon: string;
 }
 
-/** 常规配置默认值(系统信息 + 日志清理,字段均在 SysGeneralConfig) */
-const GENERAL_DEFAULTS: Api.System.GeneralSettingConfig = {
-  systemName: 'devops-admin',
-  systemDescription: '企业运维管理平台',
-  logoUrl: '',
-  faviconUrl: '',
-  loginLogRetentionDays: 90,
-  operationLogRetentionDays: 90,
-  defaultPassword: 'User@1234'
-};
-
-/** 安全配置默认值(对齐后端 SysSecurityConfig 的 gorm default 与 DefaultSecurityConfig) */
-const SECURITY_DEFAULTS: Api.System.SecuritySettingConfig = {
-  // 验证码 Captcha*
-  captchaEnabled: true,
-  captchaType: 'click',
-  captchaOpen: 0,
-  captchaTimeout: 3600,
-  captchaTolerance: 5,
-  keyLong: 6,
-  imgWidth: 240,
-  imgHeight: 80,
-  // 密码复杂度 Password*
-  passwordMinLength: 8,
-  passwordRequireUppercase: false,
-  passwordRequireLowercase: false,
-  passwordRequireDigit: false,
-  passwordRequireSpecial: false,
-  // 登录失败锁定 LoginFailLock*
-  loginFailLockCount: 5,
-  loginFailLockTime: 30,
-  // 访问控制 IpValidation*
-  ipValidationEnabled: false,
-  ipValidationMode: 'blacklist',
-  ipBlacklist: '',
-  ipWhitelist: '',
-  // 限流 Limit*
-  limitEnable: false,
-  limitWindow: 60,
-  limitCount: 30,
-  // 密码过期 PwdExpire*
-  pwdExpireEnable: false,
-  pwdExpireDays: 90
-};
-
-/** LDAP 配置默认值(对齐后端 DefaultLdapConfig) */
-const LDAP_DEFAULTS: Api.System.LdapSettingConfig = {
-  enabled: false,
-  host: 'localhost',
-  port: 389,
-  useSSL: false,
-  bindDN: '',
-  bindPass: '',
-  baseDN: '',
-  filter: '(uid=%s)',
-  attrUsername: 'uid',
-  attrNickname: 'cn',
-  attrEmail: 'mail',
-  autoCreate: false
-};
-
-/** 通知配置默认值(对齐后端 DefaultNotifyConfig) */
-const NOTIFY_DEFAULTS: Api.System.NotifySettingConfig = {
-  emailEnabled: false,
-  emailHost: '',
-  emailPort: 465,
-  emailUsername: '',
-  emailPassword: '',
-  emailFromAddr: '',
-  emailFromName: '',
-  emailSSLMode: 'ssl',
-  webhookEnabled: false,
-  webhookUrl: '',
-  webhookSecret: ''
-};
-
-/** 网盘配置默认值(对齐后端 DefaultDiskConfig) */
-const DISK_DEFAULTS: Api.System.DiskSettingConfig = {
-  maxUploadSize: 500,
-  maxUploadSizeUnit: 'MB',
-  storageQuota: 10,
-  storageQuotaUnit: 'GB',
-  allowedExtensions: '',
-  blockedExtensions: '',
-  recycleBinRetentionDays: 30,
-  diskName: '',
-  diskLogo: '',
-  onlyOfficeEnabled: false,
-  onlyOfficeServerUrl: '',
-  onlyOfficeTokenSecret: '',
-  onlyOfficeCallbackUrl: ''
-};
-
-/** 认证配置默认值(对齐后端 SysAuthConfig) */
-const AUTH_DEFAULTS: Api.System.AuthSettingConfig = {
-  registerEnabled: false,
-  resetPwdEnabled: false,
-  wecomEnabled: false,
-  wecomCorpId: '',
-  wecomAgentId: 0,
-  wecomClientId: '',
-  wecomClientSecret: '',
-  wecomCallbackUrl: '',
-  wecomDomainFileName: '',
-  wecomDomainFileContent: '',
-  wechatEnabled: false,
-  wechatClientId: '',
-  wechatClientSecret: '',
-  wechatCallbackUrl: '',
-  giteeEnabled: false,
-  giteeClientId: '',
-  giteeClientSecret: '',
-  giteeCallbackUrl: '',
-  githubEnabled: false,
-  githubClientId: '',
-  githubClientSecret: '',
-  githubCallbackUrl: '',
-  dingtalkEnabled: false,
-  dingtalkClientId: '',
-  dingtalkClientSecret: '',
-  dingtalkCallbackUrl: ''
-};
+// 系统设置默认值由后端在初始化(/initdb)时 seed(见 source/system/sys_setting.go),
+// 前端不再维护默认值副本: 此前 XXX_DEFAULTS 与后端 DefaultXxxConfig 已出现不一致
+// (loginLogRetentionDays 90 vs 30、systemName 'devops-admin' vs 'DevOps Admin' 等),
+// 现以后端为唯一真源, loadConfig 直接采用后端返回值。
 
 const activeKey = ref<SettingKey>('general');
+const loaded = ref(false);
 const isMobile = computed(() => useAppStore().isMobile);
 
 const config = ref<{
@@ -163,12 +45,12 @@ const config = ref<{
   notify: Api.System.NotifySettingConfig;
   auth: Api.System.AuthSettingConfig;
 }>({
-  general: { ...GENERAL_DEFAULTS },
-  security: { ...SECURITY_DEFAULTS },
-  ldap: { ...LDAP_DEFAULTS },
-  disk: { ...DISK_DEFAULTS },
-  notify: { ...NOTIFY_DEFAULTS },
-  auth: { ...AUTH_DEFAULTS }
+  general: {} as Api.System.GeneralSettingConfig,
+  security: {} as Api.System.SecuritySettingConfig,
+  ldap: {} as Api.System.LdapSettingConfig,
+  disk: {} as Api.System.DiskSettingConfig,
+  notify: {} as Api.System.NotifySettingConfig,
+  auth: {} as Api.System.AuthSettingConfig
 });
 
 /** 菜单项统一定义，同时传给 setting-menu 和 currentTitle。computed 确保切换语言时标签/描述联动更新 */
@@ -219,12 +101,13 @@ async function loadConfig() {
     window.$message?.error(t('page.system.setting.loadFail'));
     return;
   }
-  config.value.general = mergeConfig(GENERAL_DEFAULTS, data?.general);
-  config.value.security = mergeConfig(SECURITY_DEFAULTS, data?.security);
-  config.value.ldap = mergeConfig(LDAP_DEFAULTS, data?.ldap);
-  config.value.disk = mergeConfig(DISK_DEFAULTS, data?.disk);
-  config.value.notify = mergeConfig(NOTIFY_DEFAULTS, data?.notify);
-  config.value.auth = mergeConfig(AUTH_DEFAULTS, data?.auth);
+  config.value.general = data?.general ?? config.value.general;
+  config.value.security = data?.security ?? config.value.security;
+  config.value.ldap = data?.ldap ?? config.value.ldap;
+  config.value.disk = data?.disk ?? config.value.disk;
+  config.value.notify = data?.notify ?? config.value.notify;
+  config.value.auth = data?.auth ?? config.value.auth;
+  loaded.value = true;
 }
 
 async function handleSave() {
@@ -263,7 +146,15 @@ onMounted(() => {
         <NDivider class="my-12px" />
         <div class="flex justify-between items-center mb-16px">
           <div class="text-16px font-600">{{ currentTitle }}</div>
-          <NButton v-if="hasAuth('system:setting:save')" type="primary" :loading="loading" class="dark:text-white" @click="handleSave">保存</NButton>
+          <NButton
+            v-if="hasAuth('system:setting:save')"
+            type="primary"
+            :loading="loading"
+            :disabled="!loaded"
+            class="dark:text-white"
+            @click="handleSave"
+            >保存</NButton
+          >
         </div>
         <div class="overflow-auto setting-mobile-content">
           <GeneralSetting v-if="activeKey === 'general'" v-model:config="config.general" />
@@ -285,7 +176,7 @@ onMounted(() => {
           <template #header>
             <div class="flex items-center justify-between">
               <span class="text-16px font-600">{{ currentTitle }}</span>
-              <NButton v-if="hasAuth('system:setting:save')" type="primary" :loading="loading" @click="handleSave">
+              <NButton v-if="hasAuth('system:setting:save')" type="primary" :loading="loading" :disabled="!loaded" @click="handleSave">
                 {{ $t('page.system.setting.save') }}
               </NButton>
             </div>

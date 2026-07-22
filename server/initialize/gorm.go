@@ -63,6 +63,8 @@ func RegisterTables() {
 		system.SysNotifyConfig{},
 		system.SysAuthConfig{},
 		system.SysDiskConfig{},
+		system.SysTimedTask{},
+		system.SysTimedTaskLog{},
 
 		media.MediaUpload{},
 		media.MediaUploadChunk{},

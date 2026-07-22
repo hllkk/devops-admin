@@ -123,17 +123,6 @@ func (i *initUser) InitializeData(ctx context.Context) (next context.Context, er
 			Avatar:            "https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif?imageView2/1/w/80/h/80",
 			RoleId:            adminRoleID, // 主角色(登录链路 claims 用)
 		},
-		{
-			UUID:              uuid.New(),
-			UserName:          "user",
-			Password:          adminPassword,
-			PasswordUpdatedAt: &pwdUpdatedAt,
-			NickName:          "普通用户",
-			Phonenumber:       "13888888888",
-			Email:             "user@example.com",
-			Avatar:            "https://img2.baidu.com/it/u=1978192862,2048448374&fm=253&fmt=auto&app=138&f=JPEG?w=504&h=500",
-			RoleId:            userRoleID, // 主角色(登录链路 claims 用)
-		},
 	}
 	if err = db.Create(&entities).Error; err != nil {
 		return ctx, errors.Wrapf(err, "%s表数据初始化失败!", sysModel.SysUser{}.TableName())
@@ -146,7 +135,6 @@ func (i *initUser) InitializeData(ctx context.Context) (next context.Context, er
 	userRoleLinks := []sysModel.SysUserRole{
 		{SysUserId: entities[0].UserId, SysRoleId: superRoleID},
 		{SysUserId: entities[1].UserId, SysRoleId: adminRoleID},
-		{SysUserId: entities[2].UserId, SysRoleId: userRoleID},
 	}
 	if err = db.Create(&userRoleLinks).Error; err != nil {
 		return ctx, errors.Wrapf(err, "%s连接表数据初始化失败!", (&sysModel.SysUserRole{}).TableName())

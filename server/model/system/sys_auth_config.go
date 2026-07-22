@@ -13,8 +13,8 @@ import "github.com/hllkk/devops-admin/server/global"
 type SysAuthConfig struct {
 	global.OPS_MODEL
 	// 账号功能
-	RegisterEnabled  bool `json:"registerEnabled" gorm:"default:false;comment:是否开放注册"`
-	ResetPwdEnabled  bool `json:"resetPwdEnabled" gorm:"default:false;comment:是否开放找回密码"`
+	RegisterEnabled bool `json:"registerEnabled" gorm:"default:false;comment:是否开放注册"`
+	ResetPwdEnabled bool `json:"resetPwdEnabled" gorm:"default:false;comment:是否开放找回密码"`
 	// 企业微信
 	WecomEnabled           bool   `json:"wecomEnabled" gorm:"default:false;comment:企业微信登录开关"`
 	WecomCorpId            string `json:"wecomCorpId" gorm:"comment:企业微信 CorpId（企业ID）"`
