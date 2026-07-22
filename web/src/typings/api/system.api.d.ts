@@ -725,5 +725,74 @@ declare namespace Api {
       pwdExpireEnable: boolean;
       pwdExpireDays: number;
     };
+
+    /** 定时任务执行器类型 */
+    type TimedTaskExecutorType = 'method' | 'http';
+
+    /** 定时任务 */
+    type SysTimedTask = Common.CommonRecord<{
+      id: CommonType.IdType;
+      name: string;
+      description: string;
+      spec: string;
+      withSeconds: boolean;
+      executorType: TimedTaskExecutorType;
+      methodName: string;
+      params: Record<string, any> | null;
+      httpUrl: string;
+      httpMethod: string;
+      httpHeader: Record<string, any> | null;
+      httpBody: string;
+      httpAllowPrivate: boolean;
+      enabled: boolean;
+      nextRunAt: string | null;
+    }>;
+
+    /** 定时任务搜索参数 */
+    type SysTimedTaskSearchParams = CommonType.RecordNullable<
+      Pick<SysTimedTask, 'name' | 'executorType' | 'enabled'> & Api.Common.CommonSearchParams
+    >;
+
+    /** 定时任务列表 */
+    type SysTimedTaskList = Api.Common.PaginatingQueryRecord<SysTimedTask>;
+
+    /** 定时任务执行日志触发类型 */
+    type TimedTaskLogTriggerType = 'auto' | 'manual';
+
+    /** 定时任务执行日志状态 */
+    type TimedTaskLogStatus = 'success' | 'fail' | 'timeout';
+
+    /** 定时任务执行日志 */
+    type SysTimedTaskLog = Common.CommonRecord<{
+      id: CommonType.IdType;
+      taskId: CommonType.IdType;
+      taskName: string;
+      triggerType: TimedTaskLogTriggerType;
+      startedAt: string;
+      finishedAt: string;
+      durationMs: number;
+      status: TimedTaskLogStatus;
+      errorMsg: string;
+      output: string;
+    }>;
+
+    /** 定时任务执行日志搜索参数 */
+    type SysTimedTaskLogSearchParams = CommonType.RecordNullable<
+      Pick<SysTimedTaskLog, 'taskId' | 'status'> & Api.Common.CommonSearchParams
+    >;
+
+    /** 定时任务执行日志列表 */
+    type SysTimedTaskLogList = Api.Common.PaginatingQueryRecord<SysTimedTaskLog>;
+
+    /** 已注册方法 */
+    type RegisteredMethod = {
+      name: string;
+      description: string;
+    };
+
+    /** 已注册方法列表 */
+    type RegisteredMethodList = {
+      methods: RegisteredMethod[];
+    };
   }
 }

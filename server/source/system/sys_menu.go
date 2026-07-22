@@ -87,13 +87,23 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 		},
 		{
 			ParentId:  0,
+			MenuName:  "route.timer",
+			MenuType:  "M",
+			Path:      "timer",
+			Component: "Layout",
+			Icon:      "fluent:clock-24-regular",
+			Visible:   "0",
+			OrderNum:  3,
+		},
+		{
+			ParentId:  0,
 			MenuName:  "route.log",
 			MenuType:  "M",
 			Path:      "log",
 			Component: "Layout",
 			Icon:      "local-icon-log",
 			Visible:   "0",
-			OrderNum:  3,
+			OrderNum:  4,
 		},
 	}
 

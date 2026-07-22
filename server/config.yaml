@@ -1,3 +1,9 @@
+ai:
+    provider: ollama
+    ollama:
+        base-url: http://172.21.96.141:11434
+        model: qwen3.6:35b
+        timeout: 120
 aliyun-oss:
     endpoint: yourEndpoint
     access-key-id: yourAccessKeyId
@@ -9,12 +15,6 @@ app:
     node: ""
     app-id: ""
     env: ""
-ai:
-    provider: ollama
-    ollama:
-        base-url: http://172.21.96.141:11434
-        model: qwen3.6:35b
-        timeout: 120
 autocode:
     web: web/src
     root: /home/devops-admin
@@ -75,7 +75,7 @@ hua-wei-obs:
     access-key: you-access-key
     secret-key: you-secret-key
 jwt:
-    signing-key: 9bbb3704-e410-4273-91cc-7308b6c4ffca
+    signing-key: 4a1ff651-ed61-4cf8-bb0d-c7538280c928
     expires-time: 7d
     buffer-time: 1d
     issuer: devops-admin

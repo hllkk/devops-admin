@@ -100,7 +100,7 @@ export const generatedRoutes: GeneratedRoute[] = [
       title: 'log',
       i18nKey: 'route.log',
       localIcon: 'menu-log',
-      order: 3
+      order: 4
     },
     children: [
       {
@@ -269,6 +269,17 @@ export const generatedRoutes: GeneratedRoute[] = [
         }
       }
     ]
+  },
+  {
+    name: 'timer',
+    path: '/timer',
+    component: 'layout.base$view.timer',
+    meta: {
+      title: 'timer',
+      i18nKey: 'route.timer',
+      icon: 'fluent:clock-24-regular',
+      order: 3
+    }
   },
   {
     name: 'user-center',

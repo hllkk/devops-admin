@@ -41,6 +41,7 @@ declare module "@elegant-router/types" {
     "system_role": "/system/role";
     "system_setting": "/system/setting";
     "system_user": "/system/user";
+    "timer": "/timer";
     "user-center": "/user-center";
   };
 
@@ -86,6 +87,7 @@ declare module "@elegant-router/types" {
     | "server"
     | "social-callback"
     | "system"
+    | "timer"
     | "user-center"
   >;
 
@@ -115,6 +117,7 @@ declare module "@elegant-router/types" {
     | "system_role"
     | "system_setting"
     | "system_user"
+    | "timer"
     | "403"
     | "404"
     | "500"

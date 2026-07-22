@@ -708,6 +708,8 @@ declare namespace App {
             systemDescription: string;
             logoUrl: string;
             faviconUrl: string;
+            defaultPassword: string;
+            defaultPasswordPlaceholder: string;
             userDefaultPassword: string;
             userDefaultRole: string;
             captchaTitle: string;
@@ -871,6 +873,18 @@ declare namespace App {
             authOAuthCallbackUrl: string;
             authOAuthCallbackUrlPlaceholder: string;
             authOAuthCallbackUrlTip: string;
+            authWecomCorpId: string;
+            authWecomCorpIdPlaceholder: string;
+            authWecomAgentId: string;
+            authWecomAgentIdPlaceholder: string;
+            authWecomDomainVerifyTitle: string;
+            authWecomDomainVerifyTip1: string;
+            authWecomDomainVerifyTip2: string;
+            authWecomDomainVerifyTip3: string;
+            authWecomDomainFileName: string;
+            authWecomDomainFileNamePlaceholder: string;
+            authWecomDomainFileContent: string;
+            authWecomDomainFileContentPlaceholder: string;
           };
           role: {
             title: string;
@@ -1090,6 +1104,72 @@ declare namespace App {
               remark: FormMsg;
             };
           };
+          timer: {
+            title: string;
+            listTitle: string;
+            id: string;
+            name: string;
+            description: string;
+            spec: string;
+            executorType: string;
+            executorMethod: string;
+            executorHttp: string;
+            withSeconds: string;
+            withSecondsHint: string;
+            methodName: string;
+            methodNameHint: string;
+            httpUrl: string;
+            httpMethod: string;
+            httpHeader: string;
+            httpBody: string;
+            httpAllowPrivate: string;
+            httpAllowPrivateHint: string;
+            enabled: string;
+            nextRunAt: string;
+            createTime: string;
+            trigger: string;
+            triggerConfirm: string;
+            triggerSuccess: string;
+            log: string;
+            logTitle: string;
+            triggerType: string;
+            triggerAuto: string;
+            triggerManual: string;
+            status: string;
+            statusSuccess: string;
+            statusFail: string;
+            statusTimeout: string;
+            startedAt: string;
+            durationMs: string;
+            errorMsg: string;
+            output: string;
+            noDetail: string;
+            addTimer: string;
+            editTimer: string;
+            params: string;
+            paramsPlaceholder: string;
+            specPreset: string;
+            specHint: string;
+            deleteConfirm: string;
+            toggleSuccessOn: string;
+            toggleSuccessOff: string;
+            enabledSearch: string;
+            placeholder: {
+              name: string;
+              executorType: string;
+              spec: string;
+              methodName: string;
+              httpUrl: string;
+              httpBody: string;
+              httpHeader: string;
+            };
+            form: {
+              name: FormMsg;
+              spec: FormMsg;
+              methodName: FormMsg;
+              httpUrl: FormMsg;
+            };
+          };
         };
         log: {
           loginlog: {
@@ -1119,6 +1199,29 @@ declare namespace App {
             placeholder: {
               ipaddr: string;
               userName: string;
+              status: string;
+            };
+          };
+          errorlog: {
+            title: string;
+            listTitle: string;
+            detail: string;
+            form: string;
+            info: string;
+            level: string;
+            status: string;
+            solution: string;
+            createTime: string;
+            requestId: string;
+            traceId: string;
+            view: string;
+            getSolution: string;
+            confirmGetSolution: string;
+            solutionSubmitted: string;
+            placeholder: {
+              form: string;
+              info: string;
+              level: string;
               status: string;
             };
           };

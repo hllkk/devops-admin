@@ -7,3 +7,4 @@ export * from './role';
 export * from './post';
 export * from './social';
 export * from './setting';
+export * from './timer';
