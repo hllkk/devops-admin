@@ -261,6 +261,7 @@ const local: App.I18n.Schema = {
     log: '日志中心',
     log_loginlog: '登录日志',
     log_operlog: '操作日志',
+    log_errorlog: '错误日志',
     disk: '网盘',
     server: '服务器管理',
     gateway: 'AI 网关',
@@ -943,6 +944,29 @@ const local: App.I18n.Schema = {
           ipaddr: '请输入登录IP地址',
           userName: '请输入用户账号',
           status: '请选择登录状态'
+        }
+      },
+      errorlog: {
+        title: '错误日志',
+        listTitle: '错误日志列表',
+        detail: '错误详情',
+        form: '错误来源',
+        info: '错误内容',
+        level: '错误等级',
+        status: '处理状态',
+        solution: '解决方案',
+        createTime: '创建时间',
+        requestId: '请求ID',
+        traceId: '链路ID',
+        view: '详情',
+        getSolution: 'AI方案',
+        confirmGetSolution: '是否确认提交至AI进行分析处理？',
+        solutionSubmitted: 'AI处理已提交',
+        placeholder: {
+          form: '请输入错误来源',
+          info: '请输入错误内容',
+          level: '请选择错误等级',
+          status: '请选择处理状态'
         }
       },
       operlog: {

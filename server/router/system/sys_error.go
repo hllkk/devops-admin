@@ -14,10 +14,10 @@ func (s *SysErrorRouter) InitSysErrorRouter(Router *gin.RouterGroup, PublicRoute
 	sysErrorRouter := Router.Group("log/sysError")
 	publicErrorRouter := PublicRouter.Group("log/sysError")
 	{
-		sysErrorRouter.DELETE("deleteSysError", sysErrorApi.DeleteSysError)           // 删除错误日志
-		sysErrorRouter.DELETE("deleteSysErrorByIds", sysErrorApi.DeleteSysErrorByIds) // 批量删除错误日志
-		sysErrorRouter.PUT("updateSysError", sysErrorApi.UpdateSysError)              // 更新错误日志
-		sysErrorRouter.GET("getSysErrorSolution", sysErrorApi.GetSysErrorSolution)    // 触发AI处理
+		sysErrorRouter.DELETE("deleteSysError", sysErrorApi.DeleteSysError)               // 删除错误日志
+		sysErrorRouter.POST("deleteSysErrorByIds", sysErrorApi.DeleteSysErrorByIds)       // 批量删除(POST body,避免query array序列化问题)
+		sysErrorRouter.PUT("updateSysError", sysErrorApi.UpdateSysError)                  // 更新错误日志
+		sysErrorRouter.GET("getSysErrorSolution", sysErrorApi.GetSysErrorSolution)        // 触发AI处理
 	}
 	{
 		sysErrorRouter.GET("findSysError", sysErrorApi.FindSysError)       // 根据ID获取错误日志

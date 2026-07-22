@@ -2,6 +2,7 @@ package system
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/hllkk/devops-admin/server/global"
@@ -9,6 +10,7 @@ import (
 	"github.com/hllkk/devops-admin/server/model/system"
 	systemReq "github.com/hllkk/devops-admin/server/model/system/request"
 	"github.com/hllkk/devops-admin/server/utils/logger"
+	"github.com/hllkk/devops-admin/server/utils/sse"
 )
 
 type SysErrorService struct{}
@@ -84,7 +86,7 @@ func (sysErrorService *SysErrorService) GetSysErrorInfoList(ctx context.Context,
 
 // GetSysErrorSolution 异步处理错误
 // Author [yourname](https://github.com/yourname)
-func (sysErrorService *SysErrorService) GetSysErrorSolution(ctx context.Context, ID string) (err error) {
+func (sysErrorService *SysErrorService) GetSysErrorSolution(ctx context.Context, ID string, userID int64) (err error) {
 	// 立即更新为处理中
 	err = global.OPS_DB.WithContext(ctx).Model(&system.SysError{}).Where("id = ?", ID).Update("status", "处理中").Error
 	if err != nil {
@@ -97,12 +99,13 @@ func (sysErrorService *SysErrorService) GetSysErrorSolution(ctx context.Context,
 	// 卡在"处理中"。WithoutCancel 脱离请求取消生命周期,同时保留 ctx 里的链路字段
 	// (request_id/trace_id 流入本协程的 SQL 日志与出站 LLM 调用)。
 	bgCtx := context.WithoutCancel(ctx)
-	go func(id string) {
+	go func(id string, uid int64) {
 		// 查询当前错误信息用于生成方案
 		var se system.SysError
 		if err := global.OPS_DB.WithContext(bgCtx).Model(&system.SysError{}).Where("id = ?", id).First(&se).Error; err != nil {
 			logger.Bg().Mod("biz").Err(err).Warn("AI处理: 查询错误日志失败")
 			_ = global.OPS_DB.WithContext(bgCtx).Model(&system.SysError{}).Where("id = ?", id).Update("status", "处理失败").Error
+			pushErrorlogSSE(uint(uid), id, "处理失败", "")
 			return
 		}
 
@@ -139,13 +142,26 @@ func (sysErrorService *SysErrorService) GetSysErrorSolution(ctx context.Context,
 			if err := global.OPS_DB.WithContext(bgCtx).Model(&system.SysError{}).Where("id = ?", id).Updates(map[string]interface{}{"status": "处理完成", "solution": solution}).Error; err != nil {
 				logger.Bg().Mod("biz").Err(err).Warn("AI处理: 写入解决方案失败")
 			}
+			pushErrorlogSSE(uint(uid), id, "处理完成", solution)
 		} else {
 			logger.Bg().Mod("biz").Err(llmErr).Warn("AI处理: 生成解决方案失败")
 			if err := global.OPS_DB.WithContext(bgCtx).Model(&system.SysError{}).Where("id = ?", id).Update("status", "处理失败").Error; err != nil {
 				logger.Bg().Mod("biz").Err(err).Warn("AI处理: 更新失败状态失败")
 			}
+			pushErrorlogSSE(uint(uid), id, "处理失败", "")
 		}
-	}(ID)
+	}(ID, userID)
 
 	return nil
+}
+
+// pushErrorlogSSE 向触发 AI 处理的用户推送状态变更(用户不在线时静默丢弃)。
+func pushErrorlogSSE(userID uint, id string, status string, solution string) {
+	payload, _ := json.Marshal(map[string]string{
+		"type":     "errorlog:update",
+		"id":       id,
+		"status":   status,
+		"solution": solution,
+	})
+	sse.Default().Publish(userID, sse.Event{Name: "", Data: string(payload)})
 }

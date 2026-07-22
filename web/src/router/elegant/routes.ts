@@ -109,7 +109,9 @@ export const generatedRoutes: GeneratedRoute[] = [
         component: 'view.log_errorlog',
         meta: {
           title: 'log_errorlog',
-          i18nKey: 'route.log_errorlog'
+          i18nKey: 'route.log_errorlog',
+          icon: 'fluent:clipboard-error-24-regular',
+          order: 3
         }
       },
       {

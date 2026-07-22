@@ -210,6 +210,16 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			Visible:   "0",
 			OrderNum:  2,
 		},
+		{
+			ParentId:  menuNameMap["route.log"],
+			MenuName:  "route.log_errorlog",
+			MenuType:  "C",
+			Path:      "log/errorlog",
+			Component: "_admin/log/errorlog/index",
+			Icon:      "fluent:clipboard-error-24-regular",
+			Visible:   "0",
+			OrderNum:  3,
+		},
 	}
 	// 创建子菜单
 	if err = db.Create(&childMenus).Error; err != nil {

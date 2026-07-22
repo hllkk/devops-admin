@@ -93,5 +93,41 @@ declare namespace Api {
 
     /** login log list */
     type LoginLogList = Api.Common.PaginatingQueryRecord<LoginLog>;
+
+    /** error log */
+    type ErrorLog = {
+      /** 主键 */
+      id: string;
+      /** 创建时间 */
+      createTime: string;
+      /** 更新时间 */
+      updateTime: string;
+      /** 错误来源 */
+      form: string;
+      /** 错误内容 */
+      info: string;
+      /** 日志等级 */
+      level: string;
+      /** 请求ID */
+      request_id: string;
+      /** 链路ID */
+      trace_id: string;
+      /** 解决方案 */
+      solution: string;
+      /** 处理状态 */
+      status: string;
+    };
+
+    /** error log search params */
+    type ErrorLogSearchParams = CommonType.RecordNullable<
+      Pick<Api.Log.ErrorLog, 'form' | 'info' | 'level' | 'status'> & {
+        pageNum: number;
+        pageSize: number;
+        createdAtRange: [string, string] | null;
+      }
+    >;
+
+    /** error log list */
+    type ErrorLogList = Api.Common.PaginatingQueryRecord<ErrorLog>;
   }
 }

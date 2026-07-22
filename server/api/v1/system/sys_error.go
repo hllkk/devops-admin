@@ -5,6 +5,7 @@ import (
 	"github.com/hllkk/devops-admin/server/model/common/response"
 	"github.com/hllkk/devops-admin/server/model/system"
 	systemReq "github.com/hllkk/devops-admin/server/model/system/request"
+	"github.com/hllkk/devops-admin/server/utils"
 	"github.com/hllkk/devops-admin/server/utils/logger"
 )
 
@@ -50,16 +51,21 @@ func (sysErrorApi *SysErrorApi) DeleteSysError(c *gin.Context) {
 	response.OkWithMessage("删除成功", c)
 }
 
-// DeleteSysErrorByIds 批量删除错误日志
+// DeleteSysErrorByIds 批量删除错误日志(POST body 避免 query array 序列化问题)
 // @Tags      SysError
 // @Summary   批量删除错误日志
+// @Accept     application/json
 // @Produce   application/json
-// @Param     IDs[]  query  []string  true  "错误日志ID列表"
+// @Param     ids  body  []string  true  "错误日志ID列表"
 // @Success   200  {object}  response.Response{msg=string}
-// @Router    /log/sysError/deleteSysErrorByIds [delete]
+// @Router    /log/sysError/deleteSysErrorByIds [post]
 func (sysErrorApi *SysErrorApi) DeleteSysErrorByIds(c *gin.Context) {
 	ctx := c.Request.Context()
-	IDs := c.QueryArray("IDs[]")
+	var IDs []string
+	if err := c.ShouldBindJSON(&IDs); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
 	if err := sysErrorService.DeleteSysErrorByIds(ctx, IDs); err != nil {
 		response.FailWithMessage("批量删除失败", c)
 		return
@@ -151,7 +157,7 @@ func (sysErrorApi *SysErrorApi) GetSysErrorSolution(c *gin.Context) {
 		response.FailWithMessage("缺少参数: id", c)
 		return
 	}
-	if err := sysErrorService.GetSysErrorSolution(ctx, ID); err != nil {
+	if err := sysErrorService.GetSysErrorSolution(ctx, ID, utils.GetUserID(c)); err != nil {
 		response.FailWithMessage("处理触发失败", c)
 		return
 	}
