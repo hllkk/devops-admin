@@ -153,8 +153,9 @@ onMounted(() => {
             :disabled="!loaded"
             class="dark:text-white"
             @click="handleSave"
-            >保存</NButton
           >
+            保存
+          </NButton>
         </div>
         <div class="overflow-auto setting-mobile-content">
           <GeneralSetting v-if="activeKey === 'general'" v-model:config="config.general" />
