@@ -26,4 +26,5 @@ type ServiceGroup struct {
 	AiService
 	TimedTaskService
 	SocialService
+	OnlineService
 }

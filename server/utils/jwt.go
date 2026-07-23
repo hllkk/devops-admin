@@ -6,6 +6,7 @@ import (
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/hllkk/devops-admin/server/global"
 	"github.com/hllkk/devops-admin/server/model/system/request"
 )
@@ -39,6 +40,7 @@ func (j *JWT) CreateClaims(baseClaims request.BaseClaims) request.CustomClaims {
 			Audience:  jwt.ClaimStrings{"OPS"},                   // 受众
 			NotBefore: jwt.NewNumericDate(time.Now().Add(-1000)), // 签名生效时间
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(ep)),    // 过期时间 7天  配置文件
+			ID:        uuid.NewString(),                          // jti 令牌ID(在线设备踢下线标识)
 			Issuer:    global.OPS_CONFIG.JWT.Issuer,              // 签名的发行者
 		},
 	}

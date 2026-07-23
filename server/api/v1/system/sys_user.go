@@ -112,6 +112,7 @@ func (b *BaseApi) TokenNext(c *gin.Context, user system.SysUser, mustChangePwd b
 	}
 	if !global.OPS_CONFIG.System.UseMultipoint {
 		utils.SetToken(c, token, expire)
+		b.recordSession(c, user, token, claims)
 		response.OkWithDetailed(resp, "登录成功", c)
 		return
 	}
@@ -123,6 +124,7 @@ func (b *BaseApi) TokenNext(c *gin.Context, user system.SysUser, mustChangePwd b
 			return
 		}
 		utils.SetToken(c, token, expire)
+		b.recordSession(c, user, token, claims)
 		response.OkWithDetailed(resp, "登录成功", c)
 	} else if err != nil {
 		logger.WithCtx(c.Request.Context()).Mod("biz").Err(err).Error("设置登录状态失败")
@@ -137,6 +139,7 @@ func (b *BaseApi) TokenNext(c *gin.Context, user system.SysUser, mustChangePwd b
 			return
 		}
 		utils.SetToken(c, token, expire)
+		b.recordSession(c, user, token, claims)
 		response.OkWithDetailed(resp, "登录成功", c)
 	}
 }
@@ -217,14 +220,39 @@ func (b *BaseApi) GetUserInfo(c *gin.Context) {
 	}, "获取成功", c)
 }
 
-// Logout 退出登录(清 cookie + 当前 token 入黑名单)
+// Logout 退出登录(清 cookie + 当前 token 入黑名单 + 删除在线设备会话记录)
 func (b *BaseApi) Logout(c *gin.Context) {
 	token := utils.GetToken(c)
 	if token != "" {
-		_ = systemSvc.JwtServiceApp.JsonInBlacklist(c.Request.Context(), system.JwtBlacklist{Jwt: token})
+		ctx := c.Request.Context()
+		_ = systemSvc.JwtServiceApp.JsonInBlacklist(ctx, system.JwtBlacklist{Jwt: token})
+		// 同步清理当前会话的在线设备记录
+		if claims, err := utils.NewJWT().ParseToken(token); err == nil {
+			_ = onlineService.RemoveSession(ctx, claims.BaseClaims.ID, claims.RegisteredClaims.ID)
+		}
 	}
 	utils.ClearToken(c)
 	response.OkWithMessage("退出成功", c)
+}
+
+// recordSession 登录成功后把当前会话写入在线设备列表(Redis)。
+// 记录失败仅记日志,不阻断登录流程。
+func (b *BaseApi) recordSession(c *gin.Context, user system.SysUser, token string, claims systemReq.CustomClaims) {
+	ip := c.ClientIP()
+	browser, osStr, device := utils.ParseUserAgent(c.Request.UserAgent())
+	if err := onlineService.RecordSession(c.Request.Context(), claims.BaseClaims.ID, user.DeptId, system.OnlineSession{
+		Token:         token,
+		TokenId:       claims.RegisteredClaims.ID,
+		UserName:      user.UserName,
+		Ipaddr:        ip,
+		LoginLocation: utils.ParseIPLocation(ip),
+		Browser:       browser,
+		Os:            osStr,
+		DeviceType:    device,
+		LoginTime:     time.Now(),
+	}); err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("biz").Err(err).Error("记录在线设备会话失败")
+	}
 }
 
 // RefreshToken 刷新 token(读 cookie 续签,新 token 写回 cookie)

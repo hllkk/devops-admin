@@ -117,7 +117,7 @@ async function forceLogout(tokenId: string) {
     :scroll-x="scrollX"
     :loading="loading"
     remote
-    :row-key="row => row.noticeId"
+    :row-key="row => row.tokenId"
     class="h-full"
   />
 </template>
