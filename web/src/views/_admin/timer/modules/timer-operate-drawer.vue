@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { jsonClone } from '@sa/utils';
 import { fetchCreateTimedTask, fetchUpdateTimedTask, fetchGetRegisteredMethods } from '@/service/api/system/timer';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
 import { $t } from '@/locales';
