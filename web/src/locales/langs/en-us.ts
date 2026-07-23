@@ -678,7 +678,6 @@ const local: App.I18n.Schema = {
         tabAuthWechat: 'WeChat',
         tabAuthGitee: 'Gitee',
         tabAuthGithub: 'GitHub',
-        tabAuthDingtalk: 'DingTalk',
         authRegisterEnabled: 'Enable Registration',
         authRegisterEnabledTip: 'Show register link on login page',
         authResetPwdEnabled: 'Enable Password Reset',

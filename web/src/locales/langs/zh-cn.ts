@@ -674,7 +674,6 @@ const local: App.I18n.Schema = {
         tabAuthWechat: '微信开放平台',
         tabAuthGitee: 'Gitee',
         tabAuthGithub: 'GitHub',
-        tabAuthDingtalk: '钉钉',
         authRegisterEnabled: '开放注册',
         authRegisterEnabledTip: '开启后登录页显示注册入口',
         authResetPwdEnabled: '开放找回密码',

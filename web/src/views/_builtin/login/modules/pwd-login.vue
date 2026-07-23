@@ -263,12 +263,6 @@ async function handleSocialLogin(type: Api.System.SocialSource) {
         </template>
         <span class="ml-6px">GitHub</span>
       </NButton>
-      <NButton v-if="systemStore.setting?.dingtalkEnabled" class="flex-1 min-w-100px" @click="handleSocialLogin('dingtalk')">
-        <template #icon>
-          <icon-ant-design-dingtalk-circle-filled class="color-#0089FF" />
-        </template>
-        <span class="ml-6px">DingTalk</span>
-      </NButton>
     </div>
 
     <!-- 行为验证码弹窗（按 config.type 动态渲染） -->

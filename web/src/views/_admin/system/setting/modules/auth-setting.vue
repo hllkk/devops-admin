@@ -199,41 +199,5 @@ const configModel = defineModel<Api.System.AuthSettingConfig>('config', { requir
         </template>
       </NForm>
     </NTabPane>
-
-    <!-- 钉钉 -->
-    <NTabPane name="dingtalk" :tab="$t('page.system.setting.tabAuthDingtalk')">
-      <NForm :model="configModel" label-placement="left" :label-width="180" class="mt-16px">
-        <NFormItem :label="$t('page.system.setting.authOAuthEnabled')" path="dingtalkEnabled">
-          <NSwitch v-model:value="configModel.dingtalkEnabled" />
-        </NFormItem>
-        <template v-if="configModel.dingtalkEnabled">
-          <NFormItem :label="$t('page.system.setting.authOAuthClientId')" path="dingtalkClientId">
-            <NInput
-              v-model:value="configModel.dingtalkClientId"
-              :placeholder="$t('page.system.setting.authOAuthClientIdPlaceholder')"
-              class="max-w-400px"
-            />
-          </NFormItem>
-          <NFormItem :label="$t('page.system.setting.authOAuthClientSecret')" path="dingtalkClientSecret">
-            <NInput
-              v-model:value="configModel.dingtalkClientSecret"
-              type="password"
-              show-password-on="click"
-              :placeholder="$t('page.system.setting.authOAuthClientSecretPlaceholder')"
-              class="max-w-400px"
-            />
-          </NFormItem>
-          <NFormItem :label="$t('page.system.setting.authOAuthCallbackUrl')" path="dingtalkCallbackUrl">
-            <div class="flex flex-col gap-4px max-w-400px">
-              <NInput
-                v-model:value="configModel.dingtalkCallbackUrl"
-                :placeholder="$t('page.system.setting.authOAuthCallbackUrlPlaceholder')"
-              />
-              <span class="text-12px color-gray-400">{{ $t('page.system.setting.authOAuthCallbackUrlTip') }}</span>
-            </div>
-          </NFormItem>
-        </template>
-      </NForm>
-    </NTabPane>
   </NTabs>
 </template>

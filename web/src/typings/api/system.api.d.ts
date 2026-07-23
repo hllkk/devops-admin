@@ -504,7 +504,6 @@ declare namespace Api {
       | 'qq'
       | 'weibo'
       | 'gitee'
-      | 'dingtalk'
       | 'baidu'
       | 'csdn'
       | 'coding'
@@ -651,11 +650,6 @@ declare namespace Api {
       githubClientId: string;
       githubClientSecret: string;
       githubCallbackUrl: string;
-      /** 钉钉 */
-      dingtalkEnabled: boolean;
-      dingtalkClientId: string;
-      dingtalkClientSecret: string;
-      dingtalkCallbackUrl: string;
     };
 
     /** 系统设置：聚合配置（GET/PUT /system/setting 的请求与响应体） */
@@ -689,7 +683,6 @@ declare namespace Api {
       wechatEnabled: boolean;
       giteeEnabled: boolean;
       githubEnabled: boolean;
-      dingtalkEnabled: boolean;
     };
 
     /** 通用配置(系统信息 + 日志清理) */
