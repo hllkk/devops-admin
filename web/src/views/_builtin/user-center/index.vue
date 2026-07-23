@@ -29,7 +29,7 @@ const {
   validate: passwordValidate,
   restoreValidation: passwordRestoreValidation
 } = useNaiveForm();
-const { createRequiredRule, formRules } = useFormRules();
+const { createRequiredRule, patternRules } = useFormRules();
 
 type ProfileModel = Api.System.UserProfileOperateParams;
 type PasswordModel = Api.System.UserPasswordOperateParams & { confirmPassword: string };
@@ -59,8 +59,8 @@ type PasswordRuleKey = Extract<keyof PasswordModel, 'oldPassword' | 'newPassword
 
 const profileRules: Record<ProfileRuleKey, App.Global.FormRule> = {
   nickName: createRequiredRule($t('page.userCenter.profile.form.nickName')),
-  email: formRules.email,
-  phonenumber: formRules.phone,
+  email: { ...patternRules.email, required: true },
+  phonenumber: { ...patternRules.phone, required: true },
   sex: createRequiredRule($t('page.userCenter.profile.form.sex'))
 };
 
