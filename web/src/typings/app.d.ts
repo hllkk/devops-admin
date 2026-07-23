@@ -896,6 +896,7 @@ declare namespace App {
             roleKey: string;
             roleKeyShort: string;
             roleSort: string;
+            dataScope: string;
             status: string;
             remark: string;
             createTime: string;

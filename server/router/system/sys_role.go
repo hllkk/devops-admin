@@ -17,6 +17,8 @@ func (r *RoleRouter) InitRoleRouter(Router *gin.RouterGroup) {
 		roleRouter.POST("", roleApi.CreateRole)                                // 新增角色(含分配菜单)
 		roleRouter.PUT("", roleApi.UpdateRole)                                 // 修改角色(全量替换菜单)
 		roleRouter.PUT("changeStatus", roleApi.UpdateRoleStatus)               // 修改角色状态
+		roleRouter.PUT("dataScope", roleApi.UpdateRoleDataScope)               // 分配数据权限
+		roleRouter.GET("deptTree/:roleId", roleApi.GetRoleDeptTreeSelect)      // 角色数据权限部门树(含已选)
 		roleRouter.PUT("authUser/selectAll", roleApi.AuthUserSelectAll)        // 批量授权用户
 		roleRouter.PUT("authUser/cancelAll", roleApi.AuthUserCancelAll)        // 批量取消授权
 		roleRouter.DELETE(":ids", roleApi.BatchDeleteRole)                     // 批量删除角色

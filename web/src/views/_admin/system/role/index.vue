@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { NDivider, NTime } from 'naive-ui';
 import { jsonClone } from '@sa/utils';
 import { useBoolean } from '@sa/hooks';
+import { dataScopeRecord } from '@/constants/business';
 import { fetchBatchDeleteRole, fetchGetRoleList, fetchUpdateRoleStatus } from '@/service/api/system/role';
 import { useAppStore } from '@/store/modules/app';
 import { useAuth } from '@/hooks/business/auth';
@@ -15,6 +16,7 @@ import StatusSwitch from '@/components/custom/status-switch.vue';
 import RoleOperateDrawer from './modules/role-operate-drawer.vue';
 import RoleSearch from './modules/role-search.vue';
 import RoleAuthUserDrawer from './modules/role-auth-user-drawer.vue';
+import RoleDataScopeDrawer from './modules/role-data-scope-drawer.vue';
 
 defineOptions({
   name: 'RoleList'
@@ -26,6 +28,7 @@ const { hasAuth } = useAuth();
 
 useDict('sys_normal_disable');
 
+const { bool: dataScopeDrawerVisible, setTrue: openDataScopeDrawer } = useBoolean(false);
 const { bool: authUserDrawerVisible, setTrue: openAuthUserDrawer } = useBoolean(false);
 
 const searchParams = ref<Api.System.RoleSearchParams>({
@@ -77,6 +80,15 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
         minWidth: 120
       },
       {
+        key: 'dataScope',
+        title: $t('page.system.role.dataScope'),
+        align: 'center',
+        minWidth: 180,
+        render: row => {
+          return <NTag type="info">{dataScopeRecord[row.dataScope]}</NTag>;
+        }
+      },
+      {
         key: 'status',
         title: $t('page.system.role.status'),
         align: 'center',
@@ -119,6 +131,18 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
             );
           };
 
+          const dataScopeBtn = () => {
+            return (
+              <ButtonIcon
+                text
+                type="primary"
+                icon="material-symbols:database"
+                tooltipContent="数据范围权限"
+                onClick={() => handleDataScope(row)}
+              />
+            );
+          };
+
           const authUserBtn = () => {
             return (
               <ButtonIcon
@@ -147,6 +171,7 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
           const buttons = [];
           if (hasAuth('system:role:edit')) {
             buttons.push(editBtn());
+            buttons.push(dataScopeBtn());
             buttons.push(authUserBtn());
           }
           if (hasAuth('system:role:remove')) buttons.push(deleteBtn());
@@ -210,6 +235,12 @@ async function handleStatusChange(
   }
 }
 
+function handleDataScope(row: Api.System.Role) {
+  const findItem = data.value.find(item => item.roleId === row.roleId) || null;
+  editingData.value = jsonClone(findItem);
+  openDataScopeDrawer();
+}
+
 function handleAuthUser(row: Api.System.Role) {
   const findItem = data.value.find(item => item.roleId === row.roleId) || null;
   editingData.value = jsonClone(findItem);
@@ -259,6 +290,7 @@ function handleAuthUser(row: Api.System.Role) {
         :row-data="editingData"
         @submitted="getData"
       />
+      <RoleDataScopeDrawer v-model:visible="dataScopeDrawerVisible" :row-data="editingData" @submitted="getData" />
       <RoleAuthUserDrawer v-model:visible="authUserDrawerVisible" :row-data="editingData" @submitted="getData" />
     </NCard>
   </div>

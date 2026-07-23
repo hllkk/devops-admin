@@ -39,3 +39,9 @@ type DeptTreeNode struct {
 	Weight   int            `json:"weight"`   // 显示顺序(对应 SysDepartment.OrderNum)
 	Children []DeptTreeNode `json:"children"` // 子部门
 }
+
+// RoleDeptTreeSelect 角色数据权限部门树(对齐前端 GET /system/role/deptTree/{roleId} 与 Api.System.RoleDeptTreeSelect)。
+type RoleDeptTreeSelect struct {
+	CheckedKeys []int64        `json:"checkedKeys"` // 角色已分配部门ID(自定义档完整集合,忠实往返)
+	Depts       []DeptTreeNode `json:"depts"`       // 全部启用部门树(后端组装)
+}

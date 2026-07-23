@@ -24,6 +24,9 @@ type RoleOperateParams struct {
 	Status            string        `json:"status"`            // 角色状态('0'正常/'1'停用)
 	Remark            string        `json:"remark"`            // 备注
 	MenuIds           []Int64String `json:"menuIds"`           // 分配菜单ID(全量;叶子+半选父级)
+	DataScope         int           `json:"dataScope,string"`  // 数据范围档位(1全部2本部门及子级3本部门4仅本人5自定义;仅 dataScope 接口消费)
+	DeptIds           []Int64String `json:"deptIds"`            // 自定义部门集(仅档位5用;全量替换 sys_role_departments)
+	DeptCheckStrictly bool          `json:"deptCheckStrictly"`  // 部门树选择项是否关联显示(仅 dataScope 接口消费)
 }
 
 // RoleUserSearch 角色已分配用户分页查询(对齐前端 GET /system/role/authUser/allocatedList,GET query 传输)。

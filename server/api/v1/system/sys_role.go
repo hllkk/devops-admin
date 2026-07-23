@@ -258,3 +258,45 @@ func (a *RoleApi) ExportRole(c *gin.Context) {
 	}
 	writeXlsx(c, "角色列表", buf)
 }
+
+// UpdateRoleDataScope
+// @Tags      SysRole
+// @Summary   分配角色数据权限
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  body  systemReq.RoleOperateParams  true  "角色信息(含 roleId/dataScope/deptIds)"
+// @Success   200   {object}  response.Response{data=bool,msg=string}
+// @Router    /system/role/dataScope [put]
+func (a *RoleApi) UpdateRoleDataScope(c *gin.Context) {
+	var req systemReq.RoleOperateParams
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	if err := roleService.UpdateRoleDataScope(c.Request.Context(), req, utils.GetUserID(c)); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	response.OkWithDetailed(true, "修改成功", c)
+}
+
+// GetRoleDeptTreeSelect
+// @Tags      SysRole
+// @Summary   获取角色数据权限部门树(含已选部门)
+// @Produce   application/json
+// @Param     roleId  path  int  true  "角色ID"
+// @Success   200  {object}  response.Response{data=system.RoleDeptTreeSelect,msg=string}
+// @Router    /system/role/deptTree/{roleId} [get]
+func (a *RoleApi) GetRoleDeptTreeSelect(c *gin.Context) {
+	roleId, err := strconv.ParseInt(c.Param("roleId"), 10, 64)
+	if err != nil {
+		response.FailWithMessage("无效的角色ID", c)
+		return
+	}
+	result, err := roleService.GetRoleDeptTreeSelect(c.Request.Context(), roleId)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	response.OkWithDetailed(result, "获取成功", c)
+}

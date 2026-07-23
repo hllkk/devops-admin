@@ -49,3 +49,14 @@ export const menuLayoutRecord: Record<Api.System.MenuLayout, string> = {
 };
 
 export const menuLayoutOptions = transformRecordToOption(menuLayoutRecord);
+
+/** data scope（对齐后端 datascope 档位：1全部 2本部门及以下 3本部门 4仅本人 5自定义） */
+export const dataScopeRecord: Record<Api.System.DataScope, string> = {
+  '1': '全部数据权限',
+  '2': '本部门及以下数据权限',
+  '3': '本部门数据权限',
+  '4': '仅本人数据权限',
+  '5': '自定数据权限'
+};
+
+export const dataScopeOptions = transformRecordToOption(dataScopeRecord);

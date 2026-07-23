@@ -265,7 +265,7 @@ async function handleSocialLogin(type: Api.System.SocialSource) {
       </NButton>
       <NButton v-if="systemStore.setting?.dingtalkEnabled" class="flex-1 min-w-100px" @click="handleSocialLogin('dingtalk')">
         <template #icon>
-          <icon-ant-design:dingtalk-circle-filled class="color-#0089FF" />
+          <icon-ant-design-dingtalk-circle-filled class="color-#0089FF" />
         </template>
         <span class="ml-6px">DingTalk</span>
       </NButton>

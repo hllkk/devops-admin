@@ -7,6 +7,7 @@ import (
 	"github.com/hllkk/devops-admin/server/global"
 	"github.com/hllkk/devops-admin/server/model/system"
 	systemReq "github.com/hllkk/devops-admin/server/model/system/request"
+	"github.com/hllkk/devops-admin/server/utils/datascope"
 	"gorm.io/gorm"
 )
 
@@ -250,4 +251,75 @@ func (s *RoleService) ExportRoleList(ctx context.Context, q systemReq.RoleSearch
 	}
 	err = db.Order(roleOrder).Limit(ExportMaxRows).Find(&list).Error
 	return
+}
+
+// UpdateRoleDataScope 分配角色数据权限(对齐前端 PUT /system/role/dataScope)。
+// 事务:更新 sys_roles.data_scope/dept_check_strictly;档位=5(自定义)全量替换 sys_role_departments,非 5 清空。
+// 超管角色(SuperAdmin)禁止改数据权限,防止被降级。
+func (s *RoleService) UpdateRoleDataScope(ctx context.Context, req systemReq.RoleOperateParams, updateBy int64) error {
+	roleId := req.RoleId.Int64()
+	if roleId == 0 {
+		return errors.New("角色ID不能为空")
+	}
+	if req.DataScope < datascope.ScopeAll || req.DataScope > datascope.ScopeCustom {
+		return errors.New("数据范围档位非法")
+	}
+	var role system.SysRole
+	if err := global.OPS_DB.WithContext(ctx).Select("role_id", "super_admin").
+		Where("role_id = ?", roleId).First(&role).Error; err != nil {
+		return errors.New("角色不存在")
+	}
+	if role.SuperAdmin {
+		return errors.New("超级管理员角色不允许修改数据权限")
+	}
+	deptIds := toInt64Slice(req.DeptIds)
+	return global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&system.SysRole{}).Where("role_id = ?", roleId).
+			Updates(map[string]interface{}{
+				"data_scope":          req.DataScope,
+				"dept_check_strictly": req.DeptCheckStrictly,
+				"update_by":           updateBy,
+			}).Error; err != nil {
+			return err
+		}
+		return saveRoleDepartments(tx, roleId, deptIds, req.DataScope)
+	})
+}
+
+// GetRoleDeptTreeSelect 角色数据权限部门树(对齐前端 GET /system/role/deptTree/{roleId})。
+// depts=启用部门树(复用 DepartmentService.GetDeptTree);checkedKeys=该角色自定义部门集(sys_role_departments 全量,忠实往返)。
+func (s *RoleService) GetRoleDeptTreeSelect(ctx context.Context, roleId int64) (result system.RoleDeptTreeSelect, err error) {
+	if roleId == 0 {
+		return result, errors.New("角色ID不能为空")
+	}
+	result.Depts, err = (&DepartmentService{}).GetDeptTree(ctx)
+	if err != nil {
+		return
+	}
+	result.CheckedKeys = make([]int64, 0)
+	if err = global.OPS_DB.WithContext(ctx).Model(&system.SysRoleDepartment{}).
+		Where("sys_role_id = ?", roleId).Pluck("sys_department_id", &result.CheckedKeys).Error; err != nil {
+		return
+	}
+	return
+}
+
+// saveRoleDepartments 按档位维护角色-部门关联:自定义档(5)全量替换,其余档清空(不依赖部门集)。
+func saveRoleDepartments(tx *gorm.DB, roleId int64, deptIds []int64, scope int) error {
+	if err := tx.Where("sys_role_id = ?", roleId).Delete(&system.SysRoleDepartment{}).Error; err != nil {
+		return err
+	}
+	if scope != datascope.ScopeCustom {
+		return nil
+	}
+	rows := make([]system.SysRoleDepartment, 0, len(deptIds))
+	for _, did := range deptIds {
+		if did > 0 {
+			rows = append(rows, system.SysRoleDepartment{SysRoleId: roleId, SysDepartmentId: did})
+		}
+	}
+	if len(rows) == 0 {
+		return nil
+	}
+	return tx.Create(&rows).Error
 }

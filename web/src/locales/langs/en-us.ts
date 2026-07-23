@@ -711,6 +711,7 @@ const local: App.I18n.Schema = {
         roleKey: 'Role Permission String',
         roleKeyShort: 'Permission Key',
         roleSort: 'Display Order',
+        dataScope: 'Data Scope',
         status: 'Role Status',
         remark: 'Remark',
         createTime: 'Create Time',

@@ -707,6 +707,7 @@ const local: App.I18n.Schema = {
         roleKey: '角色权限字符串',
         roleKeyShort: '权限字符',
         roleSort: '显示顺序',
+        dataScope: '数据范围',
         status: '角色状态',
         remark: '备注',
         createTime: '创建时间',
