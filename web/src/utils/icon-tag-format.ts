@@ -26,7 +26,7 @@ const browserOptions = [
   { icon: 'ic:baseline-wechat', value: 'windowswechat' },
   { icon: 'arcticons:quark-browser', value: 'quark' },
   { icon: 'ic:baseline-wechat', value: 'wxwork' },
-  { icon: 'simple-icons:tencentqq', value: 'qq' },
+  { icon: 'icon-park-solid:tencent-qq', value: 'qq' },
   { icon: 'arcticons:dingtalk', value: 'dingtalk' },
   { icon: 'arcticons:uc-browser', value: 'uc' },
   { icon: 'ri:baidu-fill', value: 'baidu' }
@@ -34,7 +34,7 @@ const browserOptions = [
 
 const osOptions = [
   { icon: 'devicon:windows8', value: 'windows' },
-  { icon: 'cbi:imac', value: 'osx' },
+  { icon: 'logos:macosx', value: 'osx' },
   { icon: 'devicon:linux', value: 'linux' },
   { icon: 'logos:android-icon', value: 'android' },
   { icon: 'file-icons:apple', value: 'ios' }
@@ -58,5 +58,5 @@ export function getBrowserIcon(browser: string): string {
  */
 export function getOsIcon(os: string): string {
   const icon = osOptions.find(item => os.toLocaleLowerCase().includes(item.value));
-  return icon?.icon || 'mingcute:device-fill';
+  return icon?.icon || 'icon-park:devices';
 }

@@ -25,4 +25,5 @@ type ServiceGroup struct {
 	SettingService
 	AiService
 	TimedTaskService
+	SocialService
 }

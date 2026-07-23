@@ -21,7 +21,7 @@ const { routerPushByKey } = useRouterPush();
 const code = route.query.code as string;
 const state = route.query.state as string;
 const source = route.query.source as string;
-const stateJson = state ? JSON.parse(atob(state)) : {};
+const stateJson = state ? JSON.parse(atob(state.replace(/-/g, '+').replace(/_/g, '/'))) : {};
 const domain = (stateJson.domain as string) ?? window.location.host;
 const msg = ref('正在登录，请稍后......');
 
