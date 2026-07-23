@@ -133,7 +133,7 @@ async function updatePassword() {
             </NSpace>
           </NDescriptionsItem>
           <NDescriptionsItem label="创建日期">
-            <div class="text-14px">{{ userInfo.user?.createTime }}</div>
+            <NTime :time="Date.parse(userInfo.user?.createTime ?? '')" format="yyyy-MM-dd HH:mm:ss" />
           </NDescriptionsItem>
         </NDescriptions>
       </div>
