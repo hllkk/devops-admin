@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"time"
 
-	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/gin-gonic/gin"
+	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/hllkk/devops-admin/server/global"
 	"github.com/hllkk/devops-admin/server/model/common/response"
 	"github.com/hllkk/devops-admin/server/model/system"
@@ -281,8 +281,4 @@ func (b *BaseApi) RefreshToken(c *gin.Context) {
 	}, "刷新成功", c)
 }
 
-// GetConstantRoutes 常量路由(static 模式:前端本地管路由,后端返回空数组;
-// 后续切换 dynamic 模式时再实现 getUserRoutes 完整下发)
-func (b *BaseApi) GetConstantRoutes(c *gin.Context) {
-	response.OkWithDetailed([]struct{}{}, "获取成功", c)
-}
+// GetConstantRoutes 已迁移至 RouteApi(见 sys_route.go),与 getUserRoutes/isRouteExist 统一到 /route 资源。

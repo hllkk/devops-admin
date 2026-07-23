@@ -69,6 +69,31 @@
 - 前端：所有请求 `withCredentials: true`（**待落地**：当前 axios 实例未配置，靠 `VITE_HTTP_PROXY` 同源代理转发 cookie）；`getAuthorization()` 返回 `null`（已实现）；登录态信号 `isAuthenticated`+`tokenExpiresAt`（localStorage，可读非敏感）。
 - CORS：`middleware.Cors()` 回显 Origin + `Allow-Credentials: true`。
 
+## 动态路由（/route/*）
+
+前端 Soybean 支持 `VITE_AUTH_ROUTE_MODE` 静态/动态两态（`web/.env` 默认 `static`）。动态模式下前端从后端 `/route/*` 取路由，后端把 `SysMenu`（RuoYi 契约）**实时转换**为前端 `Api.Route.MenuRoute`（即 Elegant Router 的 `ElegantConstRoute` + `id`）下发，存储层（`sys_menu`）不改。
+
+- `GET /route/getConstantRoutes` → `MenuRoute[]`：**公开（挂 PublicGroup，登录前可调——constant 路由含登录页本身，前端 guard 在未登录阶段即调用）**。返回**空数组**，dynamic 模式下 constant 路由（login/404/init/user-center/iframe-page 等 `_builtin`）由前端静态生成 fallback，后端不下发。`getUserRoutes`/`isRouteExist` 挂 PrivateGroup（需登录态）。
+- `GET /route/getUserRoutes` → `UserRoute { routes: MenuRoute[], home }`：按当前用户角色过滤 `sys_menu`（`menuType` 取 `M`/`C`，`F` 按钮不进路由、仅走 `userInfo.permissions`）。超管（任一角色 `SuperAdmin`）返回全部；普通用户按 角色→`sys_role_menu`→`sys_menu` 过滤，并向上回溯补齐祖先目录（防授权子菜单时父目录缺失致树断裂）。`home` 取 `admin`（对齐 `VITE_ROUTE_HOME`），无权时取第一个顶层路由 key。
+- `GET /route/isRouteExist?routeName=` → `bool`：路由名是否在当前用户有权路由名集合中（前端守卫用）。
+
+**转换规则（`RouteService`，`server/service/system/sys_route.go`）**：
+
+| SysMenu | MenuRoute |
+|---|---|
+| `Path`（`system/user`） | `name`=`routeKey(Path)`（去首尾斜杠、`/`→`_` → `system_user`）；`path`=`"/"+Path`（`/system/user`） |
+| `MenuName`（`route.system_user`） | `meta.i18nKey`（显示走 i18n）；`meta.title`=`routeKey`（兜底） |
+| `MenuType=M` 有子 / `MenuType=M` 顶层无子 | 多级目录 `component=layout.base` / 顶层无子按**单级** `layout.base$view.<key>`（按 children 有无判定，不盲信 menuType） |
+| `MenuType=C` 顶层无子 / 子级 | 单级 `layout.base$view.<key>` / 子级 `view.<key>` |
+| `Icon`=`mdi:xxx` 等 | `meta.icon` |
+| `Icon`=`local-icon-<n>` | `meta.localIcon`=`menu-<n>` |
+| `OrderNum` | `meta.order` |
+| `Visible=1` | `meta.hideInMenu=true` |
+| `IsCache=0` | `meta.keepAlive=true` |
+| `IsFrame=0` | `meta.href`=规范化 Path（外链） |
+
+> `name`/`view.<key>` 必须命中前端 Elegant Router 构建期生成的 `RouteKey`/`views` map（`web/src/router/elegant/imports.ts`），否则 `transform.ts` 解析组件时静默丢路由。新增页面时确保 `sys_menu.path` 对应的 `routeKey` 与 `views/` 目录生成的 key 一致。
+
 ## 完成前检查
 
 跨前后端改动结束前，至少确认以下几点：

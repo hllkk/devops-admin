@@ -190,10 +190,11 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
     } else {
       const { data, error } = await fetchGetConstantRoutes();
 
-      if (!error) {
+      if (!error && data && data.length > 0) {
         addConstantRoutes(data);
       } else {
-        // if fetch constant routes failed, use static constant routes
+        // 后端未下发 constant(本项目约定 constant 走前端静态,后端返回空数组)或接口失败
+        // -> 用静态 constant(login/404/init 等 _builtin),否则 login 等常量路由缺失致路由启动 resolve 报错
         addConstantRoutes(staticRoute.constantRoutes);
       }
     }

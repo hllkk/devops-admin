@@ -9,6 +9,7 @@ type ApiGroup struct {
 	PostApi
 	DeptApi
 	MenuApi
+	RouteApi
 	RoleApi
 	UserApi
 	LoginLogApi
@@ -35,6 +36,7 @@ var (
 	postService           = service.ServiceGroupApp.SystemServiceGroup.PostService
 	departmentService     = service.ServiceGroupApp.SystemServiceGroup.DepartmentService
 	menuService           = service.ServiceGroupApp.SystemServiceGroup.MenuService
+	routeService          = service.ServiceGroupApp.SystemServiceGroup.RouteService
 	roleService           = service.ServiceGroupApp.SystemServiceGroup.RoleService
 	operLogService        = service.ServiceGroupApp.SystemServiceGroup.SysOperLogService
 	noticeService         = service.ServiceGroupApp.SystemServiceGroup.NoticeService

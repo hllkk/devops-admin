@@ -107,7 +107,7 @@ func Routers() *gin.Engine {
 	{
 
 		systemRouter.InitAuthRouter(PrivateGroup)                  // 鉴权路由(getUserInfo/logout/refreshToken)
-		systemRouter.InitRouteRouter(PrivateGroup)                 // 路由下发(/route/getConstantRoutes)
+		systemRouter.InitRouteRouter(PrivateGroup, PublicGroup)    // 路由下发(/route:getConstantRoutes 公开,getUserRoutes/isRouteExist 私有)
 		systemRouter.InitDictRouter(PrivateGroup)                  // 字典管理(/system/dict/type/*、/system/dict/data/*)
 		systemRouter.InitPostRouter(PrivateGroup)                  // 岗位管理(/system/post/*)
 		systemRouter.InitDeptRouter(PrivateGroup)                  // 部门管理(/system/dept/*)

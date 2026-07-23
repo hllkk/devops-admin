@@ -134,7 +134,12 @@ async function updatePassword() {
             </NSpace>
           </NDescriptionsItem>
           <NDescriptionsItem :label="$t('page.userCenter.createTime')">
-            <NTime :time="Date.parse(userInfo.user?.createTime ?? '')" format="yyyy-MM-dd HH:mm:ss" />
+            <NTime
+              v-if="userInfo.user?.createTime"
+              :time="Date.parse(userInfo.user.createTime)"
+              format="yyyy-MM-dd HH:mm:ss"
+            />
+            <span v-else>-</span>
           </NDescriptionsItem>
         </NDescriptions>
       </div>
@@ -211,7 +216,7 @@ async function updatePassword() {
               />
             </NFormItem>
             <NFormItem class="flex items-center justify-end">
-              <NButton class="ml-20px w-120px" type="primary" :loading="btnLoading" @click="updatePassword">
+              <NButton class="ml-20px min-w-120px" type="primary" :loading="btnLoading" @click="updatePassword">
                 <template #icon>
                   <SvgIcon icon="ic:outline-key" class="size-24px" />
                 </template>

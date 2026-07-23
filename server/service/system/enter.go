@@ -20,6 +20,7 @@ type ServiceGroup struct {
 	PostService
 	DepartmentService
 	MenuService
+	RouteService
 	RoleService
 	NoticeService
 	SettingService
