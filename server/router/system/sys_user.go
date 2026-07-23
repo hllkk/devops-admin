@@ -44,6 +44,8 @@ func (s *UserRouter) InitUserRouter(Router *gin.RouterGroup) {
 		systemUserRouter.PUT("changeStatus", userApi.UpdateUserStatus)      // 修改用户状态
 		systemUserRouter.PUT("resetPwd", userApi.ResetUserPwd)              // 重置密码
 		systemUserRouter.PUT("profile/updatePwd", userApi.ChangeMyPassword) // 当前用户自助改密(密码过期解锁入口)
+		systemUserRouter.PUT("profile", userApi.UpdateMyProfile)            // 当前用户自助改基本资料(昵称/邮箱/手机号/性别)
+		systemUserRouter.POST("profile/avatar", userApi.UpdateMyAvatar)     // 当前用户自助上传头像
 		systemUserRouter.DELETE(":userIds", userApi.BatchDeleteUser)        // 批量删除用户
 	}
 }

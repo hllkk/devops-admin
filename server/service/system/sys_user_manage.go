@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"mime/multipart"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -13,6 +15,7 @@ import (
 	"github.com/hllkk/devops-admin/server/model/system"
 	systemReq "github.com/hllkk/devops-admin/server/model/system/request"
 	"github.com/hllkk/devops-admin/server/utils"
+	"github.com/hllkk/devops-admin/server/utils/upload"
 	"gorm.io/gorm"
 )
 
@@ -264,6 +267,41 @@ func (s *UserService) ChangeMyPassword(ctx context.Context, userId int64, oldPwd
 	})
 }
 
+// UpdateMyProfile 当前用户自助修改基本资料(对齐前端 PUT /system/user/profile)。
+// 仅写 nick_name/email/phonenumber/sex + update_by;userName/角色/部门/状态不在自助范围,走管理员侧接口。
+func (s *UserService) UpdateMyProfile(ctx context.Context, userId int64, req systemReq.UpdateMyProfileParams) error {
+	return global.OPS_DB.WithContext(ctx).Model(&system.SysUser{}).Where("id = ?", userId).
+		Updates(map[string]interface{}{
+			"nick_name":   req.NickName,
+			"email":       req.Email,
+			"phonenumber": req.Phonenumber,
+			"sex":         req.Sex,
+			"update_by":   userId,
+		}).Error
+}
+
+// UpdateMyAvatar 当前用户自助上传头像(对齐前端 POST /system/user/profile/avatar,字段名 avatarfile)。
+// 经统一 OSS 抽象落存储,把返回 url 写回 SysUser.Avatar;local 模式 url 形态与 media 一致(原样存,不补前缀)。
+// 头像场景仅允许图片后缀,杜绝借头像接口传任意可执行/文档文件。
+func (s *UserService) UpdateMyAvatar(ctx context.Context, userId int64, file *multipart.FileHeader) (string, error) {
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	switch ext {
+	case ".jpg", ".jpeg", ".png", ".gif", ".webp":
+	default:
+		return "", errors.New("仅支持 jpg/jpeg/png/gif/webp 格式的图片")
+	}
+	oss := upload.NewOss()
+	url, _, err := oss.UploadFile(ctx, file)
+	if err != nil {
+		return "", errors.New("头像上传失败: " + err.Error())
+	}
+	if err = global.OPS_DB.WithContext(ctx).Model(&system.SysUser{}).Where("id = ?", userId).
+		Updates(map[string]interface{}{"avatar": url, "update_by": userId}).Error; err != nil {
+		return "", err
+	}
+	return url, nil
+}
+
 // saveUserRoles 全量替换用户角色(删后批量插 sys_user_role)。
 func saveUserRoles(tx *gorm.DB, userId int64, roleIds []int64) error {
 	if err := tx.Where("sys_user_id = ?", userId).Delete(&system.SysUserRole{}).Error; err != nil {
@@ -355,6 +393,7 @@ func (s *UserService) ExportList(ctx context.Context, q systemReq.UserSearch) (l
 //   - 活用户:updateSupport=true 更新字段,false 跳过;
 //   - 软删除用户:复活(清 deleted_at + 覆盖字段 + 重置密码强制首登改密),计入 update;
 //   - 都没命中:新建。
+//
 // 新建/复活密码统一用 DefaultImportPassword(bcrypt),PasswordUpdatedAt 留空触发首登强制改密。
 // 返回 insert/update/skip/fail 计数与失败明细(供前端逐行展示)。
 func (s *UserService) ImportUsers(ctx context.Context, rows []map[string]string, updateSupport bool, createBy int64) (insert, updateCnt, skip, fail int, failMsgs []string) {

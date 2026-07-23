@@ -48,16 +48,16 @@ type UserSearch struct {
 // create 时 userId 为空、password 必填;update 时 userId 必填、password 空=不改。
 // roleIds/postIds 用 []common.Int64String 兼容前端 IdType[](string 混合)。
 type UserOperateParams struct {
-	UserId      common.Int64String  `json:"userId"`      // 用户ID(新增时为空)
-	DeptId      common.Int64String  `json:"deptId"`      // 主部门ID
-	UserName    string        `json:"userName"`    // 用户名(create 必填,唯一)
-	NickName    string        `json:"nickName"`    // 昵称
-	Email       string        `json:"email"`       // 邮箱
-	Phonenumber string        `json:"phonenumber"` // 手机号
-	Sex         string        `json:"sex"`         // 性别 0男1女2未知
-	Password    string        `json:"password"`    // 密码(create 必填;update 空=不改)
-	Status      string        `json:"status"`      // 状态
-	Remark      string        `json:"remark"`      // 备注
+	UserId      common.Int64String   `json:"userId"`      // 用户ID(新增时为空)
+	DeptId      common.Int64String   `json:"deptId"`      // 主部门ID
+	UserName    string               `json:"userName"`    // 用户名(create 必填,唯一)
+	NickName    string               `json:"nickName"`    // 昵称
+	Email       string               `json:"email"`       // 邮箱
+	Phonenumber string               `json:"phonenumber"` // 手机号
+	Sex         string               `json:"sex"`         // 性别 0男1女2未知
+	Password    string               `json:"password"`    // 密码(create 必填;update 空=不改)
+	Status      string               `json:"status"`      // 状态
+	Remark      string               `json:"remark"`      // 备注
 	RoleIds     []common.Int64String `json:"roleIds"`     // 角色ID列表(全量替换)
 	PostIds     []common.Int64String `json:"postIds"`     // 岗位ID列表(全量替换)
 }
@@ -66,7 +66,7 @@ type UserOperateParams struct {
 // 项目无加密中间件,password 明文传输(传输层由网关/TLS 保护),后端 bcrypt 存储。
 type ResetUserPwdParams struct {
 	UserId   common.Int64String `json:"userId"`   // 用户ID
-	Password string      `json:"password"` // 新密码(明文)
+	Password string             `json:"password"` // 新密码(明文)
 }
 
 // ChangeMyPasswordParams 当前用户自助修改密码(对齐前端 PUT /system/user/profile/updatePwd)。
@@ -74,4 +74,13 @@ type ResetUserPwdParams struct {
 type ChangeMyPasswordParams struct {
 	OldPassword string `json:"oldPassword" binding:"required"` // 旧密码(明文,二次校验)
 	NewPassword string `json:"newPassword" binding:"required"` // 新密码(明文,复杂度由 service 校验)
+}
+
+// UpdateMyProfileParams 当前用户自助修改基本资料(对齐前端 PUT /system/user/profile,UserProfileOperateParams)。
+// 仅允许改 nickName/email/phonenumber/sex;userName/角色/部门/状态等敏感字段不在自助范围,走管理员侧接口。
+type UpdateMyProfileParams struct {
+	NickName    string `json:"nickName"`    // 昵称
+	Email       string `json:"email"`       // 邮箱
+	Phonenumber string `json:"phonenumber"` // 手机号
+	Sex         string `json:"sex"`         // 性别 0男1女2未知
 }

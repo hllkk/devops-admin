@@ -47,8 +47,6 @@ const socialSources = computed(() => {
   const githubColor = themeStore.darkMode ? '#ffffff' : '#010409';
   return [
     { key: 'wechat_open' as Api.System.SocialSource, icon: 'ic:outline-wechat', color: '#44b549', name: '微信' },
-    { key: 'topiam' as Api.System.SocialSource, localIcon: 'topiam', color: '', name: 'TopIAM' },
-    { key: 'maxkey' as Api.System.SocialSource, localIcon: 'maxkey', color: '', name: 'MaxKey' },
     { key: 'gitee' as Api.System.SocialSource, icon: 'simple-icons:gitee', color: '#c71d23', name: 'Gitee' },
     { key: 'github' as Api.System.SocialSource, icon: 'mdi:github', color: githubColor, name: 'GitHub' }
   ];
@@ -88,7 +86,6 @@ function getSocial(key: string) {
           <template v-else>
             <div class="h-full flex flex-col items-center justify-center gap-16px">
               <SvgIcon
-                :local-icon="source.localIcon"
                 :icon="source.icon"
                 class="size-48px"
                 :style="{ color: source.color }"

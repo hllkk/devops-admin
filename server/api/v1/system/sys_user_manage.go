@@ -297,6 +297,48 @@ func (a *UserApi) ChangeMyPassword(c *gin.Context) {
 	response.OkWithDetailed(true, "密码修改成功", c)
 }
 
+// UpdateMyProfile
+// @Tags      SysUser
+// @Summary   当前用户修改基本资料(昵称/邮箱/手机号/性别)
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  body  systemReq.UpdateMyProfileParams  true  "基本资料"
+// @Success   200   {object}  response.Response{data=bool,msg=string}
+// @Router    /system/user/profile [put]
+func (a *UserApi) UpdateMyProfile(c *gin.Context) {
+	var req systemReq.UpdateMyProfileParams
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	if err := userService.UpdateMyProfile(c.Request.Context(), utils.GetUserID(c), req); err != nil {
+		response.FailWithMessage("修改失败", c)
+		return
+	}
+	response.OkWithDetailed(true, "修改成功", c)
+}
+
+// UpdateMyAvatar
+// @Tags      SysUser
+// @Summary   当前用户上传头像
+// @Accept    multipart/form-data
+// @Produce   application/json
+// @Param     avatarfile  formData  file  true  "头像图片(jpg/jpeg/png/gif/webp)"
+// @Success   200  {object}  response.Response{data=bool,msg=string}
+// @Router    /system/user/profile/avatar [post]
+func (a *UserApi) UpdateMyAvatar(c *gin.Context) {
+	file, err := c.FormFile("avatarfile")
+	if err != nil {
+		response.FailWithMessage("文件获取失败", c)
+		return
+	}
+	if _, err := userService.UpdateMyAvatar(c.Request.Context(), utils.GetUserID(c), file); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	response.OkWithDetailed(true, "头像更新成功", c)
+}
+
 // BatchDeleteUser
 // @Tags      SysUser
 // @Summary   批量删除用户
