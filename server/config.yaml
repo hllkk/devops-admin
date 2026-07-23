@@ -75,7 +75,7 @@ hua-wei-obs:
     access-key: you-access-key
     secret-key: you-secret-key
 jwt:
-    signing-key: 4a1ff651-ed61-4cf8-bb0d-c7538280c928
+    signing-key: b51e4e42-0a1f-402b-9146-1697908c54b3
     expires-time: 7d
     buffer-time: 1d
     issuer: devops-admin
@@ -100,13 +100,13 @@ media:
     max-file-size: 0
     session-ttl: 0
 minio:
-    endpoint: yourEndpoint
-    access-key-id: yourAccessKeyId
-    access-key-secret: yourAccessKeySecret
-    bucket-name: yourBucketName
+    endpoint: 127.0.0.1:9000
+    access-key-id: rustfsadmin
+    access-key-secret: rustfsadmin
+    bucket-name: devops-admin
     use-ssl: false
     base-path: ""
-    bucket-url: http://host:9000/yourBucketName
+    bucket-url: http://127.0.0.1:9000/devops-admin
 mongo:
     coll: ""
     options: ""
@@ -224,7 +224,7 @@ sqlite:
     log-zap: false
 system:
     db-type: pgsql
-    oss-type: local
+    oss-type: minio
     router-prefix: ""
     addr: 8888
     iplimit-count: 15000

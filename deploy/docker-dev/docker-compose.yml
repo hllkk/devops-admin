@@ -36,6 +36,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - dev-net
 
   redis:
     image: redis:8-alpine
@@ -52,3 +54,68 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - dev-net
+
+  # ============================================================================
+  # RustFS：S3 兼容对象存储（MinIO 的 Rust 实现，drop-in 替换）
+  #
+  # - server 侧 oss-type=minio，minio-go 客户端直连 rustfs，业务代码零改动
+  # - user: root 运行，免去 bind mount 目录的属主修正（无需 chown 10001 sidecar）
+  # - rustfs 与 MinIO 一样不在启动时自动建 bucket，本项目也无建桶逻辑，
+  #   由 rustfs_init 用 mc 建桶并设匿名下载策略（前端可直接 GET 文件 URL；生产改预签名）
+  # - rustfs 仍处于快速迭代期（官方明确:勿用于生产），本配置面向 dev 环境
+  # ============================================================================
+
+  rustfs:
+    image: rustfs/rustfs:${RUSTFS_VERSION:-latest}
+    container_name: devops-rustfs-dev
+    user: root
+    restart: unless-stopped
+    ports:
+      - "${RUSTFS_PORT:-9000}:9000"
+      - "${RUSTFS_CONSOLE_PORT:-9001}:9001"
+    environment:
+      RUSTFS_ROOT_USER: ${RUSTFS_ROOT_USER:-rustfsadmin}
+      RUSTFS_ROOT_PASSWORD: ${RUSTFS_ROOT_PASSWORD:-rustfsadmin}
+      RUSTFS_BROWSER: "on"
+    volumes:
+      - ${RUSTFS_DATA_PATH:-/home/docker/docker-dev/rustfs}:/data
+    command: ["server", "/data", "--console-address", ":9001"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - dev-net
+
+  # 一次性：rustfs 健康后建 bucket 并设匿名下载策略
+  rustfs_init:
+    image: minio/mc:${MC_VERSION:-latest}
+    container_name: devops-rustfs-init-dev
+    depends_on:
+      rustfs:
+        condition: service_healthy
+    environment:
+      RUSTFS_ROOT_USER: ${RUSTFS_ROOT_USER:-rustfsadmin}
+      RUSTFS_ROOT_PASSWORD: ${RUSTFS_ROOT_PASSWORD:-rustfsadmin}
+      RUSTFS_BUCKET: ${RUSTFS_BUCKET:-devops-admin}
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        mc alias set local http://rustfs:9000 "$${RUSTFS_ROOT_USER}" "$${RUSTFS_ROOT_PASSWORD}"
+        mc mb --ignore-existing "local/$${RUSTFS_BUCKET}"
+        mc anonymous set download "local/$${RUSTFS_BUCKET}" || true
+        echo "rustfs bucket $${RUSTFS_BUCKET} 就绪"
+    restart: "no"
+    networks:
+      - dev-net
+
+# 显式 dev 网络：依赖服务同处一网，服务间可用服务名互访（如 rustfs_init → rustfs:9000）。
+# server 当前跑宿主机、走端口映射 127.0.0.1 直连；未来 server 容器化时，让其 join dev-net
+# 即可改用 pgsql/redis/rustfs 服务名访问。
+networks:
+  dev-net:
+    driver: bridge
