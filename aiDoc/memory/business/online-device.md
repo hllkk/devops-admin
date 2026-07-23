@@ -27,6 +27,7 @@
 - `router/system/sys_online.go`:`OnlineRouter{InitOnlineRouter}` + 注册 enter.go;`initialize/router.go` PrivateGroup 块加 InitOnlineRouter
 - `utils/jwt.go`:CreateClaims 加 jti
 - `api/v1/system/sys_user.go`:TokenNext 三处成功点调 `recordSession`(私有 helper);Logout 删当前会话
+- `middleware/jwt.go`:续签块调 `UpdateSessionToken` 同步会话 token(续签生成新 token 但 jti 不变,须更新会话里的 Token 字段,否则踢下线入黑名单的是失效旧 token,活跃用户踢不下线)
 
 ## 契约要点
 

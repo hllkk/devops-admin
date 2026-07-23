@@ -132,6 +132,29 @@ func (s *OnlineService) RemoveSession(ctx context.Context, userId int64, tokenId
 	return global.OPS_REDIS.HDel(ctx, onlineSessionKey(userId), tokenId).Err()
 }
 
+// UpdateSessionToken 续签后同步更新会话里的 token,使踢下线能命中当前有效 token。
+// 会话不存在/解析失败时静默返回(不阻断续签)。
+func (s *OnlineService) UpdateSessionToken(ctx context.Context, userId int64, tokenId, newToken string) error {
+	if userId == 0 || tokenId == "" || newToken == "" {
+		return nil
+	}
+	key := onlineSessionKey(userId)
+	raw, err := global.OPS_REDIS.HGet(ctx, key, tokenId).Result()
+	if err != nil {
+		return nil
+	}
+	var sess system.OnlineSession
+	if e := json.Unmarshal([]byte(raw), &sess); e != nil {
+		return nil
+	}
+	sess.Token = newToken
+	data, e := json.Marshal(sess)
+	if e != nil {
+		return e
+	}
+	return global.OPS_REDIS.HSet(ctx, key, tokenId, string(data)).Err()
+}
+
 // KickSession 踢下线指定会话:校验属于当前用户后,token 入 jwt 黑名单 + 删会话记录。
 // tokenId 不属于该用户(hash 查不到)→ 返回错误,天然防止踢他人设备。
 func (s *OnlineService) KickSession(ctx context.Context, userId int64, tokenId string) error {

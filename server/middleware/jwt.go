@@ -7,6 +7,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/hllkk/devops-admin/server/global"
+	"github.com/hllkk/devops-admin/server/service"
 	"github.com/hllkk/devops-admin/server/utils"
 
 	"github.com/gin-gonic/gin"
@@ -61,6 +62,8 @@ func JWTAuth() gin.HandlerFunc {
 			c.Header("new-token", newToken)
 			c.Header("new-expires-at", strconv.FormatInt(newClaims.ExpiresAt.Unix(), 10))
 			utils.SetToken(c, newToken, int(dr.Seconds()))
+			// 续签后同步更新在线设备会话的 token,使踢下线能命中当前有效 token
+			_ = service.ServiceGroupApp.SystemServiceGroup.OnlineService.UpdateSessionToken(c.Request.Context(), claims.BaseClaims.ID, claims.RegisteredClaims.ID, newToken)
 			if global.OPS_CONFIG.System.UseMultipoint {
 				// 记录新的活跃jwt
 				_ = utils.SetRedisJWT(newToken, newClaims.Username)
