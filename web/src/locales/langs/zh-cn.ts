@@ -1072,6 +1072,83 @@ const local: App.I18n.Schema = {
           status: '请选择操作状态'
         }
       }
+    },
+    userCenter: {
+      personalInfo: '个人信息',
+      phone: '手机号码',
+      email: '用户邮箱',
+      dept: '所属部门',
+      role: '所属角色',
+      createTime: '创建日期',
+      baseProfile: '基本资料',
+      tab: {
+        profile: '基本资料',
+        updatePwd: '修改密码',
+        social: '第三方应用',
+        online: '在线设备'
+      },
+      profile: {
+        nickName: '昵称',
+        email: '邮箱',
+        phone: '手机号',
+        sex: '性别',
+        male: '男',
+        female: '女',
+        placeholder: {
+          nickName: '请输入昵称',
+          email: '请输入邮箱',
+          phone: '请输入手机号'
+        },
+        save: '保存',
+        updateSuccess: '更新成功',
+        form: {
+          nickName: '昵称不能为空',
+          sex: '性别不能为空'
+        }
+      },
+      password: {
+        oldPassword: '旧密码',
+        newPassword: '新密码',
+        confirmPassword: '确认密码',
+        placeholder: {
+          oldPassword: '请输入旧密码',
+          newPassword: '请输入新密码',
+          confirmPassword: '请再次输入新密码'
+        },
+        submit: '修改密码',
+        modifySuccess: '密码修改成功',
+        inconsistent: '两次输入的密码不一致',
+        form: {
+          oldPassword: '旧密码不能为空',
+          newPassword: '新密码不能为空',
+          confirmPassword: '确认密码不能为空'
+        }
+      },
+      avatar: {
+        title: '修改头像',
+        selectImage: '选择图片',
+        confirmCrop: '确认裁剪',
+        uploadTypeInvalid: '请上传图片类型文件（JPG、PNG等）',
+        updateSuccess: '头像更新成功！'
+      },
+      social: {
+        bindTime: '绑定时间：',
+        bind: '绑定',
+        unbind: '解绑',
+        unbindSuccess: '账户解绑成功',
+        wechat: '微信'
+      },
+      online: {
+        deviceType: '设备类型',
+        ipaddr: 'IP地址',
+        loginLocation: '登录地点',
+        browser: '浏览器',
+        os: '操作系统',
+        loginTime: '登录时间',
+        forceLogout: '强制下线',
+        forceLogoutConfirm: '确定强制下线吗？',
+        forceLogoutSuccess: '强制下线成功'
+      }
     }
   },
   form: {

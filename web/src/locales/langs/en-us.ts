@@ -1076,6 +1076,83 @@ const local: App.I18n.Schema = {
           status: 'Select processing status'
         }
       }
+    },
+    userCenter: {
+      personalInfo: 'Personal Info',
+      phone: 'Phone',
+      email: 'Email',
+      dept: 'Department',
+      role: 'Role',
+      createTime: 'Create Time',
+      baseProfile: 'Base Profile',
+      tab: {
+        profile: 'Base Profile',
+        updatePwd: 'Change Password',
+        social: 'Third-Party Apps',
+        online: 'Online Devices'
+      },
+      profile: {
+        nickName: 'Nickname',
+        email: 'Email',
+        phone: 'Phone',
+        sex: 'Gender',
+        male: 'Male',
+        female: 'Female',
+        placeholder: {
+          nickName: 'Please enter nickname',
+          email: 'Please enter email',
+          phone: 'Please enter phone number'
+        },
+        save: 'Save',
+        updateSuccess: 'Updated successfully',
+        form: {
+          nickName: 'Nickname cannot be empty',
+          sex: 'Gender cannot be empty'
+        }
+      },
+      password: {
+        oldPassword: 'Old Password',
+        newPassword: 'New Password',
+        confirmPassword: 'Confirm Password',
+        placeholder: {
+          oldPassword: 'Please enter old password',
+          newPassword: 'Please enter new password',
+          confirmPassword: 'Please enter new password again'
+        },
+        submit: 'Change Password',
+        modifySuccess: 'Password changed successfully',
+        inconsistent: 'The two passwords are inconsistent',
+        form: {
+          oldPassword: 'Old password cannot be empty',
+          newPassword: 'New password cannot be empty',
+          confirmPassword: 'Confirm password cannot be empty'
+        }
+      },
+      avatar: {
+        title: 'Change Avatar',
+        selectImage: 'Select Image',
+        confirmCrop: 'Confirm Crop',
+        uploadTypeInvalid: 'Please upload an image file (JPG, PNG, etc.)',
+        updateSuccess: 'Avatar updated successfully!'
+      },
+      social: {
+        bindTime: 'Bind time: ',
+        bind: 'Bind',
+        unbind: 'Unbind',
+        unbindSuccess: 'Account unbound successfully',
+        wechat: 'WeChat'
+      },
+      online: {
+        deviceType: 'Device Type',
+        ipaddr: 'IP Address',
+        loginLocation: 'Login Location',
+        browser: 'Browser',
+        os: 'OS',
+        loginTime: 'Login Time',
+        forceLogout: 'Force Logout',
+        forceLogoutConfirm: 'Are you sure to force logout?',
+        forceLogoutSuccess: 'Force logout successful'
+      }
     }
   },
   form: {

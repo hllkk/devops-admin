@@ -1262,6 +1262,84 @@ declare namespace App {
             };
           };
         };
+
+        userCenter: {
+          personalInfo: string;
+          phone: string;
+          email: string;
+          dept: string;
+          role: string;
+          createTime: string;
+          baseProfile: string;
+          tab: {
+            profile: string;
+            updatePwd: string;
+            social: string;
+            online: string;
+          };
+          profile: {
+            nickName: string;
+            email: string;
+            phone: string;
+            sex: string;
+            male: string;
+            female: string;
+            placeholder: {
+              nickName: string;
+              email: string;
+              phone: string;
+            };
+            save: string;
+            updateSuccess: string;
+            form: {
+              nickName: string;
+              sex: string;
+            };
+          };
+          password: {
+            oldPassword: string;
+            newPassword: string;
+            confirmPassword: string;
+            placeholder: {
+              oldPassword: string;
+              newPassword: string;
+              confirmPassword: string;
+            };
+            submit: string;
+            modifySuccess: string;
+            inconsistent: string;
+            form: {
+              oldPassword: string;
+              newPassword: string;
+              confirmPassword: string;
+            };
+          };
+          avatar: {
+            title: string;
+            selectImage: string;
+            confirmCrop: string;
+            uploadTypeInvalid: string;
+            updateSuccess: string;
+          };
+          social: {
+            bindTime: string;
+            bind: string;
+            unbind: string;
+            unbindSuccess: string;
+            wechat: string;
+          };
+          online: {
+            deviceType: string;
+            ipaddr: string;
+            loginLocation: string;
+            browser: string;
+            os: string;
+            loginTime: string;
+            forceLogout: string;
+            forceLogoutConfirm: string;
+            forceLogoutSuccess: string;
+          };
+        };
       };
       form: {
         required: string;
