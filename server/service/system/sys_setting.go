@@ -97,7 +97,6 @@ func (s *SettingService) GetPublic(ctx context.Context) systemReq.PublicSetting 
 		WechatEnabled:     auth.WechatEnabled,
 		GiteeEnabled:      auth.GiteeEnabled,
 		GithubEnabled:     auth.GithubEnabled,
-		DingtalkEnabled:   auth.DingtalkEnabled,
 	}
 }
 

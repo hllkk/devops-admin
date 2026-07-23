@@ -248,7 +248,7 @@ const local: App.I18n.Schema = {
     'iframe-page': '外链页面',
     admin: '首页',
     'social-callback': '社交回调',
-    'user-center': '用户中心',
+    'user-center': '个人中心',
     system: '系统管理',
     system_user: '用户管理',
     system_role: '角色管理',

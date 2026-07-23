@@ -39,11 +39,6 @@ type SysAuthConfig struct {
 	GithubClientId     string `json:"githubClientId" gorm:"comment:GitHub ClientId"`
 	GithubClientSecret string `json:"githubClientSecret" gorm:"comment:GitHub ClientSecret"`
 	GithubCallbackUrl  string `json:"githubCallbackUrl" gorm:"comment:GitHub OAuth2 回调地址"`
-	// 钉钉
-	DingtalkEnabled      bool   `json:"dingtalkEnabled" gorm:"default:false;comment:钉钉登录开关"`
-	DingtalkClientId     string `json:"dingtalkClientId" gorm:"comment:钉钉 AppKey/ClientId"`
-	DingtalkClientSecret string `json:"dingtalkClientSecret" gorm:"comment:钉钉 AppSecret/ClientSecret"`
-	DingtalkCallbackUrl  string `json:"dingtalkCallbackUrl" gorm:"comment:钉钉 OAuth2 回调地址"`
 }
 
 func (SysAuthConfig) TableName() string {

@@ -43,11 +43,10 @@ type PublicSetting struct {
 	ImgWidth       int    `json:"imgWidth"`
 	ImgHeight      int    `json:"imgHeight"`
 	// 认证公开字段（仅公开开关，不暴露密钥）
-	RegisterEnabled  bool `json:"registerEnabled"`
-	ResetPwdEnabled  bool `json:"resetPwdEnabled"`
-	WecomEnabled     bool `json:"wecomEnabled"`
-	WechatEnabled    bool `json:"wechatEnabled"`
-	GiteeEnabled     bool `json:"giteeEnabled"`
-	GithubEnabled    bool `json:"githubEnabled"`
-	DingtalkEnabled  bool `json:"dingtalkEnabled"`
+	RegisterEnabled bool `json:"registerEnabled"`
+	ResetPwdEnabled bool `json:"resetPwdEnabled"`
+	WecomEnabled    bool `json:"wecomEnabled"`
+	WechatEnabled   bool `json:"wechatEnabled"`
+	GiteeEnabled    bool `json:"giteeEnabled"`
+	GithubEnabled   bool `json:"githubEnabled"`
 }
