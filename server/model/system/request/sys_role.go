@@ -1,6 +1,7 @@
 package request
 
 import (
+	"github.com/hllkk/devops-admin/server/model/common"
 	commonReq "github.com/hllkk/devops-admin/server/model/common/request"
 )
 
@@ -14,18 +15,18 @@ type RoleSearch struct {
 
 // RoleOperateParams 角色新增/修改请求(对齐前端 Api.System.RoleOperateParams)。
 // 含 menuIds 用于分配菜单:create 时全量插入 sys_role_role_menu,update 时全量替换。
-// menuIds 用 []Int64String 兼容前端 IdType[](string|number 混合,getCheckedMenuIds 返回 string[])。
+// menuIds 用 []common.Int64String 兼容前端 IdType[](string|number 混合,getCheckedMenuIds 返回 string[])。
 type RoleOperateParams struct {
-	RoleId            Int64String   `json:"roleId"`            // 角色ID(新增时为空)
+	RoleId            common.Int64String  `json:"roleId"`            // 角色ID(新增时为空)
 	RoleName          string        `json:"roleName"`          // 角色名称
 	RoleKey           string        `json:"roleKey"`           // 角色权限字符(唯一)
 	RoleSort          int           `json:"roleSort"`          // 显示顺序
 	MenuCheckStrictly bool          `json:"menuCheckStrictly"` // 菜单树选择项是否关联显示
 	Status            string        `json:"status"`            // 角色状态('0'正常/'1'停用)
 	Remark            string        `json:"remark"`            // 备注
-	MenuIds           []Int64String `json:"menuIds"`           // 分配菜单ID(全量;叶子+半选父级)
+	MenuIds           []common.Int64String `json:"menuIds"`           // 分配菜单ID(全量;叶子+半选父级)
 	DataScope         int           `json:"dataScope,string"`  // 数据范围档位(1全部2本部门及子级3本部门4仅本人5自定义;仅 dataScope 接口消费)
-	DeptIds           []Int64String `json:"deptIds"`            // 自定义部门集(仅档位5用;全量替换 sys_role_departments)
+	DeptIds           []common.Int64String `json:"deptIds"`            // 自定义部门集(仅档位5用;全量替换 sys_role_departments)
 	DeptCheckStrictly bool          `json:"deptCheckStrictly"`  // 部门树选择项是否关联显示(仅 dataScope 接口消费)
 }
 

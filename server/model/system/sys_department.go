@@ -1,6 +1,9 @@
 package system
 
-import "github.com/hllkk/devops-admin/server/global"
+import (
+	"github.com/hllkk/devops-admin/server/global"
+	"github.com/hllkk/devops-admin/server/model/common"
+)
 
 // SysDepartment 部门(组织架构树,对外业务实体,字段对齐前端 Api.System.Dept)
 //
@@ -42,6 +45,6 @@ type DeptTreeNode struct {
 
 // RoleDeptTreeSelect 角色数据权限部门树(对齐前端 GET /system/role/deptTree/{roleId} 与 Api.System.RoleDeptTreeSelect)。
 type RoleDeptTreeSelect struct {
-	CheckedKeys []int64        `json:"checkedKeys"` // 角色已分配部门ID(自定义档完整集合,忠实往返)
-	Depts       []DeptTreeNode `json:"depts"`       // 全部启用部门树(后端组装)
+	CheckedKeys common.Int64StringSlice `json:"checkedKeys"` // 角色已分配部门ID(string[],与 depts.id 统一;自定义档完整集合,忠实往返)
+	Depts       []DeptTreeNode          `json:"depts"`       // 全部启用部门树(后端组装)
 }

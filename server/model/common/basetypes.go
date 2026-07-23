@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -132,4 +133,42 @@ type TreeNode[T any] interface {
 	SetChildren(children T)
 	GetID() int
 	GetParentID() int
+}
+
+// Int64String 兼容前端 IdType(string|number)与空串的 int64 字段(雪花 id 入参适配)。
+// 容忍 "" / null / 数字 / "字符串数字",统一解析为 int64(空/null→0);用于请求体绑定,
+// 避免前端空串(如顶层 parentId "")或 number/string 混合导致普通 int64 字段绑定失败。
+type Int64String int64
+
+// UnmarshalJSON 容忍空串/null/数字/带引号数字串。
+func (v *Int64String) UnmarshalJSON(data []byte) error {
+	s := strings.TrimSpace(strings.Trim(string(data), `"`))
+	if s == "" || s == "null" {
+		*v = 0
+		return nil
+	}
+	n, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		return err
+	}
+	*v = Int64String(n)
+	return nil
+}
+
+// Int64 取 int64 值。
+func (v Int64String) Int64() int64 { return int64(v) }
+
+// Int64StringSlice 将 []int64 序列化为 JSON 字符串数组(雪花 id 出参适配)。
+// 项目约定雪花 id 输出 string(树节点 id 等用 ",string" tag);但 Go encoding/json 的 ",string" tag 对 slice 无效,
+// 故自定义 MarshalJSON 逐元素转字符串,保证响应内 checkedKeys 等与同响应节点 id 类型一致,
+// 避免前端 NTree 用 string key 匹配 number 失败导致勾选不回显。
+type Int64StringSlice []int64
+
+// MarshalJSON 逐元素转字符串输出(如 [1,2] → ["1","2"])。
+func (s Int64StringSlice) MarshalJSON() ([]byte, error) {
+	strs := make([]string, len(s))
+	for i, v := range s {
+		strs[i] = strconv.FormatInt(v, 10)
+	}
+	return json.Marshal(strs)
 }

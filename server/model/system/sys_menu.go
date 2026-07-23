@@ -1,6 +1,9 @@
 package system
 
-import "github.com/hllkk/devops-admin/server/global"
+import (
+	"github.com/hllkk/devops-admin/server/global"
+	"github.com/hllkk/devops-admin/server/model/common"
+)
 
 // SysMenu 菜单(树形自关联,对外业务实体,字段对齐前端 Api.System.Menu / RuoYi 契约)
 //
@@ -48,8 +51,8 @@ type MenuTreeSelectNode struct {
 }
 
 // RoleMenuTreeSelect 角色菜单权限树响应(对齐前端 Api.System.RoleMenuTreeSelect)。
-// menus=全部菜单的 MenuTreeSelectNode 树(精简字段,后端组装);checkedKeys=角色已分配菜单的叶子 ID(NTree cascade 回显用,对齐 RuoYi)。
+// menus=全部菜单的 MenuTreeSelectNode 树(精简字段,后端组装);checkedKeys=角色已分配菜单的叶子 ID(string[];NTree cascade 回显用,对齐 RuoYi 并与 menus.id 统一 string)。
 type RoleMenuTreeSelect struct {
-	CheckedKeys []int64              `json:"checkedKeys"` // 角色已分配菜单的叶子 ID
-	Menus       []MenuTreeSelectNode `json:"menus"`       // 全部菜单树(精简 VO,后端组装)
+	CheckedKeys common.Int64StringSlice `json:"checkedKeys"` // 角色已分配菜单的叶子 ID(string[],雪花 id 统一 string)
+	Menus       []MenuTreeSelectNode    `json:"menus"`       // 全部菜单树(精简 VO,后端组装)
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/hllkk/devops-admin/server/global"
+	"github.com/hllkk/devops-admin/server/model/common"
 	"github.com/hllkk/devops-admin/server/model/system"
 	systemReq "github.com/hllkk/devops-admin/server/model/system/request"
 )
@@ -168,7 +169,7 @@ func (s *MenuService) GetRoleMenuTreeSelect(ctx context.Context, roleId int64) (
 		Where("sys_role_id = ?", roleId).Pluck("sys_menu_id", &roleMenuIds).Error; err != nil {
 		return
 	}
-	result.CheckedKeys = s.leafCheckedKeys(ctx, roleMenuIds)
+	result.CheckedKeys = common.Int64StringSlice(s.leafCheckedKeys(ctx, roleMenuIds))
 	return
 }
 

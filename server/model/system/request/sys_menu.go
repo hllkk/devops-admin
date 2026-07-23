@@ -1,6 +1,7 @@
 package request
 
 import (
+	"github.com/hllkk/devops-admin/server/model/common"
 	commonReq "github.com/hllkk/devops-admin/server/model/common/request"
 )
 
@@ -15,10 +16,10 @@ type MenuSearch struct {
 }
 
 // MenuOperateParams 菜单新增/修改请求(对齐前端 Api.System.MenuOperateParams)。
-// create 时 menuId 为空;update 时必填 menuId。menuId/parentId 用 Int64String 兼容前端 IdType(string|number)。
+// create 时 menuId 为空;update 时必填 menuId。menuId/parentId 用 common.Int64String 兼容前端 IdType(string|number)。
 type MenuOperateParams struct {
-	MenuId     Int64String `json:"menuId"`     // 菜单ID(新增时为空)
-	ParentId   Int64String `json:"parentId"`   // 父菜单ID(0=顶级)
+	MenuId     common.Int64String `json:"menuId"`     // 菜单ID(新增时为空)
+	ParentId   common.Int64String `json:"parentId"`   // 父菜单ID(0=顶级)
 	MenuType   string      `json:"menuType"`   // 菜单类型 M目录C菜单F按钮
 	MenuName   string      `json:"menuName"`   // 菜单名称
 	OrderNum   int         `json:"orderNum"`   // 显示顺序

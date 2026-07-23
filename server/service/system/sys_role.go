@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/hllkk/devops-admin/server/global"
+	"github.com/hllkk/devops-admin/server/model/common"
 	"github.com/hllkk/devops-admin/server/model/system"
 	systemReq "github.com/hllkk/devops-admin/server/model/system/request"
 	"github.com/hllkk/devops-admin/server/utils/datascope"
@@ -211,16 +212,23 @@ func (s *RoleService) AuthUserCancelAll(ctx context.Context, roleId int64, userI
 		Where("sys_role_id = ? AND sys_user_id IN ?", roleId, userIds).Delete(&system.SysUserRole{}).Error
 }
 
-// saveRoleMenus 全量替换角色菜单关联:先删 sys_role_menu where role_id,再批量插。
+// saveRoleMenus 全量替换角色菜单关联:先删 sys_role_menu where role_id,再按 menuId 去重批量插。
+// 去重防御:复合主键表必须按值去重(前端 getCheckedMenuIds 可能产出 number/string 同值重复)。
 func saveRoleMenus(tx *gorm.DB, roleId int64, menuIds []int64) error {
 	if err := tx.Where("sys_role_id = ?", roleId).Delete(&system.SysRoleMenu{}).Error; err != nil {
 		return err
 	}
+	seen := make(map[int64]struct{}, len(menuIds))
 	rows := make([]system.SysRoleMenu, 0, len(menuIds))
 	for _, mid := range menuIds {
-		if mid > 0 {
-			rows = append(rows, system.SysRoleMenu{SysRoleId: roleId, SysMenuId: mid})
+		if mid <= 0 {
+			continue
 		}
+		if _, ok := seen[mid]; ok {
+			continue
+		}
+		seen[mid] = struct{}{}
+		rows = append(rows, system.SysRoleMenu{SysRoleId: roleId, SysMenuId: mid})
 	}
 	if len(rows) == 0 {
 		return nil
@@ -228,8 +236,8 @@ func saveRoleMenus(tx *gorm.DB, roleId int64, menuIds []int64) error {
 	return tx.Create(&rows).Error
 }
 
-// toInt64Slice 将 []Int64String 转为 []int64。
-func toInt64Slice(ids []systemReq.Int64String) []int64 {
+// toInt64Slice 将 []common.Int64String 转为 []int64。
+func toInt64Slice(ids []common.Int64String) []int64 {
 	out := make([]int64, 0, len(ids))
 	for _, id := range ids {
 		out = append(out, id.Int64())
@@ -296,11 +304,12 @@ func (s *RoleService) GetRoleDeptTreeSelect(ctx context.Context, roleId int64) (
 	if err != nil {
 		return
 	}
-	result.CheckedKeys = make([]int64, 0)
+	var checkedKeys []int64
 	if err = global.OPS_DB.WithContext(ctx).Model(&system.SysRoleDepartment{}).
-		Where("sys_role_id = ?", roleId).Pluck("sys_department_id", &result.CheckedKeys).Error; err != nil {
+		Where("sys_role_id = ?", roleId).Pluck("sys_department_id", &checkedKeys).Error; err != nil {
 		return
 	}
+	result.CheckedKeys = common.Int64StringSlice(checkedKeys)
 	return
 }
 
