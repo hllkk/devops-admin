@@ -1,0 +1,201 @@
+# ============================================================================
+# devops-admin 生产环境全栈编排：nginx(前端) + server(后端) + PostgreSQL + Redis + RustFS
+#
+# 用法（详见 README.md）：
+#   1) cp .env.example .env               # 填入强随机机密（JWT/INIT_ADMIN/PG/Redis/RustFS 密码）
+#   2) docker compose up -d --build
+#   注：config/config.yaml 为静态入库配置（密码由 env 覆盖），无需编辑
+#
+# 安全要点：
+#   - DB / Redis / RustFS 端口默认不对宿主暴露，仅在 prod-net 内以服务名互访
+#   - 仅 web(80) 对外；后端默认只经 web 反代访问（SERVER_PORT 见 .env，生产建议注释）
+#   - 机密只走 .env（initialize/other.go 用 env 覆盖 config.yaml），config.yaml 静态入库
+# ============================================================================
+
+name: devops-admin-prod
+
+services:
+  # ----------------------------------------------------------------------------
+  # 前端 + 反向代理
+  # ----------------------------------------------------------------------------
+  web:
+    build:
+      context: ../../web
+      # Dockerfile 统一放在 docker-prod/，经 BuildKit 引用 context 之外的 Dockerfile
+      dockerfile: ../deploy/docker-prod/Dockerfile.web
+    image: devops-admin/web:prod
+    container_name: devops-web
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-80}:80"
+    volumes:
+      # nginx 主配置：SPA 托管 + /proxy-default 反代到 server
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      server:
+        condition: service_started
+    networks:
+      - prod-net
+
+  # ----------------------------------------------------------------------------
+  # 后端
+  # ----------------------------------------------------------------------------
+  server:
+    build:
+      context: ../../server
+      # Dockerfile 统一放在 docker-prod/，经 BuildKit 引用 context 之外的 Dockerfile
+      dockerfile: ../deploy/docker-prod/Dockerfile.server
+      args:
+        GOPROXY: ${GOPROXY:-https://goproxy.cn,direct}
+    image: devops-admin/server:prod
+    container_name: devops-server
+    restart: unless-stopped
+    environment:
+      # 配置文件路径（静态挂载 :ro；DOCKER_ENV 下向导不回写，敏感项由 env 覆盖）
+      OPS_CONFIG: /app/config/config.yaml
+      TZ: ${TZ:-Asia/Shanghai}
+      # Docker 自动初始化标识 + 生产模式
+      DOCKER_ENV: "true"
+      GIN_MODE: release
+      # 机密：由 initialize/other.go 覆盖 config.yaml 对应字段，无需在 config 维护
+      JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:?必须设置 JWT_SIGNING_KEY}
+      PG_PASSWORD: ${POSTGRES_PASSWORD:?必须设置 POSTGRES_PASSWORD}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?必须设置 REDIS_PASSWORD}
+      RUSTFS_ROOT_USER: ${RUSTFS_ROOT_USER:-devops-admin}
+      RUSTFS_ROOT_PASSWORD: ${RUSTFS_ROOT_PASSWORD:?必须设置 RUSTFS_ROOT_PASSWORD}
+      # 自动初始化超级管理员密码（首次 /init/autoInitDB 生效）
+      INIT_ADMIN_PASSWORD: ${INIT_ADMIN_PASSWORD:-Admin@2026}
+      # 可信反代（多层反代下正确解析真实 ClientIP）
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-172.16.0.0/12,127.0.0.1/32,::1/128}
+    volumes:
+      # 静态配置（入库，只读挂载；DOCKER_ENV 下向导不回写，敏感项由 env 覆盖）
+      - ./config/config.yaml:/app/config/config.yaml:ro
+      # 本地上传文件（oss-type=local 时使用；minio 模式下也可留作兜底）
+      - ${SERVER_UPLOADS_PATH:-/home/docker/docker-prod/uploads}:/app/uploads
+      # 运行日志（zap director=log）
+      - ${SERVER_LOG_PATH:-/home/docker/docker-prod/server-log}:/app/log
+    ports:
+      # 生产建议仅经 web 反代访问；如需直连调试保留此项，否则注释掉
+      - "${SERVER_PORT:-8888}:8888"
+    depends_on:
+      pgsql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rustfs:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8888/swagger/index.html >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    networks:
+      - prod-net
+
+  # ----------------------------------------------------------------------------
+  # PostgreSQL 18
+  # ----------------------------------------------------------------------------
+  pgsql:
+    image: postgres:18-alpine
+    container_name: devops-pgsql
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-devops}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?必须设置 POSTGRES_PASSWORD}
+      # 建业务库：server 启动直连成功，配合 /init/autoInitDB 自动建表/建管理员
+      POSTGRES_DB: ${POSTGRES_DB:-devops_admin}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+      TZ: ${TZ:-Asia/Shanghai}
+    volumes:
+      # PG 18+ 默认 PGDATA=/var/lib/postgresql/18/docker，卷挂父目录
+      - ${PG_DATA_PATH:-/home/docker/docker-prod/pgsql}:/var/lib/postgresql
+      - ./config/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-devops} -d ${POSTGRES_DB:-devops_admin}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - prod-net
+
+  # ----------------------------------------------------------------------------
+  # Redis 8（requirepass 由启动参数从 .env 注入，conf 内不留明文密码）
+  # ----------------------------------------------------------------------------
+  redis:
+    image: redis:8-alpine
+    container_name: devops-redis
+    restart: unless-stopped
+    environment:
+      # 仅供 healthcheck 在容器内读取
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      TZ: ${TZ:-Asia/Shanghai}
+    volumes:
+      - ${REDIS_DATA_PATH:-/home/docker/docker-prod/redis}:/data
+      - ./config/redis.conf:/etc/redis/redis.conf:ro
+    command: ["redis-server", "/etc/redis/redis.conf", "--requirepass", "${REDIS_PASSWORD}"]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - prod-net
+
+  # ----------------------------------------------------------------------------
+  # RustFS（S3 兼容对象存储，与 dev 一致；server 侧 oss-type=minio，
+  # minio-go 客户端直连 rustfs，业务代码零改动）
+  # 端口默认不对外：前端文件下载经 nginx 的 /oss/ 反代访问（见 nginx.conf）
+  # ----------------------------------------------------------------------------
+  rustfs:
+    image: rustfs/rustfs:${RUSTFS_VERSION:-latest}
+    container_name: devops-rustfs
+    user: root                       # 免去 bind mount 目录属主修正
+    restart: unless-stopped
+    environment:
+      RUSTFS_ROOT_USER: ${RUSTFS_ROOT_USER:-rustfsadmin}
+      RUSTFS_ROOT_PASSWORD: ${RUSTFS_ROOT_PASSWORD}
+      RUSTFS_BROWSER: "on"
+      TZ: ${TZ:-Asia/Shanghai}
+    volumes:
+      - ${RUSTFS_DATA_PATH:-/home/docker/docker-prod/rustfs}:/data
+    command: ["server", "/data", "--console-address", ":9001"]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/health/ready || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    networks:
+      - prod-net
+
+  # 一次性：rustfs 启动后建 bucket 并设匿名下载策略（前端经 nginx /oss/ 可直接 GET 文件）
+  rustfs_init:
+    image: minio/mc:${MC_VERSION:-latest}
+    container_name: devops-rustfs-init
+    depends_on:
+      rustfs:
+        condition: service_started
+    environment:
+      RUSTFS_ROOT_USER: ${RUSTFS_ROOT_USER:-rustfsadmin}
+      RUSTFS_ROOT_PASSWORD: ${RUSTFS_ROOT_PASSWORD}
+      RUSTFS_BUCKET: ${RUSTFS_BUCKET:-devops_admin}
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        until mc alias set local http://rustfs:9000 "$${RUSTFS_ROOT_USER}" "$${RUSTFS_ROOT_PASSWORD}"; do
+          echo "等待 rustfs 就绪..."; sleep 2
+        done
+        mc mb --ignore-existing "local/$${RUSTFS_BUCKET}"
+        mc anonymous set download "local/$${RUSTFS_BUCKET}" || true
+        echo "rustfs bucket $${RUSTFS_BUCKET} 就绪"
+    restart: "no"
+    networks:
+      - prod-net
+
+# 同处 prod-net bridge 网络，服务间用服务名互访
+# （server → pgsql:5432 / redis:6379 / minio:9000，web → server:8888）
+networks:
+  prod-net:
+    driver: bridge

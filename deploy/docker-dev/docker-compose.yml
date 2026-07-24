@@ -24,7 +24,7 @@ services:
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
       TZ: Asia/Shanghai
     ports:
-      - "5432:5432"
+      - "15432:5432"
     volumes:
       # PG 18+ 镜像默认 PGDATA=/var/lib/postgresql/18/docker（版本子目录布局），
       # 数据卷需挂到父目录 /var/lib/postgresql，数据最终落在宿主机 .../pgsql/18/docker/
@@ -44,7 +44,7 @@ services:
     container_name: devops-redis-dev
     restart: unless-stopped
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - "16379:6379"
     volumes:
       - /home/docker/docker-dev/redis:/data
       - ./config/redis.conf:/etc/redis/redis.conf:ro
@@ -73,14 +73,14 @@ services:
     user: root
     restart: unless-stopped
     ports:
-      - "${RUSTFS_PORT:-9000}:9000"
-      - "${RUSTFS_CONSOLE_PORT:-9001}:9001"
+      - "19000:9000"
+      - "19001:9001"
     environment:
-      RUSTFS_ROOT_USER: ${RUSTFS_ROOT_USER:-rustfsadmin}
-      RUSTFS_ROOT_PASSWORD: ${RUSTFS_ROOT_PASSWORD:-rustfsadmin}
+      RUSTFS_ROOT_USER: rustfsadmin
+      RUSTFS_ROOT_PASSWORD: Tricolor_123
       RUSTFS_BROWSER: "on"
     volumes:
-      - ${RUSTFS_DATA_PATH:-/home/docker/docker-dev/rustfs}:/data
+      - /home/docker/docker-dev/rustfs:/data
     command: ["server", "/data", "--console-address", ":9001"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/health/ready"]

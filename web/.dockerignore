@@ -1,0 +1,25 @@
+# 依赖与构建产物（绝不进镜像）
+node_modules/
+dist/
+.turbo/
+coverage/
+
+# 本地环境覆盖（构建期 .env / .env.prod 需要保留，仅排除 local 覆盖）
+*.local
+.env.local
+.env.*.local
+
+# Git / 编辑器 / IDE
+.git
+.gitignore
+.idea/
+.vscode/
+*.swp
+
+# 文档与脚本不影响构建
+*.md
+.husky/
+.eslintcache
+
+# 本地运行残留
+.local/

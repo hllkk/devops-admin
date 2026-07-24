@@ -54,3 +54,7 @@ worktrees/
 
 # Superpowers（AI 工作流产物：spec / plan / sdd 统一存放于此，不入库）
 .superpowers/
+
+# 生产部署机密（docker-prod）：仅 .env 入库被忽略
+# config.yaml 是静态入库配置（密码由 .env 经 env 覆盖，本身不含真实密钥），故入库
+deploy/docker-prod/.env

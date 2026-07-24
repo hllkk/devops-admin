@@ -7,6 +7,7 @@ import (
 	"sort"
 
 	"database/sql"
+	"os"
 
 	"github.com/hllkk/devops-admin/server/global"
 	sysModel "github.com/hllkk/devops-admin/server/model/system"
@@ -153,8 +154,14 @@ func (initDBService *InitDBService) InitDB(conf request.InitDB) (err error) {
 	// 故 Redis 段与 system.use-redis 随本次落盘，4 个 handler 无需改动。
 	applyRedisConfig(conf)
 
-	if err = initHandler.WriteConfig(ctx); err != nil {
-		return err
+	// Docker 环境下配置由挂载的 config.yaml 管理（敏感项经 env 覆盖，见 initialize/other.go），
+	// 跳过回写；本地部署仍回写 config 文件。
+	if os.Getenv("DOCKER_ENV") != "true" {
+		if err = initHandler.WriteConfig(ctx); err != nil {
+			return err
+		}
+	} else {
+		fmt.Println("Docker 环境，跳过配置文件回写（配置由挂载文件管理）")
 	}
 	// 不清空 initializers:保留供 RegisterTables/Reload 复用同一份建表清单;
 	// 二次 /initdb 由各 initializer 的 TableCreated/DataInserted 探针幂等跳过。

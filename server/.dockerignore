@@ -1,0 +1,35 @@
+# 构建产物与缓存
+tmp/
+*.exe
+*.exe~
+server
+devops-admin-server
+
+# 测试
+*_test.go
+testdata/
+coverage.out
+
+# 本地环境与运行时日志（绝不进镜像）
+.env
+.env.*
+log/*
+
+# Git / 编辑器 / IDE
+.git
+.gitignore
+.gitattributes
+.idea/
+.vscode/
+*.swp
+
+# 文档不影响构建
+*.md
+docs/*.md
+
+# Docker 自身
+Dockerfile
+.dockerignore
+
+# 本地运行残留
+config.yaml.bak

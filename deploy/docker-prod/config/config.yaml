@@ -1,0 +1,274 @@
+# ============================================================================
+# devops-admin 后端生产配置（静态入库）
+#
+# 本文件入库、由 docker-compose 以只读卷挂载（:ro）。敏感项（DB/Redis/JWT/RustFS
+# 密码、可信反代）一律经环境变量在 initialize/other.go 的 applyEnvOverrides 中覆盖，
+# 故真实密钥只存在于 .env（不入库），无需在此维护或与 .env 手动同步。
+#
+# DB 连接信息（地址/库名/用户）按 docker-compose 服务名预填，供 /init/autoInitDB 使用。
+# ============================================================================
+
+ai:
+    provider: ollama
+    ollama:
+        base-url: http://ollama:11434        # 生产若启用 AI 按实际地址调整，不用可忽略
+        model: qwen3.6:35b
+        timeout: 120
+aliyun-oss:
+    endpoint: yourEndpoint
+    access-key-id: yourAccessKeyId
+    access-key-secret: yourAccessKeySecret
+    bucket-name: yourBucketName
+    bucket-url: yourBucketUrl
+    base-path: yourBasePath
+app:
+    node: ""
+    app-id: ""
+    env: ""
+autocode:
+    web: web/src
+    root: /app
+    server: server
+    module: github.com/hllkk/devops-admin/server
+    ai-path: ""
+aws-s3:
+    bucket: xxxxx-10005608
+    region: ap-shanghai
+    endpoint: ""
+    secret-id: your-secret-id
+    secret-key: your-secret-key
+    base-url: https://gin.vue.admin
+    path-prefix: github.com/hllkk/devops-admin/server
+    s3-force-path-style: false
+    disable-ssl: false
+captcha:
+    enable: true
+    type: click
+    key-long: 4
+    img-width: 240
+    img-height: 80
+    tolerance: 8
+    open-captcha: 1
+    open-captcha-timeout: 3600
+cloudflare-r2:
+    bucket: xxxx0bucket
+    base-url: https://gin.vue.admin.com
+    path: uploads
+    account-id: xxx_account_id
+    access-key-id: xxx_key_id
+    secret-access-key: xxx_secret_key
+cors:
+    mode: ""
+    whitelist: []
+db-list:
+    - type: ""
+      alias-name: ""
+      prefix: ""
+      port: ""
+      config: ""
+      db-name: ""
+      username: ""
+      password: ""
+      path: ""
+      engine: ""
+      log-mode: ""
+      max-idle-conns: 10
+      max-open-conns: 100
+      conn-max-lifetime: 0
+      singular: false
+      log-zap: false
+      disable: true
+hua-wei-obs:
+    path: you-path
+    bucket: you-bucket
+    endpoint: you-endpoint
+    access-key: you-access-key
+    secret-key: you-secret-key
+jwt:
+    # 生产签名密钥：留空，强制经环境变量 JWT_SIGNING_KEY 注入（other.go 校验非空/长度）
+    signing-key: ""
+    expires-time: 7d
+    buffer-time: 1d
+    issuer: devops-admin
+local:
+    path: /app/uploads/file
+    store-path: /app/uploads/file
+mcp:
+    name: OPS_MCP
+    version: v1.0.0
+    path: ""
+    addr: 8889
+    base_url: ""
+    upstream_base_url: ""
+    auth_header: ""
+    request_timeout: 0
+    sse_path: ""
+    message_path: ""
+    url_prefix: ""
+    separate: false
+media:
+    chunk-dir: ""
+    max-file-size: 0
+    session-ttl: 0
+minio:
+    endpoint: rustfs:9000                              # compose 服务名（RustFS，S3 兼容）
+    access-key-id: devops-admin                        # 默认占位，被 .env RUSTFS_ROOT_USER 覆盖
+    access-key-secret: devops_rustfs_2026              # 默认占位，被 .env RUSTFS_ROOT_PASSWORD 覆盖
+    bucket-name: devops_admin
+    use-ssl: false
+    base-path: ""
+    bucket-url: /oss/devops_admin                      # 前端下载：经 nginx /oss/ 反代到 rustfs（同源）
+mongo:
+    coll: ""
+    options: ""
+    database: ""
+    username: ""
+    password: ""
+    auth-source: ""
+    min-pool-size: 0
+    max-pool-size: 100
+    socket-timeout-ms: 0
+    connect-timeout-ms: 0
+    is-zap: false
+    hosts:
+        - host: ""
+          port: ""
+mssql:
+    prefix: ""
+    port: ""
+    config: ""
+    db-name: ""
+    username: ""
+    password: ""
+    path: ""
+    engine: ""
+    log-mode: ""
+    max-idle-conns: 10
+    max-open-conns: 100
+    conn-max-lifetime: 0
+    singular: false
+    log-zap: false
+mysql:
+    prefix: ""
+    port: ""
+    config: ""
+    db-name: ""
+    username: ""
+    password: ""
+    path: ""
+    engine: ""
+    log-mode: ""
+    max-idle-conns: 10
+    max-open-conns: 100
+    conn-max-lifetime: 0
+    singular: false
+    log-zap: false
+oracle:
+    prefix: ""
+    port: ""
+    config: ""
+    db-name: ""
+    username: ""
+    password: ""
+    path: ""
+    engine: ""
+    log-mode: ""
+    max-idle-conns: 10
+    max-open-conns: 100
+    conn-max-lifetime: 0
+    singular: false
+    log-zap: false
+pgsql:
+    # 预填 docker 服务名/库名/用户；password 为占位，被 .env 的 PG_PASSWORD(=POSTGRES_PASSWORD) 覆盖
+    prefix: ""
+    port: "5432"
+    config: sslmode=disable TimeZone=Asia/Shanghai
+    db-name: devops_admin
+    username: devops
+    password: devops_pg_prod_2026
+    path: pgsql
+    engine: ""
+    log-mode: warn
+    max-idle-conns: 10
+    max-open-conns: 100
+    conn-max-lifetime: 0
+    singular: false
+    log-zap: false
+qiniu:
+    zone: ZoneHuaDong
+    bucket: ""
+    img-path: ""
+    access-key: ""
+    secret-key: ""
+    use-https: false
+    use-cdn-domains: false
+redis:
+    # addr 预填 docker 服务名；password 为占位，被 .env REDIS_PASSWORD 覆盖
+    name: default
+    addr: redis:6379
+    password: devops_redis_2026
+    db: 0
+    useCluster: false
+    clusterAddrs: []
+redis-list:
+    - name: cache
+      addr: redis:6379
+      password: devops_redis_2026
+      db: 0
+      useCluster: false
+      clusterAddrs: []
+sqlite:
+    prefix: ""
+    port: ""
+    config: ""
+    db-name: ""
+    username: ""
+    password: ""
+    path: ""
+    engine: ""
+    log-mode: ""
+    max-idle-conns: 10
+    max-open-conns: 100
+    conn-max-lifetime: 0
+    singular: false
+    log-zap: false
+system:
+    db-type: pgsql                                   # /init/autoInitDB 按此类型建库
+    oss-type: minio                                  # 对象存储走 RustFS（minio-go 直连，S3 兼容）
+    router-prefix: ""
+    addr: 8888
+    iplimit-count: 15000
+    iplimit-time: 3600
+    use-multipoint: false
+    use-redis: true
+    use-mongo: false
+    use-strict-auth: false
+    disable-auto-migrate: false
+    worker-id: 1                                     # 多实例部署时每实例递增
+    # 由 .env TRUSTED_PROXIES 覆盖；空=不信任任何代理（反代部署务必配置）
+    trusted-proxies: []
+    ip2region-db-path: resource/ip2region.xdb
+tencent-cos:
+    bucket: xxxxx-10005608
+    region: ap-shanghai
+    secret-id: your-secret-id
+    secret-key: your-secret-key
+    base-url: https://gin.vue.admin
+    path-prefix: github.com/hllkk/devops-admin/server
+zap:
+    level: info
+    prefix: '[github.com/hllkk/devops-admin/server]'
+    format: json                                     # 生产用 json 便于采集
+    director: log                                    # 容器内 /app/log（已挂载）
+    encode-level: LowercaseLevelEncoder
+    stacktrace-key: stacktrace
+    show-line: true
+    log-in-console: true                             # 同时输出 stdout，docker logs 可见
+    retention-day: 30
+    access-req-body: false                           # 生产关闭请求体记录，避免敏感数据落盘
+    access-resp-data: false
+    access-req-headers: false
+    access-log-max-bytes: 1024
+    file-only-modules:
+        - http
+        - sql

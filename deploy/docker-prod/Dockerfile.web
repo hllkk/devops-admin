@@ -1,0 +1,47 @@
+# syntax=docker/dockerfile:1
+# ============================================================================
+# devops-admin 前端生产镜像（多阶段）
+#
+#   构建上下文（compose context）：仓库 web/ 目录
+#   构建：node:20-alpine + pnpm（monorepo，含 packages/* 下的 @sa/* 包）
+#   运行：nginx:1.27-alpine（托管 dist；nginx.conf 由 compose 挂载，便于调整）
+#
+# 生产构建读取 .env + .env.prod：VITE_SERVICE_BASE_URL 应指向同源反代前缀
+# /proxy-default，由 nginx 反代到 server:8888（与 dev 的 vite proxy 行为一致）。
+# 注意：Dockerfile 位于 context（web/）之外，依赖 BuildKit（现代 Docker 默认开启）。
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# 阶段 1：构建静态产物
+# ----------------------------------------------------------------------------
+FROM node:20-alpine AS builder
+
+# 部分 native addon 在 alpine(musl) 上需编译工具链；corepack 激活 pnpm
+RUN apk add --no-cache python3 make g++ \
+    && corepack enable \
+    && corepack prepare pnpm@10.5.0 --activate
+
+WORKDIR /build
+
+# 先拷依赖清单与 workspace 子包清单，命中 docker 层缓存
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages ./packages
+
+RUN pnpm install --frozen-lockfile
+
+# 拷源码（含 .env / .env.prod 等构建期变量文件）
+COPY . .
+
+# 生产构建（等价 pnpm build = vite build --mode prod，输出 dist/）
+RUN pnpm build
+
+# ----------------------------------------------------------------------------
+# 阶段 2：nginx 托管
+# ----------------------------------------------------------------------------
+FROM nginx:1.27-alpine
+
+# 清空默认页，放入构建产物；nginx 主配置由 compose 挂载
+RUN rm -rf /usr/share/nginx/html/*
+COPY --from=builder /build/dist /usr/share/nginx/html
+
+EXPOSE 80
