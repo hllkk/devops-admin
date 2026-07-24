@@ -98,8 +98,9 @@ services:
       rustfs:
         condition: service_healthy
     environment:
-      RUSTFS_ROOT_USER: ${RUSTFS_ROOT_USER:-rustfsadmin}
-      RUSTFS_ROOT_PASSWORD: ${RUSTFS_ROOT_PASSWORD:-rustfsadmin}
+      # 凭证须与上方 rustfs 服务的 RUSTFS_ROOT_USER/PASSWORD 完全一致，否则 mc alias set 签名失败、建桶失败
+      RUSTFS_ROOT_USER: rustfsadmin
+      RUSTFS_ROOT_PASSWORD: Tricolor_123
       RUSTFS_BUCKET: ${RUSTFS_BUCKET:-devops-admin}
     entrypoint: /bin/sh
     command:

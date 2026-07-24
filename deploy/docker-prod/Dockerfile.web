@@ -19,7 +19,10 @@ FROM node:20-alpine AS builder
 # 部分 native addon 在 alpine(musl) 上需编译工具链；corepack 激活 pnpm
 RUN apk add --no-cache python3 make g++ \
     && corepack enable \
-    && corepack prepare pnpm@10.5.0 --activate
+    # pnpm 版本须与生成 pnpm-lock.yaml 的版本对齐（本仓 lockfile 由 pnpm 11 生成）：
+    # 否则 --frozen-lockfile 安装时 shamefullyHoist 不生效，传递依赖（如 @iconify/utils）
+    # 不会平铺到根 node_modules，vite 加载 vite.config.ts 时解析失败
+    && corepack prepare pnpm@11.10.0 --activate
 
 WORKDIR /build
 
@@ -38,7 +41,7 @@ RUN pnpm build
 # ----------------------------------------------------------------------------
 # 阶段 2：nginx 托管
 # ----------------------------------------------------------------------------
-FROM nginx:1.27-alpine
+FROM nginx:1.30-alpine
 
 # 清空默认页，放入构建产物；nginx 主配置由 compose 挂载
 RUN rm -rf /usr/share/nginx/html/*

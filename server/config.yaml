@@ -100,13 +100,13 @@ media:
     max-file-size: 0
     session-ttl: 0
 minio:
-    endpoint: 172.21.10.41:9000
+    endpoint: 172.21.10.41:19000
     access-key-id: rustfsadmin
-    access-key-secret: rustfsadmin
+    access-key-secret: Tricolor_123
     bucket-name: devops-admin
     use-ssl: false
     base-path: ""
-    bucket-url: http://172.21.10.41:9000/devops-admin
+    bucket-url: http://172.21.10.41:19000/devops-admin
 mongo:
     coll: ""
     options: ""
