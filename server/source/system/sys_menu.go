@@ -105,6 +105,37 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			Visible:   "0",
 			OrderNum:  4,
 		},
+		// 业务模块占位首页(顶层单级 C,对齐前端 views 的 _disk/_server/_gateway 占位页)
+		{
+			ParentId:  0,
+			MenuName:  "route.disk",
+			MenuType:  "C",
+			Path:      "disk",
+			Component: "_disk/disk/index",
+			Icon:      "mdi:harddisk",
+			Visible:   "0",
+			OrderNum:  5,
+		},
+		{
+			ParentId:  0,
+			MenuName:  "route.server",
+			MenuType:  "C",
+			Path:      "server",
+			Component: "_server/server/index",
+			Icon:      "mdi:server-network",
+			Visible:   "0",
+			OrderNum:  6,
+		},
+		{
+			ParentId:  0,
+			MenuName:  "route.gateway",
+			MenuType:  "C",
+			Path:      "gateway",
+			Component: "_gateway/gateway/index",
+			Icon:      "mdi:robot-outline",
+			Visible:   "0",
+			OrderNum:  7,
+		},
 	}
 
 	// 先创建父级菜单（ParentId = 0 的菜单）

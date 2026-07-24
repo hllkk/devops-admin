@@ -79,14 +79,28 @@ func TestMenusToRoutes(t *testing.T) {
 		{MenuId: 4, ParentId: 0, MenuType: "M", MenuName: "route.timer", Path: "timer", Icon: "fluent:clock-24-regular", Visible: "0", IsCache: "1", IsFrame: "1", OrderNum: 3},
 		{MenuId: 5, ParentId: 0, MenuType: "M", MenuName: "route.log", Path: "log", Icon: "local-icon-log", Visible: "0", IsCache: "1", IsFrame: "1", OrderNum: 4},
 		{MenuId: 6, ParentId: 3, MenuType: "F", MenuName: "用户查询", Perms: "system:user:query", Icon: "#"}, // F 按钮应被过滤
+		{MenuId: 7, ParentId: 0, MenuType: "C", MenuName: "route.disk", Path: "disk", Icon: "mdi:harddisk", Visible: "0", IsCache: "1", IsFrame: "1", OrderNum: 5},
+		{MenuId: 8, ParentId: 0, MenuType: "C", MenuName: "route.server", Path: "server", Icon: "mdi:server-network", Visible: "0", IsCache: "1", IsFrame: "1", OrderNum: 6},
+		{MenuId: 9, ParentId: 0, MenuType: "C", MenuName: "route.gateway", Path: "gateway", Icon: "mdi:robot-outline", Visible: "0", IsCache: "1", IsFrame: "1", OrderNum: 7},
 	}
 
 	s := RouteService{}
 	routes := s.menusToRoutes(menus)
 
-	// 顶层 4 个(admin/system/timer/log),F 按钮不进路由
-	if want := 4; len(routes) != want {
+	// 顶层 7 个(admin/system/timer/log/disk/server/gateway),F 按钮不进路由
+	if want := 7; len(routes) != want {
 		t.Fatalf("顶层路由数 = %d, want %d (F 按钮应被过滤)", len(routes), want)
+	}
+
+	// disk/server/gateway:顶层单级 -> layout.base$view.<key>(对齐前端 imports.ts 的 views key)
+	for _, name := range []string{"disk", "server", "gateway"} {
+		r := findRoute(routes, name)
+		if r == nil {
+			t.Fatalf("缺少 %s 路由", name)
+		}
+		if want := "layout.base$view." + name; r.Component != want {
+			t.Errorf("%s.Component = %q, want %q", name, r.Component, want)
+		}
 	}
 
 	// admin:顶层单级 -> layout.base$view.admin
