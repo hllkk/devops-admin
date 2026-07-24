@@ -11,7 +11,7 @@
 ai:
     provider: ollama
     ollama:
-        base-url: http://ollama:11434        # 生产若启用 AI 按实际地址调整，不用可忽略
+        base-url: http://172.21.96.141:11434        # 生产若启用 AI 按实际地址调整，不用可忽略
         model: qwen3.6:35b
         timeout: 120
 aliyun-oss:

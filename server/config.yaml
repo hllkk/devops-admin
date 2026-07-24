@@ -75,7 +75,7 @@ hua-wei-obs:
     access-key: you-access-key
     secret-key: you-secret-key
 jwt:
-    signing-key: b51e4e42-0a1f-402b-9146-1697908c54b3
+    signing-key: 59253993-c6a0-421b-930c-168d5885bb76
     expires-time: 7d
     buffer-time: 1d
     issuer: devops-admin
@@ -169,7 +169,7 @@ oracle:
     log-zap: false
 pgsql:
     prefix: ""
-    port: "5432"
+    port: "15432"
     config: sslmode=disable TimeZone=Asia/Shanghai
     db-name: devops_admin
     username: postgres
@@ -192,14 +192,14 @@ qiniu:
     use-cdn-domains: false
 redis:
     name: default
-    addr: 127.0.0.1:6379
+    addr: 127.0.0.1:16379
     password: ""
     db: 0
     useCluster: false
     clusterAddrs: []
 redis-list:
     - name: cache
-      addr: 127.0.0.1:6379
+      addr: 127.0.0.1:16379
       password: ""
       db: 0
       useCluster: false
@@ -207,6 +207,8 @@ redis-list:
         - 172.21.0.3:7000
         - 172.21.0.4:7001
         - 172.21.0.2:7002
+social:
+    token-key: ""
 sqlite:
     prefix: ""
     port: ""

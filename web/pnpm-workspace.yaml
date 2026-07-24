@@ -2,6 +2,7 @@ packages:
   - 'packages/*'
 allowBuilds:
   '@parcel/watcher': false
+  es5-ext: false
   esbuild: false
   simple-git-hooks: false
   vue-demi: false
