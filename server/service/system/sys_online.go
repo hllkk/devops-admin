@@ -178,6 +178,23 @@ func (s *OnlineService) KickSession(ctx context.Context, userId int64, tokenId s
 	return global.OPS_REDIS.HDel(ctx, key, tokenId).Err()
 }
 
+// RevokeUserSessions 吊销指定用户的所有活跃会话(改密 / 重置密码成功后调用)。
+// 复用 KickSession 逐个踢单会话:token 入黑名单 + 删会话记录,旧 token 立即失效。
+// 当前调用方若持新 token(不同 jti)不受影响;单条失败不中断其余会话的吊销。
+func (s *OnlineService) RevokeUserSessions(ctx context.Context, userId int64) error {
+	if userId == 0 {
+		return nil
+	}
+	sessions, err := s.ListSessions(ctx, userId, "")
+	if err != nil {
+		return err
+	}
+	for _, sess := range sessions {
+		_ = s.KickSession(ctx, userId, sess.TokenId)
+	}
+	return nil
+}
+
 // toDevice 会话 → 对外设备视图(loginTime 转毫秒时间戳,对齐前端 number)。
 func toDevice(s system.OnlineSession) system.OnlineDevice {
 	return system.OnlineDevice{

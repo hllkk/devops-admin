@@ -229,13 +229,18 @@ func (s *UserService) ResetPwd(ctx context.Context, req systemReq.ResetUserPwdPa
 	if err := utils.ValidatePasswordComplexity(req.Password, (&SecurityConfigService{}).Current(ctx)); err != nil {
 		return err
 	}
-	return global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	if err := global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Model(&system.SysUser{}).Where("id = ?", userId).
 			Updates(map[string]interface{}{"password": utils.BcryptHash(req.Password), "update_by": updateBy}).Error; err != nil {
 			return err
 		}
 		return tx.Model(&system.SysUser{}).Where("id = ?", userId).Update("password_updated_at", time.Now()).Error
-	})
+	}); err != nil {
+		return err
+	}
+	// 密码重置成功:吊销该用户所有旧会话,旧 token 立即失效,需用新密码重新登录
+	_ = (&OnlineService{}).RevokeUserSessions(ctx, userId)
+	return nil
 }
 
 // ChangeMyPassword 当前用户自助改密(密码过期强制改密场景的唯一入口)。
@@ -257,14 +262,19 @@ func (s *UserService) ChangeMyPassword(ctx context.Context, userId int64, oldPwd
 		return u, err
 	}
 	now := time.Now()
-	return u, global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	if err := global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Model(&system.SysUser{}).Where("id = ?", userId).
 			Update("password", utils.BcryptHash(newPwd)).Error; err != nil {
 			return err
 		}
 		return tx.Model(&system.SysUser{}).Where("id = ?", userId).
 			Update("password_updated_at", now).Error
-	})
+	}); err != nil {
+		return u, err
+	}
+	// 改密成功:吊销其他旧会话(多端旧设备立即失效);当前会话由 handler 重发新 token(jti 不同,不受影响)
+	_ = (&OnlineService{}).RevokeUserSessions(ctx, userId)
+	return u, nil
 }
 
 // UpdateMyProfile 当前用户自助修改基本资料(对齐前端 PUT /system/user/profile)。
