@@ -30,7 +30,7 @@ WORKDIR /build
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages ./packages
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 
 # 拷源码（含 .env / .env.prod 等构建期变量文件）
 COPY . .

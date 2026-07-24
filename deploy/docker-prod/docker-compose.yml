@@ -63,8 +63,8 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD:?必须设置 REDIS_PASSWORD}
       RUSTFS_ROOT_USER: ${RUSTFS_ROOT_USER:-devops-admin}
       RUSTFS_ROOT_PASSWORD: ${RUSTFS_ROOT_PASSWORD:?必须设置 RUSTFS_ROOT_PASSWORD}
-      # 自动初始化超级管理员密码（首次 /init/autoInitDB 生效）
-      INIT_ADMIN_PASSWORD: ${INIT_ADMIN_PASSWORD:-Admin@2026}
+      # 自动初始化超级管理员密码（首次 /init/autoInitDB 生效）；强制必填，留空则 compose 启动报错
+      INIT_ADMIN_PASSWORD: ${INIT_ADMIN_PASSWORD:?必须设置 INIT_ADMIN_PASSWORD}
       # 可信反代（多层反代下正确解析真实 ClientIP）
       TRUSTED_PROXIES: ${TRUSTED_PROXIES:-172.16.0.0/12,127.0.0.1/32,::1/128}
     volumes:
@@ -85,7 +85,7 @@ services:
       rustfs:
         condition: service_started
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8888/swagger/index.html >/dev/null 2>&1 || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8888/health >/dev/null 2>&1 || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 5

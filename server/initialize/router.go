@@ -79,9 +79,12 @@ func Routers() *gin.Engine {
 	// 跨域，如需跨域可以打开下面的注释
 	// Router.Use(middleware.Cors()) // 直接放行全部跨域请求
 	// Router.Use(middleware.CorsByRules()) // 按照配置的规则放行跨域请求
-	docs.SwaggerInfo.BasePath = global.OPS_CONFIG.System.RouterPrefix
-	Router.GET(global.OPS_CONFIG.System.RouterPrefix+"/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	logger.Bg().Mod("system").Info("register swagger handler")
+	// Swagger 仅在非 release 模式注册：生产（GIN_MODE=release）下关闭，避免未授权暴露全部接口文档
+	if gin.Mode() != gin.ReleaseMode {
+		docs.SwaggerInfo.BasePath = global.OPS_CONFIG.System.RouterPrefix
+		Router.GET(global.OPS_CONFIG.System.RouterPrefix+"/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+		logger.Bg().Mod("system").Info("register swagger handler")
+	}
 	// 方便统一添加路由组前缀 多服务器上线使用
 
 	PublicGroup := Router.Group(global.OPS_CONFIG.System.RouterPrefix)

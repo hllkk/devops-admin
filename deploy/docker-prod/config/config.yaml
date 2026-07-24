@@ -191,7 +191,7 @@ pgsql:
     log-mode: warn
     max-idle-conns: 10
     max-open-conns: 100
-    conn-max-lifetime: 0
+    conn-max-lifetime: 1800   # 秒(30min)；0=永不回收有隐患，定期重建避免长跑后坏连接
     singular: false
     log-zap: false
 qiniu:

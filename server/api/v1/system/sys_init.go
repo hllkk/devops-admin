@@ -168,11 +168,12 @@ func (i *DBApi) AutoInitDB(c *gin.Context) {
 		return
 	}
 
-	// 管理员密码（从环境变量）
+	// 管理员密码（从环境变量）：生产必须显式设置，禁止默认兜底
+	// （避免已知弱口令 Admin@2026 被抢先用 /init/autoInitDB 接管超管）
 	adminPassword := os.Getenv("INIT_ADMIN_PASSWORD")
 	if adminPassword == "" {
-		adminPassword = "Admin@2026"
-		logger.WithCtx(c.Request.Context()).Mod("init").Warn("未设置 INIT_ADMIN_PASSWORD，使用默认密码")
+		response.FailWithMessage("未设置 INIT_ADMIN_PASSWORD，拒绝自动初始化", c)
+		return
 	}
 
 	// 用 config 的 DB 配置（密码已被 env 覆盖）构建初始化请求
