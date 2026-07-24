@@ -3,7 +3,9 @@
 # devops-admin 前端生产镜像（多阶段）
 #
 #   构建上下文（compose context）：仓库 web/ 目录
-#   构建：node:20-alpine + pnpm（monorepo，含 packages/* 下的 @sa/* 包）
+#   构建：node:22-alpine + pnpm（monorepo，含 packages/* 下的 @sa/* 包）
+#   注：pnpm 11 要求 Node ≥22.13（内部依赖 node:sqlite 内置模块），node:20 会在
+#   pnpm install 阶段抛 ERR_UNKNOWN_BUILTIN_MODULE，故须用 node:22
 #   运行：nginx:1.30-alpine（托管 dist；nginx.conf 由 compose 挂载，便于调整）
 #
 # 生产构建读取 .env + .env.prod：VITE_SERVICE_BASE_URL 应指向同源反代前缀
@@ -14,7 +16,11 @@
 # ----------------------------------------------------------------------------
 # 阶段 1：构建静态产物
 # ----------------------------------------------------------------------------
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
+
+# 国内构建加速：apk 走清华源、npm/pnpm 走 npmmirror（corepack 下载 pnpm 本身也随之加速）
+RUN sed -i 's|dl-cdn.alpinelinux.org|mirrors.tuna.tsinghua.edu.cn|g' /etc/apk/repositories
+ENV npm_config_registry=https://registry.npmmirror.com
 
 # 部分 native addon 在 alpine(musl) 上需编译工具链；corepack 激活 pnpm
 RUN apk add --no-cache python3 make g++ \

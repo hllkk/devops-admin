@@ -74,9 +74,10 @@ services:
       - ${SERVER_UPLOADS_PATH:-/home/docker/docker-prod/uploads}:/app/uploads
       # 运行日志（zap director=log）
       - ${SERVER_LOG_PATH:-/home/docker/docker-prod/server-log}:/app/log
-    ports:
-      # 生产建议仅经 web 反代访问；如需直连调试保留此项，否则注释掉
-      - "${SERVER_PORT:-8888}:8888"
+    # 生产：后端不对外暴露，仅经 web(:80) 反代访问（容器间走 prod-net 的 server:8888）
+    # 如需宿主直连调试，取消下行注释并确保端口未被占用：
+    # ports:
+    #   - "${SERVER_PORT:-8888}:8888"
     depends_on:
       pgsql:
         condition: service_healthy

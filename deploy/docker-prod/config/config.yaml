@@ -114,10 +114,10 @@ minio:
     endpoint: rustfs:9000                              # compose 服务名（RustFS，S3 兼容）
     access-key-id: devops-admin                        # 默认占位，被 .env RUSTFS_ROOT_USER 覆盖
     access-key-secret: devops_rustfs_2026              # 默认占位，被 .env RUSTFS_ROOT_PASSWORD 覆盖
-    bucket-name: devops_admin
+    bucket-name: devops-admin
     use-ssl: false
     base-path: ""
-    bucket-url: /oss/devops_admin                      # 前端下载：经 nginx /oss/ 反代到 rustfs（同源）
+    bucket-url: /oss/devops-admin                      # 前端下载：经 nginx /oss/ 反代到 rustfs（同源）
 mongo:
     coll: ""
     options: ""
