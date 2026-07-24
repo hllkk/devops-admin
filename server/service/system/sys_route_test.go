@@ -73,15 +73,15 @@ func TestResolveIcon(t *testing.T) {
 // F 按钮过滤、Iconify/localIcon 分流、visible/isCache/isFrame 映射。
 func TestMenusToRoutes(t *testing.T) {
 	menus := []system.SysMenu{
-		{MenuId: 1, ParentId: 0, MenuType: "C", MenuName: "route.admin", Path: "admin", Icon: "mdi:monitor-dashboard", Visible: "0", IsCache: "1", IsFrame: "1", OrderNum: 1},
-		{MenuId: 2, ParentId: 0, MenuType: "M", MenuName: "route.system", Path: "system", Icon: "carbon:cloud-service-management", Visible: "0", IsCache: "1", IsFrame: "1", OrderNum: 2},
-		{MenuId: 3, ParentId: 2, MenuType: "C", MenuName: "route.system_user", Path: "system/user", Icon: "carbon:user", Visible: "0", IsCache: "1", IsFrame: "1", OrderNum: 1},
-		{MenuId: 4, ParentId: 0, MenuType: "M", MenuName: "route.timer", Path: "timer", Icon: "fluent:clock-24-regular", Visible: "0", IsCache: "1", IsFrame: "1", OrderNum: 3},
-		{MenuId: 5, ParentId: 0, MenuType: "M", MenuName: "route.log", Path: "log", Icon: "local-icon-log", Visible: "0", IsCache: "1", IsFrame: "1", OrderNum: 4},
+		{MenuId: 1, ParentId: 0, MenuType: "C", MenuName: "route.admin", Path: "admin", Icon: "mdi:monitor-dashboard", Visible: "0", IsCache: "1", IsFrame: "1", OrderNum: 1, Module: "admin"},
+		{MenuId: 2, ParentId: 0, MenuType: "M", MenuName: "route.system", Path: "system", Icon: "carbon:cloud-service-management", Visible: "0", IsCache: "1", IsFrame: "1", OrderNum: 2, Module: "admin"},
+		{MenuId: 3, ParentId: 2, MenuType: "C", MenuName: "route.system_user", Path: "system/user", Icon: "carbon:user", Visible: "0", IsCache: "1", IsFrame: "1", OrderNum: 1, Module: "admin"},
+		{MenuId: 4, ParentId: 0, MenuType: "M", MenuName: "route.timer", Path: "timer", Icon: "fluent:clock-24-regular", Visible: "0", IsCache: "1", IsFrame: "1", OrderNum: 3, Module: "admin"},
+		{MenuId: 5, ParentId: 0, MenuType: "M", MenuName: "route.log", Path: "log", Icon: "local-icon-log", Visible: "0", IsCache: "1", IsFrame: "1", OrderNum: 4, Module: "admin"},
 		{MenuId: 6, ParentId: 3, MenuType: "F", MenuName: "用户查询", Perms: "system:user:query", Icon: "#"}, // F 按钮应被过滤
-		{MenuId: 7, ParentId: 0, MenuType: "C", MenuName: "route.disk", Path: "disk", Icon: "mdi:harddisk", Visible: "0", IsCache: "1", IsFrame: "1", OrderNum: 5},
-		{MenuId: 8, ParentId: 0, MenuType: "C", MenuName: "route.server", Path: "server", Icon: "mdi:server-network", Visible: "0", IsCache: "1", IsFrame: "1", OrderNum: 6},
-		{MenuId: 9, ParentId: 0, MenuType: "C", MenuName: "route.gateway", Path: "gateway", Icon: "mdi:robot-outline", Visible: "0", IsCache: "1", IsFrame: "1", OrderNum: 7},
+		{MenuId: 7, ParentId: 0, MenuType: "C", MenuName: "route.disk", Path: "disk", Icon: "mdi:harddisk", Visible: "0", IsCache: "1", IsFrame: "1", OrderNum: 5, Module: "disk"},
+		{MenuId: 8, ParentId: 0, MenuType: "C", MenuName: "route.server", Path: "server", Icon: "mdi:server-network", Visible: "0", IsCache: "1", IsFrame: "1", OrderNum: 6, Module: "server"},
+		{MenuId: 9, ParentId: 0, MenuType: "C", MenuName: "route.gateway", Path: "gateway", Icon: "mdi:robot-outline", Visible: "0", IsCache: "1", IsFrame: "1", OrderNum: 7, Module: "gateway"},
 	}
 
 	s := RouteService{}
@@ -100,6 +100,23 @@ func TestMenusToRoutes(t *testing.T) {
 		}
 		if want := "layout.base$view." + name; r.Component != want {
 			t.Errorf("%s.Component = %q, want %q", name, r.Component, want)
+		}
+	}
+
+	// module 归属:SysMenu.Module -> meta.module(admin 模块菜单=admin;disk/server/gateway 各自)
+	if m := findRoute(routes, "admin"); m.Meta.Module != "admin" {
+		t.Errorf("admin.Module = %q, want admin", m.Meta.Module)
+	}
+	if m := findRoute(routes, "system_user"); m.Meta.Module != "admin" {
+		t.Errorf("system_user.Module = %q, want admin", m.Meta.Module)
+	}
+	for _, c := range []struct{ name, mod string }{{"disk", "disk"}, {"server", "server"}, {"gateway", "gateway"}} {
+		r := findRoute(routes, c.name)
+		if r == nil {
+			continue
+		}
+		if r.Meta.Module != c.mod {
+			t.Errorf("%s.Module = %q, want %q", c.name, r.Meta.Module, c.mod)
 		}
 	}
 

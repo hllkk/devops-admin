@@ -21,6 +21,7 @@ type SysMenu struct {
 	OrderNum   int       `json:"orderNum" gorm:"default:0;comment:显示顺序"`                   // 显示顺序
 	Path       string    `json:"path" gorm:"comment:路由地址"`                                 // 路由地址
 	Component  string    `json:"component" gorm:"comment:组件路径"`                            // 组件路径
+	Module     string    `json:"module,omitempty" gorm:"column:module;comment:业务模块归属(admin/disk/server/gateway)"` // 业务模块归属(dynamic 路由 meta.module 来源;空=老库未回填)
 	QueryParam string    `json:"queryParam" gorm:"comment:路由参数"`                           // 路由参数
 	IsFrame    string    `json:"isFrame" gorm:"default:1;size:1;comment:是否外链 0是1否2iframe"` // 是否外链
 	IsCache    string    `json:"isCache" gorm:"default:0;size:1;comment:是否缓存 0缓存1不缓存"`     // 是否缓存

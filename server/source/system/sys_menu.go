@@ -73,6 +73,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			Icon:      "mdi:monitor-dashboard",
 			Visible:   "0",
 			OrderNum:  1,
+			Module:    "admin",
 		},
 		{
 			ParentId:  0,
@@ -84,6 +85,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			Visible:   "0",
 			OrderNum:  2,
 			Remark:    "系统管理目录",
+			Module:    "admin",
 		},
 		{
 			ParentId:  0,
@@ -94,6 +96,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			Icon:      "fluent:clock-24-regular",
 			Visible:   "0",
 			OrderNum:  3,
+			Module:    "admin",
 		},
 		{
 			ParentId:  0,
@@ -104,6 +107,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			Icon:      "local-icon-log",
 			Visible:   "0",
 			OrderNum:  4,
+			Module:    "admin",
 		},
 		// 业务模块占位首页(顶层单级 C,对齐前端 views 的 _disk/_server/_gateway 占位页)
 		{
@@ -115,6 +119,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			Icon:      "mdi:harddisk",
 			Visible:   "0",
 			OrderNum:  5,
+			Module:    "disk",
 		},
 		{
 			ParentId:  0,
@@ -125,6 +130,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			Icon:      "mdi:server-network",
 			Visible:   "0",
 			OrderNum:  6,
+			Module:    "server",
 		},
 		{
 			ParentId:  0,
@@ -135,6 +141,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			Icon:      "mdi:robot-outline",
 			Visible:   "0",
 			OrderNum:  7,
+			Module:    "gateway",
 		},
 	}
 
@@ -160,6 +167,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			Icon:      "carbon:user",
 			Visible:   "0",
 			OrderNum:  1,
+			Module:    "admin",
 		},
 		{
 			ParentId:  menuNameMap["route.system"],
@@ -170,6 +178,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			Icon:      "carbon-user-role",
 			Visible:   "0",
 			OrderNum:  2,
+			Module:    "admin",
 		},
 		{
 			ParentId:  menuNameMap["route.system"],
@@ -180,6 +189,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			Icon:      "mingcute:list-ordered-line",
 			Visible:   "0",
 			OrderNum:  3,
+			Module:    "admin",
 		},
 		{
 			ParentId:  menuNameMap["route.system"],
@@ -190,6 +200,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			Icon:      "local-icon-department",
 			Visible:   "0",
 			OrderNum:  4,
+			Module:    "admin",
 		},
 		{
 			ParentId:  menuNameMap["route.system"],
@@ -200,6 +211,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			Icon:      "local-icon-post",
 			Visible:   "0",
 			OrderNum:  5,
+			Module:    "admin",
 		},
 		{
 			ParentId:  menuNameMap["route.system"],
@@ -210,6 +222,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			Icon:      "streamline-ultimate:book-open-bookmark",
 			Visible:   "0",
 			OrderNum:  6,
+			Module:    "admin",
 		},
 		{
 			ParentId:  menuNameMap["route.system"],
@@ -220,6 +233,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			Icon:      "carbon:notification",
 			Visible:   "0",
 			OrderNum:  7,
+			Module:    "admin",
 		},
 		{
 			ParentId:  menuNameMap["route.system"],
@@ -230,6 +244,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			Icon:      "carbon:settings",
 			Visible:   "0",
 			OrderNum:  8,
+			Module:    "admin",
 		},
 		{
 			ParentId:  menuNameMap["route.log"],
@@ -240,6 +255,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			Icon:      "local-icon-login_log",
 			Visible:   "0",
 			OrderNum:  1,
+			Module:    "admin",
 		},
 		{
 			ParentId:  menuNameMap["route.log"],
@@ -250,6 +266,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			Icon:      "local-icon-operate_log",
 			Visible:   "0",
 			OrderNum:  2,
+			Module:    "admin",
 		},
 		{
 			ParentId:  menuNameMap["route.log"],
@@ -260,6 +277,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			Icon:      "fluent:clipboard-error-24-regular",
 			Visible:   "0",
 			OrderNum:  3,
+			Module:    "admin",
 		},
 	}
 	// 创建子菜单

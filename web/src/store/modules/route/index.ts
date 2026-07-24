@@ -24,7 +24,7 @@ import {
   updateLocaleOfGlobalMenus
 } from './shared';
 import { DEFAULT_MODULE, type RouteModule } from '@/constants/module';
-import { filterRoutesByModule, resolveModuleFromRoute, tagRoutesByModule } from './module';
+import { filterRoutesByModule, resolveModuleFromRoute } from './module';
 
 export const useRouteStore = defineStore(SetupStoreId.Route, () => {
   const authStore = useAuthStore();
@@ -265,10 +265,7 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
   function handleConstantAndAuthRoutes() {
     const allRoutes = filterRoutesByDev([...constantRoutes.value, ...authRoutes.value]);
 
-    // Tag module ownership from MODULE_ROUTES (no-op in dynamic mode where backend provides meta.module)
-    const taggedRoutes = tagRoutesByModule(allRoutes);
-
-    const sortRoutes = sortRoutesByOrder(taggedRoutes);
+    const sortRoutes = sortRoutesByOrder(allRoutes);
 
     // Snapshot for flicker-free menu re-filtering on module switch
     sortedTaggedRoutes.value = sortRoutes;

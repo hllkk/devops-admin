@@ -41,36 +41,8 @@ export const MODULE_CONFIG: Record<RouteModule, ModuleConfig> = {
 };
 
 /**
- * 模块路由归属表 —— 过渡期的模块归属来源。
- *
- * 背景：Elegant Router 会剥离 `_xxx` 视图分组前缀，运行时无法从路由名/路径
- * 推断模块归属；且本地 `@elegant-router/vue/vite` 的 `onRouteMetaGen` 拿不到源文件路径。
- * 故用此表显式声明「路由名 → 所属模块」，由 `tagRoutesByModule` 在运行时写入 `meta.module`。
- *
- * 这是未来后端菜单表（含 `module` 字段）的**前端声明式雏形**：后端建菜单体系后，
- * 本表内容迁移为后端菜单的 module 字段，届时删除本表与 `tagRoutesByModule`，
- * 隔离 / 主题代码零改动（它们只读 `meta.module`）。
- *
- * 规则：
- * - 全局路由（404 / login / user-center / notice-user 等）**不**登记 → `meta.module` 为空 → 所有模块可见。
- * - 新增某模块的路由时，在对应数组里追加其路由名。
+ * 模块路由归属 —— 已由后端菜单 `SysMenu.module` 字段经动态路由(/route/getUserRoutes)
+ * 下发的 `meta.module` 驱动。前端声明式归属表(MODULE_ROUTES / ROUTE_TO_MODULE / tagRoutesByModule)
+ * 已退役删除：隔离逻辑(filterRoutesByModule)只读 `meta.module`，与归属来源解耦。
+ * 全局路由(404 / login / user-center / notice-user 等)无 `meta.module` → 所有模块可见。
  */
-export const MODULE_ROUTES: Record<RouteModule, string[]> = {
-  admin: ['admin', 'system', 'system_user', 'log', 'timer'],
-  disk: ['disk'],
-  server: ['server'],
-  gateway: ['gateway']
-};
-
-/**
- * 反查表：路由名 → 模块（运行时打标用，由 MODULE_ROUTES 派生，勿手改）。
- */
-export const ROUTE_TO_MODULE: Record<string, RouteModule> = Object.entries(MODULE_ROUTES).reduce(
-  (acc, [module, names]) => {
-    names.forEach(name => {
-      acc[name] = module as RouteModule;
-    });
-    return acc;
-  },
-  {} as Record<string, RouteModule>
-);

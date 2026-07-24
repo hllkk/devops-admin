@@ -86,6 +86,7 @@ func (s *RouteService) menusToRoutes(menus []system.SysMenu) []system.MenuRoute 
 					Icon:      icon,
 					LocalIcon: localIcon,
 					Order:     n.OrderNum,
+					Module:    n.Module,
 				},
 			}
 			if n.Visible == "1" {
