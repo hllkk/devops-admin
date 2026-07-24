@@ -715,6 +715,7 @@ const local: App.I18n.Schema = {
         remark: 'Remark',
         createTime: 'Create Time',
         menuPermission: 'Menu Permission',
+        setDefaultRouter: 'Set as default route (page opened by default after login)',
         addRole: 'Add Role',
         editRole: 'Edit Role',
         assignUser: 'Assign User',

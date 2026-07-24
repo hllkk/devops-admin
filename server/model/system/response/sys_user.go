@@ -23,7 +23,8 @@ type SysUserResponse struct {
 //   - Roles 为 roleKey 字符串数组(前端超管判定/路由过滤用)
 //   - Permissions 为 perms 字符串数组(按钮权限,超管 *:*:*)
 type UserInfoResponse struct {
-	User        system.SysUser `json:"user"`
-	Roles       []string       `json:"roles"`
-	Permissions []string       `json:"permissions"`
+	User          system.SysUser `json:"user"`
+	Roles         []string       `json:"roles"`
+	Permissions   []string       `json:"permissions"`
+	DefaultRouter string         `json:"defaultRouter"` // 默认路由(主角色 DefaultRouter;登录入口)
 }

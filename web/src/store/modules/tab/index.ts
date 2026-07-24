@@ -1,8 +1,9 @@
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import { defineStore } from 'pinia';
 import type { LastLevelRouteKey, RouteKey } from '@elegant-router/types';
 import { router } from '@/router';
+import { MODULE_CONFIG } from '@/constants/module';
 import { useRouteStore } from '@/store/modules/route';
 import { useRouterPush } from '@/hooks/common/router';
 import { localStg } from '@/utils/storage';
@@ -34,10 +35,19 @@ export const useTabStore = defineStore(SetupStoreId.Tab, () => {
   /** Get active tab */
   const homeTab = ref<App.Global.Tab>();
 
-  /** Init home tab */
+  /** Init home tab — 跟随当前模块首页(非角色 DefaultRouter),修复刷新后 tab 第一回退到 DefaultRouter */
   function initHomeTab() {
-    homeTab.value = getDefaultHomeTab(router, routeStore.routeHome);
+    const home = MODULE_CONFIG[routeStore.currentModule].home as LastLevelRouteKey;
+    homeTab.value = getDefaultHomeTab(router, home);
   }
+
+  // 模块切换 / 刷新路由解析后,同步 home tab 到当前模块首页
+  watch(
+    () => routeStore.currentModule,
+    () => {
+      initHomeTab();
+    }
+  );
 
   /** Get all tabs */
   const allTabs = computed(() => getAllTabs(tabs.value, homeTab.value));

@@ -45,9 +45,9 @@ func (i *initRole) InitializeData(ctx context.Context) (context.Context, error) 
 	}
 
 	entities := []sysModel.SysRole{
-		{RoleName: "超级管理员", RoleKey: "super", RoleSort: 1, SuperAdmin: true, DataScope: 1, Remark: "系统最高权限,可操作所有功能"},
-		{RoleName: "系统管理员", RoleKey: "admin", RoleSort: 2, SuperAdmin: false, DataScope: 1, Remark: "系统普通管理员,可操作大部分功能"},
-		{RoleName: "普通用户", RoleKey: "user", RoleSort: 3, SuperAdmin: false, DataScope: 3, Remark: "系统普通用户,仅可操作个人相关功能"},
+		{RoleName: "超级管理员", RoleKey: "super", RoleSort: 1, SuperAdmin: true, DataScope: 1, DefaultRouter: "admin", Remark: "系统最高权限,可操作所有功能"},
+		{RoleName: "系统管理员", RoleKey: "admin", RoleSort: 2, SuperAdmin: false, DataScope: 1, DefaultRouter: "admin", Remark: "系统普通管理员,可操作大部分功能"},
+		{RoleName: "普通用户", RoleKey: "user", RoleSort: 3, SuperAdmin: false, DataScope: 3, DefaultRouter: "disk", Remark: "系统普通用户,仅可操作个人相关功能"},
 	}
 
 	if err := db.Create(&entities).Error; err != nil {

@@ -172,16 +172,26 @@ func (s *RouteService) GetUserRoutes(ctx context.Context, userId int64) (result 
 	}
 
 	result.Routes = s.menusToRoutes(menus)
-	result.Home = s.resolveHome(result.Routes)
+	// 主角色默认路由(登录入口;用户无权访问时 resolveHome 兜底 admin)
+	defaultRouter := routeHomeDefault
+	for _, r := range user.Roles {
+		if r.RoleId == user.RoleId && r.DefaultRouter != "" {
+			defaultRouter = r.DefaultRouter
+			break
+		}
+	}
+	result.Home = s.resolveHome(result.Routes, defaultRouter)
 	return
 }
 
 // resolveHome 落地页 key:优先 admin(对齐 VITE_ROUTE_HOME),否则取第一个顶层路由 key。
-func (s *RouteService) resolveHome(routes []system.MenuRoute) string {
-	for _, r := range routes {
-		if r.Name == routeHomeDefault {
-			return routeHomeDefault
-		}
+// resolveHome 落地页 key:优先角色默认路由(需用户有权访问),其次 admin,再次第一个顶层路由。
+func (s *RouteService) resolveHome(routes []system.MenuRoute, defaultRouter string) string {
+	if defaultRouter != "" && containsRouteName(routes, defaultRouter) {
+		return defaultRouter
+	}
+	if containsRouteName(routes, routeHomeDefault) {
+		return routeHomeDefault
 	}
 	if len(routes) > 0 {
 		return routes[0].Name

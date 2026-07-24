@@ -44,8 +44,9 @@ func (SysMenu) TableName() string {
 type MenuTreeSelectNode struct {
 	Id       int64                `json:"id,string"`  // 菜单ID(对齐前端 IdType)
 	Label    string               `json:"label"`      // 菜单名称(NTree label-field;可能为 i18n key 如 route.xxx)
-	MenuType string               `json:"menuType"`   // 菜单类型 M目录C菜单F按钮(前端渲染区分)
-	Icon     string               `json:"icon"`       // 菜单图标
+	MenuType string               `json:"menuType"`       // 菜单类型 M目录C菜单F按钮(前端渲染区分)
+	Path     string               `json:"path,omitempty"` // 路由地址(C 菜单默认路由小房子推导 routeKey 用)
+	Icon     string               `json:"icon"`           // 菜单图标
 	Visible  string               `json:"visible"`    // 显示状态 0显示1隐藏(前端隐藏标灰)
 	Status   string               `json:"status"`     // 菜单状态 0正常1停用(前端禁用标红)
 	Children []MenuTreeSelectNode `json:"children,omitempty"` // 子节点(内存组装;叶子节点省略)

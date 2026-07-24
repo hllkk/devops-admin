@@ -67,6 +67,8 @@ declare namespace Api {
       roles: string[];
       /** 菜单权限 */
       permissions: string[];
+      /** 默认路由(主角色 DefaultRouter;登录入口) */
+      defaultRouter: string;
     }
 
     /** go-captcha 行为验证码生成结果 */

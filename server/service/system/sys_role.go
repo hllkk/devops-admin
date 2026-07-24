@@ -61,6 +61,7 @@ func (s *RoleService) CreateRole(ctx context.Context, req systemReq.RoleOperateP
 		RoleSort:          req.RoleSort,
 		Status:            req.Status,
 		MenuCheckStrictly: req.MenuCheckStrictly,
+		DefaultRouter:     req.DefaultRouter,
 		Remark:            req.Remark,
 	}
 	// CreateBy/UpdateBy 为内嵌 OPS_AUDIT_MODEL 的提升字段,struct literal 中不可直接命名,改用赋值写入。
@@ -105,6 +106,7 @@ func (s *RoleService) UpdateRole(ctx context.Context, req systemReq.RoleOperateP
 				"role_sort":           req.RoleSort,
 				"menu_check_strictly": req.MenuCheckStrictly,
 				"status":              req.Status,
+				"default_router":      req.DefaultRouter,
 				"remark":              req.Remark,
 				"update_by":           updateBy,
 			}).Error; err != nil {

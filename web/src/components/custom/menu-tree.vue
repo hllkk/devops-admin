@@ -14,12 +14,15 @@ defineOptions({
 interface Props {
   immediate?: boolean;
   showHeader?: boolean;
+  /** 是否启用"默认路由"小房子(角色菜单授权用;C 菜单点击设为角色 DefaultRouter) */
+  enableDefaultRouter?: boolean;
   [key: string]: any;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   immediate: true,
-  showHeader: true
+  showHeader: true,
+  enableDefaultRouter: false
 });
 
 const { bool: expandAll } = useBoolean();
@@ -31,6 +34,7 @@ const checkedKeys = defineModel<CommonType.IdType[]>('checkedKeys', { required: 
 const options = defineModel<Api.System.MenuList>('options', { required: false, default: [] });
 const cascade = defineModel<boolean>('cascade', { required: false, default: true });
 const loading = defineModel<boolean>('loading', { required: false, default: false });
+const defaultRouter = defineModel<string>('defaultRouter', { required: false, default: '' });
 
 async function getMenuList() {
   loading.value = true;
@@ -63,17 +67,43 @@ watch([expandAll, options], ([newVal]) => {
   }
 });
 
+// 由菜单 path 推导 routeKey(与后端 routeKey 规则一致:去首尾斜杠,/ 换 _)
+function routeKeyOfPath(path?: string) {
+  return path ? path.replace(/^\/+|\/+$/g, '').replace(/\//g, '_') : '';
+}
+
+// 默认路由小房子(C 菜单可打开页;点击设为角色 DefaultRouter)
+function renderHouse(option: TreeOption) {
+  if (!props.enableDefaultRouter || option.menuType !== 'C' || !option.path) return null;
+  const key = routeKeyOfPath(String(option.path));
+  const active = key === defaultRouter.value;
+  return (
+    <span
+      class={`ml-6px inline-flex cursor-pointer text-16px ${active ? 'text-primary' : 'opacity-40 hover:opacity-80'}`}
+      title={$t('page.system.role.setDefaultRouter')}
+      onClick={(e: Event) => {
+        e.stopPropagation();
+        defaultRouter.value = key;
+      }}
+    >
+      <SvgIcon icon={active ? 'mdi:home' : 'mdi:home-outline'} />
+    </span>
+  );
+}
+
 function renderLabel({ option }: { option: TreeOption }) {
   let label = option.label;
   if (label?.startsWith('route.') || label?.startsWith('menu.')) {
     label = $t(label as App.I18n.I18nKey);
   }
+  const house = renderHouse(option);
   // 禁用的菜单显示红色
   if (option.status === '1') {
     return (
       <div class="flex items-center gap-4px text-error-200">
         {label}
         <SvgIcon icon="ri:prohibited-line" class="text-16px" />
+        {house}
       </div>
     );
   }
@@ -83,10 +113,16 @@ function renderLabel({ option }: { option: TreeOption }) {
       <div class="flex items-center gap-4px text-gray-400">
         {label}
         <SvgIcon icon="codex:hidden" class="text-21px" />
+        {house}
       </div>
     );
   }
-  return <div>{label}</div>;
+  return (
+    <div class="flex items-center">
+      {label}
+      {house}
+    </div>
+  );
 }
 
 function renderPrefix({ option }: { option: TreeOption }) {

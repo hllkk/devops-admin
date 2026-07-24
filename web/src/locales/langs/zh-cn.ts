@@ -711,6 +711,7 @@ const local: App.I18n.Schema = {
         remark: '备注',
         createTime: '创建时间',
         menuPermission: '菜单权限',
+        setDefaultRouter: '设为默认路由(用户登录后默认打开此页面)',
         addRole: '新增角色',
         editRole: '编辑角色',
         assignUser: '分配用户',

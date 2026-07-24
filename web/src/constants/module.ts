@@ -9,7 +9,7 @@
 export type RouteModule = 'admin' | 'disk' | 'server' | 'gateway';
 
 /** 默认模块（无 module 信息时的回退，例如首次进入根路径） */
-export const DEFAULT_MODULE: RouteModule = 'admin';
+export const DEFAULT_MODULE: RouteModule = 'disk';
 
 /** 所有模块（用于校验/遍历） */
 export const ALL_MODULES: RouteModule[] = ['admin', 'disk', 'server', 'gateway'];
@@ -39,10 +39,3 @@ export const MODULE_CONFIG: Record<RouteModule, ModuleConfig> = {
   server: { preset: 'standard', home: 'server', icon: 'mdi:server-network' },
   gateway: { preset: 'standard', home: 'gateway', icon: 'mdi:robot-outline' }
 };
-
-/**
- * 模块路由归属 —— 已由后端菜单 `SysMenu.module` 字段经动态路由(/route/getUserRoutes)
- * 下发的 `meta.module` 驱动。前端声明式归属表(MODULE_ROUTES / ROUTE_TO_MODULE / tagRoutesByModule)
- * 已退役删除：隔离逻辑(filterRoutesByModule)只读 `meta.module`，与归属来源解耦。
- * 全局路由(404 / login / user-center / notice-user 等)无 `meta.module` → 所有模块可见。
- */

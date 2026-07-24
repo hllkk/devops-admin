@@ -209,16 +209,24 @@ func TestMenusToRoutesMetaFlags(t *testing.T) {
 func TestResolveHome(t *testing.T) {
 	s := RouteService{}
 	// 含 admin -> home=admin
-	if h := s.resolveHome([]system.MenuRoute{{Name: "system"}, {Name: "admin"}}); h != "admin" {
+	if h := s.resolveHome([]system.MenuRoute{{Name: "system"}, {Name: "admin"}}, ""); h != "admin" {
 		t.Errorf("resolveHome(含 admin) = %q, want admin", h)
 	}
 	// 不含 admin -> 取第一个
-	if h := s.resolveHome([]system.MenuRoute{{Name: "system"}, {Name: "log"}}); h != "system" {
+	if h := s.resolveHome([]system.MenuRoute{{Name: "system"}, {Name: "log"}}, ""); h != "system" {
 		t.Errorf("resolveHome(无 admin) = %q, want system", h)
 	}
 	// 空 -> 默认 admin
-	if h := s.resolveHome(nil); h != "admin" {
+	if h := s.resolveHome(nil, ""); h != "admin" {
 		t.Errorf("resolveHome(空) = %q, want admin", h)
+	}
+	// defaultRouter 优先(且在路由里)
+	if h := s.resolveHome([]system.MenuRoute{{Name: "admin"}, {Name: "disk"}}, "disk"); h != "disk" {
+		t.Errorf("resolveHome(defaultRouter=disk) = %q, want disk", h)
+	}
+	// defaultRouter 不在路由里 -> 兜底 admin
+	if h := s.resolveHome([]system.MenuRoute{{Name: "admin"}}, "disk"); h != "admin" {
+		t.Errorf("resolveHome(defaultRouter 无权) = %q, want admin", h)
 	}
 }
 

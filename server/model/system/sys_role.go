@@ -22,6 +22,7 @@ type SysRole struct {
 	MenuCheckStrictly bool   `json:"menuCheckStrictly" gorm:"default:true;comment:菜单树选择项是否关联显示"`     // 菜单树选择项是否关联显示
 	DeptCheckStrictly bool   `json:"deptCheckStrictly" gorm:"default:true;comment:部门树选择项是否关联显示"`     // 部门树选择项是否关联显示(数据权限自定义档部门树用)
 	DataScope         int    `json:"dataScope,string" gorm:"default:1;comment:数据范围 1全部2本部门及子级3本部门4仅本人5自定义"` // 数据范围档位(json string 传输,引擎 datascope.go 消费)
+	DefaultRouter     string `json:"defaultRouter" gorm:"default:admin;comment:默认路由(角色登录后默认打开的路由名,如 admin/disk/server/system_user)"` // 默认路由(登录入口;主角色 user.RoleId 的 DefaultRouter 决定)
 	Remark            string `json:"remark" gorm:"comment:备注"`                                       // 备注
 	Flag              bool   `json:"flag" gorm:"-"`                                                  // 用户是否存在此角色标识(内存组装,默认不存在)
 }

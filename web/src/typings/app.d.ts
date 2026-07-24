@@ -900,6 +900,7 @@ declare namespace App {
             remark: string;
             createTime: string;
             menuPermission: string;
+            setDefaultRouter: string;
             addRole: string;
             editRole: string;
             assignUser: string;

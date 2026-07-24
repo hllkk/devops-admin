@@ -21,6 +21,7 @@ type RoleOperateParams struct {
 	RoleName          string        `json:"roleName"`          // 角色名称
 	RoleKey           string        `json:"roleKey"`           // 角色权限字符(唯一)
 	RoleSort          int           `json:"roleSort"`          // 显示顺序
+	DefaultRouter     string        `json:"defaultRouter"`     // 默认路由(角色登录后默认打开的路由名;C 菜单 routeKey)
 	MenuCheckStrictly bool          `json:"menuCheckStrictly"` // 菜单树选择项是否关联显示
 	Status            string        `json:"status"`            // 角色状态('0'正常/'1'停用)
 	Remark            string        `json:"remark"`            // 备注

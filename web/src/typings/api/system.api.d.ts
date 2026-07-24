@@ -37,6 +37,8 @@ declare namespace Api {
       status: Common.EnableStatus;
       /** 是否管理员 */
       superAdmin: boolean;
+      /** 默认路由(角色登录后默认打开的路由名;主角色决定登录入口) */
+      defaultRouter: string;
     }>;
 
     /** role search params */
@@ -49,7 +51,7 @@ declare namespace Api {
       Pick<
         Api.System.Role,
         'roleId' | 'roleName' | 'roleKey' | 'roleSort' | 'menuCheckStrictly' | 'deptCheckStrictly'
-        | 'dataScope' | 'status' | 'remark'
+        | 'dataScope' | 'status' | 'remark' | 'defaultRouter'
       > & { menuIds: CommonType.IdType[]; deptIds: CommonType.IdType[] }
     >;
 

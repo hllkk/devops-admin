@@ -61,7 +61,7 @@ func (userService *UserService) GetUserInfo(ctx context.Context, userId int64) (
 
 // GetUserDetail 组装 getUserInfo 响应所需:用户实体(含 roles/dept) + roleKey 列表 + perms 列表。
 // 超管(任一角色 SuperAdmin)permissions=["*:*:*"];其余按 角色→sys_role_menu→sys_menu.perms 聚合去重。
-func (userService *UserService) GetUserDetail(ctx context.Context, userId int64) (user system.SysUser, roles []string, permissions []string, err error) {
+func (userService *UserService) GetUserDetail(ctx context.Context, userId int64) (user system.SysUser, roles []string, permissions []string, defaultRouter string, err error) {
 	user, err = userService.GetUserInfo(ctx, userId)
 	if err != nil {
 		return
@@ -76,6 +76,10 @@ func (userService *UserService) GetUserDetail(ctx context.Context, userId int64)
 		roleIds = append(roleIds, r.RoleId)
 		if r.SuperAdmin {
 			isSuper = true
+		}
+		// 主角色(user.RoleId)的默认路由作为登录入口
+		if r.RoleId == user.RoleId && r.DefaultRouter != "" {
+			defaultRouter = r.DefaultRouter
 		}
 	}
 	if isSuper {

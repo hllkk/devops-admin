@@ -34,7 +34,8 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   const userInfo: Api.Auth.UserInfo = reactive({
     user: undefined,
     roles: [],
-    permissions: []
+    permissions: [],
+    defaultRouter: ''
   });
   /** is super role in static route */
   const isStaticSuper = computed(() => {
@@ -134,7 +135,8 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
         if (isClear) {
           needRedirect = false;
         }
-        await redirectFromLogin(needRedirect);
+        // 登录入口:redirect 优先,其次主角色默认路由,最后 toHome 兜底
+        await redirectFromLogin(needRedirect, userInfo.defaultRouter);
 
         window.$notification?.success({
           title: $t('page.login.common.loginSuccess'),

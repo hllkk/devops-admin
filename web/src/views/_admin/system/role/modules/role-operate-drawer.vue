@@ -63,7 +63,8 @@ function createDefaultModel(): Model {
     roleSort: 1,
     menuCheckStrictly: true,
     status: '0',
-    remark: ''
+    remark: '',
+    defaultRouter: ''
   };
 }
 
@@ -103,7 +104,7 @@ function closeDrawer() {
 
 async function handleSubmit() {
   await validate();
-  const { roleId, roleName, roleKey, roleSort, menuCheckStrictly, status, remark } = model.value;
+  const { roleId, roleName, roleKey, roleSort, menuCheckStrictly, status, remark, defaultRouter } = model.value;
   const menuIds = menuTreeRef.value?.getCheckedMenuIds();
   // request
   if (props.operateType === 'add') {
@@ -114,6 +115,7 @@ async function handleSubmit() {
       menuCheckStrictly,
       status,
       remark,
+      defaultRouter,
       menuIds
     });
     if (error) return;
@@ -129,6 +131,7 @@ async function handleSubmit() {
       menuCheckStrictly,
       status,
       remark,
+      defaultRouter,
       menuIds
     });
     if (error) return;
@@ -179,6 +182,8 @@ watch(visible, () => {
             v-model:options="menuOptions"
             v-model:cascade="model.menuCheckStrictly"
             v-model:loading="menuLoading"
+            v-model:default-router="model.defaultRouter"
+            :enable-default-router="true"
             :immediate="operateType === 'add'"
           />
         </NFormItem>
