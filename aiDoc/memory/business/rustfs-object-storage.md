@@ -2,6 +2,7 @@
 
 - 日期：2026-07-23
 - 状态：已落地并实跑验证（dev）—— rustfs healthy、bucket `devops-admin` 建好、匿名 `download`、mc 上传+宿主匿名 GET 200 全链路通；仅应用层 minio-go 未单独实跑（mc 同协议已证写入可行）。
+- 生产（docker-prod）2026-07-24 落地：`rustfs:latest` + `rustfs_init` 设 `anonymous download` + nginx `/oss/` 同源反代（`bucket-url=/oss/devops_admin`），rustfs 端口不对外、下载统一经 `/oss/`。当前 bucket 仅存头像，匿名公开可接受；网盘/私有文件模块上线前是硬性前置，见下「生产匿名下载决策」。
 
 ## 需求
 
@@ -25,7 +26,8 @@
 
 - **server 跑宿主机、依赖服务跑 docker**，故 endpoint/bucket-url 用 `127.0.0.1:9000`（端口映射直连）；compose 定义了显式 `dev-net` bridge 网络供服务间互访（如 `rustfs_init`→`rustfs:9000`），未来 server 容器化 join `dev-net` 即可改用服务名。
 - 用 `minio` 前必须先 `docker compose up -d` 起 RustFS，否则上传失败；切回本地磁盘改 `oss-type: local`。
-- `mc anonymous set download` 让 bucket 匿名可读，前端可直接 GET 文件 URL；**生产应改预签名/鉴权 URL**。
+- `mc anonymous set download` 让 bucket 匿名可读，前端可直接 GET 文件 URL。
+- **生产匿名下载决策（docker-prod，2026-07-24）**：生产沿用匿名下载 + nginx `/oss/` 同源反代（`bucket-url=/oss/devops_admin`），效果是任何知道/猜到对象 key 者可匿名 GET bucket 内文件。当前 bucket 仅存用户头像，公开可接受。**网盘 / 私有文件模块上线前是硬性前置**：必须改用 server 签发的预签名 URL（minio-go `PresignedGetObject`）做鉴权下载，并移除/收敛 nginx `/oss/` 的无条件反代，否则构成私有文件越权读取。
 - **RustFS 官方明确"快速迭代中，勿用于生产"**，当前配置面向 dev。
 - **勿再为 rustfs 加 chown 10001 sidecar**：官方文档建议镜像以 uid 10001 运行 + chown 数据目录，但 `user: root` 一行即绕过所有属主权限问题（用户实测验证）。初版照搬文档加了 `rustfs_perms`（alpine chown），属过度设计，已移除。
 

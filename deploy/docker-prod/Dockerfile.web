@@ -4,7 +4,7 @@
 #
 #   构建上下文（compose context）：仓库 web/ 目录
 #   构建：node:20-alpine + pnpm（monorepo，含 packages/* 下的 @sa/* 包）
-#   运行：nginx:1.27-alpine（托管 dist；nginx.conf 由 compose 挂载，便于调整）
+#   运行：nginx:1.30-alpine（托管 dist；nginx.conf 由 compose 挂载，便于调整）
 #
 # 生产构建读取 .env + .env.prod：VITE_SERVICE_BASE_URL 应指向同源反代前缀
 # /proxy-default，由 nginx 反代到 server:8888（与 dev 的 vite proxy 行为一致）。
@@ -30,7 +30,7 @@ WORKDIR /build
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages ./packages
 
-RUN pnpm install
+RUN pnpm install --frozen-lockfile
 
 # 拷源码（含 .env / .env.prod 等构建期变量文件）
 COPY . .
