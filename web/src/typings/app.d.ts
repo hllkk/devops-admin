@@ -918,6 +918,7 @@ declare namespace App {
           };
           menu: {
             title: string;
+            module: string;
             parentId: string;
             orderNum: string;
             rootName: string;

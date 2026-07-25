@@ -36,10 +36,29 @@ func (s *MenuService) GetMenuList(ctx context.Context, q systemReq.MenuSearch) (
 	return
 }
 
+// checkModuleConsistency 校验子菜单 module 与父菜单一致(filterRoutesByModule 以父节点
+// module 决定整棵子树归属,父子不一致会让子菜单在所有模块菜单消失)。顶层菜单(parentId=0)跳过。
+func (s *MenuService) checkModuleConsistency(ctx context.Context, parentId int64, module string) error {
+	if parentId == 0 {
+		return nil
+	}
+	var parent system.SysMenu
+	if err := global.OPS_DB.WithContext(ctx).Where("menu_id = ?", parentId).First(&parent).Error; err != nil {
+		return err
+	}
+	if module != parent.Module {
+		return errors.New("子菜单业务模块归属须与父菜单一致")
+	}
+	return nil
+}
+
 // CreateMenu 新增菜单;menuName 必填,createBy 填审计字段。
 func (s *MenuService) CreateMenu(ctx context.Context, req systemReq.MenuOperateParams, createBy int64) error {
 	if req.MenuName == "" {
 		return errors.New("菜单名称不能为空")
+	}
+	if err := s.checkModuleConsistency(ctx, req.ParentId.Int64(), req.Module); err != nil {
+		return err
 	}
 	m := system.SysMenu{
 		ParentId:   req.ParentId.Int64(),
@@ -56,6 +75,7 @@ func (s *MenuService) CreateMenu(ctx context.Context, req systemReq.MenuOperateP
 		Perms:      req.Perms,
 		Icon:       req.Icon,
 		Remark:     req.Remark,
+		Module:     req.Module,
 	}
 	// CreateBy/UpdateBy 为内嵌 OPS_AUDIT_MODEL 的提升字段,struct literal 中不可直接命名,改用赋值写入。
 	m.CreateBy = createBy
@@ -71,6 +91,9 @@ func (s *MenuService) UpdateMenu(ctx context.Context, req systemReq.MenuOperateP
 	}
 	if req.MenuName == "" {
 		return errors.New("菜单名称不能为空")
+	}
+	if err := s.checkModuleConsistency(ctx, req.ParentId.Int64(), req.Module); err != nil {
+		return err
 	}
 	return global.OPS_DB.WithContext(ctx).Model(&system.SysMenu{}).Where("menu_id = ?", menuId).
 		Updates(map[string]interface{}{
@@ -88,6 +111,7 @@ func (s *MenuService) UpdateMenu(ctx context.Context, req systemReq.MenuOperateP
 			"perms":       req.Perms,
 			"icon":        req.Icon,
 			"remark":      req.Remark,
+			"module":      req.Module,
 			"update_by":   updateBy,
 		}).Error
 }

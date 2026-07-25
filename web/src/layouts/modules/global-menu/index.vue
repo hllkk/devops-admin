@@ -27,10 +27,10 @@ const activeMenu = computed(() => {
     'top-hybrid-header-first': TopHybridHeaderFirst
   };
 
-  return menuMap[themeStore.layout.mode];
+  return menuMap[themeStore.effectiveLayoutMode];
 });
 
-const reRenderVertical = computed(() => themeStore.layout.mode === 'vertical' && appStore.isMobile);
+const reRenderVertical = computed(() => themeStore.effectiveLayoutMode === 'vertical' && appStore.isMobile);
 </script>
 
 <template>

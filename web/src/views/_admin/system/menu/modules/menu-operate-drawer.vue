@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue';
 import type { SelectOption } from 'naive-ui';
 import { jsonClone } from '@sa/utils';
 import { menuIconTypeOptions, menuIsFrameOptions, menuLayoutOptions, menuTypeOptions } from '@/constants/business';
+import { ALL_MODULES, type RouteModule } from '@/constants/module';
 import { fetchCreateMenu, fetchUpdateMenu } from '@/service/api/system';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
 import { getLocalMenuIcons } from '@/utils/icon';
@@ -25,6 +26,8 @@ interface Props {
   pid?: string | number;
   /** menu type */
   menuType?: Api.System.MenuType;
+  /** default module for a new menu (from the page's current module view) */
+  defaultModule?: RouteModule;
 }
 
 const props = defineProps<Props>();
@@ -62,6 +65,7 @@ const model = ref<Model>(createDefaultModel());
 function createDefaultModel(): Model {
   return {
     parentId: props.pid || 0,
+    module: props.defaultModule || 'admin',
     menuName: '',
     orderNum: 1,
     path: '',
@@ -95,6 +99,35 @@ const isMenu = computed(() => model.value.menuType === 'C');
 
 // 是否为按钮类型
 const isBtn = computed(() => model.value.menuType === 'F');
+
+// 是否为顶层菜单(parentId=0):只有顶层可改 module,子菜单 module 锁定随父
+const isTopLevel = computed(() => Number(model.value.parentId) === 0);
+
+// 模块下拉选项(label 复用 module.* 翻译)
+const moduleOptions = computed(() => ALL_MODULES.map(m => ({ label: $t(`module.${m}`), value: m })));
+
+// 在菜单树(含虚拟根 menuId=0)中按 menuId 查节点
+function findMenuById(nodes: Api.System.Menu[] | null | undefined, id: number): Api.System.Menu | undefined {
+  if (!nodes) return undefined;
+  for (const n of nodes) {
+    if (Number(n.menuId) === id) return n;
+    const hit = findMenuById(n.children, id);
+    if (hit) return hit;
+  }
+  return undefined;
+}
+
+// 选父菜单时子菜单 module 自动随父(只读),保证 filterRoutesByModule 父子归属一致
+watch(
+  () => model.value.parentId,
+  pid => {
+    if (Number(pid) !== 0) {
+      const parent = findMenuById(props.treeData, Number(pid));
+      if (parent?.module) model.value.module = parent.module;
+    }
+  },
+  { immediate: true }
+);
 
 // 外链类型
 const isExternalType = computed(() => model.value.isFrame === '0');
@@ -224,6 +257,7 @@ async function handleSubmit() {
 
   const payload = {
     menuName,
+    module: model.value.module,
     path: processPath(model.value.path),
     parentId,
     orderNum,
@@ -317,6 +351,9 @@ function onCreate() {
                 :label="item.label"
               />
             </NRadioGroup>
+          </NFormItemGi>
+          <NFormItemGi v-if="!isBtn" :span="12" :label="$t('page.system.menu.module')" path="module">
+            <NSelect v-model:value="model.module" :options="moduleOptions" :disabled="!isTopLevel" />
           </NFormItemGi>
           <NFormItemGi :span="12" path="layout">
             <template #label>

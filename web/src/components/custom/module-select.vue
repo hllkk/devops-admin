@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, h } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouterPush } from '@/hooks/common/router';
 import type { LastLevelRouteKey } from '@elegant-router/types';
 import type { DropdownOption } from 'naive-ui';
 import { ALL_MODULES, MODULE_CONFIG, type RouteModule } from '@/constants/module';
@@ -11,7 +11,7 @@ import SvgIcon from '@/components/custom/svg-icon.vue';
 
 defineOptions({ name: 'ModuleSelect' });
 
-const router = useRouter();
+const { routerPushByKey } = useRouterPush();
 const routeStore = useRouteStore();
 const tabStore = useTabStore();
 
@@ -34,7 +34,7 @@ function handleSelect(key: string) {
   const module = key as RouteModule;
   const homeRoute = MODULE_CONFIG[module].home as LastLevelRouteKey;
   tabStore.resetTabs(homeRoute);
-  router.push(`/${key}`);
+  routerPushByKey(homeRoute);
 }
 </script>
 

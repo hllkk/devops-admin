@@ -729,6 +729,7 @@ const local: App.I18n.Schema = {
       },
       menu: {
         title: '菜单管理',
+        module: '业务模块',
         parentId: '上级菜单',
         orderNum: '显示顺序',
         rootName: '根目录',

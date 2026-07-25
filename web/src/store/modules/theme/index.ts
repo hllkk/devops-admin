@@ -33,6 +33,14 @@ export const useThemeStore = defineStore(SetupStoreId.Theme, () => {
   const routeStore = useRouteStore();
 
   /**
+   * 对外生效的菜单模式:disk 模块定死 vertical-mix(disk-layout 复用 base 外壳但固定菜单模式),
+   * 其余模块用用户主题设置。base-layout/global-menu/global-sider 统一读它,避免 disk 下外壳与菜单组件模式不一致。
+   */
+  const effectiveLayoutMode = computed<UnionKey.ThemeLayoutMode>(() =>
+    routeStore.currentModule === 'disk' ? 'vertical-mix' : settings.value.layout.mode
+  );
+
+  /**
    * Global (admin / default module) structural snapshot — the base every module inherits.
    * Appearance lives directly in `settings` and is always global; only structure is per-module.
    */
@@ -40,6 +48,14 @@ export const useThemeStore = defineStore(SetupStoreId.Theme, () => {
 
   /** Per-module structural overrides (non-default modules), persisted to `themeSettings__<module>` */
   const moduleOverrides = ref<Record<string, StructuralThemeSetting>>(loadModuleOverrides());
+
+  // 初始化即对齐当前模块结构:刷新停在非默认模块时,不必依赖 currentModule 首次变化才触发 watch
+  applyStructural(
+    settings.value,
+    routeStore.currentModule === DEFAULT_MODULE
+      ? globalStructural.value
+      : moduleOverrides.value[routeStore.currentModule] ?? globalStructural.value
+  );
 
   // Module switch: save the outgoing module's current structure, apply the incoming module's structure.
   // Appearance fields are never touched here → appearance stays global across modules (no tearing).
@@ -338,6 +354,7 @@ export const useThemeStore = defineStore(SetupStoreId.Theme, () => {
 
   return {
     ...toRefs(settings.value),
+    effectiveLayoutMode,
     darkMode,
     themeColors,
     naiveTheme,

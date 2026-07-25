@@ -1,9 +1,10 @@
 <script setup lang="tsx">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import type { DataTableColumns, TreeInst, TreeOption } from 'naive-ui';
 import { NButton, NDivider, NIcon, NInput, NPopconfirm, NTime } from 'naive-ui';
 import { useBoolean, useLoading } from '@sa/hooks';
 import { menuIsFrameRecord, menuTypeRecord } from '@/constants/business';
+import { ALL_MODULES, type RouteModule } from '@/constants/module';
 import { fetchDeleteMenu, fetchGetMenuList } from '@/service/api/system';
 import { useAppStore } from '@/store/modules/app';
 import { useDict } from '@/hooks/business/dict';
@@ -33,8 +34,26 @@ const { loading: btnLoading, startLoading: startBtnLoading, endLoading: endBtnLo
 const name = ref<string>();
 const createType = ref<Api.System.MenuType>();
 const createPid = ref<CommonType.IdType>(0);
+const createDefaultModule = ref<RouteModule>('admin');
 const currentMenu = ref<Api.System.Menu>();
-const treeData = ref<Api.System.Menu[]>([]);
+const currentViewModule = ref<RouteModule>('admin');
+const rawMenuList = ref<Api.System.Menu[]>([]);
+/** 按当前模块过滤后的菜单树(前端过滤;菜单量小,无需后端按 module 查) */
+const treeData = computed<Api.System.Menu[]>(() => {
+  const filtered = rawMenuList.value.filter(item => item.module === currentViewModule.value);
+  const { tree } = handleTree(filtered, { idField: 'menuId', filterFn: item => item.menuType !== 'F' });
+  return [
+    {
+      menuId: 0,
+      // 主树标签由 getMenuLabel 对 menuId=0 特判实时翻译；此处保留翻译值，兜底供 MenuTreeSelect 等其它消费方显示
+      menuName: $t('page.system.menu.rootName'),
+      icon: 'material-symbols:home-outline-rounded',
+      children: tree
+    }
+  ] as Api.System.Menu[];
+});
+/** 模块下拉选项(label 复用 module.* 翻译) */
+const moduleOptions = computed(() => ALL_MODULES.map(m => ({ label: $t(`module.${m}`), value: m })));
 const checkedKeys = ref<CommonType.IdType[]>([0]);
 const expandedKeys = ref<CommonType.IdType[]>([0]);
 
@@ -57,18 +76,17 @@ const getMeunTree = async () => {
   startLoading();
   const { data, error } = await fetchGetMenuList();
   if (error) return;
-  const { tree } = handleTree(data, { idField: 'menuId', filterFn: item => item.menuType !== 'F' });
-  treeData.value = [
-    {
-      menuId: 0,
-      // 主树标签由 getMenuLabel 对 menuId=0 特判实时翻译；此处保留翻译值，兜底供 MenuTreeSelect 等其它消费方显示
-      menuName: $t('page.system.menu.rootName'),
-      icon: 'material-symbols:home-outline-rounded',
-      children: tree
-    }
-  ] as Api.System.Menu[];
+  rawMenuList.value = data || [];
   endLoading();
 };
+
+// 切换模块视图:树整体替换,清空选中与展开,避免残留旧模块节点
+watch(currentViewModule, () => {
+  currentMenu.value = undefined;
+  checkedKeys.value = [0];
+  expandedKeys.value = [0];
+  btnData.value = [];
+});
 
 getMeunTree();
 
@@ -86,6 +104,7 @@ async function handleSubmitted(menuType?: Api.System.MenuType) {
 function handleAddMenu(pid: CommonType.IdType) {
   createPid.value = pid;
   createType.value = pid === 0 ? 'M' : 'C';
+  createDefaultModule.value = currentViewModule.value;
   operateType.value = 'add';
   openDrawer();
 }
@@ -385,7 +404,13 @@ const renderIframeQuery = (queryParam: string) => {
     </template>
     <template #sider>
       <div class="flex gap-6px">
-        <NInput v-model:value="name" size="small" :placeholder="$t('page.system.menu.form.menuName.required')" />
+        <NSelect v-model:value="currentViewModule" :options="moduleOptions" size="small" class="w-130px shrink-0" />
+        <NInput
+          v-model:value="name"
+          size="small"
+          class="flex-1"
+          :placeholder="$t('page.system.menu.form.menuName.required')"
+        />
       </div>
       <NSpin :show="loading" class="infinite-scroll">
         <NTree
@@ -550,6 +575,7 @@ const renderIframeQuery = (queryParam: string) => {
       :row-data="editingData"
       :tree-data="treeData"
       :pid="createPid"
+      :default-module="createDefaultModule"
       :menu-type="createType"
       @submitted="handleSubmitted"
     />

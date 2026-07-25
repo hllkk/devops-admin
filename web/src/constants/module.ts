@@ -15,17 +15,18 @@ export const DEFAULT_MODULE: RouteModule = 'disk';
 export const ALL_MODULES: RouteModule[] = ['admin', 'disk', 'server', 'gateway'];
 
 /**
- * 布局预设：控制布局外壳结构。
- * - `standard`：标签页后台（有 tab / footer / 全局 header）
- * - `workbench`：沉浸式工作台（无 tab / footer，紧凑 header，适合网盘等）
+ * 布局预设：值对齐布局注册表的 layout name（router/elegant/imports.ts 的 layouts 键）。
+ * router/routes 的 applyModuleLayout 按模块 preset 把路由 component 从 layout.base 替换为对应布局。
+ * - `base`：标准后台（layout.base；菜单模式可配、有 tab、有主题设置入口）
+ * - `disk`：网盘布局（layout.disk；定死左侧菜单混合模式 vertical-mix、无 tab、无主题设置入口）
  *
- * 与模块隔离（菜单归属）正交：同一 preset 可被多模块使用，同一模块切换 preset 不影响菜单。
+ * 与模块隔离（菜单归属）正交：preset 决定布局外壳，不影响菜单按 module 过滤。
  */
-export type LayoutPreset = 'standard' | 'workbench';
+export type LayoutPreset = 'base' | 'disk';
 
 /** 模块布局配置 ——「模块 → 布局预设 / 首页 / 图标」唯一数据源。新增模块在此加一行。 */
 export interface ModuleConfig {
-  /** 布局预设，决定布局外壳结构 */
+  /** 布局预设(= layout name):'base' 标准后台 | 'disk' 网盘(vertical-mix 定死 / 无 tab / 无主题入口) */
   preset: LayoutPreset;
   /** 模块首页路由名（用于模块切换、logo 回首页） */
   home: string;
@@ -34,8 +35,8 @@ export interface ModuleConfig {
 }
 
 export const MODULE_CONFIG: Record<RouteModule, ModuleConfig> = {
-  admin: { preset: 'standard', home: 'admin', icon: 'mdi:monitor-dashboard' },
-  disk: { preset: 'workbench', home: 'disk', icon: 'mdi:harddisk' },
-  server: { preset: 'standard', home: 'server', icon: 'mdi:server-network' },
-  gateway: { preset: 'standard', home: 'gateway', icon: 'mdi:robot-outline' }
+  admin: { preset: 'base', home: 'admin', icon: 'mdi:monitor-dashboard' },
+  disk: { preset: 'disk', home: 'disk', icon: 'mdi:harddisk' },
+  server: { preset: 'base', home: 'server', icon: 'mdi:server-network' },
+  gateway: { preset: 'base', home: 'gateway', icon: 'mdi:robot-outline' }
 };

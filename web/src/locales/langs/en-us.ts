@@ -733,6 +733,7 @@ const local: App.I18n.Schema = {
       },
       menu: {
         title: 'Menu Management',
+        module: 'Module',
         parentId: 'Parent Menu',
         orderNum: 'Display Order',
         rootName: 'Root Category',

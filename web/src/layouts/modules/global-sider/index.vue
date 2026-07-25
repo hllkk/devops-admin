@@ -12,13 +12,13 @@ defineOptions({
 const appStore = useAppStore();
 const themeStore = useThemeStore();
 
-const isTopHybridSidebarFirst = computed(() => themeStore.layout.mode === 'top-hybrid-sidebar-first');
-const isTopHybridHeaderFirst = computed(() => themeStore.layout.mode === 'top-hybrid-header-first');
+const isTopHybridSidebarFirst = computed(() => themeStore.effectiveLayoutMode === 'top-hybrid-sidebar-first');
+const isTopHybridHeaderFirst = computed(() => themeStore.effectiveLayoutMode === 'top-hybrid-header-first');
 const darkMenu = computed(
   () =>
     !themeStore.darkMode && !isTopHybridSidebarFirst.value && !isTopHybridHeaderFirst.value && themeStore.sider.inverted
 );
-const showLogo = computed(() => themeStore.layout.mode === 'vertical');
+const showLogo = computed(() => themeStore.effectiveLayoutMode === 'vertical');
 const menuWrapperClass = computed(() => (showLogo.value ? 'flex-1-hidden' : 'h-full'));
 </script>
 

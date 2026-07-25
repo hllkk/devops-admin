@@ -23,16 +23,34 @@ const appStore = useAppStore();
 const themeStore = useThemeStore();
 const { secondLevelMenus, childLevelMenus, isActiveFirstLevelMenuHasChildren } = provideMixMenuContext();
 
+interface Props {
+  /** 隐藏标签页 */
+  hideTab?: boolean;
+  /** 隐藏 header 主题设置齿轮(明暗切换仍保留) */
+  hideThemeControls?: boolean;
+  /** 不挂载主题抽屉(彻底无主题设置入口) */
+  hideThemeDrawer?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  hideTab: false,
+  hideThemeControls: false,
+  hideThemeDrawer: false
+});
+
+/** 实际菜单模式:disk 模块定死 vertical-mix(themeStore.effectiveLayoutMode),其余用用户设置 */
+const effectiveMode = computed(() => themeStore.effectiveLayoutMode);
+
 const GlobalMenu = defineAsyncComponent(() => import('../modules/global-menu/index.vue'));
 
 const layoutMode = computed(() => {
   const vertical: LayoutMode = 'vertical';
   const horizontal: LayoutMode = 'horizontal';
-  return themeStore.layout.mode.includes(vertical) ? vertical : horizontal;
+  return effectiveMode.value.includes(vertical) ? vertical : horizontal;
 });
 
 const headerProps = computed(() => {
-  const { mode } = themeStore.layout;
+  const mode = effectiveMode.value;
 
   const headerPropsConfig: Record<UnionKey.ThemeLayoutMode, App.Global.HeaderProps> = {
     vertical: {
@@ -70,15 +88,15 @@ const headerProps = computed(() => {
   return headerPropsConfig[mode];
 });
 
-const siderVisible = computed(() => themeStore.layout.mode !== 'horizontal');
+const siderVisible = computed(() => effectiveMode.value !== 'horizontal');
 
-const isVerticalMix = computed(() => themeStore.layout.mode === 'vertical-mix');
+const isVerticalMix = computed(() => effectiveMode.value === 'vertical-mix');
 
-const isVerticalHybridHeaderFirst = computed(() => themeStore.layout.mode === 'vertical-hybrid-header-first');
+const isVerticalHybridHeaderFirst = computed(() => effectiveMode.value === 'vertical-hybrid-header-first');
 
-const isTopHybridSidebarFirst = computed(() => themeStore.layout.mode === 'top-hybrid-sidebar-first');
+const isTopHybridSidebarFirst = computed(() => effectiveMode.value === 'top-hybrid-sidebar-first');
 
-const isTopHybridHeaderFirst = computed(() => themeStore.layout.mode === 'top-hybrid-header-first');
+const isTopHybridHeaderFirst = computed(() => effectiveMode.value === 'top-hybrid-header-first');
 
 const siderWidth = computed(() => getSiderAndCollapsedWidth(false));
 
@@ -140,7 +158,7 @@ onMounted(() => {
     :full-content="appStore.fullContent"
     :fixed-top="themeStore.fixedHeaderAndTab"
     :header-height="themeStore.header.height"
-    :tab-visible="themeStore.tab.visible"
+    :tab-visible="!hideTab && themeStore.tab.visible"
     :tab-height="themeStore.tab.height"
     :content-class="appStore.contentXScrollable ? 'overflow-x-hidden' : ''"
     :sider-visible="siderVisible"
@@ -152,17 +170,17 @@ onMounted(() => {
     :right-footer="themeStore.footer.right"
   >
     <template #header>
-      <GlobalHeader v-bind="headerProps" />
+      <GlobalHeader v-bind="headerProps" :show-theme-controls="!hideThemeControls" />
     </template>
     <template #tab>
-      <GlobalTab />
+      <GlobalTab v-if="!hideTab" />
     </template>
     <template #sider>
       <GlobalSider />
     </template>
     <GlobalMenu />
     <GlobalContent />
-    <ThemeDrawer />
+    <ThemeDrawer v-if="!hideThemeDrawer" />
     <template #footer>
       <GlobalFooter />
     </template>
