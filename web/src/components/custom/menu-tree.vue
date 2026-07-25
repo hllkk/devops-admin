@@ -1,10 +1,11 @@
 <script setup lang="tsx">
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import type { TreeOption, TreeSelectInst } from 'naive-ui';
 import { useBoolean } from '@sa/hooks';
 import { fetchGetMenuTreeSelect } from '@/service/api/system';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import { $t } from '@/locales';
+import { ALL_MODULES, MODULE_CONFIG, type RouteModule } from '@/constants/module';
 
 defineOptions({
   name: 'MenuTree',
@@ -27,7 +28,8 @@ const props = withDefaults(defineProps<Props>(), {
 
 const { bool: expandAll } = useBoolean();
 const { bool: checkAll } = useBoolean();
-const expandedKeys = ref<CommonType.IdType[]>([0]);
+// 初始展开到模块分组层(根 0 + 四个模块组 -1..-4),进来即可见各模块菜单
+const expandedKeys = ref<CommonType.IdType[]>([0, -1, -2, -3, -4]);
 
 const menuTreeRef = ref<TreeSelectInst | null>(null);
 const checkedKeys = defineModel<CommonType.IdType[]>('checkedKeys', { required: false, default: [] });
@@ -36,19 +38,44 @@ const cascade = defineModel<boolean>('cascade', { required: false, default: true
 const loading = defineModel<boolean>('loading', { required: false, default: false });
 const defaultRouter = defineModel<string>('defaultRouter', { required: false, default: '' });
 
+// 按业务模块把菜单归类为四个虚拟分组节点(角色授权树视觉分组用)。
+// 分组节点用负 id(与真实菜单雪花 id 不冲突);后端 saveRoleMenus 已过滤 mid<=0,不会写入 sys_role_menu。
+// 分组节点 menuType='M',不渲染默认路由小房子(renderHouse 仅认 C 菜单)。
+function buildGroupedOptions(menus: Api.System.MenuList): Api.System.MenuList {
+  const buckets = new Map<RouteModule, Api.System.MenuList>();
+  ALL_MODULES.forEach(m => buckets.set(m, []));
+  menus.forEach(m => {
+    // module 缺失(老库未回填)兜底归 admin
+    const mod: RouteModule = m.module && ALL_MODULES.includes(m.module) ? m.module : 'admin';
+    buckets.get(mod)!.push(m);
+  });
+  return ALL_MODULES.map((mod, idx) => ({
+    id: -(idx + 1),
+    label: $t(`module.${mod}` as App.I18n.I18nKey),
+    icon: MODULE_CONFIG[mod].icon,
+    menuType: 'M',
+    module: mod,
+    children: buckets.get(mod)!
+  })) as Api.System.MenuList;
+}
+
+// 渲染树:把 options(平铺顶层菜单)包根 + 按模块分组。
+// 必须放渲染层 computed:编辑角色时 immediate=false、getMenuList 不执行,options 由父组件直塞 data.menus;
+// 若分组只在 getMenuList 里做,编辑场景会漏分组(平铺显示)。
+const treeData = computed<Api.System.MenuList>(() => [
+  {
+    id: 0,
+    label: $t('page.system.menu.rootName'),
+    icon: 'material-symbols:home-outline-rounded',
+    children: buildGroupedOptions(options.value ?? [])
+  }
+] as Api.System.MenuList);
+
 async function getMenuList() {
   loading.value = true;
   const { error, data } = await fetchGetMenuTreeSelect();
   if (error) return;
-  options.value = [
-    {
-      id: 0,
-      label: $t('page.system.menu.rootName'),
-      icon: 'material-symbols:home-outline-rounded',
-      children: data
-    }
-  ] as Api.System.MenuList;
-  // 折叠到只显示根节点
+  options.value = data;
   loading.value = false;
 }
 
@@ -58,13 +85,9 @@ onMounted(() => {
   }
 });
 
-watch([expandAll, options], ([newVal]) => {
-  if (newVal) {
-    // 展开所有节点
-    expandedKeys.value = getAllMenuIds(options.value);
-  } else {
-    expandedKeys.value = [0];
-  }
+watch(expandAll, newVal => {
+  // 展开=全部节点;折叠=根 + 四个模块分组层(仍可见各模块顶层菜单)
+  expandedKeys.value = newVal ? getAllMenuIds(treeData.value) : [0, -1, -2, -3, -4];
 });
 
 // 由菜单 path 推导 routeKey(与后端 routeKey 规则一致:去首尾斜杠,/ 换 _)
@@ -163,7 +186,7 @@ function getLeafMenuIds(menu: Api.System.MenuList): CommonType.IdType[] {
 
 function handleCheckedTreeNodeAll(checked: boolean) {
   if (checked) {
-    checkedKeys.value = getAllMenuIds(options.value);
+    checkedKeys.value = getAllMenuIds(treeData.value);
     return;
   }
   checkedKeys.value = [];
@@ -176,13 +199,14 @@ function getCheckedMenuIds(isCascade: boolean = false) {
     const parentIds: string[] = indeterminateData?.keys.filter(item => !menuIds?.includes(String(item))) as string[];
     menuIds?.push(...parentIds);
   }
-  return menuIds;
+  // 过滤虚拟分组节点(负 id)与根节点(0):后端 saveRoleMenus 亦过滤 mid<=0,此处双保险防污染 sys_role_menu
+  return (menuIds ?? []).filter(id => Number(id) > 0);
 }
 
 watch(cascade, () => {
   if (cascade.value) {
     // 获取当前菜单树中的所有叶子节点ID
-    const allLeafIds = getLeafMenuIds(options.value);
+    const allLeafIds = getLeafMenuIds(treeData.value);
     // 筛选出当前选中项中的叶子节点
     const selectedLeafIds = checkedKeys.value.filter(id => allLeafIds.includes(id));
     // 重新设置选中状态为只包含叶子节点，让组件基于父子联动规则重新计算父节点状态
@@ -223,7 +247,7 @@ defineExpose({
         :selectable="false"
         key-field="id"
         label-field="label"
-        :data="options"
+        :data="treeData"
         :cascade="cascade"
         :loading="loading"
         virtual-scroll

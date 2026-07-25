@@ -90,7 +90,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 		{
 			ParentId:  0,
 			MenuName:  "route.timer",
-			MenuType:  "M",
+			MenuType:  "C",
 			Path:      "timer",
 			Component: "Layout",
 			Icon:      "fluent:clock-24-regular",

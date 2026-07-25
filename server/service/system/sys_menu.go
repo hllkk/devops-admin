@@ -156,6 +156,7 @@ func (s *MenuService) buildMenuTreeSelect(all []system.SysMenu) []system.MenuTre
 				Label:    n.MenuName,
 				MenuType: n.MenuType,
 				Path:     n.Path,
+				Module:   n.Module,
 				Icon:     n.Icon,
 				Visible:  n.Visible,
 				Status:   n.Status,
