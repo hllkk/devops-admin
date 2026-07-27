@@ -755,6 +755,8 @@ const local: App.I18n.Schema = {
         editMenu: '编辑菜单',
         perms: '权限标识',
         permsTip: '控制器中定义的权限字符，如：system:user:list',
+        apiPrefix: '接口路径',
+        apiPrefixTip: '该菜单对应后端接口的 casbin 策略路径(逗号分隔多个),如：/system/user, /system/user/*；角色授权菜单时自动推导为接口权限',
         status: '菜单状态',
         statusTip: '选择停用则该菜单及其子菜单都不可见',
         emptyMenu: '暂无菜单数据',
@@ -797,6 +799,7 @@ const local: App.I18n.Schema = {
           menuName: { required: '请输入菜单名称', invalid: '菜单名称格式不正确' },
           orderNum: { required: '请输入显示顺序', invalid: '显示顺序格式不正确' },
           perms: { required: '请输入权限标识', invalid: '权限标识格式不正确' },
+          apiPrefix: { required: '请输入接口路径模式，如 /system/user, /system/user/*', invalid: '接口路径格式不正确' },
           path: { required: '请输入路由地址', invalid: '路由地址格式不正确' },
           component: { required: '请输入组件路径', invalid: '组件路径格式不正确' }
         }

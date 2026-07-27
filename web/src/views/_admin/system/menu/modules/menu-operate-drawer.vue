@@ -77,6 +77,7 @@ function createDefaultModel(): Model {
     visible: '0',
     status: '0',
     perms: '',
+    apiPrefix: '',
     icon: defaultIcon,
     remark: ''
   };
@@ -262,6 +263,7 @@ async function handleSubmit() {
     visible: menuVisible,
     status,
     perms,
+    apiPrefix,
     remark,
     component,
     queryParam
@@ -280,6 +282,7 @@ async function handleSubmit() {
     visible: menuVisible,
     status,
     perms,
+    apiPrefix,
     icon: icon || defaultIcon,
     component: processComponent(component),
     remark
@@ -527,6 +530,15 @@ function onCreate() {
               </div>
             </template>
             <NInput v-model:value="model.perms" :placeholder="$t('page.system.menu.form.perms.required')" />
+          </NFormItemGi>
+          <NFormItemGi v-if="!isCatalog" :span="24" path="apiPrefix">
+            <template #label>
+              <div class="flex-center">
+                <FormTip :content="$t('page.system.menu.apiPrefixTip')" />
+                <span>{{ $t('page.system.menu.apiPrefix') }}</span>
+              </div>
+            </template>
+            <NInput v-model:value="model.apiPrefix" :placeholder="$t('page.system.menu.form.apiPrefix.required')" />
           </NFormItemGi>
 
           <NFormItemGi v-if="!isBtn" :span="12" :label="$t('page.system.menu.visible')" path="visible">

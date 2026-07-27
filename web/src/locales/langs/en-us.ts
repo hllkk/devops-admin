@@ -759,6 +759,8 @@ const local: App.I18n.Schema = {
         editMenu: 'Edit Menu',
         perms: 'Permission Key',
         permsTip: 'Permission key defined in the controller, e.g.: system:user:list',
+        apiPrefix: 'API Path',
+        apiPrefixTip: 'Casbin policy paths for the menu backend APIs (comma-separated), e.g.: /system/user, /system/user/*; derived into interface permissions on role-menu assignment',
         status: 'Menu Status',
         statusTip: 'If disabled, this menu and its submenus will be invisible',
         emptyMenu: 'No menu data',
@@ -801,6 +803,7 @@ const local: App.I18n.Schema = {
           menuName: { required: 'Please enter the menu name', invalid: 'Menu name format is incorrect' },
           orderNum: { required: 'Please enter the display order', invalid: 'Display order format is incorrect' },
           perms: { required: 'Please enter the permission key', invalid: 'Permission key format is incorrect' },
+          apiPrefix: { required: 'Enter API path patterns, e.g. /system/user, /system/user/*', invalid: 'API path format is incorrect' },
           path: { required: 'Please enter the route path', invalid: 'Route path format is incorrect' },
           component: { required: 'Please enter the component path', invalid: 'Component path format is incorrect' }
         }

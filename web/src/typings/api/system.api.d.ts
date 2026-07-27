@@ -269,6 +269,8 @@ declare namespace Api {
       status: Common.EnableStatus;
       /** 权限标识 */
       perms: string;
+      /** 接口路径模式(casbin 策略 obj,逗号分隔多个,如 /system/user, /system/user/*;菜单授权时推导为接口权限) */
+      apiPrefix?: string;
       /** 菜单图标 */
       icon: string;
       /** 备注 */
@@ -306,6 +308,7 @@ declare namespace Api {
         | 'visible'
         | 'status'
         | 'perms'
+        | 'apiPrefix'
         | 'icon'
         | 'remark'
         | 'module'

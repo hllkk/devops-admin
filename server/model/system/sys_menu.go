@@ -28,6 +28,7 @@ type SysMenu struct {
 	Visible    string    `json:"visible" gorm:"default:0;size:1;comment:显示状态 0显示1隐藏"`      // 显示状态
 	Status     string    `json:"status" gorm:"default:0;size:1;comment:菜单状态 0正常1停用"`       // 菜单状态(对齐前端 '0'/'1')
 	Perms      string    `json:"perms" gorm:"comment:权限标识"`                                // 权限标识
+	ApiPrefix  string    `json:"apiPrefix,omitempty" gorm:"column:api_prefix;comment:接口路径模式(casbin策略obj,逗号分隔多个,如 /system/user, /system/user/*)"` // 接口路径模式(菜单授权时推导为该角色casbin策略)
 	Icon       string    `json:"icon" gorm:"comment:菜单图标"`                                 // 菜单图标
 	Remark     string    `json:"remark" gorm:"comment:备注"`                                 // 备注
 	ParentName string    `json:"parentName" gorm:"-"`                                      // 父菜单名称(内存组装,不建列)

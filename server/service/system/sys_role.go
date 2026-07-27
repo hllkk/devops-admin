@@ -3,12 +3,16 @@ package system
 import (
 	"context"
 	"errors"
+	"strconv"
+	"strings"
 
 	"github.com/hllkk/devops-admin/server/global"
 	"github.com/hllkk/devops-admin/server/model/common"
 	"github.com/hllkk/devops-admin/server/model/system"
 	systemReq "github.com/hllkk/devops-admin/server/model/system/request"
+	"github.com/hllkk/devops-admin/server/utils"
 	"github.com/hllkk/devops-admin/server/utils/datascope"
+	"github.com/hllkk/devops-admin/server/utils/logger"
 	"gorm.io/gorm"
 )
 
@@ -75,12 +79,17 @@ func (s *RoleService) CreateRole(ctx context.Context, req systemReq.RoleOperateP
 	r.CreateBy = createBy
 	r.UpdateBy = createBy
 	menuIds := toInt64Slice(req.MenuIds)
-	return global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	if err := global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(&r).Error; err != nil {
 			return err
 		}
 		return saveRoleMenus(tx, r.RoleId, menuIds)
-	})
+	}); err != nil {
+		return err
+	}
+	// 菜单授权事务成功后,同步该角色 casbin 接口策略(全量替换;失败仅告警,下次授权自愈)
+	syncRoleCasbinPolicy(r.RoleId, menuIds)
+	return nil
 }
 
 // UpdateRole 修改角色 + 全量替换菜单分配(事务:roleKey 唯一排除自身 → 更新角色 → 删后插 sys_role_menu)。
@@ -105,7 +114,7 @@ func (s *RoleService) UpdateRole(ctx context.Context, req systemReq.RoleOperateP
 		return errors.New("角色权限字符已存在")
 	}
 	menuIds := toInt64Slice(req.MenuIds)
-	return global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	if err := global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Model(&system.SysRole{}).Where("role_id = ?", roleId).
 			Updates(map[string]interface{}{
 				"role_name":           req.RoleName,
@@ -120,7 +129,12 @@ func (s *RoleService) UpdateRole(ctx context.Context, req systemReq.RoleOperateP
 			return err
 		}
 		return saveRoleMenus(tx, roleId, menuIds)
-	})
+	}); err != nil {
+		return err
+	}
+	// 菜单授权事务成功后,同步该角色 casbin 接口策略(全量替换;失败仅告警,下次授权自愈)
+	syncRoleCasbinPolicy(roleId, menuIds)
+	return nil
 }
 
 // UpdateRoleStatus 修改角色状态(对齐前端 PUT /system/role/changeStatus)。
@@ -146,7 +160,7 @@ func (s *RoleService) DeleteRole(ctx context.Context, ids []int64) error {
 	if userCnt > 0 {
 		return errors.New("角色已分配给用户,不允许删除")
 	}
-	return global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	if err := global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Where("sys_role_id IN ?", ids).Delete(&system.SysRoleMenu{}).Error; err != nil {
 			return err
 		}
@@ -154,7 +168,12 @@ func (s *RoleService) DeleteRole(ctx context.Context, ids []int64) error {
 			return err
 		}
 		return tx.Where("role_id IN ?", ids).Delete(&system.SysRole{}).Error
-	})
+	}); err != nil {
+		return err
+	}
+	// 角色删除后,清理其 casbin 接口策略(防孤儿策略残留)
+	clearRolesCasbinPolicy(ids)
+	return nil
 }
 
 // GetAllocatedUserList 角色已分配用户分页(join sys_user_role,对齐前端 GET /system/role/authUser/allocatedList)。
@@ -243,6 +262,80 @@ func saveRoleMenus(tx *gorm.DB, roleId int64, menuIds []int64) error {
 		return nil
 	}
 	return tx.Create(&rows).Error
+}
+
+// syncRoleCasbinPolicy 全量替换角色的 casbin 接口策略:按 menuIds 查菜单 api_prefix,
+// 组装 (roleId, pattern, *) 策略,先清旧再写新。在 saveRoleMenus 事务成功后调用,
+// 用 enforcer API 操作(自动落 casbin_rule 表 + 刷新缓存);失败仅记日志告警(全量替换语义,下次授权自愈)。
+func syncRoleCasbinPolicy(roleId int64, menuIds []int64) {
+	e := utils.GetCasbin()
+	roleIdStr := strconv.FormatInt(roleId, 10)
+	if e == nil {
+		logger.Bg().Mod("rbac").Warn("casbin enforcer 未初始化, 跳过角色策略同步: roleId=" + roleIdStr)
+		return
+	}
+	// 全量替换:先清该角色全部策略(含 menuIds 为空时仅清不写,用于角色被收回全部菜单)
+	if _, err := e.RemoveFilteredPolicy(0, roleIdStr); err != nil {
+		logger.Bg().Mod("rbac").Err(err).Error("清理角色旧 casbin 策略失败: roleId=" + roleIdStr)
+		return
+	}
+	if len(menuIds) == 0 {
+		return
+	}
+	// 查菜单 api_prefix,按逗号拆分得 pattern 列表
+	var menus []system.SysMenu
+	if err := global.OPS_DB.Select("api_prefix").Where("menu_id IN ?", menuIds).Find(&menus).Error; err != nil {
+		logger.Bg().Mod("rbac").Err(err).Error("查询菜单 api_prefix 失败: roleId=" + roleIdStr)
+		return
+	}
+	patterns := expandApiPrefixes(menus)
+	if len(patterns) == 0 {
+		return
+	}
+	rules := make([][]string, 0, len(patterns))
+	for _, p := range patterns {
+		rules = append(rules, []string{roleIdStr, p, "*"})
+	}
+	if _, err := e.AddPolicies(rules); err != nil {
+		logger.Bg().Mod("rbac").Err(err).Error("写入角色 casbin 策略失败: roleId=" + roleIdStr)
+	}
+}
+
+// expandApiPrefixes 从菜单列表展开 casbin obj pattern:按逗号拆分每个菜单的 ApiPrefix,
+// 去空白、去重、跳过空值,返回有序唯一的 pattern 列表(供 syncRoleCasbinPolicy 组装策略)。
+func expandApiPrefixes(menus []system.SysMenu) []string {
+	seen := make(map[string]struct{})
+	out := make([]string, 0, len(menus))
+	for _, m := range menus {
+		if strings.TrimSpace(m.ApiPrefix) == "" {
+			continue
+		}
+		for _, p := range strings.Split(m.ApiPrefix, ",") {
+			p = strings.TrimSpace(p)
+			if p == "" {
+				continue
+			}
+			if _, ok := seen[p]; ok {
+				continue
+			}
+			seen[p] = struct{}{}
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+// clearRolesCasbinPolicy 批量清理角色的 casbin 接口策略(删角色后调用,防孤儿策略)。
+func clearRolesCasbinPolicy(roleIds []int64) {
+	e := utils.GetCasbin()
+	if e == nil || len(roleIds) == 0 {
+		return
+	}
+	for _, roleId := range roleIds {
+		if _, err := e.RemoveFilteredPolicy(0, strconv.FormatInt(roleId, 10)); err != nil {
+			logger.Bg().Mod("rbac").Err(err).Error("清理已删角色 casbin 策略失败: roleId=" + strconv.FormatInt(roleId, 10))
+		}
+	}
 }
 
 // toInt64Slice 将 []common.Int64String 转为 []int64。

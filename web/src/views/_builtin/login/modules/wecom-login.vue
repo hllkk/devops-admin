@@ -193,7 +193,7 @@ if (isWebview && !!systemStore.setting?.wecomEnabled) {
 </script>
 
 <template>
-  <div class="flex-col-center gap-24px">
+  <div class="h-full flex-col-center gap-24px">
     <!-- WebView 免登跳转中 -->
     <div v-if="webviewRedirecting" class="flex-col-center h-340px">
       <NSpin size="large" />

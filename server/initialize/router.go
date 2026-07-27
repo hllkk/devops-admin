@@ -94,7 +94,7 @@ func Routers() *gin.Engine {
 	PrivateGroup.Use(middleware.JWTAuth()).
 		Use(middleware.OperationRecord()).
 		Use(middleware.MustChangePwdGuard()).
-		// Use(middleware.CasbinHandler()).
+		Use(middleware.CasbinHandler()).
 		Use(middleware.DataScope())
 
 	{

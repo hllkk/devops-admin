@@ -944,6 +944,8 @@ declare namespace App {
             editMenu: string;
             perms: string;
             permsTip: string;
+            apiPrefix: string;
+            apiPrefixTip: string;
             status: string;
             statusTip: string;
             emptyMenu: string;
@@ -986,6 +988,7 @@ declare namespace App {
               menuName: FormMsg;
               orderNum: FormMsg;
               perms: FormMsg;
+              apiPrefix: FormMsg;
               path: FormMsg;
               component: FormMsg;
             };
