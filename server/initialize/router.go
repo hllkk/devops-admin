@@ -76,9 +76,10 @@ func Routers() *gin.Engine {
 
 	Router.StaticFS(global.OPS_CONFIG.Local.StorePath, justFilesFilesystem{http.Dir(global.OPS_CONFIG.Local.StorePath)})
 	// Router.Use(middleware.LoadTls())  // 如果需要使用https 请打开此中间件 然后前往 core/server.go 将启动模式 更变为 Router.RunTLS("端口","你的cre/pem文件","你的key文件")
-	// 跨域，如需跨域可以打开下面的注释
-	// Router.Use(middleware.Cors()) // 直接放行全部跨域请求
-	// Router.Use(middleware.CorsByRules()) // 按照配置的规则放行跨域请求
+	// 跨域:当前同源部署(前后端经 nginx 同域反代)无需启用 CORS。
+	// 若改为跨域部署,务必用 CorsByRules()(按 strict-whitelist 白名单放行);
+	// 不要启用反射式的 Cors()——它回显任意 Origin 且 Allow-Credentials=true,在 httpOnly cookie 模式下有风险。
+	// Router.Use(middleware.CorsByRules())
 	// Swagger 仅在非 release 模式注册：生产（GIN_MODE=release）下关闭，避免未授权暴露全部接口文档
 	if gin.Mode() != gin.ReleaseMode {
 		docs.SwaggerInfo.BasePath = global.OPS_CONFIG.System.RouterPrefix

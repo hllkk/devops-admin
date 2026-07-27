@@ -12,6 +12,10 @@ import (
 	"gorm.io/gorm"
 )
 
+// dummyHash 用户名不存在时跑一次等价 bcrypt,抹平与"密码错误"分支的响应时序差异,消除用户名枚举侧信道。
+// 包加载时计算一次(DefaultCost≈100ms),不进入请求路径,不影响运行期性能。
+var dummyHash = utils.BcryptHash("dummy-timing-equalization")
+
 type UserService struct{}
 
 // Login 校验用户名密码 返回带 Roles 的用户(登录链路 claims 需要 SuperAdmin)
@@ -22,6 +26,8 @@ func (userService *UserService) Login(ctx context.Context, u *system.SysUser) (u
 		First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// 用户名不存在也跑一次等价 bcrypt,抹平与"密码错误"分支的响应时序,消除用户名枚举侧信道
+			_ = utils.BcryptCheck(u.Password, dummyHash)
 			err = errors.New("用户名不存在或密码错误")
 		}
 		return user, err

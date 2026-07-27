@@ -2,7 +2,6 @@ package utils
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -37,18 +36,14 @@ func SetToken(c *gin.Context, token string, maxAge int) {
 	c.SetCookie("x-token", token, maxAge, "/", "", RequestIsSecure(c), true)
 }
 
+// GetToken 取登录 token:优先 header x-token,其次 cookie x-token(当前前端纯 cookie 模式走 cookie 分支)。
+// 仅取值,不做校验、不回写 cookie——解析与黑名单校验统一由 JWTAuth 中间件完成,
+// 避免每个认证请求都冗余地重写一次 x-token cookie。
 func GetToken(c *gin.Context) string {
-	token := c.Request.Header.Get("x-token")
-	if token == "" {
-		j := NewJWT()
-		token, _ = c.Cookie("x-token")
-		claims, err := j.ParseToken(token)
-		if err != nil {
-			logger.WithCtx(c.Request.Context()).Mod("system").Error("重新写入cookie token失败,未能成功解析token,请检查请求头是否存在x-token且claims是否为规定结构")
-			return token
-		}
-		SetToken(c, token, int(claims.ExpiresAt.Unix()-time.Now().Unix()))
+	if token := c.Request.Header.Get("x-token"); token != "" {
+		return token
 	}
+	token, _ := c.Cookie("x-token")
 	return token
 }
 

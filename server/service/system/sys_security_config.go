@@ -94,8 +94,4 @@ func (s *SecurityConfigService) LoadAll(ctx context.Context) {
 	setSecurityConfigCache(cfg)
 }
 
-// CurrentLimit 供中间件读取限流配置 返回 enable/window/count
-func (s *SecurityConfigService) CurrentLimit(ctx context.Context) (enable bool, window int, count int) {
-	cfg := s.Current(ctx)
-	return cfg.LimitEnable, cfg.LimitWindow, cfg.LimitCount
-}
+// CurrentLimit 已移除:SecurityLimit 直接读 Current() 取完整配置(IP 校验 + 限流共用),无需再单独封装限流三元组。
