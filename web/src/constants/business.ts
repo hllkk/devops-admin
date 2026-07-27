@@ -1,5 +1,11 @@
 import { transformRecordToOption } from '@/utils/common';
 
+/** 文件上传接受的扩展名（accept） */
+export enum AcceptType {
+  Image = '.jpg,.jpeg,.png,.gif,.bmp,.webp',
+  File = '.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.pdf,.zip,.rar,.7z'
+}
+
 /** enable status */
 export const enableStatusRecord: Record<Api.Common.EnableStatus, string> = {
   '0': '正常',

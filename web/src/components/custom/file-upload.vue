@@ -5,7 +5,7 @@ import type { JSX } from 'vue/jsx-runtime';
 import { fetchBatchDeleteOss } from '@/service/api/system/oss';
 import { getToken } from '@/store/modules/auth/shared';
 import { getServiceBaseURL } from '@/utils/service';
-import { AcceptType } from '@/enum/business';
+import { AcceptType } from '@/constants/business';
 
 defineOptions({
   name: 'FileUpload',

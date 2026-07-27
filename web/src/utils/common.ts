@@ -1,4 +1,3 @@
-import { AcceptType } from '@/enum/business';
 import { $t } from '@/locales';
 /**
  * Transform record to option
@@ -84,11 +83,6 @@ export function isNotNull(value: any) {
 /** 判断是否为空 */
 export function isNull(value: any) {
   return value === undefined || value === null || value === '';
-}
-
-/** 判断是否为图片类型 */
-export function isImage(suffix: string) {
-  return AcceptType.Image.split(',').includes(suffix.toLowerCase());
 }
 
 /**
