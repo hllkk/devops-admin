@@ -161,9 +161,12 @@ func (s *RouteService) GetUserRoutes(ctx context.Context, userId int64) (result 
 		}
 	}
 
-	// 2. 取菜单(M/C,F 不进路由):超管全量,否则按 roleIds 过滤 + 向上回溯补祖先
+	// 2. 取菜单(M/C,F 不进路由):超管全量,否则按 roleIds 过滤 + 向上回溯补祖先。
+	// 仅下发启用菜单(status='0'):停用菜单不应再出现在路由树/可被直接 URL 访问(对齐 RuoYi getRouters)。
+	// 菜单管理页的 list 不受影响——管理员仍可按 status 筛选查到停用菜单进行维护。
 	query := global.OPS_DB.WithContext(ctx).Model(&system.SysMenu{}).
 		Where("menu_type IN ?", []string{"M", "C"}).
+		Where("status = ?", "0").
 		Order(menuOrder)
 	var menus []system.SysMenu
 	if isSuper {

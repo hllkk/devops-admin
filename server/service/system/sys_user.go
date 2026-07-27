@@ -92,11 +92,13 @@ func (userService *UserService) GetUserDetail(ctx context.Context, userId int64)
 		return
 	}
 	if len(roleIds) > 0 {
+		// 仅聚合启用菜单(status='0')的按钮权限:停用菜单的 perms 不应再下发给前端按钮显隐/鉴权
 		err = global.OPS_DB.WithContext(ctx).Model(&system.SysMenu{}).
 			Where("menu_id IN (?)",
 				global.OPS_DB.Model(&system.SysRoleMenu{}).
 					Where("sys_role_id IN ?", roleIds).
 					Select("sys_menu_id")).
+			Where("status = ?", "0").
 			Where("perms <> ''").
 			Distinct("perms").
 			Pluck("perms", &permissions).Error

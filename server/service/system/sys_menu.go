@@ -8,6 +8,7 @@ import (
 	"github.com/hllkk/devops-admin/server/model/common"
 	"github.com/hllkk/devops-admin/server/model/system"
 	systemReq "github.com/hllkk/devops-admin/server/model/system/request"
+	"gorm.io/gorm"
 )
 
 // MenuService 菜单业务服务(对齐前端 /system/menu/* 资源)
@@ -92,7 +93,20 @@ func (s *MenuService) UpdateMenu(ctx context.Context, req systemReq.MenuOperateP
 	if req.MenuName == "" {
 		return errors.New("菜单名称不能为空")
 	}
-	if err := s.checkModuleConsistency(ctx, req.ParentId.Int64(), req.Module); err != nil {
+	// 防环:新父不能是自身,也不能落在自身子孙子树内——否则成环节点 parent_id≠0,
+	// 从 childrenOf[0] 触达不到,会在菜单树选择/路由下发中整体消失(buildMenuTreeSelect/menusToRoutes)。
+	newParentId := req.ParentId.Int64()
+	if newParentId != 0 {
+		if newParentId == menuId {
+			return errors.New("上级菜单不能选择自身")
+		}
+		for _, d := range s.collectWithDescendants(ctx, []int64{menuId}) {
+			if d == newParentId {
+				return errors.New("上级菜单不能选择自身的子菜单")
+			}
+		}
+	}
+	if err := s.checkModuleConsistency(ctx, newParentId, req.Module); err != nil {
 		return err
 	}
 	return global.OPS_DB.WithContext(ctx).Model(&system.SysMenu{}).Where("menu_id = ?", menuId).
@@ -199,16 +213,27 @@ func (s *MenuService) GetRoleMenuTreeSelect(ctx context.Context, roleId int64) (
 	return
 }
 
-// CascadeDeleteMenu 级联删除:收集选中菜单及其全部子孙(按 parent_id 递归),删菜单 + 清理 sys_role_menu 关联。
+// CascadeDeleteMenu 级联删除:收集选中菜单及其全部子孙(按 parent_id 递归),事务内删菜单 + 清理 sys_role_menu 关联;
+// 事务后按受影响角色剩余菜单重建 casbin 策略(防菜单已删但 api_prefix 残留导致权限收回不彻底)。
 func (s *MenuService) CascadeDeleteMenu(ctx context.Context, menuIds []int64) error {
 	if len(menuIds) == 0 {
 		return errors.New("未选择删除项")
 	}
 	all := s.collectWithDescendants(ctx, menuIds)
-	if err := global.OPS_DB.WithContext(ctx).Where("sys_menu_id IN ?", all).Delete(&system.SysRoleMenu{}).Error; err != nil {
+	// 删前收集受影响角色:级联清关联后需按其剩余菜单重建 casbin,否则被删菜单的 api_prefix 沦为孤儿策略
+	var affectedRoleIds []int64
+	global.OPS_DB.WithContext(ctx).Model(&system.SysRoleMenu{}).
+		Where("sys_menu_id IN ?", all).Distinct("sys_role_id").Pluck("sys_role_id", &affectedRoleIds)
+	if err := global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("sys_menu_id IN ?", all).Delete(&system.SysRoleMenu{}).Error; err != nil {
+			return err
+		}
+		return tx.Where("menu_id IN ?", all).Delete(&system.SysMenu{}).Error
+	}); err != nil {
 		return err
 	}
-	return global.OPS_DB.WithContext(ctx).Where("menu_id IN ?", all).Delete(&system.SysMenu{}).Error
+	rebuildAffectedCasbinPolicy(ctx, affectedRoleIds)
+	return nil
 }
 
 // leafCheckedKeys 取角色已分配菜单的叶子 ID(角色菜单中,没有子菜单也属于角色菜单的节点)。

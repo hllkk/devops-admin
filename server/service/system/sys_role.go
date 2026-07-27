@@ -388,6 +388,21 @@ func clearRolesCasbinPolicy(roleIds []int64) {
 	}
 }
 
+// rebuildAffectedCasbinPolicy 按各角色当前剩余菜单(sys_role_menu)全量重建 casbin 接口策略。
+// 用于菜单删除/级联删除后:菜单被删但其 api_prefix 可能仍残留在角色策略里(权限收回不彻底),
+// 故按剩余菜单重建。失败仅告警(全量替换语义,下次角色授权自愈)。
+func rebuildAffectedCasbinPolicy(ctx context.Context, roleIds []int64) {
+	if len(roleIds) == 0 {
+		return
+	}
+	for _, roleId := range roleIds {
+		var menuIds []int64
+		global.OPS_DB.WithContext(ctx).Model(&system.SysRoleMenu{}).
+			Where("sys_role_id = ?", roleId).Pluck("sys_menu_id", &menuIds)
+		syncRoleCasbinPolicy(roleId, menuIds)
+	}
+}
+
 // toInt64Slice 将 []common.Int64String 转为 []int64。
 func toInt64Slice(ids []common.Int64String) []int64 {
 	out := make([]int64, 0, len(ids))
