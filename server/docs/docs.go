@@ -5283,51 +5283,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/user/getUserList": {
-            "post": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "SysUser"
-                ],
-                "summary": "分页获取用户列表",
-                "parameters": [
-                    {
-                        "description": "页码, 每页大小",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/request.GetUserList"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/response.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/response.PageResult"
-                                        },
-                                        "msg": {
-                                            "type": "string"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
         "/wecomCallback": {
             "get": {
                 "produces": [
@@ -5505,30 +5460,6 @@ const docTemplate = `{
                 },
                 "remark": {
                     "description": "备注",
-                    "type": "string"
-                }
-            }
-        },
-        "request.GetUserList": {
-            "type": "object",
-            "properties": {
-                "deptId": {
-                    "type": "string",
-                    "example": "0"
-                },
-                "keyword": {
-                    "description": "关键字",
-                    "type": "string"
-                },
-                "pageNum": {
-                    "description": "页码",
-                    "type": "integer"
-                },
-                "pageSize": {
-                    "description": "每页大小",
-                    "type": "integer"
-                },
-                "userName": {
                     "type": "string"
                 }
             }
@@ -7096,6 +7027,10 @@ const docTemplate = `{
         "system.SysMenu": {
             "type": "object",
             "properties": {
+                "apiPrefix": {
+                    "description": "接口路径模式(菜单授权时推导为该角色casbin策略)",
+                    "type": "string"
+                },
                 "children": {
                     "description": "子菜单(内存组装,不建列)",
                     "type": "array",

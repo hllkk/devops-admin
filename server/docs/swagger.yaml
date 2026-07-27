@@ -107,23 +107,6 @@ definitions:
         description: 备注
         type: string
     type: object
-  request.GetUserList:
-    properties:
-      deptId:
-        example: "0"
-        type: string
-      keyword:
-        description: 关键字
-        type: string
-      pageNum:
-        description: 页码
-        type: integer
-      pageSize:
-        description: 每页大小
-        type: integer
-      userName:
-        type: string
-    type: object
   request.InitDB:
     properties:
       adminPassword:
@@ -1266,6 +1249,9 @@ definitions:
     type: object
   system.SysMenu:
     properties:
+      apiPrefix:
+        description: 接口路径模式(菜单授权时推导为该角色casbin策略)
+        type: string
       children:
         description: 子菜单(内存组装,不建列)
         items:
@@ -5009,32 +4995,6 @@ paths:
                   type: string
               type: object
       summary: 用户注册账号
-      tags:
-      - SysUser
-  /user/getUserList:
-    post:
-      parameters:
-      - description: 页码, 每页大小
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/request.GetUserList'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/response.PageResult'
-                msg:
-                  type: string
-              type: object
-      summary: 分页获取用户列表
       tags:
       - SysUser
   /wecomCallback:

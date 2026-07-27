@@ -7,7 +7,6 @@ import (
 
 	"github.com/hllkk/devops-admin/server/global"
 	"github.com/hllkk/devops-admin/server/model/system"
-	systemReq "github.com/hllkk/devops-admin/server/model/system/request"
 	"github.com/hllkk/devops-admin/server/utils"
 	"gorm.io/gorm"
 )
@@ -107,21 +106,6 @@ func (userService *UserService) GetUserDetail(ctx context.Context, userId int64)
 	}
 	if permissions == nil {
 		permissions = []string{}
-	}
-	return
-}
-
-// GetUserInfoList 分页查用户列表
-func (userService *UserService) GetUserInfoList(ctx context.Context, q systemReq.GetUserList) (list []system.SysUser, total int64, err error) {
-	db := global.OPS_DB.WithContext(ctx).Model(&system.SysUser{})
-	if q.UserName != "" {
-		db = db.Where("user_name LIKE ?", "%"+q.UserName+"%")
-	}
-	limit, offset := q.LimitOffset()
-	if limit > 0 {
-		err = db.Count(&total).Limit(limit).Offset(offset).Find(&list).Error
-	} else {
-		err = db.Count(&total).Find(&list).Error
 	}
 	return
 }

@@ -209,10 +209,14 @@ func (s *UserService) GetDetail(ctx context.Context, userId int64) (result syste
 	}
 	result.Roles = u.Roles
 	var roleIds []int64
-	global.OPS_DB.WithContext(ctx).Model(&system.SysUserRole{}).Where("sys_user_id = ?", userId).Pluck("sys_role_id", &roleIds)
+	if err = global.OPS_DB.WithContext(ctx).Model(&system.SysUserRole{}).Where("sys_user_id = ?", userId).Pluck("sys_role_id", &roleIds).Error; err != nil {
+		return
+	}
 	result.RoleIds = int64ToStrSlice(roleIds)
 	var postIds []int64
-	global.OPS_DB.WithContext(ctx).Model(&system.SysUserPost{}).Where("sys_user_id = ?", userId).Pluck("sys_post_id", &postIds)
+	if err = global.OPS_DB.WithContext(ctx).Model(&system.SysUserPost{}).Where("sys_user_id = ?", userId).Pluck("sys_post_id", &postIds).Error; err != nil {
+		return
+	}
 	result.PostIds = int64ToStrSlice(postIds)
 	return
 }
@@ -294,6 +298,9 @@ func (s *UserService) UpdateMyProfile(ctx context.Context, userId int64, req sys
 // 经统一 OSS 抽象落存储,把返回 url 写回 SysUser.Avatar;local 模式 url 形态与 media 一致(原样存,不补前缀)。
 // 头像场景仅允许图片后缀,杜绝借头像接口传任意可执行/文档文件。
 func (s *UserService) UpdateMyAvatar(ctx context.Context, userId int64, file *multipart.FileHeader) (string, error) {
+	if file.Size > MaxAvatarBytes {
+		return "", fmt.Errorf("头像文件不能超过 %dMB", MaxAvatarBytes>>20)
+	}
 	ext := strings.ToLower(filepath.Ext(file.Filename))
 	switch ext {
 	case ".jpg", ".jpeg", ".png", ".gif", ".webp":
@@ -362,6 +369,8 @@ const (
 	// DefaultImportPassword 导入新用户的初始密码(满足默认复杂度:大小写+数字+特殊+8位)。
 	// PasswordUpdatedAt 留零值,登录链路 MustChangePwdGuard 会强制首登改密,故明文常量无暴露风险。
 	DefaultImportPassword = "User@1234"
+	// MaxAvatarBytes 头像上传大小上限(5MB),防已登录用户上传超大文件耗尽内存/OSS 配额。
+	MaxAvatarBytes = 5 << 20
 )
 
 // ExportList 按列表查询条件导出用户(全量,不分页;过滤条件与 GetList 保持一致,加导出上限防过大)。

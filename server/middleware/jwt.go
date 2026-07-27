@@ -70,13 +70,6 @@ func JWTAuth() gin.HandlerFunc {
 			}
 		}
 		c.Next()
-
-		if newToken, exists := c.Get("new-token"); exists {
-			c.Header("new-token", newToken.(string))
-		}
-		if newExpiresAt, exists := c.Get("new-expires-at"); exists {
-			c.Header("new-expires-at", newExpiresAt.(string))
-		}
 	}
 }
 

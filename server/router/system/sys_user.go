@@ -24,8 +24,7 @@ func (s *UserRouter) InitUserRouter(Router *gin.RouterGroup) {
 		// userRouter.PUT("setSelfSetting", baseApi.SetSelfSetting)          // 用户界面配置
 	}
 	{
-		userRouterWithoutRecord.POST("getUserList", baseApi.GetUserList) // 分页获取用户列表
-		userRouterWithoutRecord.GET("getUserInfo", baseApi.GetUserInfo)  // 获取自身信息
+		userRouterWithoutRecord.GET("getUserInfo", baseApi.GetUserInfo) // 获取自身信息
 	}
 
 	// /system/user/* RESTful 接口(对齐前端 user.ts);鉴权与操作日志由 PrivateGroup 全局中间件统一处理。

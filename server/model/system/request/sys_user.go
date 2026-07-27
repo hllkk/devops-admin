@@ -25,13 +25,6 @@ type Register struct {
 	Phonenumber string  `json:"phonenumber" form:"phonenumber"`
 }
 
-// GetUserList 用户分页查询(内嵌通用分页 + 过滤)
-type GetUserList struct {
-	commonReq.PageInfo
-	UserName string `json:"userName" form:"userName"`
-	DeptId   int64  `json:"deptId,string" form:"deptId"`
-}
-
 // UserSearch 用户分页查询(对齐前端 Api.System.UserSearchParams,GET query 传输)。
 // deptId/userName/nickName/phonenumber 过滤;roleId>0 时 join sys_user_role。
 type UserSearch struct {

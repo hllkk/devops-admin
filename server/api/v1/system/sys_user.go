@@ -180,33 +180,6 @@ func (b *BaseApi) Register(c *gin.Context) {
 	response.OkWithDetailed(systemRes.SysUserResponse{User: userReturn}, "注册成功", c)
 }
 
-// GetUserList
-// @Tags      SysUser
-// @Summary   分页获取用户列表
-// @Produce   application/json
-// @Param     data  body      systemReq.GetUserList                                  true  "页码, 每页大小"
-// @Success   200   {object}  response.Response{data=response.PageResult,msg=string}
-// @Router    /user/getUserList [post]
-func (b *BaseApi) GetUserList(c *gin.Context) {
-	var pageInfo systemReq.GetUserList
-	if err := c.ShouldBindJSON(&pageInfo); err != nil {
-		response.FailWithMessage(err.Error(), c)
-		return
-	}
-	list, total, err := userService.GetUserInfoList(c.Request.Context(), pageInfo)
-	if err != nil {
-		logger.WithCtx(c.Request.Context()).Mod("biz").Err(err).Error("获取失败")
-		response.FailWithMessage("获取失败", c)
-		return
-	}
-	response.OkWithDetailed(response.PageResult{
-		Rows:     list,
-		Total:    total,
-		PageNum:  pageInfo.PageNum,
-		PageSize: pageInfo.PageSize,
-	}, "获取成功", c)
-}
-
 // GetUserInfo 获取当前登录用户信息（/auth/getUserInfo）返回 user + roles(roleKey) + permissions(perms)
 func (b *BaseApi) GetUserInfo(c *gin.Context) {
 	userId := utils.GetUserID(c)
