@@ -29,6 +29,7 @@ export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<Ro
   system_role: () => import("@/views/_admin/system/role/index.vue"),
   system_setting: () => import("@/views/_admin/system/setting/index.vue"),
   system_user: () => import("@/views/_admin/system/user/index.vue"),
+  test: () => import("@/views/_admin/test/index.vue"),
   timer: () => import("@/views/_admin/timer/index.vue"),
   403: () => import("@/views/_builtin/403/index.vue"),
   404: () => import("@/views/_builtin/404/index.vue"),

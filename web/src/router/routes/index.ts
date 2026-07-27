@@ -2,7 +2,6 @@ import type { CustomRoute, ElegantConstRoute, ElegantRoute } from '@elegant-rout
 import { generatedRoutes } from '../elegant/routes';
 import { layouts, views } from '../elegant/imports';
 import { transformElegantRoutesToVueRoutes } from '../elegant/transform';
-import { MODULE_CONFIG, type RouteModule } from '@/constants/module';
 
 /**
  * custom routes
@@ -32,18 +31,20 @@ export function createStaticRoutes() {
 }
 
 /**
- * Apply module layout:把 preset='disk' 模块的路由布局从 layout.base 换成 layout.disk。
- * 递归处理 children;module 为空(全局路由)不动。MODULE_CONFIG.preset 的唯一消费点。
+ * Tag disk layout:给 component 含 layout.disk 的路由节点打 meta.useDiskLayout=true。
+ * 布局完全由后端下发的 component 决定(不再按 module 改写);这里只做一次标记,
+ * 供 themeStore.effectiveLayoutMode 判断是否定死 vertical-mix(disk 布局的固有菜单模式)。
+ * 递归处理 children;vue-router 的 route.meta 会合并所有 matched 层级,故子路由自动继承父的标记。
  */
-function applyModuleLayout(routes: ElegantConstRoute[]): ElegantConstRoute[] {
+function tagLayoutMeta(routes: ElegantConstRoute[]): ElegantConstRoute[] {
   return routes.map(route => {
-    const module = (route.meta as { module?: RouteModule } | undefined)?.module;
     const next: ElegantConstRoute = { ...route };
-    if (module && MODULE_CONFIG[module]?.preset === 'disk' && next.component) {
-      next.component = next.component.replace('layout.base', 'layout.disk');
+    if (typeof next.component === 'string' && next.component.includes('layout.disk')) {
+      // 拷新 meta 打标记(避免污染原 route 的 meta 引用);断言绕过展开后 title 被窄化为 optional 与 RouteMeta.title 必填的差异
+      next.meta = { ...next.meta, useDiskLayout: true } as typeof next.meta;
     }
     if (next.children) {
-      next.children = applyModuleLayout(next.children as ElegantConstRoute[]);
+      next.children = tagLayoutMeta(next.children as ElegantConstRoute[]);
     }
     return next;
   });
@@ -55,5 +56,5 @@ function applyModuleLayout(routes: ElegantConstRoute[]): ElegantConstRoute[] {
  * @param routes Elegant routes
  */
 export function getAuthVueRoutes(routes: ElegantConstRoute[]) {
-  return transformElegantRoutesToVueRoutes(applyModuleLayout(routes), layouts, views);
+  return transformElegantRoutesToVueRoutes(tagLayoutMeta(routes), layouts, views);
 }

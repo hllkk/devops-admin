@@ -8,6 +8,7 @@ import { SetupStoreId } from '@/enum';
 import { useAuthStore } from '../auth';
 import { useRouteStore } from '../route';
 import { DEFAULT_MODULE } from '@/constants/module';
+import { router } from '@/router';
 import {
   addThemeVarsToGlobal,
   applyStructural,
@@ -33,11 +34,12 @@ export const useThemeStore = defineStore(SetupStoreId.Theme, () => {
   const routeStore = useRouteStore();
 
   /**
-   * 对外生效的菜单模式:disk 模块定死 vertical-mix(disk-layout 复用 base 外壳但固定菜单模式),
-   * 其余模块用用户主题设置。base-layout/global-menu/global-sider 统一读它,避免 disk 下外壳与菜单组件模式不一致。
+   * 对外生效的菜单模式:disk 布局(layout.disk)定死 vertical-mix,其余用用户主题设置。
+   * 布局完全由后端下发的 component 决定(不再绑定 module);router/routes 的 tagLayoutMeta 给 disk 路由
+   * 打 meta.useDiskLayout。base-layout/global-menu/global-sider 统一读它,避免 disk 外壳与菜单组件模式不一致。
    */
   const effectiveLayoutMode = computed<UnionKey.ThemeLayoutMode>(() =>
-    routeStore.currentModule === 'disk' ? 'vertical-mix' : settings.value.layout.mode
+    router.currentRoute.value.meta?.useDiskLayout ? 'vertical-mix' : settings.value.layout.mode
   );
 
   /**

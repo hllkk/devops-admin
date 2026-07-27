@@ -271,6 +271,15 @@ export const generatedRoutes: GeneratedRoute[] = [
     ]
   },
   {
+    name: 'test',
+    path: '/test',
+    component: 'layout.base$view.test',
+    meta: {
+      title: 'test',
+      i18nKey: 'route.test'
+    }
+  },
+  {
     name: 'timer',
     path: '/timer',
     component: 'layout.base$view.timer',

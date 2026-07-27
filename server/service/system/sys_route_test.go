@@ -242,3 +242,66 @@ func TestContainsRouteName(t *testing.T) {
 		t.Error("不应找到不存在的 name")
 	}
 }
+
+func TestResolveLayout(t *testing.T) {
+	cases := []struct {
+		in   string
+		want string
+	}{
+		{"layout.blank$view._admin_system_user", "blank"},
+		{"layout.disk$view._admin_disk", "disk"},
+		{"layout.disk", "disk"},
+		{"layout.base$view.admin", "base"},
+		{"Layout", "base"},     // RuoYi 目录占位
+		{"_admin/system/user/index", "base"}, // RuoYi 普通菜单路径
+		{"FrameView", "base"},  // RuoYi 外链/iframe 占位
+		{"", "base"},
+	}
+	for _, c := range cases {
+		if got := resolveLayout(c.in); got != c.want {
+			t.Errorf("resolveLayout(%q) = %q, want %q", c.in, got, c.want)
+		}
+	}
+}
+
+// TestMenusToRoutesLayout 断言 SysMenu.Component 里编码的布局意图(blank/disk)被 menusToRoutes 提取,
+// 且 component 里脏的 view 段(录入的 views 目录路径下划线化)被 routeKey(Path)规范化覆盖:
+//   - 顶层单级 -> layout.<layout>$view.<key>
+//   - 多级目录根 -> layout.<layout>
+//   - 子级叶子 -> view.<key>(无外壳,布局不生效)
+func TestMenusToRoutesLayout(t *testing.T) {
+	menus := []system.SysMenu{
+		// 顶层单级·网盘布局:component 的 view 段 _admin_disk 是脏的,应被 routeKey(disk) 覆盖
+		{MenuId: 1, ParentId: 0, MenuType: "C", MenuName: "route.disk", Path: "disk", Component: "layout.disk$view._admin_disk", OrderNum: 1, Module: "disk"},
+		// 顶层单级·空白布局:脏 view 段 print_page 应被 routeKey(print) 覆盖
+		{MenuId: 2, ParentId: 0, MenuType: "C", MenuName: "route.print", Path: "print", Component: "layout.blank$view.print_page", OrderNum: 2, Module: "admin"},
+		// 顶层多级目录·网盘布局(有子)
+		{MenuId: 3, ParentId: 0, MenuType: "M", MenuName: "route.storage", Path: "storage", Component: "layout.disk", OrderNum: 3, Module: "disk"},
+		{MenuId: 4, ParentId: 3, MenuType: "C", MenuName: "route.storage_file", Path: "storage/file", Component: "_disk/storage/file/index", OrderNum: 1, Module: "disk"},
+	}
+	routes := (&RouteService{}).menusToRoutes(menus)
+
+	if r := findRoute(routes, "disk"); r == nil {
+		t.Fatal("缺少 disk 路由")
+	} else if r.Component != "layout.disk$view.disk" {
+		t.Errorf("disk(网盘布局)Component = %q, want layout.disk$view.disk", r.Component)
+	}
+
+	if r := findRoute(routes, "print"); r == nil {
+		t.Fatal("缺少 print 路由")
+	} else if r.Component != "layout.blank$view.print" {
+		t.Errorf("print(空白布局)Component = %q, want layout.blank$view.print", r.Component)
+	}
+
+	if r := findRoute(routes, "storage"); r == nil {
+		t.Fatal("缺少 storage 路由")
+	} else if r.Component != "layout.disk" {
+		t.Errorf("storage(网盘目录)Component = %q, want layout.disk", r.Component)
+	}
+
+	if r := findRoute(routes, "storage_file"); r == nil {
+		t.Fatal("缺少 storage_file 路由")
+	} else if r.Component != "view.storage_file" {
+		t.Errorf("storage_file(子级叶子)Component = %q, want view.storage_file(布局不生效,view 由 routeKey 覆盖)", r.Component)
+	}
+}

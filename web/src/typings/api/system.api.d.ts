@@ -220,7 +220,7 @@ declare namespace Api {
      * - "0": "默认布局"
      * - "1": "空白布局"
      */
-    type MenuLayout = '0' | '1';
+    type MenuLayout = '0' | '1' | '2';
 
     /**
      * menu type

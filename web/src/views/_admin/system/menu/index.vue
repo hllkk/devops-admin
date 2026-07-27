@@ -508,9 +508,11 @@ const renderIframeQuery = (queryParam: string) => {
             </NDescriptionsItem>
             <NDescriptionsItem v-if="isMenu" :label="$t('page.system.menu.component')">
               {{
-                currentMenu.component?.startsWith('layout.blank$view.')
-                  ? `${currentMenu.component?.slice(18, currentMenu.component.length)?.replaceAll('_', '/')}/index`
-                  : currentMenu.component
+                currentMenu.component?.startsWith('layout.disk$view.')
+                  ? `${currentMenu.component?.slice(17)}/index`
+                  : currentMenu.component?.startsWith('layout.blank$view.')
+                    ? `${currentMenu.component?.slice(18)}/index`
+                    : currentMenu.component
               }}
             </NDescriptionsItem>
             <NDescriptionsItem

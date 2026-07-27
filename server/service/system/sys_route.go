@@ -17,8 +17,9 @@ type RouteService struct{}
 const (
 	routeLocalIconPrefix = "local-icon-" // SysMenu.Icon 本地图标前缀,转 meta.localIcon("menu-<name>")
 	routeIconNone        = "#"           // RuoYi 无图标占位,转换时忽略
-	routeHomeDefault     = "admin"       // 落地页 key,对齐 web/.env VITE_ROUTE_HOME=admin
-	routeLayoutBase      = "layout.base" // Soybean 基础布局组件引用
+	routeHomeDefault     = "admin"        // 落地页 key,对齐 web/.env VITE_ROUTE_HOME=admin
+	routeLayoutBlank     = "layout.blank" // 空白布局标记(菜单管理"空白布局"录入时编码进 component)
+	routeLayoutDisk      = "layout.disk"  // 网盘布局标记(菜单管理"网盘布局"录入时编码进 component)
 )
 
 // routeKey 由 SysMenu.Path 推导 Elegant Router 的 RouteKey/视图 key:
@@ -49,6 +50,25 @@ func resolveIcon(icon string) (iconOut, localIconOut string) {
 		return "", "menu-" + strings.TrimPrefix(icon, routeLocalIconPrefix)
 	}
 	return icon, ""
+}
+
+// resolveLayout 从 SysMenu.Component 提取布局外壳名(对齐 web/src/router/elegant/imports.ts 的 layouts 键)。
+// 菜单管理把布局选择编码进 component:
+//   - 空白布局 -> "layout.blank$view.xxx"
+//   - 网盘布局 -> "layout.disk$view.xxx"
+//   - 目录 "Layout" / 普通菜单 "xxx/index" / 外链 "FrameView" / 空 -> 默认 base
+//
+// 只取布局意图(blank/disk/base);view 段统一由 routeKey(Path) 规范化,不复用 component 里的路径段
+// (component 里的 view 段是录入的 views 目录路径下划线化,与构建期 routeKey 不一致,直接用会导致 transform 找不到组件)。
+func resolveLayout(component string) string {
+	switch {
+	case strings.Contains(component, routeLayoutBlank):
+		return "blank"
+	case strings.Contains(component, routeLayoutDisk):
+		return "disk"
+	default:
+		return "base"
+	}
 }
 
 // menusToRoutes 将菜单平表(已按 menuOrder 排序)组装并转换为 MenuRoute 树。
@@ -98,18 +118,20 @@ func (s *RouteService) menusToRoutes(menus []system.SysMenu) []system.MenuRoute 
 			if n.IsFrame == "0" {
 				r.Meta.Href = routePath(n.Path)
 			}
-			// component 由层级 + 是否有子节点决定(对齐 transform.ts 的 layout./view. 解析)
+			// component 由层级 + 是否有子节点决定(对齐 transform.ts 的 layout./view. 解析);
+			// 布局外壳读 SysMenu.Component(resolveLayout 提取 blank/disk/base),view 段读 routeKey(Path)。
+			layout := resolveLayout(n.Component)
 			kids := build(n.MenuId)
 			switch {
 			case len(kids) > 0:
 				r.Children = kids
 				if n.ParentId == 0 {
-					r.Component = routeLayoutBase // 多级目录:仅 layout
+					r.Component = "layout." + layout // 多级目录:仅 layout 外壳
 				} else {
 					r.Component = "view." + key // 兜底:C 理论无子(子为 F 已过滤)
 				}
 			case n.ParentId == 0:
-				r.Component = routeLayoutBase + "$view." + key // 顶层单级页:layout$view 拼接
+				r.Component = "layout." + layout + "$view." + key // 顶层单级页:layout$view 拼接
 			default:
 				r.Component = "view." + key // 子级叶子页
 			}

@@ -138,6 +138,9 @@ const isInternalType = computed(() => model.value.isFrame === '1');
 // 空白布局
 const isBlankLayout = computed(() => layoutType.value === '1');
 
+// 网盘布局(layout.disk:复用 base 外壳但定死 vertical-mix / 无 tab / 无主题入口)
+const isDiskLayout = computed(() => layoutType.value === '2');
+
 // iframe类型
 const isIframeType = computed(() => model.value.isFrame === '2');
 
@@ -162,15 +165,19 @@ const localIconOptions = localIcons.map<SelectOption>(item => ({
 function handleInitModel() {
   queryList.value = [];
   iconType.value = '1';
-  layoutType.value = '0';
+  // 新建时 disk 模块默认网盘布局(仅默认值,用户可在抽屉内改);编辑态由下方回显覆盖
+  layoutType.value = props.operateType === 'add' && props.defaultModule === 'disk' ? '2' : '0';
   model.value = createDefaultModel();
 
   if (props.operateType === 'edit' && props.rowData) {
     Object.assign(model.value, jsonClone(props.rowData));
     const component = model.value.component;
-    if (component?.startsWith('layout.blank$view.')) {
+    if (component?.startsWith('layout.disk$view.')) {
+      layoutType.value = '2';
+      model.value.component = component?.slice(17);
+    } else if (component?.startsWith('layout.blank$view.')) {
       layoutType.value = '1';
-      model.value.component = component?.slice(18, component.length)?.replaceAll('_', '/');
+      model.value.component = component?.slice(18);
     } else if (isMenu.value && isInternalType.value) {
       model.value.component = component?.slice(0, -6);
     }
@@ -207,8 +214,13 @@ function processComponent(component: string | null | undefined): string {
   if (isIframeType.value || isExternalType.value) {
     return 'FrameView';
   }
+  if (isMenu.value && isDiskLayout.value) {
+    // view 段保留原始路径(带斜杠):后端 menusToRoutes 会用 routeKey(Path) 覆盖 view 段下发,
+    // DB 里 view 段只供菜单管理展示/回显——存原始路径则无损还原,避免 replaceAll('/','_') 把 _disk 前导下划线当分隔符致双斜杠
+    return `layout.disk$view.${component}`;
+  }
   if (isMenu.value && isBlankLayout.value) {
-    return `layout.blank$view.${component?.replaceAll('/', '_')}`;
+    return `layout.blank$view.${component}`;
   }
   if (isMenu.value && isInternalType.value) {
     return component?.endsWith('/index') ? component : `${component || ''}/index`;
@@ -318,7 +330,8 @@ watch(visible, () => {
 });
 
 function handleLayoutChange(value: string) {
-  model.value.visible = value as Api.Common.VisibleStatus;
+  // 布局切换联动菜单显隐(沿用既有约定:空白布局隐藏);网盘布局正常显示,避免 visible 被设成非法 '2'
+  model.value.visible = (value === '1' ? '1' : '0') as Api.Common.VisibleStatus;
 }
 
 function onCreate() {

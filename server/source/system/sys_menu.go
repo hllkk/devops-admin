@@ -115,7 +115,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			MenuName:  "route.disk",
 			MenuType:  "C",
 			Path:      "disk",
-			Component: "_disk/disk/index",
+			Component: "layout.disk$view._disk/disk",
 			Icon:      "mdi:harddisk",
 			Visible:   "0",
 			OrderNum:  5,

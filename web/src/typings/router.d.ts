@@ -82,5 +82,13 @@ declare module 'vue-router' {
      * Provided by the backend menu payload (dynamic mode, /route/getUserRoutes 下发 SysMenu.module).
      */
     module?: import('@/constants/module').RouteModule | null;
+    /**
+     * Whether the route renders under the disk layout (layout.disk).
+     *
+     * Tagged by router/routes tagLayoutMeta when the route's component contains "layout.disk".
+     * vue-router merges meta across matched levels, so child routes inherit it.
+     * Drives themeStore.effectiveLayoutMode (disk layout → vertical-mix), decoupled from module.
+     */
+    useDiskLayout?: boolean | null;
   }
 }
