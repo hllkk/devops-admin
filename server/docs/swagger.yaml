@@ -204,6 +204,9 @@ definitions:
       menuType:
         description: 菜单类型 M目录C菜单F按钮
         type: string
+      module:
+        description: 业务模块归属 admin/disk/server/gateway(空=未归属,当全局路由;前端模块隔离来源)
+        type: string
       orderNum:
         description: 显示顺序
         type: integer
@@ -316,8 +319,6 @@ definitions:
         type: integer
       captchaType:
         type: string
-      dingtalkEnabled:
-        type: boolean
       faviconUrl:
         type: string
       giteeEnabled:
@@ -384,6 +385,21 @@ definitions:
     type: object
   request.RoleOperateParams:
     properties:
+      dataScope:
+        description: 数据范围档位(1全部2本部门及子级3本部门4仅本人5自定义;仅 dataScope 接口消费)
+        example: "0"
+        type: string
+      defaultRouter:
+        description: 默认路由(角色登录后默认打开的路由名;C 菜单 routeKey)
+        type: string
+      deptCheckStrictly:
+        description: 部门树选择项是否关联显示(仅 dataScope 接口消费)
+        type: boolean
+      deptIds:
+        description: 自定义部门集(仅档位5用;全量替换 sys_role_departments)
+        items:
+          type: integer
+        type: array
       menuCheckStrictly:
         description: 菜单树选择项是否关联显示
         type: boolean
@@ -426,6 +442,24 @@ definitions:
       security:
         $ref: '#/definitions/system.SysSecurityConfig'
     type: object
+  request.SocialLoginForm:
+    properties:
+      clientId:
+        description: 前端环境值(可选,当前不消费)
+        type: string
+      grantType:
+        description: 固定 "social"
+        type: string
+      socialCode:
+        description: 三方授权码 authorization_code
+        type: string
+      socialState:
+        description: GetAuthURL 返回的 base64 state
+        type: string
+      source:
+        description: wechat_open/gitee/github
+        type: string
+    type: object
   request.TestEmailReq:
     properties:
       emailFromAddr:
@@ -448,6 +482,7 @@ definitions:
   request.ToggleTimedTask:
     properties:
       ID:
+        example: "0"
         type: string
       enabled:
         type: boolean
@@ -457,9 +492,25 @@ definitions:
   request.TriggerTimedTask:
     properties:
       ID:
+        example: "0"
         type: string
     required:
     - ID
+    type: object
+  request.UpdateMyProfileParams:
+    properties:
+      email:
+        description: 邮箱
+        type: string
+      nickName:
+        description: 昵称
+        type: string
+      phonenumber:
+        description: 手机号
+        type: string
+      sex:
+        description: 性别 0男1女2未知
+        type: string
     type: object
   request.UserOperateParams:
     properties:
@@ -641,6 +692,64 @@ definitions:
         description: 显示顺序(对应 SysDepartment.OrderNum)
         type: integer
     type: object
+  system.MenuRoute:
+    properties:
+      children:
+        description: 子路由(多级目录)
+        items:
+          $ref: '#/definitions/system.MenuRoute'
+        type: array
+      component:
+        description: 组件引用(layout.base / view.<key> / layout.base$view.<key>)
+        type: string
+      id:
+        description: 菜单 ID(雪花,string)
+        type: string
+      meta:
+        allOf:
+        - $ref: '#/definitions/system.MenuRouteMeta'
+        description: 路由 meta
+      name:
+        description: 路由名 = RouteKey(由 Path 推导)
+        type: string
+      path:
+        description: 路由路径(绝对,"/"+Path)
+        type: string
+      redirect:
+        description: 重定向(目录节点前端自动算,后端通常不下发)
+        type: string
+    type: object
+  system.MenuRouteMeta:
+    properties:
+      hideInMenu:
+        description: 菜单隐藏;SysMenu.Visible=="1"
+        type: boolean
+      href:
+        description: 外链地址;SysMenu.IsFrame=="0" 时取规范化 Path
+        type: string
+      i18nKey:
+        description: i18n key;取 SysMenu.MenuName(如 route.system_user)
+        type: string
+      icon:
+        description: Iconify 图标名(如 mdi:xxx);来自 SysMenu.Icon
+        type: string
+      keepAlive:
+        description: 页面缓存;SysMenu.IsCache=="0"
+        type: boolean
+      localIcon:
+        description: 本地 svg 图标名(如 menu-log);来自 SysMenu.Icon 的 local-icon- 前缀
+        type: string
+      module:
+        description: 业务模块归属(admin/disk/server/gateway);取 SysMenu.Module,前端 meta.module
+          驱动模块隔离
+        type: string
+      order:
+        description: 排序;取 SysMenu.OrderNum
+        type: integer
+      title:
+        description: 兜底标题(显示优先 i18nKey);取 routeKey
+        type: string
+    type: object
   system.MenuTreeSelectNode:
     properties:
       children:
@@ -660,6 +769,12 @@ definitions:
         type: string
       menuType:
         description: 菜单类型 M目录C菜单F按钮(前端渲染区分)
+        type: string
+      module:
+        description: 业务模块归属(admin/disk/server/gateway;角色授权树前端按模块分组用)
+        type: string
+      path:
+        description: 路由地址(C 菜单默认路由小房子推导 routeKey 用)
         type: string
       status:
         description: 菜单状态 0正常1停用(前端禁用标红)
@@ -684,10 +799,53 @@ definitions:
       readAt:
         type: string
     type: object
+  system.OnlineDevice:
+    properties:
+      browser:
+        description: 浏览器类型
+        type: string
+      deptName:
+        description: 所在部门
+        type: string
+      deviceType:
+        description: 设备类型 pc/android/ios/xcx(对齐前端 System.DeviceType)
+        type: string
+      ipaddr:
+        description: 登录IP地址
+        type: string
+      loginLocation:
+        description: 登录地点
+        type: string
+      loginTime:
+        description: 登录时间(毫秒时间戳,对齐前端 number)
+        type: integer
+      os:
+        description: 操作系统
+        type: string
+      tokenId:
+        description: 令牌ID(jti)
+        type: string
+      userName:
+        description: 用户账号
+        type: string
+    type: object
+  system.RoleDeptTreeSelect:
+    properties:
+      checkedKeys:
+        description: 角色已分配部门ID(string[],与 depts.id 统一;自定义档完整集合,忠实往返)
+        items:
+          type: integer
+        type: array
+      depts:
+        description: 全部启用部门树(后端组装)
+        items:
+          $ref: '#/definitions/system.DeptTreeNode'
+        type: array
+    type: object
   system.RoleMenuTreeSelect:
     properties:
       checkedKeys:
-        description: 角色已分配菜单的叶子 ID
+        description: 角色已分配菜单的叶子 ID(string[],雪花 id 统一 string)
         items:
           type: integer
         type: array
@@ -705,15 +863,6 @@ definitions:
           column 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;
           json 仍叫 createTime/updateTime 对齐前端 CommonRecord。
         type: string
-      dingtalkCallbackUrl:
-        type: string
-      dingtalkClientId:
-        type: string
-      dingtalkClientSecret:
-        type: string
-      dingtalkEnabled:
-        description: 钉钉
-        type: boolean
       giteeCallbackUrl:
         type: string
       giteeClientId:
@@ -1000,6 +1149,9 @@ definitions:
       defaultPassword:
         description: 导入新建/复活用户的初始密码;首登强制改密
         type: string
+      defaultRoleId:
+        example: "0"
+        type: string
       faviconUrl:
         type: string
       id:
@@ -1149,6 +1301,9 @@ definitions:
         type: string
       menuType:
         description: 菜单类型
+        type: string
+      module:
+        description: 业务模块归属(dynamic 路由 meta.module 来源;空=老库未回填)
         type: string
       orderNum:
         description: 显示顺序
@@ -1393,8 +1548,15 @@ definitions:
           json 仍叫 createTime/updateTime 对齐前端 CommonRecord。
         type: string
       dataScope:
-        description: 数据范围(后端数据权限,前端不直接消费)
-        type: integer
+        description: 数据范围档位(json string 传输,引擎 datascope.go 消费)
+        example: "0"
+        type: string
+      defaultRouter:
+        description: 默认路由(登录入口;主角色 user.RoleId 的 DefaultRouter 决定)
+        type: string
+      deptCheckStrictly:
+        description: 部门树选择项是否关联显示(数据权限自定义档部门树用)
+        type: boolean
       flag:
         description: 用户是否存在此角色标识(内存组装,默认不存在)
         type: boolean
@@ -1496,6 +1658,81 @@ definitions:
         description: 密码过期(后端登录链路用,前端不直接消费)
         type: boolean
       updateTime:
+        type: string
+    type: object
+  system.SysSocial:
+    properties:
+      accessCode:
+        description: 小米等平台专用
+        type: string
+      authId:
+        type: string
+      avatar:
+        type: string
+      code:
+        description: 授权 code
+        type: string
+      createBy:
+        example: "0"
+        type: string
+      createTime:
+        description: |-
+          字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);
+          column 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;
+          json 仍叫 createTime/updateTime 对齐前端 CommonRecord。
+        type: string
+      email:
+        type: string
+      expireIn:
+        type: integer
+      id:
+        example: "0"
+        type: string
+      idToken:
+        description: id token
+        type: string
+      macAlgorithm:
+        description: 小米平台
+        type: string
+      macKey:
+        description: 小米平台
+        type: string
+      mobile:
+        type: string
+      nickName:
+        type: string
+      oauthToken:
+        description: Twitter 平台
+        type: string
+      oauthTokenSecret:
+        description: Twitter 平台
+        type: string
+      openId:
+        type: string
+      scope:
+        description: 授权范围
+        type: string
+      source:
+        description: wechat_open/gitee/github
+        type: string
+      tokenType:
+        description: token 类型
+        type: string
+      unionId:
+        description: 仅微信有意义
+        type: string
+      updateBy:
+        example: "0"
+        type: string
+      updateTime:
+        type: string
+      userId:
+        example: "0"
+        type: string
+      userName:
+        description: |-
+          以下 gorm:"-" 瞬态字段:对齐前端 Api.System.Social 的 JustAuth 全平台风格字段,
+          本项目只用 wechat_open/gitee/github 三平台,这些字段不落库,序列化输出空串(见设计 9.3)
         type: string
     type: object
   system.SysTimedTask:
@@ -1679,6 +1916,15 @@ definitions:
           $ref: '#/definitions/system.SysRole'
         type: array
     type: object
+  system.UserRoute:
+    properties:
+      home:
+        type: string
+      routes:
+        items:
+          $ref: '#/definitions/system.MenuRoute'
+        type: array
+    type: object
   task.TaskMeta:
     properties:
       description:
@@ -1692,6 +1938,134 @@ info:
   title: Devops-Admin Swagger API接口文档
   version: v0.2.0
 paths:
+  /auth/binding/{source}:
+    get:
+      parameters:
+      - description: 来源:wechat_open/gitee/github
+        in: path
+        name: source
+        required: true
+        type: string
+      - description: 回调域名(默认取 Host)
+        in: query
+        name: domain
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 授权URL字符串
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  type: string
+                msg:
+                  type: string
+              type: object
+      summary: 获取第三方授权URL
+      tags:
+      - Social
+  /auth/qrCodeStatus:
+    get:
+      parameters:
+      - description: QrCodeView 返回的 sceneId
+        in: query
+        name: sceneId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{status,expiresAt?,errMsg?}'
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  type: object
+                msg:
+                  type: string
+              type: object
+      summary: 企业微信扫码登录-轮询状态
+      tags:
+      - Wecom
+  /auth/social/callback:
+    post:
+      parameters:
+      - description: socialCode/socialState/source/grantType
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.SocialLoginForm'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 绑定成功返回提示;登录成功签发JWT(httpOnly cookie)并返回 LoginResponse
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 社交登录/绑定回调(交换code+处理绑定或登录)
+      tags:
+      - Social
+  /auth/unlock/{id}:
+    delete:
+      parameters:
+      - description: 关联记录ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 解绑成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                msg:
+                  type: string
+              type: object
+      summary: 解绑指定第三方账号(至少保留一种登录方式)
+      tags:
+      - Social
+  /auth/wecomLogin:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{sceneId,oauthUrl,countdown}'
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  type: object
+                msg:
+                  type: string
+              type: object
+      summary: 企业微信扫码登录-获取二维码
+      tags:
+      - Wecom
+  /auth/wecomWebviewLogin:
+    get:
+      parameters:
+      - description: 登录后回跳路径(同源相对)
+        in: query
+        name: redirect
+        type: string
+      produces:
+      - text/html
+      responses: {}
+      summary: 企业微信客户端免登-跳转授权
+      tags:
+      - Wecom
   /base/captcha:
     get:
       parameters:
@@ -1742,6 +2116,23 @@ paths:
       summary: 用户登录
       tags:
       - Base
+  /init/autoInitDB:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 自动初始化结果
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Docker 环境自动初始化
+      tags:
+      - SysInit
   /init/checkdb:
     post:
       produces:
@@ -2265,6 +2656,137 @@ paths:
       summary: 更新错误日志
       tags:
       - SysError
+  /monitor/online:
+    get:
+      parameters:
+      - description: 登录IP(模糊匹配)
+        in: query
+        name: ipaddr
+        type: string
+      - description: 页码
+        in: query
+        name: pageNum
+        required: true
+        type: integer
+      - description: 每页大小
+        in: query
+        name: pageSize
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.PageResult'
+                  - properties:
+                      rows:
+                        items:
+                          $ref: '#/definitions/system.OnlineDevice'
+                        type: array
+                    type: object
+                msg:
+                  type: string
+              type: object
+      summary: 获取当前用户在线设备列表
+      tags:
+      - Monitor
+  /monitor/online/myself/{tokenId}:
+    delete:
+      parameters:
+      - description: 令牌ID
+        in: path
+        name: tokenId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  type: boolean
+                msg:
+                  type: string
+              type: object
+      summary: 强制下线当前用户的指定在线设备
+      tags:
+      - Monitor
+  /route/getConstantRoutes:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/system.MenuRoute'
+                  type: array
+                msg:
+                  type: string
+              type: object
+      summary: 常量路由
+      tags:
+      - Route
+  /route/getUserRoutes:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/system.UserRoute'
+                msg:
+                  type: string
+              type: object
+      summary: 用户动态路由(按角色过滤后转换的 MenuRoute 树 + home)
+      tags:
+      - Route
+  /route/isRouteExist:
+    get:
+      parameters:
+      - description: 路由名(RouteKey)
+        in: query
+        name: routeName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  type: boolean
+                msg:
+                  type: string
+              type: object
+      summary: 路由是否存在(前端路由守卫用)
+      tags:
+      - Route
   /system/dept:
     post:
       consumes:
@@ -3520,6 +4042,59 @@ paths:
       summary: 修改角色状态
       tags:
       - SysRole
+  /system/role/dataScope:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: 角色信息(含 roleId/dataScope/deptIds)
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.RoleOperateParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  type: boolean
+                msg:
+                  type: string
+              type: object
+      summary: 分配角色数据权限
+      tags:
+      - SysRole
+  /system/role/deptTree/{roleId}:
+    get:
+      parameters:
+      - description: 角色ID
+        in: path
+        name: roleId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/system.RoleDeptTreeSelect'
+                msg:
+                  type: string
+              type: object
+      summary: 获取角色数据权限部门树(含已选部门)
+      tags:
+      - SysRole
   /system/role/export:
     post:
       responses: {}
@@ -3573,6 +4148,27 @@ paths:
                   type: string
               type: object
       summary: 分页获取角色列表
+      tags:
+      - SysRole
+  /system/role/optionselect:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/system.SysRole'
+                  type: array
+                msg:
+                  type: string
+              type: object
+      summary: 获取角色选择框列表(启用角色,不分页)
       tags:
       - SysRole
   /system/setting:
@@ -3668,6 +4264,27 @@ paths:
       summary: 获取公开系统设置(登录页,免鉴权)
       tags:
       - SysSetting
+  /system/social/list:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 绑定列表(token字段不返回)
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/system.SysSocial'
+                  type: array
+                msg:
+                  type: string
+              type: object
+      summary: 当前用户已绑定的第三方账号列表
+      tags:
+      - Social
   /system/user:
     post:
       consumes:
@@ -3974,6 +4591,61 @@ paths:
                   type: string
               type: object
       summary: 获取部门下用户列表(部门负责人选择用)
+      tags:
+      - SysUser
+  /system/user/profile:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: 基本资料
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.UpdateMyProfileParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  type: boolean
+                msg:
+                  type: string
+              type: object
+      summary: 当前用户修改基本资料(昵称/邮箱/手机号/性别)
+      tags:
+      - SysUser
+  /system/user/profile/avatar:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: 头像图片(jpg/jpeg/png/gif/webp)
+        in: formData
+        name: avatarfile
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  type: boolean
+                msg:
+                  type: string
+              type: object
+      summary: 当前用户上传头像
       tags:
       - SysUser
   /system/user/profile/updatePwd:
@@ -4365,6 +5037,25 @@ paths:
       summary: 分页获取用户列表
       tags:
       - SysUser
+  /wecomCallback:
+    get:
+      parameters:
+      - description: 授权 code
+        in: query
+        name: code
+        required: true
+        type: string
+      - description: sceneId(PC)/一次性令牌(WebView)
+        in: query
+        name: state
+        required: true
+        type: string
+      produces:
+      - text/html
+      responses: {}
+      summary: 企业微信扫码登录-回调
+      tags:
+      - Wecom
 securityDefinitions:
   ApiKeyAuth:
     in: header

@@ -726,6 +726,9 @@ declare namespace App {
             faviconUrl: string;
             defaultPassword: string;
             defaultPasswordPlaceholder: string;
+            defaultRole: string;
+            defaultRolePlaceholder: string;
+            defaultRoleTip: string;
             userDefaultPassword: string;
             userDefaultRole: string;
             captchaTitle: string;
@@ -892,9 +895,6 @@ declare namespace App {
             authWecomCorpIdPlaceholder: string;
             authWecomAgentId: string;
             authWecomAgentIdPlaceholder: string;
-            authWecomDefaultRole: string;
-            authWecomDefaultRolePlaceholder: string;
-            authWecomDefaultRoleTip: string;
             authWecomDomainVerifyTitle: string;
             authWecomDomainVerifyTip1: string;
             authWecomDomainVerifyTip2: string;

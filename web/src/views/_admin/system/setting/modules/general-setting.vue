@@ -36,6 +36,15 @@ const config = defineModel<Api.System.GeneralSettingConfig>('config', { required
             class="max-w-400px"
           />
         </NFormItem>
+        <NFormItem :label="$t('page.system.setting.defaultRole')" path="defaultRoleId">
+          <div class="flex flex-col gap-4px max-w-400px">
+            <RoleSelect
+              v-model:value="config.defaultRoleId"
+              :placeholder="$t('page.system.setting.defaultRolePlaceholder')"
+            />
+            <span class="text-12px color-gray-400">{{ $t('page.system.setting.defaultRoleTip') }}</span>
+          </div>
+        </NFormItem>
       </NForm>
     </NTabPane>
 

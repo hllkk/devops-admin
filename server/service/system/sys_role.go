@@ -18,6 +18,13 @@ type RoleService struct{}
 // roleOrder 角色统一排序:role_sort 升序,同序按 role_id 升序。
 const roleOrder = "role_sort ASC, role_id ASC"
 
+// GetRoleOptionList 获取启用角色列表(选择框用,不分页;对齐前端 GET /system/role/optionselect)。
+// 返回 status='0' 的全部角色,前端 RoleSelect 渲染为下拉选项。
+func (s *RoleService) GetRoleOptionList(ctx context.Context) (list []system.SysRole, err error) {
+	err = global.OPS_DB.WithContext(ctx).Where("status = ?", "0").Order(roleOrder).Find(&list).Error
+	return
+}
+
 // GetRoleList 分页查角色列表(对齐前端 GET /system/role/list)。
 // roleName/roleKey 模糊,status 精确;分页走 PageInfo.LimitOffset。
 func (s *RoleService) GetRoleList(ctx context.Context, q systemReq.RoleSearch) (list []system.SysRole, total int64, err error) {

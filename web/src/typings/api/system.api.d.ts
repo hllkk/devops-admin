@@ -642,8 +642,6 @@ declare namespace Api {
       wecomCallbackUrl: string;
       wecomDomainFileName: string;
       wecomDomainFileContent: string;
-      /** 企业微信扫码自动建号默认角色ID */
-      wecomDefaultRoleId: CommonType.IdType;
       /** 微信开放平台 */
       wechatEnabled: boolean;
       wechatClientId: string;
@@ -706,6 +704,8 @@ declare namespace Api {
       operationLogRetentionDays: number;
       /** 导入/重置用户的默认密码 */
       defaultPassword: string;
+      /** 默认角色ID(企微扫码等自动建号用,为空则建号失败) */
+      defaultRoleId: CommonType.IdType;
     };
 
     /** 安全配置:对齐后端 SysSecurityConfig 六段字段 */

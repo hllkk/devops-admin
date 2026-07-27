@@ -14,6 +14,7 @@ type SysGeneralConfig struct {
 	LoginLogRetentionDays     int    `json:"loginLogRetentionDays" gorm:"default:30;comment:登录日志保留天数"`
 	OperationLogRetentionDays int    `json:"operationLogRetentionDays" gorm:"default:30;comment:操作日志保留天数"`
 	DefaultPassword           string `json:"defaultPassword" gorm:"default:User@1234;comment:导入/重置用户的默认密码(建议满足密码复杂度)"` // 导入新建/复活用户的初始密码;首登强制改密
+	DefaultRoleId             int64  `json:"defaultRoleId,string" gorm:"default:0;comment:默认角色ID(企微扫码等自动建号用,为0则建号失败)"`
 }
 
 func (SysGeneralConfig) TableName() string {

@@ -1,29 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useLoading } from '@sa/hooks';
-import { fetchGetRoleSelect } from '@/service/api/system';
 
 defineOptions({ name: 'AuthSetting' });
 
 const { t } = useI18n();
 
 const configModel = defineModel<Api.System.AuthSettingConfig>('config', { required: true });
-
-// 企微扫码自动建号的默认角色选项
-const { loading: roleLoading, startLoading: startRoleLoading, endLoading: endRoleLoading } = useLoading();
-const roleOptions = ref<CommonType.Option<CommonType.IdType>[]>([]);
-
-async function getRoleOptions() {
-  startRoleLoading();
-  const { error, data } = await fetchGetRoleSelect();
-  if (!error) {
-    roleOptions.value = (data || []).map(item => ({ label: item.roleName, value: item.roleId }));
-  }
-  endRoleLoading();
-}
-
-getRoleOptions();
 </script>
 
 <template>
@@ -82,18 +64,6 @@ getRoleOptions();
               <span class="text-12px color-gray-400">{{ $t('page.system.setting.authOAuthCallbackUrlTip') }}</span>
             </div>
           </NFormItem>
-          <NFormItem :label="$t('page.system.setting.authWecomDefaultRole')" path="wecomDefaultRoleId">
-            <div class="flex flex-col gap-4px max-w-400px">
-              <NSelect
-                v-model:value="configModel.wecomDefaultRoleId"
-                :options="roleOptions"
-                :loading="roleLoading"
-                :placeholder="$t('page.system.setting.authWecomDefaultRolePlaceholder')"
-              />
-              <span class="text-12px color-gray-400">{{ $t('page.system.setting.authWecomDefaultRoleTip') }}</span>
-            </div>
-          </NFormItem>
-
           <NCollapse class="mt-16px">
             <NCollapseItem :title="$t('page.system.setting.authWecomDomainVerifyTitle')" name="domain">
               <NAlert type="warning" :show-icon="false" class="mb-16px">

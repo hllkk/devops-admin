@@ -9,12 +9,13 @@ defineOptions({
 });
 
 interface Props {
-  [key: string]: any;
+  /** 是否多选(默认单选);单选 value=IdType,多选 value=IdType[] */
+  multiple?: boolean;
 }
 
-defineProps<Props>();
+withDefaults(defineProps<Props>(), { multiple: false });
 
-const value = defineModel<CommonType.IdType[] | null>('value', { required: false });
+const value = defineModel<CommonType.IdType | CommonType.IdType[] | null>('value', { required: false });
 
 const { loading: roleLoading, startLoading: startRoleLoading, endLoading: endRoleLoading } = useLoading();
 
@@ -40,6 +41,7 @@ getRoleOptions();
 <template>
   <NSelect
     v-model:value="value"
+    :multiple="multiple"
     :loading="roleLoading"
     :options="roleOptions"
     v-bind="$attrs"

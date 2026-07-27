@@ -30,8 +30,7 @@ const remberMe = ref<boolean>(false);
 
 // 仅开发模式预填初始账号便于联调；生产构建（import.meta.env.DEV=false）经死代码消除后为空，避免登录页预填弱口令
 const model: Api.Auth.PwdLoginForm = reactive({
-  username: import.meta.env.DEV ? 'admin' : '',
-  password: import.meta.env.DEV ? 'admin123' : ''
+
 });
 
 // ===== go-captcha 行为验证码状态 =====

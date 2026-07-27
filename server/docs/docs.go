@@ -15,6 +15,222 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/auth/binding/{source}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Social"
+                ],
+                "summary": "获取第三方授权URL",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "来源:wechat_open/gitee/github",
+                        "name": "source",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "回调域名(默认取 Host)",
+                        "name": "domain",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "授权URL字符串",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/qrCodeStatus": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wecom"
+                ],
+                "summary": "企业微信扫码登录-轮询状态",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "QrCodeView 返回的 sceneId",
+                        "name": "sceneId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{status,expiresAt?,errMsg?}",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/social/callback": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Social"
+                ],
+                "summary": "社交登录/绑定回调(交换code+处理绑定或登录)",
+                "parameters": [
+                    {
+                        "description": "socialCode/socialState/source/grantType",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.SocialLoginForm"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "绑定成功返回提示;登录成功签发JWT(httpOnly cookie)并返回 LoginResponse",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/unlock/{id}": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Social"
+                ],
+                "summary": "解绑指定第三方账号(至少保留一种登录方式)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "关联记录ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "解绑成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/wecomLogin": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wecom"
+                ],
+                "summary": "企业微信扫码登录-获取二维码",
+                "responses": {
+                    "200": {
+                        "description": "{sceneId,oauthUrl,countdown}",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/wecomWebviewLogin": {
+            "get": {
+                "produces": [
+                    "text/html"
+                ],
+                "tags": [
+                    "Wecom"
+                ],
+                "summary": "企业微信客户端免登-跳转授权",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "登录后回跳路径(同源相对)",
+                        "name": "redirect",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/base/captcha": {
             "get": {
                 "produces": [
@@ -92,6 +308,37 @@ const docTemplate = `{
                                             "$ref": "#/definitions/response.LoginResponse"
                                         },
                                         "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/init/autoInitDB": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysInit"
+                ],
+                "summary": "Docker 环境自动初始化",
+                "responses": {
+                    "200": {
+                        "description": "自动初始化结果",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
                                             "type": "string"
                                         }
                                     }
@@ -989,6 +1236,234 @@ const docTemplate = `{
                                 {
                                     "type": "object",
                                     "properties": {
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/monitor/online": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Monitor"
+                ],
+                "summary": "获取当前用户在线设备列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "登录IP(模糊匹配)",
+                        "name": "ipaddr",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "pageNum",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页大小",
+                        "name": "pageSize",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.PageResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "rows": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/system.OnlineDevice"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/monitor/online/myself/{tokenId}": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Monitor"
+                ],
+                "summary": "强制下线当前用户的指定在线设备",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "令牌ID",
+                        "name": "tokenId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/route/getConstantRoutes": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Route"
+                ],
+                "summary": "常量路由",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/system.MenuRoute"
+                                            }
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/route/getUserRoutes": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Route"
+                ],
+                "summary": "用户动态路由(按角色过滤后转换的 MenuRoute 树 + home)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/system.UserRoute"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/route/isRouteExist": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Route"
+                ],
+                "summary": "路由是否存在(前端路由守卫用)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "路由名(RouteKey)",
+                        "name": "routeName",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
                                         "msg": {
                                             "type": "string"
                                         }
@@ -3099,6 +3574,97 @@ const docTemplate = `{
                 }
             }
         },
+        "/system/role/dataScope": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysRole"
+                ],
+                "summary": "分配角色数据权限",
+                "parameters": [
+                    {
+                        "description": "角色信息(含 roleId/dataScope/deptIds)",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.RoleOperateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/role/deptTree/{roleId}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysRole"
+                ],
+                "summary": "获取角色数据权限部门树(含已选部门)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "角色ID",
+                        "name": "roleId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/system.RoleDeptTreeSelect"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/system/role/export": {
             "post": {
                 "tags": [
@@ -3179,6 +3745,43 @@ const docTemplate = `{
                                                     }
                                                 }
                                             ]
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/role/optionselect": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysRole"
+                ],
+                "summary": "获取角色选择框列表(启用角色,不分页)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/system.SysRole"
+                                            }
                                         },
                                         "msg": {
                                             "type": "string"
@@ -3384,6 +3987,43 @@ const docTemplate = `{
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/request.PublicSetting"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/social/list": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Social"
+                ],
+                "summary": "当前用户已绑定的第三方账号列表",
+                "responses": {
+                    "200": {
+                        "description": "绑定列表(token字段不返回)",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/system.SysSocial"
+                                            }
                                         },
                                         "msg": {
                                             "type": "string"
@@ -3815,6 +4455,100 @@ const docTemplate = `{
                                             "items": {
                                                 "$ref": "#/definitions/system.SysUser"
                                             }
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/user/profile": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysUser"
+                ],
+                "summary": "当前用户修改基本资料(昵称/邮箱/手机号/性别)",
+                "parameters": [
+                    {
+                        "description": "基本资料",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.UpdateMyProfileParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/user/profile/avatar": {
+            "post": {
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysUser"
+                ],
+                "summary": "当前用户上传头像",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "头像图片(jpg/jpeg/png/gif/webp)",
+                        "name": "avatarfile",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
                                         },
                                         "msg": {
                                             "type": "string"
@@ -4593,6 +5327,34 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/wecomCallback": {
+            "get": {
+                "produces": [
+                    "text/html"
+                ],
+                "tags": [
+                    "Wecom"
+                ],
+                "summary": "企业微信扫码登录-回调",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "授权 code",
+                        "name": "code",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "sceneId(PC)/一次性令牌(WebView)",
+                        "name": "state",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
         }
     },
     "definitions": {
@@ -4881,6 +5643,10 @@ const docTemplate = `{
                     "description": "菜单类型 M目录C菜单F按钮",
                     "type": "string"
                 },
+                "module": {
+                    "description": "业务模块归属 admin/disk/server/gateway(空=未归属,当全局路由;前端模块隔离来源)",
+                    "type": "string"
+                },
                 "orderNum": {
                     "description": "显示顺序",
                     "type": "integer"
@@ -5037,9 +5803,6 @@ const docTemplate = `{
                 "captchaType": {
                     "type": "string"
                 },
-                "dingtalkEnabled": {
-                    "type": "boolean"
-                },
                 "faviconUrl": {
                     "type": "string"
                 },
@@ -5136,6 +5899,26 @@ const docTemplate = `{
         "request.RoleOperateParams": {
             "type": "object",
             "properties": {
+                "dataScope": {
+                    "description": "数据范围档位(1全部2本部门及子级3本部门4仅本人5自定义;仅 dataScope 接口消费)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "defaultRouter": {
+                    "description": "默认路由(角色登录后默认打开的路由名;C 菜单 routeKey)",
+                    "type": "string"
+                },
+                "deptCheckStrictly": {
+                    "description": "部门树选择项是否关联显示(仅 dataScope 接口消费)",
+                    "type": "boolean"
+                },
+                "deptIds": {
+                    "description": "自定义部门集(仅档位5用;全量替换 sys_role_departments)",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "menuCheckStrictly": {
                     "description": "菜单树选择项是否关联显示",
                     "type": "boolean"
@@ -5196,6 +5979,31 @@ const docTemplate = `{
                 }
             }
         },
+        "request.SocialLoginForm": {
+            "type": "object",
+            "properties": {
+                "clientId": {
+                    "description": "前端环境值(可选,当前不消费)",
+                    "type": "string"
+                },
+                "grantType": {
+                    "description": "固定 \"social\"",
+                    "type": "string"
+                },
+                "socialCode": {
+                    "description": "三方授权码 authorization_code",
+                    "type": "string"
+                },
+                "socialState": {
+                    "description": "GetAuthURL 返回的 base64 state",
+                    "type": "string"
+                },
+                "source": {
+                    "description": "wechat_open/gitee/github",
+                    "type": "string"
+                }
+            }
+        },
         "request.TestEmailReq": {
             "type": "object",
             "properties": {
@@ -5232,7 +6040,8 @@ const docTemplate = `{
             ],
             "properties": {
                 "ID": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "0"
                 },
                 "enabled": {
                     "type": "boolean"
@@ -5246,6 +6055,28 @@ const docTemplate = `{
             ],
             "properties": {
                 "ID": {
+                    "type": "string",
+                    "example": "0"
+                }
+            }
+        },
+        "request.UpdateMyProfileParams": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "description": "邮箱",
+                    "type": "string"
+                },
+                "nickName": {
+                    "description": "昵称",
+                    "type": "string"
+                },
+                "phonenumber": {
+                    "description": "手机号",
+                    "type": "string"
+                },
+                "sex": {
+                    "description": "性别 0男1女2未知",
                     "type": "string"
                 }
             }
@@ -5500,6 +6331,87 @@ const docTemplate = `{
                 }
             }
         },
+        "system.MenuRoute": {
+            "type": "object",
+            "properties": {
+                "children": {
+                    "description": "子路由(多级目录)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/system.MenuRoute"
+                    }
+                },
+                "component": {
+                    "description": "组件引用(layout.base / view.\u003ckey\u003e / layout.base$view.\u003ckey\u003e)",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "菜单 ID(雪花,string)",
+                    "type": "string"
+                },
+                "meta": {
+                    "description": "路由 meta",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/system.MenuRouteMeta"
+                        }
+                    ]
+                },
+                "name": {
+                    "description": "路由名 = RouteKey(由 Path 推导)",
+                    "type": "string"
+                },
+                "path": {
+                    "description": "路由路径(绝对,\"/\"+Path)",
+                    "type": "string"
+                },
+                "redirect": {
+                    "description": "重定向(目录节点前端自动算,后端通常不下发)",
+                    "type": "string"
+                }
+            }
+        },
+        "system.MenuRouteMeta": {
+            "type": "object",
+            "properties": {
+                "hideInMenu": {
+                    "description": "菜单隐藏;SysMenu.Visible==\"1\"",
+                    "type": "boolean"
+                },
+                "href": {
+                    "description": "外链地址;SysMenu.IsFrame==\"0\" 时取规范化 Path",
+                    "type": "string"
+                },
+                "i18nKey": {
+                    "description": "i18n key;取 SysMenu.MenuName(如 route.system_user)",
+                    "type": "string"
+                },
+                "icon": {
+                    "description": "Iconify 图标名(如 mdi:xxx);来自 SysMenu.Icon",
+                    "type": "string"
+                },
+                "keepAlive": {
+                    "description": "页面缓存;SysMenu.IsCache==\"0\"",
+                    "type": "boolean"
+                },
+                "localIcon": {
+                    "description": "本地 svg 图标名(如 menu-log);来自 SysMenu.Icon 的 local-icon- 前缀",
+                    "type": "string"
+                },
+                "module": {
+                    "description": "业务模块归属(admin/disk/server/gateway);取 SysMenu.Module,前端 meta.module 驱动模块隔离",
+                    "type": "string"
+                },
+                "order": {
+                    "description": "排序;取 SysMenu.OrderNum",
+                    "type": "integer"
+                },
+                "title": {
+                    "description": "兜底标题(显示优先 i18nKey);取 routeKey",
+                    "type": "string"
+                }
+            }
+        },
         "system.MenuTreeSelectNode": {
             "type": "object",
             "properties": {
@@ -5525,6 +6437,14 @@ const docTemplate = `{
                 },
                 "menuType": {
                     "description": "菜单类型 M目录C菜单F按钮(前端渲染区分)",
+                    "type": "string"
+                },
+                "module": {
+                    "description": "业务模块归属(admin/disk/server/gateway;角色授权树前端按模块分组用)",
+                    "type": "string"
+                },
+                "path": {
+                    "description": "路由地址(C 菜单默认路由小房子推导 routeKey 用)",
                     "type": "string"
                 },
                 "status": {
@@ -5561,11 +6481,71 @@ const docTemplate = `{
                 }
             }
         },
+        "system.OnlineDevice": {
+            "type": "object",
+            "properties": {
+                "browser": {
+                    "description": "浏览器类型",
+                    "type": "string"
+                },
+                "deptName": {
+                    "description": "所在部门",
+                    "type": "string"
+                },
+                "deviceType": {
+                    "description": "设备类型 pc/android/ios/xcx(对齐前端 System.DeviceType)",
+                    "type": "string"
+                },
+                "ipaddr": {
+                    "description": "登录IP地址",
+                    "type": "string"
+                },
+                "loginLocation": {
+                    "description": "登录地点",
+                    "type": "string"
+                },
+                "loginTime": {
+                    "description": "登录时间(毫秒时间戳,对齐前端 number)",
+                    "type": "integer"
+                },
+                "os": {
+                    "description": "操作系统",
+                    "type": "string"
+                },
+                "tokenId": {
+                    "description": "令牌ID(jti)",
+                    "type": "string"
+                },
+                "userName": {
+                    "description": "用户账号",
+                    "type": "string"
+                }
+            }
+        },
+        "system.RoleDeptTreeSelect": {
+            "type": "object",
+            "properties": {
+                "checkedKeys": {
+                    "description": "角色已分配部门ID(string[],与 depts.id 统一;自定义档完整集合,忠实往返)",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "depts": {
+                    "description": "全部启用部门树(后端组装)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/system.DeptTreeNode"
+                    }
+                }
+            }
+        },
         "system.RoleMenuTreeSelect": {
             "type": "object",
             "properties": {
                 "checkedKeys": {
-                    "description": "角色已分配菜单的叶子 ID",
+                    "description": "角色已分配菜单的叶子 ID(string[],雪花 id 统一 string)",
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -5586,19 +6566,6 @@ const docTemplate = `{
                 "createTime": {
                     "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
                     "type": "string"
-                },
-                "dingtalkCallbackUrl": {
-                    "type": "string"
-                },
-                "dingtalkClientId": {
-                    "type": "string"
-                },
-                "dingtalkClientSecret": {
-                    "type": "string"
-                },
-                "dingtalkEnabled": {
-                    "description": "钉钉",
-                    "type": "boolean"
                 },
                 "giteeCallbackUrl": {
                     "type": "string"
@@ -5973,6 +6940,10 @@ const docTemplate = `{
                     "description": "导入新建/复活用户的初始密码;首登强制改密",
                     "type": "string"
                 },
+                "defaultRoleId": {
+                    "type": "string",
+                    "example": "0"
+                },
                 "faviconUrl": {
                     "type": "string"
                 },
@@ -6167,6 +7138,10 @@ const docTemplate = `{
                 },
                 "menuType": {
                     "description": "菜单类型",
+                    "type": "string"
+                },
+                "module": {
+                    "description": "业务模块归属(dynamic 路由 meta.module 来源;空=老库未回填)",
                     "type": "string"
                 },
                 "orderNum": {
@@ -6480,8 +7455,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "dataScope": {
-                    "description": "数据范围(后端数据权限,前端不直接消费)",
-                    "type": "integer"
+                    "description": "数据范围档位(json string 传输,引擎 datascope.go 消费)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "defaultRouter": {
+                    "description": "默认路由(登录入口;主角色 user.RoleId 的 DefaultRouter 决定)",
+                    "type": "string"
+                },
+                "deptCheckStrictly": {
+                    "description": "部门树选择项是否关联显示(数据权限自定义档部门树用)",
+                    "type": "boolean"
                 },
                 "flag": {
                     "description": "用户是否存在此角色标识(内存组装,默认不存在)",
@@ -6620,6 +7604,103 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "updateTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "system.SysSocial": {
+            "type": "object",
+            "properties": {
+                "accessCode": {
+                    "description": "小米等平台专用",
+                    "type": "string"
+                },
+                "authId": {
+                    "type": "string"
+                },
+                "avatar": {
+                    "type": "string"
+                },
+                "code": {
+                    "description": "授权 code",
+                    "type": "string"
+                },
+                "createBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "createTime": {
+                    "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "expireIn": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "idToken": {
+                    "description": "id token",
+                    "type": "string"
+                },
+                "macAlgorithm": {
+                    "description": "小米平台",
+                    "type": "string"
+                },
+                "macKey": {
+                    "description": "小米平台",
+                    "type": "string"
+                },
+                "mobile": {
+                    "type": "string"
+                },
+                "nickName": {
+                    "type": "string"
+                },
+                "oauthToken": {
+                    "description": "Twitter 平台",
+                    "type": "string"
+                },
+                "oauthTokenSecret": {
+                    "description": "Twitter 平台",
+                    "type": "string"
+                },
+                "openId": {
+                    "type": "string"
+                },
+                "scope": {
+                    "description": "授权范围",
+                    "type": "string"
+                },
+                "source": {
+                    "description": "wechat_open/gitee/github",
+                    "type": "string"
+                },
+                "tokenType": {
+                    "description": "token 类型",
+                    "type": "string"
+                },
+                "unionId": {
+                    "description": "仅微信有意义",
+                    "type": "string"
+                },
+                "updateBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "userId": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "userName": {
+                    "description": "以下 gorm:\"-\" 瞬态字段:对齐前端 Api.System.Social 的 JustAuth 全平台风格字段,\n本项目只用 wechat_open/gitee/github 三平台,这些字段不落库,序列化输出空串(见设计 9.3)",
                     "type": "string"
                 }
             }
@@ -6865,6 +7946,20 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/system.SysRole"
+                    }
+                }
+            }
+        },
+        "system.UserRoute": {
+            "type": "object",
+            "properties": {
+                "home": {
+                    "type": "string"
+                },
+                "routes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/system.MenuRoute"
                     }
                 }
             }

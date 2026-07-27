@@ -269,7 +269,7 @@ func (a *WecomAuthApi) handleWecomLogin(c *gin.Context, code string) (token stri
 		logger.WithCtx(ctx).Mod("wecom").Err(err).Error("企微授权失败")
 		return "", 0, "", 0, "企业微信授权失败,请重试"
 	}
-	user, err := a.loginOrRegister(ctx, prof, cfg)
+	user, err := a.loginOrRegister(ctx, prof)
 	if err != nil {
 		logger.WithCtx(ctx).Mod("wecom").Err(err).Error("企微登录建号失败")
 		return "", 0, "", 0, err.Error()
@@ -283,7 +283,7 @@ func (a *WecomAuthApi) handleWecomLogin(c *gin.Context, code string) (token stri
 
 // loginOrRegister 企微 userid → 本地用户:已绑定则校验状态并刷新资料,未绑定则自动建号。
 // 自动建号是企微场景与 github/gitee(拒绝自动建号)的本质差异——企业员工扫码即应可用。
-func (a *WecomAuthApi) loginOrRegister(ctx context.Context, prof *utils.WecomProfile, cfg system.SysAuthConfig) (*system.SysUser, error) {
+func (a *WecomAuthApi) loginOrRegister(ctx context.Context, prof *utils.WecomProfile) (*system.SysUser, error) {
 	// 已绑定:查 sys_social(wecom, userid)
 	var rec system.SysSocial
 	global.OPS_DB.WithContext(ctx).Where("source = ? AND open_id = ?", "wecom", prof.UserID).Limit(1).Find(&rec)
@@ -299,12 +299,13 @@ func (a *WecomAuthApi) loginOrRegister(ctx context.Context, prof *utils.WecomPro
 		return &user, nil
 	}
 
-	// 未绑定:自动建号
-	if cfg.WecomDefaultRoleId == 0 {
-		return nil, errors.New("企业微信默认角色未配置,请联系管理员")
+	// 未绑定:自动建号(默认角色取自常规配置 SysGeneralConfig.DefaultRoleId,供企微/后续 LDAP 等复用)
+	defaultRoleId := (&systemSvc.GeneralConfigService{}).Current(ctx).DefaultRoleId
+	if defaultRoleId == 0 {
+		return nil, errors.New("默认角色未配置,请在「系统设置 → 常规配置」中配置默认角色")
 	}
 	var role system.SysRole
-	global.OPS_DB.WithContext(ctx).Where("role_id = ?", cfg.WecomDefaultRoleId).Limit(1).Find(&role)
+	global.OPS_DB.WithContext(ctx).Where("role_id = ?", defaultRoleId).Limit(1).Find(&role)
 	if role.RoleId == 0 {
 		return nil, errors.New("企业微信默认角色不存在,请联系管理员")
 	}
@@ -326,7 +327,7 @@ func (a *WecomAuthApi) loginOrRegister(ctx context.Context, prof *utils.WecomPro
 			Email:             prof.Email,
 			Phonenumber:       prof.Mobile,
 			Avatar:            prof.Avatar,
-			RoleId:            cfg.WecomDefaultRoleId,
+			RoleId:            defaultRoleId,
 			Status:            "0",
 			PasswordUpdatedAt: &now, // 标记刚设置,避免密码过期判定
 		}
@@ -334,7 +335,7 @@ func (a *WecomAuthApi) loginOrRegister(ctx context.Context, prof *utils.WecomPro
 			return fmt.Errorf("创建用户失败: %w", e)
 		}
 		// 角色关联(sys_user_role),Preload Roles 依赖此连接记录
-		if e := tx.Create(&system.SysUserRole{SysUserId: user.UserId, SysRoleId: cfg.WecomDefaultRoleId}).Error; e != nil {
+		if e := tx.Create(&system.SysUserRole{SysUserId: user.UserId, SysRoleId: defaultRoleId}).Error; e != nil {
 			return fmt.Errorf("分配角色失败: %w", e)
 		}
 		if e := tx.Create(&system.SysSocial{

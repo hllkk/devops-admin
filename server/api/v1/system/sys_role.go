@@ -15,6 +15,22 @@ import (
 // RoleApi 角色管理(对齐前端 /system/role/* 资源)
 type RoleApi struct{}
 
+// GetRoleOption
+// @Tags      SysRole
+// @Summary   获取角色选择框列表(启用角色,不分页)
+// @Produce   application/json
+// @Success   200  {object}  response.Response{data=[]system.SysRole,msg=string}
+// @Router    /system/role/optionselect [get]
+func (a *RoleApi) GetRoleOption(c *gin.Context) {
+	list, err := roleService.GetRoleOptionList(c.Request.Context())
+	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("biz").Err(err).Error("获取角色选项失败")
+		response.FailWithMessage("获取失败", c)
+		return
+	}
+	response.OkWithDetailed(list, "获取成功", c)
+}
+
 // GetRoleList
 // @Tags      SysRole
 // @Summary   分页获取角色列表
