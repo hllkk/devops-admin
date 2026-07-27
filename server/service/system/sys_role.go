@@ -99,6 +99,12 @@ func (s *RoleService) UpdateRole(ctx context.Context, req systemReq.RoleOperateP
 	if roleId == 0 {
 		return errors.New("角色ID不能为空")
 	}
+	// 超管角色受保护:禁止改其配置/菜单,防止越权破坏或被用于提权
+	if prot, err := isProtectedRole(ctx, roleId); err != nil {
+		return err
+	} else if prot {
+		return errors.New("超级管理员角色不允许修改")
+	}
 	if req.RoleName == "" {
 		return errors.New("角色名称不能为空")
 	}
@@ -143,8 +149,31 @@ func (s *RoleService) UpdateRoleStatus(ctx context.Context, req systemReq.RoleOp
 	if roleId == 0 {
 		return errors.New("角色ID不能为空")
 	}
+	// 超管角色受保护:禁止改其状态,防止越权启停超管角色
+	if prot, err := isProtectedRole(ctx, roleId); err != nil {
+		return err
+	} else if prot {
+		return errors.New("超级管理员角色不允许修改状态")
+	}
 	return global.OPS_DB.WithContext(ctx).Model(&system.SysRole{}).Where("role_id = ?", roleId).
 		Updates(map[string]interface{}{"status": req.Status, "update_by": updateBy}).Error
+}
+
+// isProtectedRole 判定给定角色是否为受保护的超管角色(SuperAdmin=true)。
+// 受保护角色禁止通过角色写接口(改/状态/授权用户/取消授权)被改动:
+// 既防越权破坏超管配置,更防有角色管理权限者把自己授权进超管角色实现垂直提权
+// (超管经 claims.SuperAdmin 绕过 CasbinHandler 策略校验,见 middleware/casbin_rbac.go)。
+// roleId==0 视为非保护(调用方应已做非空校验)。
+func isProtectedRole(ctx context.Context, roleId int64) (bool, error) {
+	if roleId == 0 {
+		return false, nil
+	}
+	var cnt int64
+	if err := global.OPS_DB.WithContext(ctx).Model(&system.SysRole{}).
+		Where("role_id = ? AND super_admin = ?", roleId, true).Count(&cnt).Error; err != nil {
+		return false, err
+	}
+	return cnt > 0, nil
 }
 
 // DeleteRole 批量删除角色;被用户引用(sys_user_role)时禁删(对齐 RuoYi);清理 sys_role_menu/sys_role_departments。
@@ -159,6 +188,15 @@ func (s *RoleService) DeleteRole(ctx context.Context, ids []int64) error {
 	}
 	if userCnt > 0 {
 		return errors.New("角色已分配给用户,不允许删除")
+	}
+	// 超管角色受保护:批量删除时含超管角色则整体拒绝,防越权删除导致权限体系崩塌
+	var protCnt int64
+	if err := global.OPS_DB.WithContext(ctx).Model(&system.SysRole{}).
+		Where("role_id IN ? AND super_admin = ?", ids, true).Count(&protCnt).Error; err != nil {
+		return err
+	}
+	if protCnt > 0 {
+		return errors.New("超级管理员角色不允许删除")
 	}
 	if err := global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Where("sys_role_id IN ?", ids).Delete(&system.SysRoleMenu{}).Error; err != nil {
@@ -207,6 +245,12 @@ func (s *RoleService) AuthUserSelectAll(ctx context.Context, roleId int64, userI
 	if len(userIds) == 0 {
 		return errors.New("未选择用户")
 	}
+	// 超管角色受保护:禁止往超管角色授权用户,防有权限者把自己塞进超管角色提权
+	if prot, err := isProtectedRole(ctx, roleId); err != nil {
+		return err
+	} else if prot {
+		return errors.New("超级管理员角色不允许授权用户")
+	}
 	var existIds []int64
 	if err := global.OPS_DB.WithContext(ctx).Model(&system.SysUserRole{}).
 		Where("sys_role_id = ? AND sys_user_id IN ?", roleId, userIds).Pluck("sys_user_id", &existIds).Error; err != nil {
@@ -235,6 +279,12 @@ func (s *RoleService) AuthUserCancelAll(ctx context.Context, roleId int64, userI
 	}
 	if len(userIds) == 0 {
 		return errors.New("未选择用户")
+	}
+	// 超管角色受保护:禁止从超管角色取消用户授权,与 AuthUserSelectAll 对称防提权
+	if prot, err := isProtectedRole(ctx, roleId); err != nil {
+		return err
+	} else if prot {
+		return errors.New("超级管理员角色不允许取消授权")
 	}
 	return global.OPS_DB.WithContext(ctx).
 		Where("sys_role_id = ? AND sys_user_id IN ?", roleId, userIds).Delete(&system.SysUserRole{}).Error

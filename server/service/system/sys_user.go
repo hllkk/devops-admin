@@ -20,7 +20,7 @@ type UserService struct{}
 // Login 校验用户名密码 返回带 Roles 的用户(登录链路 claims 需要 SuperAdmin)
 func (userService *UserService) Login(ctx context.Context, u *system.SysUser) (user system.SysUser, err error) {
 	err = global.OPS_DB.WithContext(ctx).
-		Preload("Roles").
+		Preload("Roles", "status = ?", "0"). // 仅加载启用角色:停用角色不进 claims/perms,使"停用角色"真正收回权限
 		Where("user_name = ?", u.UserName).
 		First(&user).Error
 	if err != nil {
@@ -58,7 +58,7 @@ func (userService *UserService) Register(ctx context.Context, u system.SysUser) 
 // GetUserInfo 按 userId 查用户(含 Roles/Dept) 供 /auth/getUserInfo 组装
 func (userService *UserService) GetUserInfo(ctx context.Context, userId int64) (user system.SysUser, err error) {
 	err = global.OPS_DB.WithContext(ctx).
-		Preload("Roles").Preload("Dept").
+		Preload("Roles", "status = ?", "0").Preload("Dept"). // 与 Login 对齐:仅启用角色参与 getUserInfo 组装
 		Where("id = ?", userId).
 		First(&user).Error
 	return
