@@ -48,6 +48,8 @@ declare namespace StorageType {
     loginRember: string;
     /** httpOnly cookie 模式登录态信号：true 表示已登录（token 本体仅存 cookie） */
     isAuthenticated: boolean;
+    /** 上次所在的业务模块（全局公共页跟随来源模块用；非法值由 route store 校验回落） */
+    lastModule: string;
     /** access token 过期毫秒时间戳（供主动刷新定时器使用） */
     tokenExpiresAt: number;
     /**

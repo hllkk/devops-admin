@@ -9,6 +9,7 @@ import { SetupStoreId } from '@/enum';
 import { createStaticRoutes, getAuthVueRoutes } from '@/router/routes';
 import { ROOT_ROUTE } from '@/router/routes/builtin';
 import { getRouteName, getRoutePath } from '@/router/elegant/transform';
+import { localStg } from '@/utils/storage';
 import { useAuthStore } from '../auth';
 import { useTabStore } from '../tab';
 import {
@@ -23,7 +24,7 @@ import {
   transformMenuToSearchMenus,
   updateLocaleOfGlobalMenus
 } from './shared';
-import { DEFAULT_MODULE, type RouteModule } from '@/constants/module';
+import { ALL_MODULES, DEFAULT_MODULE, type RouteModule } from '@/constants/module';
 import { filterRoutesByModule, resolveModuleFromRoute } from './module';
 
 export const useRouteStore = defineStore(SetupStoreId.Route, () => {
@@ -90,8 +91,16 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
     menus.value = getGlobalMenusByAuthRoutes(filterRoutesByModule(routes, currentModule.value));
   }
 
-  /** Last visited module — sticky, so global pages (user-center / notice-user) follow the source module */
-  const lastModule = ref<RouteModule>(DEFAULT_MODULE);
+  /** 校验 localStorage 里的模块值,非法(被篡改/历史脏值)回落 DEFAULT_MODULE */
+  function normalizeModule(stored: string | null): RouteModule {
+    return stored && ALL_MODULES.includes(stored as RouteModule) ? (stored as RouteModule) : DEFAULT_MODULE;
+  }
+
+  /**
+   * Last visited module — sticky, so global pages (user-center / notice-user) follow the source module.
+   * 持久化到 localStorage:刷新全局页时不丢失来源模块(否则 admin 下刷新个人中心会闪回 disk)。
+   */
+  const lastModule = ref<RouteModule>(normalizeModule(localStg.get('lastModule')));
 
   /** Tagged + sorted routes snapshot, reused on module switch (routes stay registered, no re-add) */
   const sortedTaggedRoutes = shallowRef<ElegantConstRoute[]>([]);
@@ -106,7 +115,10 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
   watch(
     () => router.currentRoute.value.meta?.module,
     m => {
-      if (m) lastModule.value = m as RouteModule;
+      if (m) {
+        lastModule.value = m as RouteModule;
+        localStg.set('lastModule', m as RouteModule);
+      }
     },
     { immediate: true }
   );

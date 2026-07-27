@@ -9,7 +9,7 @@ declare module "@elegant-router/types" {
   /**
    * route layout
    */
-  export type RouteLayout = "base" | "blank" | "disk";
+  export type RouteLayout = "base" | "blank" | "disk" | "auto";
 
   /**
    * route map
@@ -41,7 +41,6 @@ declare module "@elegant-router/types" {
     "system_role": "/system/role";
     "system_setting": "/system/setting";
     "system_user": "/system/user";
-    "test": "/test";
     "timer": "/timer";
     "user-center": "/user-center";
   };
@@ -88,7 +87,6 @@ declare module "@elegant-router/types" {
     | "server"
     | "social-callback"
     | "system"
-    | "test"
     | "timer"
     | "user-center"
   >;
@@ -119,7 +117,6 @@ declare module "@elegant-router/types" {
     | "system_role"
     | "system_setting"
     | "system_user"
-    | "test"
     | "timer"
     | "403"
     | "404"

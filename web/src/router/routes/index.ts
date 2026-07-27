@@ -51,10 +51,29 @@ function tagLayoutMeta(routes: ElegantConstRoute[]): ElegantConstRoute[] {
 }
 
 /**
+ * Auto-layout 候选:登录后才访问的全局公共功能页(无 meta.module),外壳跟随 currentModule。
+ * 在此加一行即可让未来的消息中心等公共页同效。
+ */
+const AUTO_LAYOUT_ROUTES = new Set<string>(['user-center']);
+
+/**
+ * 把名单内全局页的 layout 从 base 改写成 auto(运行期由 AutoLayout 按 currentModule 选 base/disk)。
+ * 改写点在三条初始化路径的公共出口 getAuthVueRoutes,一次覆盖 static/dynamic/constant,不碰生成产物。
+ */
+function rewriteAutoLayout(routes: ElegantConstRoute[]): ElegantConstRoute[] {
+  return routes.map(route => {
+    if (AUTO_LAYOUT_ROUTES.has(route.name) && typeof route.component === 'string') {
+      return { ...route, component: route.component.replace('layout.base', 'layout.auto') };
+    }
+    return route;
+  });
+}
+
+/**
  * Get auth vue routes
  *
  * @param routes Elegant routes
  */
 export function getAuthVueRoutes(routes: ElegantConstRoute[]) {
-  return transformElegantRoutesToVueRoutes(tagLayoutMeta(routes), layouts, views);
+  return transformElegantRoutesToVueRoutes(tagLayoutMeta(rewriteAutoLayout(routes)), layouts, views);
 }

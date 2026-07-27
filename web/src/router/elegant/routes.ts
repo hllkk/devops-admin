@@ -47,16 +47,18 @@ export const generatedRoutes: GeneratedRoute[] = [
       title: 'admin',
       i18nKey: 'route.admin',
       icon: 'mdi:monitor-dashboard',
-      order: 1
+      order: 1,
+      module: 'admin'
     }
   },
   {
     name: 'disk',
     path: '/disk',
-    component: 'layout.base$view.disk',
+    component: 'layout.disk$view.disk',
     meta: {
       title: 'disk',
-      i18nKey: 'route.disk'
+      i18nKey: 'route.disk',
+      module: 'disk'
     }
   },
   {
@@ -65,7 +67,8 @@ export const generatedRoutes: GeneratedRoute[] = [
     component: 'layout.base$view.gateway',
     meta: {
       title: 'gateway',
-      i18nKey: 'route.gateway'
+      i18nKey: 'route.gateway',
+      module: 'gateway'
     }
   },
   {
@@ -100,7 +103,8 @@ export const generatedRoutes: GeneratedRoute[] = [
       title: 'log',
       i18nKey: 'route.log',
       localIcon: 'menu-log',
-      order: 4
+      order: 4,
+      module: 'admin'
     },
     children: [
       {
@@ -156,7 +160,8 @@ export const generatedRoutes: GeneratedRoute[] = [
     component: 'layout.base$view.server',
     meta: {
       title: 'server',
-      i18nKey: 'route.server'
+      i18nKey: 'route.server',
+      module: 'server'
     }
   },
   {
@@ -177,7 +182,8 @@ export const generatedRoutes: GeneratedRoute[] = [
       title: 'system',
       i18nKey: 'route.system',
       icon: 'carbon:cloud-service-management',
-      order: 2
+      order: 2,
+      module: 'admin'
     },
     children: [
       {
@@ -271,15 +277,6 @@ export const generatedRoutes: GeneratedRoute[] = [
     ]
   },
   {
-    name: 'test',
-    path: '/test',
-    component: 'layout.base$view.test',
-    meta: {
-      title: 'test',
-      i18nKey: 'route.test'
-    }
-  },
-  {
     name: 'timer',
     path: '/timer',
     component: 'layout.base$view.timer',
@@ -287,13 +284,14 @@ export const generatedRoutes: GeneratedRoute[] = [
       title: 'timer',
       i18nKey: 'route.timer',
       icon: 'fluent:clock-24-regular',
-      order: 3
+      order: 3,
+      module: 'admin'
     }
   },
   {
     name: 'user-center',
     path: '/user-center',
-    component: 'layout.base$view.user-center',
+    component: 'layout.auto$view.user-center',
     meta: {
       title: 'user-center',
       i18nKey: 'route.user-center',

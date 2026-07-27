@@ -9,11 +9,13 @@ import type { LastLevelRouteKey, RouteLayout } from "@elegant-router/types";
 import BaseLayout from "@/layouts/base-layout/index.vue";
 import BlankLayout from "@/layouts/blank-layout/index.vue";
 import DiskLayout from "@/layouts/disk-layout/index.vue";
+import AutoLayout from "@/layouts/auto-layout/index.vue";
 
 export const layouts: Record<RouteLayout, RouteComponent | (() => Promise<RouteComponent>)> = {
   base: BaseLayout,
   blank: BlankLayout,
   disk: DiskLayout,
+  auto: AutoLayout,
 };
 
 export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<RouteComponent>)> = {
@@ -29,7 +31,6 @@ export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<Ro
   system_role: () => import("@/views/_admin/system/role/index.vue"),
   system_setting: () => import("@/views/_admin/system/setting/index.vue"),
   system_user: () => import("@/views/_admin/system/user/index.vue"),
-  test: () => import("@/views/_admin/test/index.vue"),
   timer: () => import("@/views/_admin/timer/index.vue"),
   403: () => import("@/views/_builtin/403/index.vue"),
   404: () => import("@/views/_builtin/404/index.vue"),
