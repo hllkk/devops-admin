@@ -130,6 +130,13 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
 
       const pass = await getUserInfo();
       if (pass) {
+        // 登录页是 constant 路由,登录前守卫走未登录分支提前 return,动态路由从未初始化。
+        // 这里在跳转前先把动态路由 addRoute,使 redirectFromLogin 按角色默认路由(name)跳转时
+        // 目标路由已注册,避免 vue-router name 解析失败而停在登录页(需刷新才进首页)。
+        if (!routeStore.isInitAuthRoute) {
+          await routeStore.initAuthRoute();
+        }
+
         const isClear = checkTabClear();
         let needRedirect = redirect;
         if (isClear) {
