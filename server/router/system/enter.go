@@ -20,6 +20,7 @@ type RouterGroup struct {
 	SysErrorRouter
 	TimedTaskRouter
 	SocialRouter
+	WecomRouter
 	OnlineRouter
 }
 
@@ -40,5 +41,6 @@ var (
 	sysErrorApi  = v1.ApiGroupApp.SystemApiGroup.SysErrorApi
 	timedTaskApi = v1.ApiGroupApp.SystemApiGroup.TimedTaskApi
 	socialApi    = v1.ApiGroupApp.SystemApiGroup.SocialApi
+	wecomApi     = v1.ApiGroupApp.SystemApiGroup.WecomAuthApi
 	onlineApi    = v1.ApiGroupApp.SystemApiGroup.OnlineApi
 )

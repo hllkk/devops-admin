@@ -573,6 +573,19 @@ declare namespace App {
             imageRequired: string;
             refresh: string;
           };
+          wecomLogin: {
+            title: string;
+            scanTip: string;
+            appName: string;
+            scanned: string;
+            scannedConfirm: string;
+            expired: string;
+            refresh: string;
+            loading: string;
+            qrCodeLoadFailed: string;
+            countdown: string;
+            backToLogin: string;
+          };
         };
         init: {
           title: string;
@@ -879,6 +892,9 @@ declare namespace App {
             authWecomCorpIdPlaceholder: string;
             authWecomAgentId: string;
             authWecomAgentIdPlaceholder: string;
+            authWecomDefaultRole: string;
+            authWecomDefaultRolePlaceholder: string;
+            authWecomDefaultRoleTip: string;
             authWecomDomainVerifyTitle: string;
             authWecomDomainVerifyTip1: string;
             authWecomDomainVerifyTip2: string;
@@ -1329,6 +1345,8 @@ declare namespace App {
             unbind: string;
             unbindSuccess: string;
             wechat: string;
+            wecom: string;
+            autoBindTip: string;
           };
           online: {
             deviceType: string;

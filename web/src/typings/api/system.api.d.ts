@@ -182,6 +182,8 @@ declare namespace Api {
       nickName: string;
       /** 授权的第三方邮箱 */
       email: string;
+      /** 授权的第三方手机号(企微等) */
+      mobile: string;
       /** 授权的第三方头像地址 */
       avatar: string;
       /** 平台的授权信息，部分平台可能没有 */
@@ -640,6 +642,8 @@ declare namespace Api {
       wecomCallbackUrl: string;
       wecomDomainFileName: string;
       wecomDomainFileContent: string;
+      /** 企业微信扫码自动建号默认角色ID */
+      wecomDefaultRoleId: CommonType.IdType;
       /** 微信开放平台 */
       wechatEnabled: boolean;
       wechatClientId: string;

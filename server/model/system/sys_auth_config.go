@@ -24,6 +24,7 @@ type SysAuthConfig struct {
 	WecomCallbackUrl       string `json:"wecomCallbackUrl" gorm:"comment:企业微信 OAuth2 回调地址"`
 	WecomDomainFileName    string `json:"wecomDomainFileName" gorm:"comment:企业微信可信域名校验文件名(WW_verify_*.txt)"`
 	WecomDomainFileContent string `json:"wecomDomainFileContent" gorm:"comment:企业微信可信域名校验文件内容"`
+	WecomDefaultRoleId     int64  `json:"wecomDefaultRoleId,string" gorm:"default:0;comment:企业微信扫码自动建号默认角色ID(为0时建号失败)"`
 	// 微信开放平台
 	WechatEnabled      bool   `json:"wechatEnabled" gorm:"default:false;comment:微信开放平台登录开关"`
 	WechatClientId     string `json:"wechatClientId" gorm:"comment:微信开放平台 AppId"`

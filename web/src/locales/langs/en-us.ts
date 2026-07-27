@@ -386,6 +386,19 @@ const local: App.I18n.Schema = {
         imagePlaceholder: 'Enter characters in image',
         imageRequired: 'Please enter the captcha',
         refresh: 'Click to refresh'
+      },
+      wecomLogin: {
+        title: 'WeCom Login',
+        scanTip: 'Scan with WeCom to log in',
+        appName: 'WeCom',
+        scanned: 'Scanned',
+        scannedConfirm: 'Please confirm on your phone',
+        expired: 'QR code expired',
+        refresh: 'Click to refresh',
+        loading: 'Loading QR code…',
+        qrCodeLoadFailed: 'Failed to load QR code, please retry',
+        countdown: 'QR code expires in {seconds}s',
+        backToLogin: 'Back to password login'
       }
     },
     init: {
@@ -694,6 +707,9 @@ const local: App.I18n.Schema = {
         authWecomCorpIdPlaceholder: 'Corp ID, e.g. ww1234567890abcdef',
         authWecomAgentId: 'Agent ID',
         authWecomAgentIdPlaceholder: 'Enter application Agent ID',
+        authWecomDefaultRole: 'Default role for auto-created user',
+        authWecomDefaultRolePlaceholder: 'Select default role',
+        authWecomDefaultRoleTip: 'First scan login creates account with this role; unset causes signup failure',
         authWecomDomainVerifyTitle: '⚠️ Trusted Domain Verification',
         authWecomDomainVerifyTip1: '1. Used for WeCom self-built app "Web Authorization & JS-SDK" trusted domain verification.',
         authWecomDomainVerifyTip2: '2. After filling in the file name and content, the system automatically responds to /WW_verify_*.txt — no manual file placement or frontend rebuild needed.',
@@ -1142,7 +1158,9 @@ const local: App.I18n.Schema = {
         bind: 'Bind',
         unbind: 'Unbind',
         unbindSuccess: 'Account unbound successfully',
-        wechat: 'WeChat'
+        wechat: 'WeChat',
+        wecom: 'WeCom',
+        autoBindTip: 'WeCom account is auto-linked via QR login'
       },
       online: {
         deviceType: 'Device Type',

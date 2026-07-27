@@ -23,6 +23,7 @@ type SysSocial struct {
 	NickName     string `gorm:"size:64;comment:第三方昵称(快照)" json:"nickName"`
 	Avatar       string `gorm:"size:512;comment:第三方头像URL(快照)" json:"avatar"`
 	Email        string `gorm:"size:128;comment:第三方邮箱(快照)" json:"email"`
+	Mobile       string `gorm:"size:32;comment:第三方手机号(快照,企微等)" json:"mobile"`
 	AccessToken  string `gorm:"size:2048;comment:访问令牌(AES加密)" json:"-"` // 加密存储,不返回前端
 	RefreshToken string `gorm:"size:2048;comment:刷新令牌(AES加密)" json:"-"` // 加密存储,不返回前端
 	ExpireIn     int64  `gorm:"comment:令牌有效期(秒,0=无信息)" json:"expireIn"`

@@ -165,6 +165,32 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     }
   }
 
+  /**
+   * 企业微信扫码登录成功后调用
+   * (httpOnly cookie 已由后端在轮询响应 Set-Cookie 下发,此处仅置前端登录态并拉取用户信息)
+   */
+  async function wecomLogin(expiresAt: number, redirect = true) {
+    localStg.set('isAuthenticated', true);
+    token.value = 'authenticated';
+    storeTokenExpiry(expiresAt);
+
+    const pass = await getUserInfo();
+    if (pass) {
+      // 与密码登录一致:跳转前确保动态路由已注册
+      if (!routeStore.isInitAuthRoute) {
+        await routeStore.initAuthRoute();
+      }
+      await redirectFromLogin(redirect, userInfo.defaultRouter);
+      window.$notification?.success({
+        title: $t('page.login.common.loginSuccess'),
+        content: $t('page.login.common.welcomeBack', { userName: userInfo.user?.userName || '' }),
+        duration: 4500
+      });
+    } else {
+      resetStore();
+    }
+  }
+
   async function getUserInfo() {
     const { data: info, error } = await fetchGetUserInfo();
 
@@ -199,6 +225,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     loginLoading,
     resetStore,
     login,
+    wecomLogin,
     logout,
     initUserInfo
   };

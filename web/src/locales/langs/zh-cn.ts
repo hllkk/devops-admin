@@ -382,6 +382,19 @@ const local: App.I18n.Schema = {
         imagePlaceholder: '请输入图中字符',
         imageRequired: '请输入验证码',
         refresh: '点击刷新'
+      },
+      wecomLogin: {
+        title: '企业微信登录',
+        scanTip: '请使用企业微信扫码登录',
+        appName: '企业微信',
+        scanned: '已扫码',
+        scannedConfirm: '请在手机上确认登录',
+        expired: '二维码已过期',
+        refresh: '点击刷新',
+        loading: '正在加载二维码…',
+        qrCodeLoadFailed: '二维码加载失败，请重试',
+        countdown: '二维码 {seconds}s 后失效',
+        backToLogin: '返回密码登录'
       }
     },
     init: {
@@ -690,6 +703,9 @@ const local: App.I18n.Schema = {
         authWecomCorpIdPlaceholder: 'Corp ID，如 ww1234567890abcdef',
         authWecomAgentId: '应用 AgentId',
         authWecomAgentIdPlaceholder: '请输入应用 AgentId',
+        authWecomDefaultRole: '扫码建号默认角色',
+        authWecomDefaultRolePlaceholder: '请选择默认角色',
+        authWecomDefaultRoleTip: '员工首次扫码登录按此角色创建账号；未选则建号失败',
         authWecomDomainVerifyTitle: '⚠️ 可信域名校验',
         authWecomDomainVerifyTip1: '1. 用于企业微信自建应用"网页授权及JS-SDK"中可信域名校验。',
         authWecomDomainVerifyTip2: '2. 填写文件名与内容后，系统自动响应 /WW_verify_*.txt，无需手动放置文件或重新构建前端。',
@@ -1138,7 +1154,9 @@ const local: App.I18n.Schema = {
         bind: '绑定',
         unbind: '解绑',
         unbindSuccess: '账户解绑成功',
-        wechat: '微信'
+        wechat: '微信',
+        wecom: '企业微信',
+        autoBindTip: '企业微信账号通过扫码登录自动关联'
       },
       online: {
         deviceType: '设备类型',

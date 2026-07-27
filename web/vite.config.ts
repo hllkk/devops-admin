@@ -35,7 +35,8 @@ export default defineConfig(configEnv => {
       host: '0.0.0.0',
       port: 9527,
       open: false,
-      proxy: createViteProxy(viteEnv, enableProxy)
+      proxy: createViteProxy(viteEnv, enableProxy),
+      allowedHosts: ['j.chinargb.com.cn']
     },
     preview: {
       port: 9725

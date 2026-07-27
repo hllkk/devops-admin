@@ -44,12 +44,22 @@ async function unbindSsoAccount(socialId: CommonType.IdType) {
 
 const themeStore = useThemeStore();
 
-const socialSources = computed(() => {
+interface SocialSourceItem {
+  key: Api.System.SocialSource;
+  icon: string;
+  color: string;
+  name: string;
+  /** 企微等"扫码自动建号"来源:不支持在用户中心主动绑定到已有账号,仅展示自动关联状态 */
+  autoBind?: boolean;
+}
+
+const socialSources = computed<SocialSourceItem[]>(() => {
   const githubColor = themeStore.darkMode ? '#ffffff' : '#010409';
   return [
-    { key: 'wechat_open' as Api.System.SocialSource, icon: 'ic:outline-wechat', color: '#44b549', name: $t('page.userCenter.social.wechat') },
-    { key: 'gitee' as Api.System.SocialSource, icon: 'simple-icons:gitee', color: '#c71d23', name: 'Gitee' },
-    { key: 'github' as Api.System.SocialSource, icon: 'mdi:github', color: githubColor, name: 'GitHub' }
+    { key: 'wechat_open', icon: 'ic:outline-wechat', color: '#44b549', name: $t('page.userCenter.social.wechat') },
+    { key: 'wecom', icon: 'ic:outline-wechat', color: '#2B7EF9', name: $t('page.userCenter.social.wecom'), autoBind: true },
+    { key: 'gitee', icon: 'simple-icons:gitee', color: '#c71d23', name: 'Gitee' },
+    { key: 'github', icon: 'mdi:github', color: githubColor, name: 'GitHub' }
   ];
 });
 
@@ -94,7 +104,10 @@ function getSocial(key: string) {
                 :style="{ color: source.color }"
               />
               <div class="text-16px font-medium">{{ source.name }}</div>
-              <NButton type="primary" size="small" @click="bindSsoAccount(source.key)">{{ $t('page.userCenter.social.bind') }}</NButton>
+              <NButton v-if="!source.autoBind" type="primary" size="small" @click="bindSsoAccount(source.key)">
+                {{ $t('page.userCenter.social.bind') }}
+              </NButton>
+              <div v-else class="px-12px text-center text-12px text-gray-400">{{ $t('page.userCenter.social.autoBindTip') }}</div>
             </div>
           </template>
         </NCard>

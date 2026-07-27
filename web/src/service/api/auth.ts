@@ -68,3 +68,26 @@ export function fetchSocialLoginCallback(data: Api.Auth.SocialLoginForm) {
 export function fetchCustomBackendError(code: string, msg: string) {
   return request({ url: '/auth/error', params: { code, msg } });
 }
+
+/** 企业微信扫码登录-获取二维码(sceneId + oauthUrl,前端用 qrcode 库渲染) */
+export function fetchWecomQrCode() {
+  return request<{ sceneId: string; oauthUrl: string; countdown: number }>({ url: '/auth/wecomLogin', method: 'get' });
+}
+
+/** 企业微信扫码登录-轮询状态;命中 confirmed 时后端已 Set-Cookie,响应带 expiresAt */
+export function fetchQrCodeStatus(sceneId: string) {
+  return request<{ status: string; expiresAt?: number; errMsg?: string }>({
+    url: '/auth/qrCodeStatus',
+    method: 'get',
+    params: { sceneId }
+  });
+}
+
+/** 企业微信客户端 WebView 免登-获取授权跳转地址(前端 location.replace 发起) */
+export function fetchWecomWebviewLogin(redirect?: string) {
+  return request<{ oauthUrl: string }>({
+    url: '/auth/wecomWebviewLogin',
+    method: 'get',
+    params: redirect ? { redirect } : {}
+  });
+}

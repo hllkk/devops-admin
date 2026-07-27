@@ -239,7 +239,7 @@ async function handleSocialLogin(type: Api.System.SocialSource) {
     </NDivider>
 
     <div v-if="systemStore.hasAnyThirdPartyLogin" class="w-full flex flex-wrap justify-center gap-16px">
-      <NButton v-if="systemStore.setting?.wecomEnabled" class="flex-1 min-w-100px" @click="handleSocialLogin('wecom')">
+      <NButton v-if="systemStore.setting?.wecomEnabled" class="flex-1 min-w-100px" @click="toggleLoginModule('wecom-login')">
         <template #icon>
           <icon-tdesign-logo-wecom class="color-#2B7EF9" />
         </template>

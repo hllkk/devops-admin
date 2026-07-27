@@ -19,6 +19,7 @@ type ApiGroup struct {
 	SysErrorApi
 	TimedTaskApi
 	SocialApi
+	WecomAuthApi
 	OnlineApi
 }
 
