@@ -312,7 +312,7 @@ func (a *UserApi) UpdateMyProfile(c *gin.Context) {
 		return
 	}
 	if err := userService.UpdateMyProfile(c.Request.Context(), utils.GetUserID(c), req); err != nil {
-		response.FailWithMessage("修改失败", c)
+		response.FailWithMessage("修改失败: "+err.Error(), c)
 		return
 	}
 	response.OkWithDetailed(true, "修改成功", c)

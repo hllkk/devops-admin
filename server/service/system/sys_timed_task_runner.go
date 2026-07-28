@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/hllkk/devops-admin/server/global"
@@ -41,11 +42,55 @@ func truncateText(s string, n int) string {
 	return s[:n] + "...(截断)"
 }
 
+// taskRunMu 任务级互斥锁池: key=taskID(uint)。RunTask 用 TryLock 防同任务重叠执行
+// (手动触发狂点、慢任务 + 高频 spec 叠加)。单实例内有效; 删除任务残留一个空 mutex(可忽略)。
+var taskRunMu sync.Map
+
+func taskLock(id uint) *sync.Mutex {
+	v, _ := taskRunMu.LoadOrStore(id, &sync.Mutex{})
+	return v.(*sync.Mutex)
+}
+
 // RunTask 统一执行入口(自动调度与手动触发共用):
 // panic 兜底、起止/耗时/状态/错误落 sys_timed_task_logs、失败经 SSE 告警。
 // 阻塞执行; 调度器回调与手动触发均应在独立 goroutine 中调用。
 func (s *TimedTaskService) RunTask(t system.SysTimedTask, trigger string) {
+	// 单实例互斥: 同一任务上一次执行未结束时跳过本次触发(防手动狂点、慢任务+高频spec叠加)。
+	mu := taskLock(t.ID)
+	if !mu.TryLock() {
+		logger.Bg().Mod("timedTask").Info(fmt.Sprintf("任务 %s 上一次执行尚未结束, 跳过本次触发(%s)", t.Name, trigger))
+		return
+	}
+	defer mu.Unlock()
+
 	started := time.Now()
+	logWritten := false
+	// panic 兜底(对齐本函数 doc): 链路任一环意外 panic 时记日志, 并在正常落库未发生时补一条
+	// fail 日志防丢失。robfig/cron v3 默认不 recover, 不兜底会崩整个进程。
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Bg().Mod("timedTask").Error(fmt.Sprintf("任务执行 panic: %s: %v", t.Name, r))
+			if logWritten {
+				return
+			}
+			finished := time.Now()
+			row := system.SysTimedTaskLog{
+				TaskId:      t.ID,
+				TaskName:    t.Name,
+				TriggerType: trigger,
+				StartedAt:   started,
+				FinishedAt:  finished,
+				DurationMs:  finished.Sub(started).Milliseconds(),
+				Status:      system.TimedTaskStatusFail,
+				ErrorMsg:    truncateText(fmt.Sprintf("panic: %v", r), maxLogTextLen),
+			}
+			ctx := datascope.WithSystem(context.Background())
+			if err := global.OPS_DB.WithContext(ctx).Create(&row).Error; err != nil {
+				logger.Bg().Mod("timedTask").Err(err).Error("定时任务 panic 兜底日志落库失败: " + t.Name)
+			}
+		}
+	}()
+
 	var output string
 	var runErr error
 	switch t.ExecutorType {
@@ -84,6 +129,7 @@ func (s *TimedTaskService) RunTask(t system.SysTimedTask, trigger string) {
 	if err := global.OPS_DB.WithContext(ctx).Create(&logRow).Error; err != nil {
 		logger.Bg().Mod("timedTask").Err(err).Error("定时任务执行日志落库失败: " + t.Name)
 	}
+	logWritten = true
 	if runErr != nil {
 		logger.Bg().Mod("timedTask").Err(runErr).Error("定时任务执行失败: " + t.Name)
 		s.alertFailure(t, errMsg)

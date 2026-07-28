@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"image"
 	"mime/multipart"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -281,9 +283,41 @@ func (s *UserService) ChangeMyPassword(ctx context.Context, userId int64, oldPwd
 	return u, nil
 }
 
+// profileEmailRegexp / profilePhoneRegexp 个人中心自助资料格式校验(前端 pattern 可被绕过, 后端兜底)。
+var (
+	profileEmailRegexp = regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
+	profilePhoneRegexp = regexp.MustCompile(`^1[3-9]\d{9}$`)
+)
+
+// 个人中心自助资料字段长度上限(超长直接拒绝而非截断, 防 DB 列宽溢出异常)。
+const (
+	profileNickNameMaxLen = 50
+	profileEmailMaxLen    = 128
+)
+
 // UpdateMyProfile 当前用户自助修改基本资料(对齐前端 PUT /system/user/profile)。
 // 仅写 nick_name/email/phonenumber/sex + update_by;userName/角色/部门/状态不在自助范围,走管理员侧接口。
+// 格式/长度校验在后端兜底(前端 pattern 可绕过), 防超长触发 DB 异常、非法值污染通知链路。
 func (s *UserService) UpdateMyProfile(ctx context.Context, userId int64, req systemReq.UpdateMyProfileParams) error {
+	if l := len([]rune(req.NickName)); l > profileNickNameMaxLen {
+		return fmt.Errorf("昵称长度不能超过 %d(当前 %d)", profileNickNameMaxLen, l)
+	}
+	if req.Email != "" {
+		if len(req.Email) > profileEmailMaxLen {
+			return fmt.Errorf("邮箱长度不能超过 %d", profileEmailMaxLen)
+		}
+		if !profileEmailRegexp.MatchString(req.Email) {
+			return errors.New("邮箱格式不合法")
+		}
+	}
+	if req.Phonenumber != "" && !profilePhoneRegexp.MatchString(req.Phonenumber) {
+		return errors.New("手机号格式不合法(需为 11 位手机号)")
+	}
+	switch req.Sex {
+	case "0", "1", "2", "":
+	default:
+		return errors.New("性别取值非法")
+	}
 	return global.OPS_DB.WithContext(ctx).Model(&system.SysUser{}).Where("id = ?", userId).
 		Updates(map[string]interface{}{
 			"nick_name":   req.NickName,
@@ -296,16 +330,19 @@ func (s *UserService) UpdateMyProfile(ctx context.Context, userId int64, req sys
 
 // UpdateMyAvatar 当前用户自助上传头像(对齐前端 POST /system/user/profile/avatar,字段名 avatarfile)。
 // 经统一 OSS 抽象落存储,把返回 url 写回 SysUser.Avatar;local 模式 url 形态与 media 一致(原样存,不补前缀)。
-// 头像场景仅允许图片后缀,杜绝借头像接口传任意可执行/文档文件。
+// 双重校验:后缀白名单(对齐前端 accept)+ image.DecodeConfig 嗅探真实图片头, 防伪造后缀传非图片内容。
 func (s *UserService) UpdateMyAvatar(ctx context.Context, userId int64, file *multipart.FileHeader) (string, error) {
 	if file.Size > MaxAvatarBytes {
 		return "", fmt.Errorf("头像文件不能超过 %dMB", MaxAvatarBytes>>20)
 	}
 	ext := strings.ToLower(filepath.Ext(file.Filename))
 	switch ext {
-	case ".jpg", ".jpeg", ".png", ".gif", ".webp":
+	case ".jpg", ".jpeg", ".png", ".gif":
 	default:
-		return "", errors.New("仅支持 jpg/jpeg/png/gif/webp 格式的图片")
+		return "", errors.New("仅支持 jpg/jpeg/png/gif 格式的图片")
+	}
+	if err := verifyImageContent(file); err != nil {
+		return "", err
 	}
 	oss := upload.NewOss()
 	url, _, err := oss.UploadFile(ctx, file)
@@ -317,6 +354,20 @@ func (s *UserService) UpdateMyAvatar(ctx context.Context, userId int64, file *mu
 		return "", err
 	}
 	return url, nil
+}
+
+// verifyImageContent 用标准库解码配置嗅探真实图片格式(jpg/png/gif 标准库自带 decoder),
+// 杜绝改后缀上传非图片内容(HTML/webshell 等)。webp 不在标准库 decoder, 故后缀白名单已对齐前端去掉。
+func verifyImageContent(file *multipart.FileHeader) error {
+	f, err := file.Open()
+	if err != nil {
+		return errors.New("无法读取头像文件")
+	}
+	defer f.Close()
+	if _, _, err := image.DecodeConfig(f); err != nil {
+		return errors.New("文件内容不是有效的图片")
+	}
+	return nil
 }
 
 // saveUserRoles 全量替换用户角色(删后批量插 sys_user_role)。

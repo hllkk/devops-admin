@@ -131,38 +131,37 @@ func (s *DepartmentService) UpdateDept(ctx context.Context, req systemReq.DeptOp
 		return err
 	}
 	newAncestors := parent.Ancestors + "," + strconv.FormatInt(parentId, 10)
-	if err := global.OPS_DB.WithContext(ctx).Model(&system.SysDepartment{}).Where("dept_id = ?", deptId).
-		Updates(map[string]interface{}{
-			"parent_id":     parentId,
-			"ancestors":     newAncestors,
-			"dept_name":     req.DeptName,
-			"dept_category": req.DeptCategory,
-			"order_num":     req.OrderNum,
-			"leader":        req.Leader,
-			"phone":         req.Phone,
-			"email":         req.Email,
-			"status":        req.Status,
-			"update_by":     updateBy,
-		}).Error; err != nil {
-		return err
-	}
-	// 父级变更时同步子孙 ancestors:旧完整链前缀 → 新完整链前缀
 	oldFullChain := old.Ancestors + "," + strconv.FormatInt(deptId, 10)
 	newFullChain := newAncestors + "," + strconv.FormatInt(deptId, 10)
-	if oldFullChain != newFullChain {
-		var children []system.SysDepartment
-		// 子孙 = ancestors 等于旧完整链(直接子)或以其+", "开头(更深子)
-		if err := global.OPS_DB.WithContext(ctx).
-			Where("ancestors = ? OR ancestors LIKE ?", oldFullChain, oldFullChain+",%").Find(&children).Error; err != nil {
+	// 主部门更新与子孙 ancestors 同步须原子:中途失败会留下不一致的祖级链(exclude 树错位、
+	// 后续移动漏改子孙),故整体走事务。子孙同步用一条 SQL 做前缀替换(旧完整链→新完整链),
+	// 免去逐条 UPDATE 的 N+1(大部门树下移动高层部门可达成百上千次 UPDATE)。
+	if err := global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&system.SysDepartment{}).Where("dept_id = ?", deptId).
+			Updates(map[string]interface{}{
+				"parent_id":     parentId,
+				"ancestors":     newAncestors,
+				"dept_name":     req.DeptName,
+				"dept_category": req.DeptCategory,
+				"order_num":     req.OrderNum,
+				"leader":        req.Leader,
+				"phone":         req.Phone,
+				"email":         req.Email,
+				"status":        req.Status,
+				"update_by":     updateBy,
+			}).Error; err != nil {
 			return err
 		}
-		for _, c := range children {
-			updated := newFullChain + c.Ancestors[len(oldFullChain):]
-			if err := global.OPS_DB.WithContext(ctx).Model(&system.SysDepartment{}).
-				Where("dept_id = ?", c.DeptId).Update("ancestors", updated).Error; err != nil {
-				return err
-			}
+		// 父级变更时同步子孙 ancestors:子孙 = ancestors 等于旧完整链(直接子)或以其+", "开头(更深子);
+		// 尾段 = SUBSTRING(ancestors, len(oldFullChain)+1)(SQL 1-based),前缀拼新完整链。
+		if oldFullChain != newFullChain {
+			return tx.Model(&system.SysDepartment{}).
+				Where("ancestors = ? OR ancestors LIKE ?", oldFullChain, oldFullChain+",%").
+				Update("ancestors", gorm.Expr("CONCAT(?, SUBSTRING(ancestors, ?))", newFullChain, len(oldFullChain)+1)).Error
 		}
+		return nil
+	}); err != nil {
+		return err
 	}
 	return nil
 }

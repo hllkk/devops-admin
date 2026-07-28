@@ -90,10 +90,17 @@ func (s *NoticeService) CreateNotice(ctx context.Context, req systemReq.NoticeOp
 	if isAnnouncement || targetType == "" {
 		targetType = "all"
 	}
+	// 通知(非公告)的定向范围必须合法:否则 expandTargetUserIDs 返回空,会误走全员广播
+	if !isAnnouncement && targetType != "all" && targetType != "users" && targetType != "depts" {
+		return errors.New("投递范围非法(须 all/users/depts)")
+	}
+	// status='1'(停用/草稿)只入库不投递:不展开目标、不落 record、不推送,
+	// 避免"草稿"被立即广播给全员(发布由后续改 status 触发,编辑不重推,属既定语义)。
+	shouldDeliver := req.Status != "1"
 
 	// 展开定向目标(公告/全员 → nil,表示广播不入 record)
 	var targetUserIDs []int64
-	if !isAnnouncement && targetType != "all" {
+	if shouldDeliver && !isAnnouncement && targetType != "all" {
 		targetUserIDs = s.expandTargetUserIDs(ctx, targetType, req.TargetUserIds, req.TargetDeptIds)
 	}
 
@@ -136,8 +143,10 @@ func (s *NoticeService) CreateNotice(ctx context.Context, req systemReq.NoticeOp
 		return err
 	}
 
-	// 在线加速推送(离线靠 record 兜底,上线拉取)
-	s.publishNotice(n, targetUserIDs)
+	// 在线加速推送(离线靠 record 兜底,上线拉取);停用/草稿不推送
+	if shouldDeliver {
+		s.publishNotice(n, targetUserIDs)
+	}
 	return nil
 }
 
@@ -244,6 +253,8 @@ func (s *NoticeService) MarkNoticeRead(ctx context.Context, userId int64, notice
 
 // UpdateNotice 修改通知公告;noticeId 必填,updateBy 填审计字段。
 // 用 map 更新以显式覆盖全部可编辑字段(含空串),避免 GORM struct 更新遗漏零值字段。
+// 接收范围在创建时确定,编辑不重新定向(要改范围请删除重建);但 noticeType 从通知(1)改成公告(2)
+// 时须清理该通知的接收记录(公告不入 record,否则 record 沦为孤儿),整体走事务。
 func (s *NoticeService) UpdateNotice(ctx context.Context, req systemReq.NoticeOperateParams, updateBy int64) error {
 	if req.NoticeId == 0 {
 		return errors.New("公告ID不能为空")
@@ -255,14 +266,37 @@ func (s *NoticeService) UpdateNotice(ctx context.Context, req systemReq.NoticeOp
 		"status":         req.Status,
 		"update_by":      updateBy,
 	}
-	return global.OPS_DB.WithContext(ctx).Model(&system.SysNotice{}).
-		Where("notice_id = ?", req.NoticeId).Updates(updates).Error
+	// type 从通知(1)改成公告(2)时,旧 record 沦为孤儿(公告不入 record),须清理
+	clearRecords := false
+	if req.NoticeType == system.NoticeTypeAnnouncement {
+		var old system.SysNotice
+		if e := global.OPS_DB.WithContext(ctx).Select("notice_type").
+			Where("notice_id = ?", req.NoticeId).First(&old).Error; e == nil &&
+			old.NoticeType == system.NoticeTypeNotice {
+			clearRecords = true
+		}
+	}
+	return global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if e := tx.Model(&system.SysNotice{}).Where("notice_id = ?", req.NoticeId).Updates(updates).Error; e != nil {
+			return e
+		}
+		if clearRecords {
+			return tx.Where("notice_id = ?", req.NoticeId).Delete(&system.SysNoticeRecord{}).Error
+		}
+		return nil
+	})
 }
 
-// DeleteNotice 批量删除通知公告(按 notice_id,业务实体走软删除,与 dict/role 一致)。
+// DeleteNotice 批量删除通知公告(按 notice_id,业务实体走软删除,与 dict/role 一致);
+// 事务内级联清理 sys_notice_record,避免接收记录成为指向已删通知的孤儿。
 func (s *NoticeService) DeleteNotice(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return errors.New("未选择删除项")
 	}
-	return global.OPS_DB.WithContext(ctx).Where("notice_id IN ?", ids).Delete(&system.SysNotice{}).Error
+	return global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if e := tx.Where("notice_id IN ?", ids).Delete(&system.SysNoticeRecord{}).Error; e != nil {
+			return e
+		}
+		return tx.Where("notice_id IN ?", ids).Delete(&system.SysNotice{}).Error
+	})
 }

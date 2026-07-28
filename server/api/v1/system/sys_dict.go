@@ -115,6 +115,20 @@ func (d *DictApi) BatchDeleteDictType(c *gin.Context) {
 	response.OkWithDetailed(true, "删除成功", c)
 }
 
+// RefreshDictTypeCache
+// @Tags      SysDictType
+// @Summary   刷新字典缓存
+// @Produce   application/json
+// @Success   200  {object}  response.Response{data=bool,msg=string}
+// @Router    /system/dict/type/refreshCache [delete]
+func (d *DictApi) RefreshDictTypeCache(c *gin.Context) {
+	if err := dictDataService.RefreshDictCache(c.Request.Context()); err != nil {
+		response.FailWithMessage("刷新失败", c)
+		return
+	}
+	response.OkWithDetailed(true, "刷新成功", c)
+}
+
 // GetDictTypeOption
 // @Tags      SysDictType
 // @Summary   获取字典类型选择框列表

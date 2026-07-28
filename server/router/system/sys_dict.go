@@ -17,6 +17,7 @@ func (d *DictRouter) InitDictRouter(Router *gin.RouterGroup) {
 		dictTypeRouter.POST("", dictApi.CreateDictType)               // 新增字典类型
 		dictTypeRouter.PUT("", dictApi.UpdateDictType)                // 修改字典类型
 		dictTypeRouter.DELETE(":ids", dictApi.BatchDeleteDictType)    // 批量删除字典类型
+		dictTypeRouter.DELETE("refreshCache", dictApi.RefreshDictTypeCache) // 刷新字典缓存(static 与 :ids 同层,static 优先匹配)
 	}
 	dictDataRouter := Router.Group("system/dict/data")
 	{
