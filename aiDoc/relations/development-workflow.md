@@ -1,10 +1,18 @@
 # 开发流程 (development-workflow)
 
 ## 分支策略
-- `main`：生产
-- `develop`：开发
-- `feature/*`：功能
-- `hotfix/*`：紧急修复
+
+本仓库采用「基座 / 业务主线」双分支模型：
+
+- `master`：**基座**。只承载基座自身的能力与修复（框架、系统模块、基础设施），保持干净稳定，不堆业务功能。基座自身改动直接在 `master` 上进行。
+- `devops`：**业务主线**。所有后续业务功能（网盘、AI 网关等）都在此分支上开发与提交，长期存在。`devops` 基于 `master` 派生，随基座升级定期同步。
+- `main`：**已废弃**的历史项目（旧 submodule 壳仓库形态，与当前扁平化 `master` 无共同祖先），不再维护，不要在其上开发或向其合并。
+
+### 工作流
+
+- **开发业务功能**：在 `devops` 上直接进行。
+- **需要改基座**：切到 `master` 修改并提交，再回到 `devops` 执行 `git merge master` 把基座改动同步进业务主线。基座改动统一经 `master` 中转，不要直接在 `devops` 上改基座代码，避免业务线与基座线交叉污染。
+- **同步节奏**：`devops` 定期 `git merge master`，避免与基座偏离过远。
 
 ## 提交规范
 - `type(scope): desc`，type ∈ feat|fix|docs|style|refactor|test|chore
