@@ -15,7 +15,7 @@ import (
 // 启动加载见 LoadTimedTasks。ctx 由统一 Runner 注入(已带 datascope.WithSystem 与超时)。
 // 二开注册自己的任务: 在此追加 task.Register, 然后在面板新建任务选择该方法即可。
 func Timer() {
-	task.Register("ClearDB", "清理数据库过期日志(操作记录/登录日志/JWT黑名单/定时任务执行日志)", func(ctx context.Context, _ json.RawMessage) error {
+	task.Register("ClearDB", "清理数据库过期日志(操作记录/登录日志/JWT黑名单/定时任务执行日志/错误日志)", func(ctx context.Context, _ json.RawMessage) error {
 		// 保留天数取自常规配置 sys_general_config(<=0 则该项不清理)。
 		// 闭包在 initialize 包取值后传入 task,避免 task 反向 import service/system 成环
 		cfg := (&system.GeneralConfigService{}).Current(ctx)

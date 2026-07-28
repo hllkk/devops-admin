@@ -27,7 +27,7 @@ type ClearOptions struct {
 
 // ClearTable 清理数据库过期数据。
 //   - sys_oper_log / sys_login_log:保留天数取自 ClearOptions(天),<=0 跳过
-//   - jwt_blacklists(7天) / sys_timed_task_logs(30天):与常规配置无关,保持硬编码
+//   - jwt_blacklists(7天) / sys_timed_task_logs(30天) / sys_error(30天):与常规配置无关,保持硬编码
 //
 // 所有表均嵌入 OPS_BASE,列名锁定为 create_time(见 global/model.go)。
 // GVA 遗留的 created_at 列名在本项目不存在,旧硬编码已修正。
@@ -54,6 +54,13 @@ func ClearTable(db *gorm.DB, opts ClearOptions) error {
 		CompareField: "create_time",
 		Interval:     "720h", // 执行日志保留 30 天
 	})
+	// 错误日志(sys_error)有匿名公开上报入口 createSysError(无鉴权可写),
+	// 需定期清理防存储膨胀;与 jwt_blacklists/sys_timed_task_logs 一致走硬编码保留期。
+	details = append(details, common.ClearDB{
+		TableName:    "sys_error",
+		CompareField: "create_time",
+		Interval:     "720h", // 错误日志保留 30 天
+	})
 	if opts.LoginLogRetentionDays > 0 {
 		details = append(details, common.ClearDB{
 			TableName:    "sys_login_log",
@@ -71,7 +78,7 @@ func ClearTable(db *gorm.DB, opts ClearOptions) error {
 		if duration < 0 {
 			return errors.New("parse duration < 0")
 		}
-		if err = db.Debug().Exec(fmt.Sprintf("DELETE FROM %s WHERE %s < ?", detail.TableName, detail.CompareField), time.Now().Add(-duration)).Error; err != nil {
+		if err = db.Exec(fmt.Sprintf("DELETE FROM %s WHERE %s < ?", detail.TableName, detail.CompareField), time.Now().Add(-duration)).Error; err != nil {
 			// PostgreSQL "relation does not exist"(42P01) 表示表尚未建/被删,跳过继续清理其他表
 			if isTableNotExistErr(err) {
 				continue

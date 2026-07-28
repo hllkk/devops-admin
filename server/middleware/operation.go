@@ -57,6 +57,12 @@ const (
 func OperationRecord() gin.HandlerFunc {
 	operLogSvc := &service.ServiceGroupApp.SystemServiceGroup.SysOperLogService
 	return func(c *gin.Context) {
+		// 仅记录写操作:GET/HEAD 为查询,不落操作日志(避免高频查询撑大 sys_oper_log,
+		// 与 resolveBusinessType 将 GET 归为「其它」的语义一致)。请求仍正常放行。
+		if c.Request.Method == http.MethodGet || c.Request.Method == http.MethodHead {
+			c.Next()
+			return
+		}
 		start := time.Now()
 
 		record := system.SysOperLog{
@@ -191,6 +197,8 @@ func resolveBusinessType(c *gin.Context) string {
 		return bizExport
 	case strings.Contains(path, "import"):
 		return bizImport
+	case strings.Contains(path, "clean"):
+		return bizClean
 	}
 	switch c.Request.Method {
 	case http.MethodPost:

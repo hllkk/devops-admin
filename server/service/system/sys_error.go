@@ -15,14 +15,35 @@ import (
 
 type SysErrorService struct{}
 
+// errorFieldMaxRunes 错误日志前端可控长文本字段(rune)上限。
+// createSysError 为匿名公开上报入口(无鉴权可写),按 rune 截断防存储膨胀/DoS。
+const errorFieldMaxRunes = 4000
+
 // CreateSysError 创建错误日志记录
 // Author [yourname](https://github.com/yourname)
 func (sysErrorService *SysErrorService) CreateSysError(ctx context.Context, sysError *system.SysError) (err error) {
 	if global.OPS_DB == nil {
 		return nil
 	}
+	// 匿名上报不可信:对前端可控字段截断(Form/Info/Solution 按 rune 限长,
+	// RequestID/TraceID 对齐 varchar(64) 防超长致插入失败),防撑大 text 列 / 刷库。
+	clampStrPtr(sysError.Form, errorFieldMaxRunes)
+	clampStrPtr(sysError.Info, errorFieldMaxRunes)
+	clampStrPtr(sysError.Solution, errorFieldMaxRunes)
+	clampStrPtr(&sysError.RequestID, 64)
+	clampStrPtr(&sysError.TraceID, 64)
 	err = global.OPS_DB.WithContext(ctx).Create(sysError).Error
 	return err
+}
+
+// clampStrPtr 按 rune 上限截断字符串(超长则保留前 max 个 rune + 截断标记);nil 指针跳过。
+func clampStrPtr(p *string, max int) {
+	if p == nil || max <= 0 {
+		return
+	}
+	if r := []rune(*p); len(r) > max {
+		*p = string(r[:max]) + "...[截断]"
+	}
 }
 
 // DeleteSysError 删除错误日志记录
