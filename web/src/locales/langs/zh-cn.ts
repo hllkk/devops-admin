@@ -325,6 +325,51 @@ const local: App.I18n.Schema = {
     }
   },
   page: {
+    disk: {
+      title: '网盘',
+      empty: '暂无文件',
+      loadingMore: '加载更多中...',
+      allLoaded: '已加载全部 {count} 项',
+      fileType: {
+        title: '文件类型',
+        all: '全部',
+        image: '图片',
+        document: '文档',
+        video: '视频',
+        audio: '音频',
+        other: '其他'
+      },
+      toolbar: {
+        showCapacity: '显示容量',
+        search: '搜索',
+        searchPlaceholder: '搜索文件名',
+        refresh: '刷新',
+        sort: '排序'
+      },
+      sort: {
+        name: '名称',
+        size: '大小',
+        modifyTime: '修改时间'
+      },
+      breadcrumb: {
+        root: '根目录',
+        count: '共 {count} 项'
+      },
+      column: {
+        name: '名称',
+        size: '大小',
+        modifyTime: '修改时间'
+      },
+      file: {
+        folder: '文件夹'
+      },
+      capacity: {
+        title: '存储空间',
+        usedLabel: '已使用',
+        totalLabel: '总容量',
+        unlimited: '无限制'
+      }
+    },
     login: {
       common: {
         title: '欢迎登录',

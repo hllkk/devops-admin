@@ -31,6 +31,16 @@
   - 本地 SVG 放 `src/assets/svg-icon/*.svg`，经 `vite-plugin-svg-icons` 注册，`getLocalIcons()` 枚举
   - Iconify（`@iconify/vue` + `@iconify/json`），`setupIconifyOffline()` 走离线 / `VITE_ICONIFY_URL`
 - 路由/菜单图标用**图标名字符串**（如 `"mdi:folder"`）
+- **渲染图标 VNode 不用 `h()`**：在函数/回调里产图标 VNode 时（典型如 NaiveUI `NMenu` / `NDropdown` option 的 `icon` 字段、`NTabs`，这些字段收 VNode 不收字符串），一律用项目封装的 `SvgIconVNode`，**不要** `h(SvgIcon, { ... })`：
+  ```ts
+  import { useSvgIcon } from '@/hooks/common/icon';
+  const { SvgIconVNode } = useSvgIcon();
+  // 之后在 options 里：
+  icon: SvgIconVNode({ icon: 'ph:user-circle', fontSize: 18 })        // Iconify 名
+  icon: SvgIconVNode({ localIcon: 'disk-file-image', fontSize: 24 })  // 本地 svg 名（不含 icon-local- 前缀）
+  ```
+  `SvgIconVNode({ icon?, localIcon?, fontSize? })` 内部已绑定 `@/components/custom/svg-icon.vue`，是项目里产图标 VNode 的标准方式（参照 `user-avatar.vue` / `global-tab/context-menu.vue` / `store/modules/route/shared.ts`）。尺寸用 `fontSize`，不要靠 `h()` 传 `class` 控大小。
+- **函数里渲染组件一律不用 `h()`**：图标之外，任何「需要在函数/回调里返回组件」的场景也不要手写 `h(Component, props, children)`；把当前 SFC 的 `<script setup lang="ts">` 改成 `<script setup lang="tsx">`，用 TSX 书写（如表格列 `render`，见 §11）。规则：模板能写就写模板，要在函数里写 JSX 就切 `tsx`，`h()` 只读不用。
 
 ## 6. 国际化（vue-i18n）
 - 语言文件 `src/locales/langs/{zh-cn,en-us}.ts`

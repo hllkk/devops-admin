@@ -82,6 +82,7 @@
 - 双体系:本地 SVG(`web/src/assets/svg-icon/`,经 `vite-plugin-svg-icons` + UnoCSS `FileSystemIconLoader` 在**构建期**注册)与 Iconify(`@iconify/vue`,离线走 `setupIconifyOffline()` / `VITE_ICONIFY_URL`);菜单/路由图标用**图标名字符串**引用,渲染统一走 `web/src/components/custom/svg-icon.vue`
 - **菜单图标**:本地款放 `web/src/assets/svg-icon/menu/<name>.svg`,路由里以 `localIcon: 'menu-<name>'` 引用(渲染为 `#icon-local-menu-<name>`);也可用 Iconify 名(如 `icon: 'lucide:users'`)。优先线框/空心风格,避免视觉实心款;**找不到合适的空心款时,去 Iconify(优先 `lucide`)挑一个合适的空心 svg、规整后存为本地 `web/src/assets/svg-icon/menu/<name>.svg`(不要手画自己发挥,也不要将就用实心款)**;新增本地 svg 后由构建期扫描注册,dev 按需热更、生产构建全量进 sprite,**根 `<svg>` 不要写固定 `stroke-width`/`fill`,颜色用 `currentColor` 由外层控制**
 - **其它系统 / 业务开发的图标**:只要语义合适即可,**不必在意空心还是实心**;优先复用现有图标集(lucide 等),确实没有合适的再往 `svg-icon/` 加本地 svg
+- **渲染图标不用 `h()`**:在函数/回调里产图标 VNode(如 NaiveUI `NMenu`/`NDropdown` option 的 `icon` 字段)一律用 `const { SvgIconVNode } = useSvgIcon()` + `SvgIconVNode({ icon?, localIcon?, fontSize? })`,不要 `h(SvgIcon, {...})`;进而在函数里渲染任意组件都禁用 `h()`,需要时把 SFC 的 `<script setup lang="ts">` 改为 `lang="tsx"` 用 TSX;细则见 `aiDoc/frontend-backend/frontend-rules.md` 的「图标」一节
 - 细则见 `aiDoc/frontend-backend/frontend-rules.md` 的「图标」一节
 
 ### 页面点触测试(AI 驱动浏览器验证)

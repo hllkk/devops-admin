@@ -13,5 +13,5 @@ defineOptions({
     base-layout/global-menu/global-sider 都读它,保证与 admin 的 vertical-mix 渲染一致。
     admin/server/gateway 仍用 layout.base(不传 prop,行为不变)。
   -->
-  <BaseLayout hide-tab hide-theme-controls hide-theme-drawer />
+  <BaseLayout hide-tab hide-theme-controls hide-theme-drawer hide-footer />
 </template>

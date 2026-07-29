@@ -30,12 +30,15 @@ interface Props {
   hideThemeControls?: boolean;
   /** 不挂载主题抽屉(彻底无主题设置入口) */
   hideThemeDrawer?: boolean;
+  /** 隐藏底部 footer */
+  hideFooter?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   hideTab: false,
   hideThemeControls: false,
-  hideThemeDrawer: false
+  hideThemeDrawer: false,
+  hideFooter: false
 });
 
 /** 实际菜单模式:disk 模块定死 vertical-mix(themeStore.effectiveLayoutMode),其余用用户设置 */
@@ -164,7 +167,7 @@ onMounted(() => {
     :sider-visible="siderVisible"
     :sider-width="siderWidth"
     :sider-collapsed-width="siderCollapsedWidth"
-    :footer-visible="themeStore.footer.visible"
+    :footer-visible="!props.hideFooter && themeStore.footer.visible"
     :footer-height="themeStore.footer.height"
     :fixed-footer="themeStore.footer.fixed"
     :right-footer="themeStore.footer.right"

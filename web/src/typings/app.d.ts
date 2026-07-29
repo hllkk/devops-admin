@@ -515,6 +515,51 @@ declare namespace App {
         };
       };
       page: {
+        disk: {
+          title: string;
+          empty: string;
+          loadingMore: string;
+          allLoaded: string;
+          fileType: {
+            title: string;
+            all: string;
+            image: string;
+            document: string;
+            video: string;
+            audio: string;
+            other: string;
+          };
+          toolbar: {
+            showCapacity: string;
+            search: string;
+            searchPlaceholder: string;
+            refresh: string;
+            sort: string;
+          };
+          sort: {
+            name: string;
+            size: string;
+            modifyTime: string;
+          };
+          breadcrumb: {
+            root: string;
+            count: string;
+          };
+          column: {
+            name: string;
+            size: string;
+            modifyTime: string;
+          };
+          file: {
+            folder: string;
+          };
+          capacity: {
+            title: string;
+            usedLabel: string;
+            totalLabel: string;
+            unlimited: string;
+          };
+        };
         login: {
           common: {
             title: string;

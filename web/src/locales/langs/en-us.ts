@@ -329,6 +329,51 @@ const local: App.I18n.Schema = {
     }
   },
   page: {
+    disk: {
+      title: 'Disk',
+      empty: 'No files',
+      loadingMore: 'Loading more...',
+      allLoaded: 'All {count} items loaded',
+      fileType: {
+        title: 'File Type',
+        all: 'All',
+        image: 'Images',
+        document: 'Documents',
+        video: 'Videos',
+        audio: 'Audio',
+        other: 'Other'
+      },
+      toolbar: {
+        showCapacity: 'Show Capacity',
+        search: 'Search',
+        searchPlaceholder: 'Search file name',
+        refresh: 'Refresh',
+        sort: 'Sort'
+      },
+      sort: {
+        name: 'Name',
+        size: 'Size',
+        modifyTime: 'Modified'
+      },
+      breadcrumb: {
+        root: 'Root',
+        count: '{count} items'
+      },
+      column: {
+        name: 'Name',
+        size: 'Size',
+        modifyTime: 'Modified'
+      },
+      file: {
+        folder: 'Folder'
+      },
+      capacity: {
+        title: 'Storage',
+        usedLabel: 'Used',
+        totalLabel: 'Total',
+        unlimited: 'Unlimited'
+      }
+    },
     login: {
       common: {
         title: 'Welcome',
