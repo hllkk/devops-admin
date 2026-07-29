@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { $t } from '@/locales';
 import { useDiskStore } from '@/store/modules/disk';
 import SvgIcon from '@/components/custom/svg-icon.vue';
-import { formatFileSize } from '../utils/format';
+import { formatFileSize } from '@/utils/format';
 import { useSvgIcon } from '@/hooks/common/icon';
 
 defineOptions({ name: 'FileTypeMenu' });

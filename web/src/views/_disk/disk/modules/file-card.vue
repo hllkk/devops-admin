@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { useDiskStore } from '@/store/modules/disk';
 import { $t } from '@/locales';
 import FileIcon from './file-icon.vue';
-import { formatFileSize } from '../utils/format';
+import { formatFileSize } from '@/utils/format';
 
 defineOptions({ name: 'FileCard' });
 

@@ -5,7 +5,7 @@ import { useDiskStore } from '@/store/modules/disk';
 import { $t } from '@/locales';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import { getFileIcon } from '@/service/api/disk/file';
-import { formatFileSize } from '../utils/format';
+import { formatFileSize } from '@/utils/format';
 
 defineOptions({ name: 'FileList' });
 
