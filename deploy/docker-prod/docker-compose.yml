@@ -170,7 +170,9 @@ services:
     networks:
       - prod-net
 
-  # 一次性：rustfs 启动后建 bucket 并设匿名下载策略（前端经 nginx /oss/ 可直接 GET 文件）
+  # 一次性：rustfs 启动后建 bucket，并将匿名下载收敛到 uploads/ 前缀
+  # 头像/媒体走 uploads/（前端经 nginx /oss/ 可直接匿名 GET）；撤整桶匿名后，网盘 file/ 等前缀
+  # 默认私有，下载必须走后端代理鉴权，避免凭 key 越权读取整桶对象
   rustfs_init:
     image: minio/mc:${MC_VERSION:-latest}
     container_name: devops-rustfs-init
@@ -189,8 +191,10 @@ services:
           echo "等待 rustfs 就绪..."; sleep 2
         done
         mc mb --ignore-existing "local/$${RUSTFS_BUCKET}"
-        mc anonymous set download "local/$${RUSTFS_BUCKET}" || true
-        echo "rustfs bucket $${RUSTFS_BUCKET} 就绪"
+        # 收敛匿名下载：先撤整桶匿名，再仅对 uploads/ 前缀放开（头像/媒体公开；网盘 file/ 等保持私有）
+        mc anonymous set none "local/$${RUSTFS_BUCKET}" || true
+        mc anonymous set download "local/$${RUSTFS_BUCKET}/uploads" || true
+        echo "rustfs bucket $${RUSTFS_BUCKET} 就绪（匿名下载仅限 uploads/ 前缀）"
     restart: "no"
     networks:
       - prod-net
