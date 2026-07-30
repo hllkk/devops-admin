@@ -72,9 +72,9 @@ function handleToggleGridSize() {
 </script>
 
 <template>
-  <div class="flex-y-center gap-8px px-12px py-8px flex-wrap">
-    <!-- 搜索：flex-1 占位，将右侧功能组推到行尾；max-w 限制桌面宽度，窄屏自适应收缩 -->
-    <NInputGroup class="flex-1 max-w-240px" size="small">
+  <div class="flex-y-center justify-between gap-8px px-12px py-8px flex-wrap">
+    <!-- 搜索：靠 justify-between 分布到左端，功能组到右端；flex-1 + max-w 让桌面保持合理宽度，窄屏自适应收缩 -->
+    <NInputGroup class="flex-1 max-w-240px">
       <NInput
         v-model:value="keyword"
         :placeholder="$t('page.disk.toolbar.searchPlaceholder')"
@@ -82,13 +82,13 @@ function handleToggleGridSize() {
         @keyup.enter="handleSearch"
         @clear="handleSearch"
       />
-      <NButton size="small" type="primary" :focusable="false" @click="handleSearch">
+      <NButton type="primary" :focusable="false" @click="handleSearch">
         <SvgIcon icon="material-symbols:search" class="text-16px" />
       </NButton>
     </NInputGroup>
 
     <!-- 功能按钮组 -->
-    <NButtonGroup size="small">
+    <NButtonGroup>
       <!-- 排序：字段×方向合一 -->
       <NDropdown :options="sortOptions" trigger="click" @select="handleSortSelect">
         <NTooltip trigger="hover">

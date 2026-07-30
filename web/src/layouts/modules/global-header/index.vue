@@ -25,7 +25,12 @@ interface Props {
   showThemeControls?: boolean;
 }
 
-withDefaults(defineProps<Props>(), { showThemeControls: true });
+withDefaults(defineProps<Props>(), {
+    showLogo: false,
+    showMenuToggler: false,
+    showMenu: false,
+    showThemeControls: true
+  });
 
 const appStore = useAppStore();
 const themeStore = useThemeStore();
