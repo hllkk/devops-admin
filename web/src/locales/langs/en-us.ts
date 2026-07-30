@@ -270,7 +270,8 @@ const local: App.I18n.Schema = {
     disk: 'Disk',
     server: 'Server',
     gateway: 'AI Gateway',
-    init: 'System Init'
+    init: 'System Init',
+    home: 'Profile'
   },
   module: {
     admin: 'Admin',
@@ -529,7 +530,49 @@ const local: App.I18n.Schema = {
         desc4: 'Soybean is busy writing project documentation for soybean-admin!',
         desc5: 'Soybean just wrote some of the workbench pages casually, and it was enough to see!'
       },
-      creativity: 'Creativity'
+      creativity: 'Creativity',
+      identity: {
+        cardTitle: 'AI Identity',
+        active: 'Active',
+        inactive: 'Inactive',
+        noIdentity: 'No AI identity yet',
+        apiKeyLabel: 'API KEY',
+        budgetLabel: 'Budget',
+        modelsLabel: 'Models',
+        mcpLabel: 'MCP',
+        skillLabel: 'Skill',
+        copy: 'Copy',
+        copied: 'Copied',
+        budgetUnlimited: 'Unlimited',
+        budgetModels: 'Models ¥{amount}',
+        budgetMcps: 'MCP ¥{amount}',
+        budgetPerResource: 'Per resource',
+        resModel: 'Available Models',
+        resMcp: 'MCP Servers',
+        resSkill: 'Skills',
+        resCount: '{count} item(s)',
+        resEmptyModels: 'No models available',
+        resEmptyMarket: 'Not enabled',
+        overviewTitle: 'Usage Overview',
+        overviewMonthBudget: 'Monthly Budget',
+        overviewSpent: 'Spent',
+        overviewRequests: 'Requests',
+        overviewDailyAvg: 'Daily Average',
+        overviewBudgetUsage: 'Budget Usage',
+        appsTitle: 'My Applications',
+        appsEmpty: 'No applications',
+        typeModel: 'Model',
+        typeMcp: 'MCP',
+        typeSkill: 'Skill',
+        typeAgent: 'Agent',
+        statusPending: 'Pending',
+        statusApproved: 'Approved',
+        statusRejected: 'Rejected',
+        navIdentity: 'My AI Identity',
+        navMarket: 'AI Market',
+        navModels: 'Model Hub',
+        comingSoon: 'Coming soon'
+      }
     },
     system: {
       user: {
@@ -682,9 +725,11 @@ const local: App.I18n.Schema = {
         diskMaxUploadSize: 'Max Upload Size',
         diskStorageQuota: 'Storage Quota',
         diskAllowedExtensions: 'Allowed File Types',
-        diskAllowedExtensionsTip: 'Leave empty to allow all types. Enter file extensions (without dot), separated by commas.',
+        diskAllowedExtensionsTip:
+          'Leave empty to allow all types. Enter file extensions (without dot), separated by commas.',
         diskBlockedExtensions: 'Blocked File Types',
-        diskBlockedExtensionsTip: 'Enter blocked file extensions (without dot), takes priority over allowed types. Leave empty to allow all.',
+        diskBlockedExtensionsTip:
+          'Enter blocked file extensions (without dot), takes priority over allowed types. Leave empty to allow all.',
         diskRecycleBinRetentionDays: 'Recycle Bin Retention Days',
         diskUnitMB: 'MB',
         diskUnitGB: 'GB',
@@ -700,7 +745,8 @@ const local: App.I18n.Schema = {
         diskOnlyOfficeServerUrlTip: 'The browser-accessible URL of the Document Server.',
         diskOnlyOfficeTokenSecret: 'Secret Key',
         diskOnlyOfficeTokenSecretPlaceholder: 'Same as the JWT_SECRET of the OnlyOffice container',
-        diskOnlyOfficeTokenSecretTip: 'Must match the JWT_SECRET env var of the Document Server container. Leave empty to disable JWT signing.',
+        diskOnlyOfficeTokenSecretTip:
+          'Must match the JWT_SECRET env var of the Document Server container. Leave empty to disable JWT signing.',
         diskOnlyOfficeCallbackUrl: 'Callback URL',
         diskOnlyOfficeCallbackUrlPlaceholder: 'http://backend-ip:port/api',
         diskOnlyOfficeCallbackUrlTip: 'The OnlyOffice container must be able to reach this URL to save documents.',
@@ -754,14 +800,17 @@ const local: App.I18n.Schema = {
         authOAuthClientSecretPlaceholder: 'Enter application Client Secret',
         authOAuthCallbackUrl: 'Callback URL',
         authOAuthCallbackUrlPlaceholder: 'Enter OAuth2 callback URL',
-        authOAuthCallbackUrlTip: 'Format: https://your-domain.com/auth/callback/<provider>. Make sure this URL is configured in the third-party platform.',
+        authOAuthCallbackUrlTip:
+          'Format: https://your-domain.com/auth/callback/<provider>. Make sure this URL is configured in the third-party platform.',
         authWecomCorpId: 'Corp ID',
         authWecomCorpIdPlaceholder: 'Corp ID, e.g. ww1234567890abcdef',
         authWecomAgentId: 'Agent ID',
         authWecomAgentIdPlaceholder: 'Enter application Agent ID',
         authWecomDomainVerifyTitle: '⚠️ Trusted Domain Verification',
-        authWecomDomainVerifyTip1: '1. Used for WeCom self-built app "Web Authorization & JS-SDK" trusted domain verification.',
-        authWecomDomainVerifyTip2: '2. After filling in the file name and content, the system automatically responds to /WW_verify_*.txt — no manual file placement or frontend rebuild needed.',
+        authWecomDomainVerifyTip1:
+          '1. Used for WeCom self-built app "Web Authorization & JS-SDK" trusted domain verification.',
+        authWecomDomainVerifyTip2:
+          '2. After filling in the file name and content, the system automatically responds to /WW_verify_*.txt — no manual file placement or frontend rebuild needed.',
         authWecomDomainVerifyTip3: '3. You may clear this configuration after verification passes.',
         authWecomDomainFileName: 'File Name',
         authWecomDomainFileNamePlaceholder: 'e.g. WW_verify_xxxx.txt',
@@ -809,7 +858,8 @@ const local: App.I18n.Schema = {
         perms: 'Permission Key',
         permsTip: 'Permission key defined in the controller, e.g.: system:user:list',
         apiPrefix: 'API Path',
-        apiPrefixTip: 'Casbin policy paths for the menu backend APIs (comma-separated), e.g.: /system/user, /system/user/*; derived into interface permissions on role-menu assignment',
+        apiPrefixTip:
+          'Casbin policy paths for the menu backend APIs (comma-separated), e.g.: /system/user, /system/user/*; derived into interface permissions on role-menu assignment',
         status: 'Menu Status',
         statusTip: 'If disabled, this menu and its submenus will be invisible',
         emptyMenu: 'No menu data',
@@ -852,7 +902,10 @@ const local: App.I18n.Schema = {
           menuName: { required: 'Please enter the menu name', invalid: 'Menu name format is incorrect' },
           orderNum: { required: 'Please enter the display order', invalid: 'Display order format is incorrect' },
           perms: { required: 'Please enter the permission key', invalid: 'Permission key format is incorrect' },
-          apiPrefix: { required: 'Enter API path patterns, e.g. /system/user, /system/user/*', invalid: 'API path format is incorrect' },
+          apiPrefix: {
+            required: 'Enter API path patterns, e.g. /system/user, /system/user/*',
+            invalid: 'API path format is incorrect'
+          },
           path: { required: 'Please enter the route path', invalid: 'Route path format is incorrect' },
           component: { required: 'Please enter the component path', invalid: 'Component path format is incorrect' }
         }
@@ -1011,7 +1064,8 @@ const local: App.I18n.Schema = {
         httpHeader: 'Header(JSON)',
         httpBody: 'Body',
         httpAllowPrivate: 'Allow Private',
-        httpAllowPrivateHint: 'By default internal/loopback addresses are denied (SSRF protection), enable only when needed',
+        httpAllowPrivateHint:
+          'By default internal/loopback addresses are denied (SSRF protection), enable only when needed',
         enabled: 'Enabled',
         nextRunAt: 'Next Run',
         createTime: 'Create Time',
@@ -1035,7 +1089,7 @@ const local: App.I18n.Schema = {
         addTimer: 'Add Timed Task',
         editTimer: 'Edit Timed Task',
         params: 'Params(JSON)',
-        paramsPlaceholder: "Free JSON, parsed by method, e.g. {'{\"days\": 30}'}; leave empty to skip",
+        paramsPlaceholder: 'Free JSON, parsed by method, e.g. {\'{"days": 30}\'}; leave empty to skip',
         specPreset: 'Presets',
         specHint: 'Syntax validated by backend; errors are shown on save failure',
         deleteConfirm: 'Confirm delete this task?',
@@ -1049,7 +1103,7 @@ const local: App.I18n.Schema = {
           methodName: 'Select registered method',
           httpUrl: 'https://example.com/hook',
           httpBody: 'Request body',
-          httpHeader: "{'{\"Authorization\":\"Bearer xxx\"}'}; leave empty to skip"
+          httpHeader: '{\'{"Authorization":"Bearer xxx"}\'}; leave empty to skip'
         },
         form: {
           name: { required: 'Please enter task name', invalid: 'Task name is required' },

@@ -118,10 +118,15 @@ const ringGradient = computed(() => {
         <template v-else>
           <!-- 容量环：三层 absolute 叠加，动态角度经 :style 绑定 -->
           <div class="relative size-80px">
-            <div class="absolute inset-0 rd-full bg-black/8 dark:bg-white/12 shadow-[inset_0_0_10px_rgba(0,0,0,0.15)] dark:shadow-[inset_0_0_10px_rgba(255,255,255,0.15)]" />
+            <div
+              class="absolute inset-0 rd-full bg-black/8 dark:bg-white/12 shadow-[inset_0_0_10px_rgba(0,0,0,0.15)] dark:shadow-[inset_0_0_10px_rgba(255,255,255,0.15)]"
+            />
             <div class="absolute inset-4px rd-full" :style="{ background: ringGradient }" />
             <div class="absolute inset-12px flex-center rd-full bg-[var(--n-color)]">
-              <span class="text-22px font-600">{{ usedPercent }}<span class="ml-2px text-12px opacity-60">%</span></span>
+              <span class="text-22px font-600">
+                {{ usedPercent }}
+                <span class="ml-2px text-12px opacity-60">%</span>
+              </span>
             </div>
           </div>
           <!-- 用量 -->

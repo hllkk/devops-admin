@@ -715,6 +715,48 @@ declare namespace App {
             desc5: string;
           };
           creativity: string;
+          identity: {
+            cardTitle: string;
+            active: string;
+            inactive: string;
+            noIdentity: string;
+            apiKeyLabel: string;
+            budgetLabel: string;
+            modelsLabel: string;
+            mcpLabel: string;
+            skillLabel: string;
+            copy: string;
+            copied: string;
+            budgetUnlimited: string;
+            budgetModels: string;
+            budgetMcps: string;
+            budgetPerResource: string;
+            resModel: string;
+            resMcp: string;
+            resSkill: string;
+            resCount: string;
+            resEmptyModels: string;
+            resEmptyMarket: string;
+            overviewTitle: string;
+            overviewMonthBudget: string;
+            overviewSpent: string;
+            overviewRequests: string;
+            overviewDailyAvg: string;
+            overviewBudgetUsage: string;
+            appsTitle: string;
+            appsEmpty: string;
+            typeModel: string;
+            typeMcp: string;
+            typeSkill: string;
+            typeAgent: string;
+            statusPending: string;
+            statusApproved: string;
+            statusRejected: string;
+            navIdentity: string;
+            navMarket: string;
+            navModels: string;
+            comingSoon: string;
+          };
         };
         system: {
           user: {

@@ -23,21 +23,13 @@ const sizeUnitOptions = computed(() => [
         <NFormItem :label="$t('page.system.setting.diskMaxUploadSize')" path="maxUploadSize">
           <NFlex align="center" :wrap="false" class="gap-8px max-w-360px">
             <NInputNumber v-model:value="configModel.maxUploadSize" :min="1" :precision="0" class="flex-1" />
-            <NSelect
-              v-model:value="configModel.maxUploadSizeUnit"
-              :options="sizeUnitOptions"
-              class="w-80px"
-            />
+            <NSelect v-model:value="configModel.maxUploadSizeUnit" :options="sizeUnitOptions" class="w-80px" />
           </NFlex>
         </NFormItem>
         <NFormItem :label="$t('page.system.setting.diskStorageQuota')" path="storageQuota">
           <NFlex align="center" :wrap="false" class="gap-8px max-w-360px">
             <NInputNumber v-model:value="configModel.storageQuota" :min="1" :precision="0" class="flex-1" />
-            <NSelect
-              v-model:value="configModel.storageQuotaUnit"
-              :options="sizeUnitOptions"
-              class="w-80px"
-            />
+            <NSelect v-model:value="configModel.storageQuotaUnit" :options="sizeUnitOptions" class="w-80px" />
           </NFlex>
         </NFormItem>
         <NFormItem path="allowedExtensions">
@@ -46,7 +38,22 @@ const sizeUnitOptions = computed(() => [
               <template #trigger>
                 <span class="flex items-center gap-4px cursor-help">
                   {{ $t('page.system.setting.diskAllowedExtensions') }}
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><path d="M12 17h.01" /></svg>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="text-gray-400"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                    <path d="M12 17h.01" />
+                  </svg>
                 </span>
               </template>
               {{ $t('page.system.setting.diskAllowedExtensionsTip') }}
@@ -64,7 +71,22 @@ const sizeUnitOptions = computed(() => [
               <template #trigger>
                 <span class="flex items-center gap-4px cursor-help">
                   {{ $t('page.system.setting.diskBlockedExtensions') }}
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><path d="M12 17h.01" /></svg>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="text-gray-400"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                    <path d="M12 17h.01" />
+                  </svg>
                 </span>
               </template>
               {{ $t('page.system.setting.diskBlockedExtensionsTip') }}
@@ -117,7 +139,22 @@ const sizeUnitOptions = computed(() => [
                 <template #trigger>
                   <span class="flex items-center gap-4px cursor-help">
                     {{ $t('page.system.setting.diskOnlyOfficeServerUrl') }}
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><path d="M12 17h.01" /></svg>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="text-gray-400"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                      <path d="M12 17h.01" />
+                    </svg>
                   </span>
                 </template>
                 {{ $t('page.system.setting.diskOnlyOfficeServerUrlTip') }}
@@ -135,7 +172,22 @@ const sizeUnitOptions = computed(() => [
                 <template #trigger>
                   <span class="flex items-center gap-4px cursor-help">
                     {{ $t('page.system.setting.diskOnlyOfficeTokenSecret') }}
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><path d="M12 17h.01" /></svg>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="text-gray-400"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                      <path d="M12 17h.01" />
+                    </svg>
                   </span>
                 </template>
                 {{ $t('page.system.setting.diskOnlyOfficeTokenSecretTip') }}
@@ -155,7 +207,22 @@ const sizeUnitOptions = computed(() => [
                 <template #trigger>
                   <span class="flex items-center gap-4px cursor-help">
                     {{ $t('page.system.setting.diskOnlyOfficeCallbackUrl') }}
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><path d="M12 17h.01" /></svg>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="text-gray-400"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                      <path d="M12 17h.01" />
+                    </svg>
                   </span>
                 </template>
                 {{ $t('page.system.setting.diskOnlyOfficeCallbackUrlTip') }}

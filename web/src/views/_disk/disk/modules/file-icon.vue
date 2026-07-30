@@ -45,26 +45,75 @@ const props = withDefaults(defineProps<Props>(), {
 
 /** 扩展名 → 图标 */
 const extensionIconMap: Record<string, string> = {
-  pdf: pdfIcon, doc: docIcon, docx: docIcon, xls: xlsIcon, xlsx: xlsIcon, csv: xlsIcon,
-  ppt: pptIcon, pptx: pptIcon, txt: txtIcon, md: txtIcon, log: txtIcon,
-  jpg: imageIcon, jpeg: imageIcon, png: imageIcon, gif: imageIcon, webp: imageIcon,
-  svg: imageIcon, bmp: imageIcon, ico: imageIcon,
-  mp4: videoIcon, avi: videoIcon, mov: videoIcon, mkv: videoIcon, wmv: videoIcon, flv: flvIcon,
-  mp3: audioIcon, wav: audioIcon, flac: audioIcon, aac: audioIcon, ogg: audioIcon,
-  wma: audioIcon, ape: audioIcon,
-  zip: zipIcon, rar: zipIcon, '7z': zipIcon, tar: zipIcon, gz: zipIcon,
-  json: codeIcon, js: codeIcon, ts: codeIcon, vue: codeIcon, html: codeIcon,
-  css: codeIcon, py: codeIcon, java: codeIcon, go: codeIcon, xml: codeIcon,
-  yaml: codeIcon, yml: codeIcon, sql: codeIcon,
-  apk: apkIcon, exe: exeIcon, msi: exeIcon, dmg: dmgIcon,
-  ttf: ttfIcon, otf: ttfIcon, woff: ttfIcon, woff2: ttfIcon,
+  pdf: pdfIcon,
+  doc: docIcon,
+  docx: docIcon,
+  xls: xlsIcon,
+  xlsx: xlsIcon,
+  csv: xlsIcon,
+  ppt: pptIcon,
+  pptx: pptIcon,
+  txt: txtIcon,
+  md: txtIcon,
+  log: txtIcon,
+  jpg: imageIcon,
+  jpeg: imageIcon,
+  png: imageIcon,
+  gif: imageIcon,
+  webp: imageIcon,
+  svg: imageIcon,
+  bmp: imageIcon,
+  ico: imageIcon,
+  mp4: videoIcon,
+  avi: videoIcon,
+  mov: videoIcon,
+  mkv: videoIcon,
+  wmv: videoIcon,
+  flv: flvIcon,
+  mp3: audioIcon,
+  wav: audioIcon,
+  flac: audioIcon,
+  aac: audioIcon,
+  ogg: audioIcon,
+  wma: audioIcon,
+  ape: audioIcon,
+  zip: zipIcon,
+  rar: zipIcon,
+  '7z': zipIcon,
+  tar: zipIcon,
+  gz: zipIcon,
+  json: codeIcon,
+  js: codeIcon,
+  ts: codeIcon,
+  vue: codeIcon,
+  html: codeIcon,
+  css: codeIcon,
+  py: codeIcon,
+  java: codeIcon,
+  go: codeIcon,
+  xml: codeIcon,
+  yaml: codeIcon,
+  yml: codeIcon,
+  sql: codeIcon,
+  apk: apkIcon,
+  exe: exeIcon,
+  msi: exeIcon,
+  dmg: dmgIcon,
+  ttf: ttfIcon,
+  otf: ttfIcon,
+  woff: ttfIcon,
+  woff2: ttfIcon,
   torrent: btIcon
 };
 
 /** 文件类型 → 图标 */
 const fileTypeIconMap: Record<string, string> = {
-  folder: folderIcon, image: imageIcon, document: docIcon,
-  video: videoIcon, audio: audioIcon, other: defaultIcon
+  folder: folderIcon,
+  image: imageIcon,
+  document: docIcon,
+  video: videoIcon,
+  audio: audioIcon,
+  other: defaultIcon
 };
 
 /** 预设尺寸 → px */
@@ -134,12 +183,5 @@ function handleThumbnailError() {
     </div>
   </div>
   <!-- 静态图标 -->
-  <img
-    v-else
-    :src="icon"
-    :width="iconSize"
-    :height="iconSize"
-    class="shrink-0 select-none"
-    draggable="false"
-  />
+  <img v-else :src="icon" :width="iconSize" :height="iconSize" class="shrink-0 select-none" draggable="false" />
 </template>

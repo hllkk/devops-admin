@@ -98,9 +98,8 @@ export const useDiskStore = defineStore(SetupStoreId.Disk, () => {
     } else {
       currentPath.value.pop();
     }
-    currentParentId.value = currentPath.value.length > 0
-      ? currentPath.value[currentPath.value.length - 1].fileId
-      : null;
+    currentParentId.value =
+      currentPath.value.length > 0 ? currentPath.value[currentPath.value.length - 1].fileId : null;
     selectedFiles.value = [];
     syncStoreToUrl();
   }

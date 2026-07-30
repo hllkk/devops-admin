@@ -57,7 +57,13 @@ const socialSources = computed<SocialSourceItem[]>(() => {
   const githubColor = themeStore.darkMode ? '#ffffff' : '#010409';
   return [
     { key: 'wechat_open', icon: 'ic:outline-wechat', color: '#44b549', name: $t('page.userCenter.social.wechat') },
-    { key: 'wecom', icon: 'ic:outline-wechat', color: '#2B7EF9', name: $t('page.userCenter.social.wecom'), autoBind: true },
+    {
+      key: 'wecom',
+      icon: 'ic:outline-wechat',
+      color: '#2B7EF9',
+      name: $t('page.userCenter.social.wecom'),
+      autoBind: true
+    },
     { key: 'gitee', icon: 'simple-icons:gitee', color: '#c71d23', name: 'Gitee' },
     { key: 'github', icon: 'mdi:github', color: githubColor, name: 'GitHub' }
   ];
@@ -83,7 +89,12 @@ function getSocial(key: string) {
                   {{ getSocial(source.key)?.nickName }}
                 </div>
                 <div class="mt-4px text-12px text-gray-500">
-                  {{ $t('page.userCenter.social.bindTime') }}<NTime v-if="getSocial(source.key)?.createTime" :time="new Date(getSocial(source.key)!.createTime)" type="datetime" />
+                  {{ $t('page.userCenter.social.bindTime') }}
+                  <NTime
+                    v-if="getSocial(source.key)?.createTime"
+                    :time="new Date(getSocial(source.key)!.createTime)"
+                    type="datetime"
+                  />
                 </div>
               </div>
               <NButton
@@ -98,16 +109,14 @@ function getSocial(key: string) {
           </template>
           <template v-else>
             <div class="h-full flex flex-col items-center justify-center gap-16px">
-              <SvgIcon
-                :icon="source.icon"
-                class="size-48px"
-                :style="{ color: source.color }"
-              />
+              <SvgIcon :icon="source.icon" class="size-48px" :style="{ color: source.color }" />
               <div class="text-16px font-medium">{{ source.name }}</div>
               <NButton v-if="!source.autoBind" type="primary" size="small" @click="bindSsoAccount(source.key)">
                 {{ $t('page.userCenter.social.bind') }}
               </NButton>
-              <div v-else class="px-12px text-center text-12px text-gray-400">{{ $t('page.userCenter.social.autoBindTip') }}</div>
+              <div v-else class="px-12px text-center text-12px text-gray-400">
+                {{ $t('page.userCenter.social.autoBindTip') }}
+              </div>
             </div>
           </template>
         </NCard>

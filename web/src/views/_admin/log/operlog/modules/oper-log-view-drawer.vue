@@ -35,7 +35,9 @@ function closeDrawer() {
         </NDescriptionsItem>
         <NDescriptionsItem :label="$t('page.log.operlog.title')">
           <NSpace>
-            <NTag class="m-1" size="small" type="primary">{{ props.rowData?.title }}{{ $t('page.log.operlog.module') }}</NTag>
+            <NTag class="m-1" size="small" type="primary">
+              {{ props.rowData?.title }}{{ $t('page.log.operlog.module') }}
+            </NTag>
             <DictTag size="small" :value="props.rowData?.businessType" dict-code="sys_oper_type" />
           </NSpace>
         </NDescriptionsItem>

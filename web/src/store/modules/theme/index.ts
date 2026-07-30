@@ -59,7 +59,7 @@ export const useThemeStore = defineStore(SetupStoreId.Theme, () => {
     settings.value,
     routeStore.currentModule === DEFAULT_MODULE
       ? globalStructural.value
-      : moduleOverrides.value[routeStore.currentModule] ?? globalStructural.value
+      : (moduleOverrides.value[routeStore.currentModule] ?? globalStructural.value)
   );
 
   // Module switch: save the outgoing module's current structure, apply the incoming module's structure.

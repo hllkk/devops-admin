@@ -249,7 +249,12 @@ function handleResetSearch() {
 <template>
   <div class="h-full flex-col-stretch gap-12px overflow-hidden lt-sm:overflow-auto">
     <TimerSearch v-model:model="searchParams" @reset="handleResetSearch" @search="getDataByPage" />
-    <NCard :title="$t('page.system.timer.listTitle')" :bordered="false" size="small" class="card-wrapper sm:flex-1-hidden">
+    <NCard
+      :title="$t('page.system.timer.listTitle')"
+      :bordered="false"
+      size="small"
+      class="card-wrapper sm:flex-1-hidden"
+    >
       <template #header-extra>
         <TableHeaderOperation
           v-model:columns="columnChecks"
@@ -282,11 +287,7 @@ function handleResetSearch() {
         :row-data="editingData"
         @submitted="getData"
       />
-      <TimerLogDrawer
-        v-model:visible="logDrawerVisible"
-        :task-id="logTaskId"
-        :task-name="logTaskName"
-      />
+      <TimerLogDrawer v-model:visible="logDrawerVisible" :task-id="logTaskId" :task-name="logTaskName" />
     </NCard>
   </div>
 </template>

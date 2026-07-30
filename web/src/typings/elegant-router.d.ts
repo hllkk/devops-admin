@@ -23,6 +23,7 @@ declare module "@elegant-router/types" {
     "admin": "/admin";
     "disk": "/disk";
     "gateway": "/gateway";
+    "home": "/home";
     "iframe-page": "/iframe-page/:url";
     "init": "/init";
     "log": "/log";
@@ -80,6 +81,7 @@ declare module "@elegant-router/types" {
     | "admin"
     | "disk"
     | "gateway"
+    | "home"
     | "iframe-page"
     | "init"
     | "log"
@@ -129,6 +131,7 @@ declare module "@elegant-router/types" {
     | "disk"
     | "gateway"
     | "server"
+    | "home"
   >;
 
   /**

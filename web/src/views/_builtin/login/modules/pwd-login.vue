@@ -29,9 +29,7 @@ const { loading: captchaLoading, startLoading: startCaptchaLoading, endLoading: 
 const remberMe = ref<boolean>(false);
 
 // 仅开发模式预填初始账号便于联调；生产构建（import.meta.env.DEV=false）经死代码消除后为空，避免登录页预填弱口令
-const model: Api.Auth.PwdLoginForm = reactive({
-
-});
+const model: Api.Auth.PwdLoginForm = reactive({});
 
 // ===== go-captcha 行为验证码状态 =====
 const captchaEnabled = ref<boolean>(false); // 当前是否要求验证码（后端触发策略决定）
@@ -219,13 +217,23 @@ async function handleSocialLogin(type: Api.System.SocialSource) {
       <NSpace vertical :size="12" class="mb-8px">
         <div class="mx-6px mb-8px flex-y-center justify-between">
           <NCheckbox v-model:checked="remberMe" size="large">{{ $t('page.login.pwdLogin.rememberMe') }}</NCheckbox>
-          <NA v-if="systemStore.isResetPwdEnabled" type="primary" class="text-18px" @click="toggleLoginModule('reset-pwd')">
+          <NA
+            v-if="systemStore.isResetPwdEnabled"
+            type="primary"
+            class="text-18px"
+            @click="toggleLoginModule('reset-pwd')"
+          >
             {{ $t('page.login.pwdLogin.forgetPassword') }}
           </NA>
-          <span v-else class="text-18px" /> <!-- 占位保持布局对齐 -->
+          <span v-else class="text-18px" />
+          <!-- 占位保持布局对齐 -->
         </div>
         <NButton type="primary" size="large" block :loading="authStore.loginLoading" @click="handleSubmit">
-          {{ captchaEnabled && captchaType !== 'image' && !captchaVerified ? $t('page.login.captcha.loginWithCaptcha') : $t('common.login') }}
+          {{
+            captchaEnabled && captchaType !== 'image' && !captchaVerified
+              ? $t('page.login.captcha.loginWithCaptcha')
+              : $t('common.login')
+          }}
         </NButton>
         <NButton v-if="systemStore.isRegisterEnabled" size="large" block @click="toggleLoginModule('register')">
           {{ $t('page.login.common.register') }}
@@ -238,13 +246,21 @@ async function handleSocialLogin(type: Api.System.SocialSource) {
     </NDivider>
 
     <div v-if="systemStore.hasAnyThirdPartyLogin" class="w-full flex flex-wrap justify-center gap-16px">
-      <NButton v-if="systemStore.setting?.wecomEnabled" class="flex-1 min-w-100px" @click="toggleLoginModule('wecom-login')">
+      <NButton
+        v-if="systemStore.setting?.wecomEnabled"
+        class="flex-1 min-w-100px"
+        @click="toggleLoginModule('wecom-login')"
+      >
         <template #icon>
           <icon-tdesign-logo-wecom class="color-#2B7EF9" />
         </template>
         <span class="ml-6px">WeCom</span>
       </NButton>
-      <NButton v-if="systemStore.setting?.wechatEnabled" class="flex-1 min-w-100px" @click="handleSocialLogin('wechat_open')">
+      <NButton
+        v-if="systemStore.setting?.wechatEnabled"
+        class="flex-1 min-w-100px"
+        @click="handleSocialLogin('wechat_open')"
+      >
         <template #icon>
           <icon-mdi-wechat class="color-#07C160" />
         </template>
@@ -256,7 +272,11 @@ async function handleSocialLogin(type: Api.System.SocialSource) {
         </template>
         <span class="ml-6px">Gitee</span>
       </NButton>
-      <NButton v-if="systemStore.setting?.githubEnabled" class="flex-1 min-w-100px" @click="handleSocialLogin('github')">
+      <NButton
+        v-if="systemStore.setting?.githubEnabled"
+        class="flex-1 min-w-100px"
+        @click="handleSocialLogin('github')"
+      >
         <template #icon>
           <icon-mdi-github class="color-#010409 dark:color-white" />
         </template>

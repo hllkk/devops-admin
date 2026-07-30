@@ -22,7 +22,8 @@ function contentTypeToFileType(contentType: string): string {
   if (ct.startsWith('audio/')) return 'audio';
   if (ct === 'application/pdf') return 'document';
   if (ct.startsWith('text/')) return 'document';
-  if (ct.includes('word') || ct.includes('spreadsheet') || ct.includes('presentation') || ct.includes('document')) return 'document';
+  if (ct.includes('word') || ct.includes('spreadsheet') || ct.includes('presentation') || ct.includes('document'))
+    return 'document';
   return 'other';
 }
 
@@ -37,7 +38,8 @@ export function getFileIcon(ext?: string): string {
   if (['xls', 'xlsx', 'csv'].includes(lower)) return 'material-symbols:table-chart';
   if (['ppt', 'pptx'].includes(lower)) return 'material-symbols:slideshow';
   if (['zip', 'rar', '7z', 'tar', 'gz'].includes(lower)) return 'material-symbols:folder-zip';
-  if (['json', 'js', 'ts', 'vue', 'html', 'css', 'py', 'java', 'go', 'xml', 'yaml', 'yml', 'sql'].includes(lower)) return 'material-symbols:code';
+  if (['json', 'js', 'ts', 'vue', 'html', 'css', 'py', 'java', 'go', 'xml', 'yaml', 'yml', 'sql'].includes(lower))
+    return 'material-symbols:code';
   return 'material-symbols:draft';
 }
 
@@ -86,9 +88,19 @@ const MOCK_FOLDERS = ['文档库', '图片素材', '视频集', '工作资料'] 
 const MOCK_FILE_PROTO = [
   { name: '风景', ext: 'jpg', ct: 'image/jpeg', size: 2_400_000 },
   { name: '设计稿', ext: 'png', ct: 'image/png', size: 1_800_000 },
-  { name: '演示文稿', ext: 'pptx', ct: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', size: 5_200_000 },
+  {
+    name: '演示文稿',
+    ext: 'pptx',
+    ct: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    size: 5_200_000
+  },
   { name: '报表', ext: 'xlsx', ct: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', size: 980_000 },
-  { name: '合同', ext: 'docx', ct: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', size: 320_000 },
+  {
+    name: '合同',
+    ext: 'docx',
+    ct: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    size: 320_000
+  },
   { name: '说明书', ext: 'pdf', ct: 'application/pdf', size: 1_500_000 },
   { name: '笔记', ext: 'txt', ct: 'text/plain', size: 12_000 },
   { name: 'README', ext: 'md', ct: 'text/markdown', size: 8_000 },
@@ -108,7 +120,14 @@ function getMockItems(): Api.Disk.BackendFileItem[] {
   let id = 1000;
   const baseTime = '2026-07-20T10:00:00';
 
-  const mk = (name: string, ext: string, ct: string, size: number, dir: string, isDir: boolean): Api.Disk.BackendFileItem => ({
+  const mk = (
+    name: string,
+    ext: string,
+    ct: string,
+    size: number,
+    dir: string,
+    isDir: boolean
+  ): Api.Disk.BackendFileItem => ({
     id: String(id++),
     name: ext ? `${name}.${ext}` : name,
     extendName: ext,
@@ -156,7 +175,10 @@ function mockFolderNameToId(): Record<string, string> {
 }
 
 /** mock：按目录/类型/关键词过滤 + 文件夹优先排序 + 分页 */
-function mockGetFileList(params: Api.Disk.FileSearchParams | undefined, currentDirectory: string): Api.Disk.BackendFileListResponse {
+function mockGetFileList(
+  params: Api.Disk.FileSearchParams | undefined,
+  currentDirectory: string
+): Api.Disk.BackendFileListResponse {
   let list = getMockItems().filter(it => it.filePath === currentDirectory);
 
   const fileType = params?.fileType && params.fileType !== 'all' ? params.fileType : '';
@@ -228,17 +250,15 @@ export function fetchGetFileList(params?: Api.Disk.FileSearchParams) {
   const diskStore = useDiskStore();
 
   if (USE_MOCK) {
-    const currentDirectory = diskStore.currentPath.length > 0
-      ? `/${diskStore.currentPath.map(item => item.fileName).join('/')}`
-      : '/';
+    const currentDirectory =
+      diskStore.currentPath.length > 0 ? `/${diskStore.currentPath.map(item => item.fileName).join('/')}` : '/';
     const data = mockGetFileList(params, currentDirectory);
     return mockResponse(data, 200);
   }
 
   const userId = Number(useAuthStore().userInfo.user?.userId ?? 0);
-  const currentDirectory = diskStore.currentPath.length > 0
-    ? `/${diskStore.currentPath.map(item => item.fileName).join('/')}`
-    : '/';
+  const currentDirectory =
+    diskStore.currentPath.length > 0 ? `/${diskStore.currentPath.map(item => item.fileName).join('/')}` : '/';
 
   const queryType = params?.fileType && params.fileType !== 'all' ? params.fileType : '';
 

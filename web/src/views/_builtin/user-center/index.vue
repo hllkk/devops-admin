@@ -158,13 +158,22 @@ async function updatePassword() {
             class="mt-16px max-w-520px"
           >
             <NFormItem :label="$t('page.userCenter.profile.nickName')" path="nickName">
-              <NInput v-model:value="profileModel.nickName" :placeholder="$t('page.userCenter.profile.placeholder.nickName')" />
+              <NInput
+                v-model:value="profileModel.nickName"
+                :placeholder="$t('page.userCenter.profile.placeholder.nickName')"
+              />
             </NFormItem>
             <NFormItem :label="$t('page.userCenter.profile.email')" path="email">
-              <NInput v-model:value="profileModel.email" :placeholder="$t('page.userCenter.profile.placeholder.email')" />
+              <NInput
+                v-model:value="profileModel.email"
+                :placeholder="$t('page.userCenter.profile.placeholder.email')"
+              />
             </NFormItem>
             <NFormItem :label="$t('page.userCenter.profile.phone')" path="phonenumber">
-              <NInput v-model:value="profileModel.phonenumber" :placeholder="$t('page.userCenter.profile.placeholder.phone')" />
+              <NInput
+                v-model:value="profileModel.phonenumber"
+                :placeholder="$t('page.userCenter.profile.placeholder.phone')"
+              />
             </NFormItem>
             <NFormItem :label="$t('page.userCenter.profile.sex')" path="sex">
               <NRadioGroup v-model:value="profileModel.sex">

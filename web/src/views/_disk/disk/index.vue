@@ -82,7 +82,8 @@ function mergeAndSort(
       case 'modifyTime':
         return (
           sortOrder *
-          (new Date(a.modifyTime || a.updateTime || '').getTime() - new Date(b.modifyTime || b.updateTime || '').getTime())
+          (new Date(a.modifyTime || a.updateTime || '').getTime() -
+            new Date(b.modifyTime || b.updateTime || '').getTime())
         );
       default:
         return a.fileName.localeCompare(b.fileName);
@@ -200,13 +201,23 @@ watch(
 );
 
 // 文件类型变化 → 重新加载
-watch(() => diskStore.currentFileType, () => getFileList());
+watch(
+  () => diskStore.currentFileType,
+  () => getFileList()
+);
 
 // 目录变化 → 重新加载
-watch(() => diskStore.currentParentId, () => getFileList());
+watch(
+  () => diskStore.currentParentId,
+  () => getFileList()
+);
 
 // 排序变化 → 重新加载
-watch(() => diskStore.sortSettings, () => getFileList(), { deep: true });
+watch(
+  () => diskStore.sortSettings,
+  () => getFileList(),
+  { deep: true }
+);
 
 // 浏览器前进/后退：URL path 变化恢复目录
 watch(
@@ -267,7 +278,13 @@ onMounted(async () => {
         <!-- 面包屑 -->
         <Breadcrumb v-if="fileList.length > 0 || diskStore.currentPath.length > 0" :total-count="totalCount" />
         <!-- 文件内容 -->
-        <FileGrid v-if="diskStore.viewMode === 'grid'" ref="fileGridRef" :files="fileList" :loading="loading" class="h-full" />
+        <FileGrid
+          v-if="diskStore.viewMode === 'grid'"
+          ref="fileGridRef"
+          :files="fileList"
+          :loading="loading"
+          class="h-full"
+        />
         <FileList v-else ref="fileListRef" :files="fileList" :loading="loading" class="flex-1 min-h-0" />
         <!-- 加载更多状态 -->
         <div v-if="loadingMore" class="flex-center gap-8px py-12px">

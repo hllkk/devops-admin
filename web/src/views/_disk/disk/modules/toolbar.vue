@@ -45,7 +45,11 @@ const sortTooltip = computed(() => {
   const { field, order } = diskStore.sortSettings;
   if (!field) return $t('page.disk.toolbar.sort');
   const fieldLabel =
-    field === 'name' ? $t('page.disk.sort.name') : field === 'size' ? $t('page.disk.sort.size') : $t('page.disk.sort.modifyTime');
+    field === 'name'
+      ? $t('page.disk.sort.name')
+      : field === 'size'
+        ? $t('page.disk.sort.size')
+        : $t('page.disk.sort.modifyTime');
   return `${$t('page.disk.toolbar.sort')} · ${fieldLabel} ${order === 'asc' ? '↑' : '↓'}`;
 });
 

@@ -41,7 +41,7 @@ function toggleThemeScheme() {
         '--wv-square-pink': 'rgb(var(--primary-color) / 0.15)',
         '--wv-square-pink-dark': 'rgb(var(--primary-color) / 0.10)',
         '--wv-square-purple': 'rgb(var(--primary-color) / 0.45)',
-        '--wv-square-purple-dark': 'rgb(var(--primary-color) / 0.20)',
+        '--wv-square-purple-dark': 'rgb(var(--primary-color) / 0.20)'
       }"
     >
       <!-- 基础几何形状 -->
@@ -55,10 +55,7 @@ function toggleThemeScheme() {
       <div class="geo-element bg-bubble animate-scale-in animate-delay-0.5s" />
 
       <!-- 太阳 / 月亮（点击切换亮暗主题） -->
-      <div
-        class="geo-element circle-top-right animate-fade-in-down animate-delay-0.5s"
-        @click="toggleThemeScheme"
-      />
+      <div class="geo-element circle-top-right animate-fade-in-down animate-delay-0.5s" @click="toggleThemeScheme" />
 
       <!-- 装饰点 -->
       <div class="geo-element dot dot-top-left animate-bounce-in animate-delay-0s" />
@@ -116,43 +113,102 @@ function toggleThemeScheme() {
     }
 
     // ---------- 动画定义 ----------
-    @keyframes fadeInUp { @include fadeAnimation('up'); }
-    @keyframes fadeInDown { @include fadeAnimation('down'); }
-    @keyframes fadeInLeft { @include fadeAnimation('left'); }
-    @keyframes fadeInLeftRotated { @include fadeAnimation('left', -25deg); }
-    @keyframes fadeInRight { @include fadeAnimation('right'); }
-    @keyframes fadeInRightRotated { @include fadeAnimation('right', 45deg); }
-    @keyframes fadeInLeftRotatedBlue { @include fadeAnimation('left', -10deg); }
-    @keyframes fadeInLeftRotatedPink { @include fadeAnimation('left', 10deg); }
-    @keyframes fadeInLeftNoRotation { @include fadeAnimation('left'); }
+    @keyframes fadeInUp {
+      @include fadeAnimation('up');
+    }
+    @keyframes fadeInDown {
+      @include fadeAnimation('down');
+    }
+    @keyframes fadeInLeft {
+      @include fadeAnimation('left');
+    }
+    @keyframes fadeInLeftRotated {
+      @include fadeAnimation('left', -25deg);
+    }
+    @keyframes fadeInRight {
+      @include fadeAnimation('right');
+    }
+    @keyframes fadeInRightRotated {
+      @include fadeAnimation('right', 45deg);
+    }
+    @keyframes fadeInLeftRotatedBlue {
+      @include fadeAnimation('left', -10deg);
+    }
+    @keyframes fadeInLeftRotatedPink {
+      @include fadeAnimation('left', 10deg);
+    }
+    @keyframes fadeInLeftNoRotation {
+      @include fadeAnimation('left');
+    }
 
     @keyframes scaleIn {
-      from { opacity: 0; transform: scale(0.8); }
-      to { opacity: 1; transform: scale(1); }
+      from {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
     }
 
     @keyframes bounceIn {
-      0% { opacity: 0; transform: scale(0.3); }
-      50% { opacity: 1; transform: scale(1.05); }
-      70% { transform: scale(0.9); }
-      100% { opacity: 1; transform: scale(1); }
+      0% {
+        opacity: 0;
+        transform: scale(0.3);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.05);
+      }
+      70% {
+        transform: scale(0.9);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
     }
 
     @keyframes lineGrow {
-      from { opacity: 0; }
-      to { opacity: 1; }
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
     }
 
     // ---------- 动画类 ----------
-    .animate-fade-in-up { animation-name: fadeInUp; }
-    .animate-fade-in-down { animation-name: fadeInDown; }
-    .animate-fade-in-left { animation-name: fadeInLeft; }
-    .animate-fade-in-right { animation-name: fadeInRight; }
-    .animate-scale-in { animation-name: scaleIn; animation-duration: 1.2s; }
-    .animate-bounce-in { animation-name: bounceIn; animation-duration: 0.6s; }
-    .animate-fade-in-left-rotated-blue { animation-name: fadeInLeftRotatedBlue; }
-    .animate-fade-in-left-rotated-pink { animation-name: fadeInLeftRotatedPink; }
-    .animate-fade-in-left-no-rotation { animation-name: fadeInLeftNoRotation; }
+    .animate-fade-in-up {
+      animation-name: fadeInUp;
+    }
+    .animate-fade-in-down {
+      animation-name: fadeInDown;
+    }
+    .animate-fade-in-left {
+      animation-name: fadeInLeft;
+    }
+    .animate-fade-in-right {
+      animation-name: fadeInRight;
+    }
+    .animate-scale-in {
+      animation-name: scaleIn;
+      animation-duration: 1.2s;
+    }
+    .animate-bounce-in {
+      animation-name: bounceIn;
+      animation-duration: 0.6s;
+    }
+    .animate-fade-in-left-rotated-blue {
+      animation-name: fadeInLeftRotatedBlue;
+    }
+    .animate-fade-in-left-rotated-pink {
+      animation-name: fadeInLeftRotatedPink;
+    }
+    .animate-fade-in-left-no-rotation {
+      animation-name: fadeInLeftNoRotation;
+    }
 
     // ---------- 定位 & 形状（颜色来自 CSS 变量 / UnoCSS） ----------
 

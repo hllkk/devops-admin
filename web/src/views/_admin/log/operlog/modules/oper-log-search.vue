@@ -56,7 +56,12 @@ async function search() {
             <NFormItemGi span="24 s:12 m:6" :label="$t('page.log.operlog.title')" path="title" class="pr-24px">
               <NInput v-model:value="model.title" :placeholder="$t('page.log.operlog.placeholder.title')" />
             </NFormItemGi>
-            <NFormItemGi span="24 s:12 m:6" :label="$t('page.log.operlog.businessType')" path="businessType" class="pr-24px">
+            <NFormItemGi
+              span="24 s:12 m:6"
+              :label="$t('page.log.operlog.businessType')"
+              path="businessType"
+              class="pr-24px"
+            >
               <DictSelect
                 v-model:value="model.businessType"
                 :placeholder="$t('page.log.operlog.placeholder.businessType')"

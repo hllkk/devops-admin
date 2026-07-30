@@ -134,7 +134,11 @@ const isWhitelistMode = computed(() => securityConfig.value.ipValidationMode ===
         <NFormItem :label="$t('page.system.setting.pwdExpireEnable')" path="pwdExpireEnable">
           <NSwitch v-model:value="securityConfig.pwdExpireEnable" />
         </NFormItem>
-        <NFormItem v-if="securityConfig.pwdExpireEnable" :label="$t('page.system.setting.pwdExpireDays')" path="pwdExpireDays">
+        <NFormItem
+          v-if="securityConfig.pwdExpireEnable"
+          :label="$t('page.system.setting.pwdExpireDays')"
+          path="pwdExpireDays"
+        >
           <NInputNumber v-model:value="securityConfig.pwdExpireDays" :min="1" :max="365" class="max-w-200px">
             <template #suffix>{{ $t('page.system.setting.unitDay') }}</template>
           </NInputNumber>

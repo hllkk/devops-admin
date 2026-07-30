@@ -171,14 +171,11 @@ function refreshQrCode() {
 }
 
 // 监听 oauthUrl 变化(初次加载)与暗黑模式切换,nextTick 确保 DOM 就绪后渲染
-watch(
-  [oauthUrl, () => themeStore.darkMode],
-  () => {
-    nextTick(() => {
-      renderQrCode();
-    });
-  }
-);
+watch([oauthUrl, () => themeStore.darkMode], () => {
+  nextTick(() => {
+    renderQrCode();
+  });
+});
 
 onUnmounted(() => {
   stopPolling();
@@ -282,7 +279,9 @@ if (isWebview && !!systemStore.setting?.wecomEnabled) {
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   overflow: hidden;
-  transition: background 0.3s, box-shadow 0.3s;
+  transition:
+    background 0.3s,
+    box-shadow 0.3s;
 }
 
 :root.dark .qr-card {

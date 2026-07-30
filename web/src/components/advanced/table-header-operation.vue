@@ -15,7 +15,6 @@ interface Props {
   showExport?: boolean;
 }
 
-
 withDefaults(defineProps<Props>(), {
   itemAlign: undefined,
   showAdd: true,

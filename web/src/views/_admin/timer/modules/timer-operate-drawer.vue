@@ -204,7 +204,11 @@ watch(visible, () => {
         <NFormItem :label="$t('page.system.timer.spec')" path="spec" required>
           <NSpace vertical class="w-full">
             <NSpace>
-              <NInput v-model:value="model.spec" :placeholder="$t('page.system.timer.placeholder.spec')" style="flex: 1; min-width: 200px" />
+              <NInput
+                v-model:value="model.spec"
+                :placeholder="$t('page.system.timer.placeholder.spec')"
+                style="flex: 1; min-width: 200px"
+              />
               <NSelect
                 :placeholder="$t('page.system.timer.specPreset')"
                 :options="specPresets"
@@ -266,7 +270,12 @@ watch(visible, () => {
             />
           </NFormItem>
           <NFormItem :label="$t('page.system.timer.httpBody')" path="httpBody">
-            <NInput v-model:value="model.httpBody" type="textarea" :rows="3" :placeholder="$t('page.system.timer.placeholder.httpBody')" />
+            <NInput
+              v-model:value="model.httpBody"
+              type="textarea"
+              :rows="3"
+              :placeholder="$t('page.system.timer.placeholder.httpBody')"
+            />
           </NFormItem>
           <NFormItem :label="$t('page.system.timer.httpAllowPrivate')" path="httpAllowPrivate">
             <NSpace align="center">

@@ -49,7 +49,12 @@ async function search() {
             <NFormItemGi span="24 s:12 m:6" :label="$t('page.system.timer.name')" path="name" class="pr-24px">
               <NInput v-model:value="model.name" :placeholder="$t('page.system.timer.placeholder.name')" clearable />
             </NFormItemGi>
-            <NFormItemGi span="24 s:12 m:6" :label="$t('page.system.timer.executorType')" path="executorType" class="pr-24px">
+            <NFormItemGi
+              span="24 s:12 m:6"
+              :label="$t('page.system.timer.executorType')"
+              path="executorType"
+              class="pr-24px"
+            >
               <NSelect
                 v-model:value="model.executorType"
                 :placeholder="$t('page.system.timer.placeholder.executorType')"

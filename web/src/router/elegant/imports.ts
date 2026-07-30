@@ -43,4 +43,5 @@ export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<Ro
   disk: () => import("@/views/_disk/disk/index.vue"),
   gateway: () => import("@/views/_gateway/gateway/index.vue"),
   server: () => import("@/views/_server/server/index.vue"),
+  home: () => import("@/views/home/index.vue"),
 };

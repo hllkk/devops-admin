@@ -177,7 +177,13 @@ onMounted(() => {
           <template #header>
             <div class="flex items-center justify-between">
               <span class="text-16px font-600">{{ currentTitle }}</span>
-              <NButton v-if="hasAuth('system:setting:save')" type="primary" :loading="loading" :disabled="!loaded" @click="handleSave">
+              <NButton
+                v-if="hasAuth('system:setting:save')"
+                type="primary"
+                :loading="loading"
+                :disabled="!loaded"
+                @click="handleSave"
+              >
                 {{ $t('page.system.setting.save') }}
               </NButton>
             </div>

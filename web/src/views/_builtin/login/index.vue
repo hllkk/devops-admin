@@ -79,9 +79,7 @@ const activeModule = computed(() => moduleMap[props.module || 'pwd-login']);
           />
         </div>
       </header>
-      <main
-        class="m-auto h-630px max-w-450px w-full rounded-5px bg-cover px-24px xl:absolute xl:inset-0"
-      >
+      <main class="m-auto h-630px max-w-450px w-full rounded-5px bg-cover px-24px xl:absolute xl:inset-0">
         <Transition :name="themeStore.page.animateMode" mode="out-in" appear>
           <component :is="activeModule.component" />
         </Transition>

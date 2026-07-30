@@ -50,8 +50,16 @@ declare namespace Api {
     type RoleOperateParams = CommonType.RecordNullable<
       Pick<
         Api.System.Role,
-        'roleId' | 'roleName' | 'roleKey' | 'roleSort' | 'menuCheckStrictly' | 'deptCheckStrictly'
-        | 'dataScope' | 'status' | 'remark' | 'defaultRouter'
+        | 'roleId'
+        | 'roleName'
+        | 'roleKey'
+        | 'roleSort'
+        | 'menuCheckStrictly'
+        | 'deptCheckStrictly'
+        | 'dataScope'
+        | 'status'
+        | 'remark'
+        | 'defaultRouter'
       > & { menuIds: CommonType.IdType[]; deptIds: CommonType.IdType[] }
     >;
 
@@ -771,7 +779,20 @@ declare namespace Api {
     type SysTimedTaskOperateParams = CommonType.RecordNullable<
       Pick<
         SysTimedTask,
-        'id' | 'name' | 'description' | 'spec' | 'withSeconds' | 'executorType' | 'methodName' | 'params' | 'httpUrl' | 'httpMethod' | 'httpHeader' | 'httpBody' | 'httpAllowPrivate' | 'enabled'
+        | 'id'
+        | 'name'
+        | 'description'
+        | 'spec'
+        | 'withSeconds'
+        | 'executorType'
+        | 'methodName'
+        | 'params'
+        | 'httpUrl'
+        | 'httpMethod'
+        | 'httpHeader'
+        | 'httpBody'
+        | 'httpAllowPrivate'
+        | 'enabled'
       >
     >;
 

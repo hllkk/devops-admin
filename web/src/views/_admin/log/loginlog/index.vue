@@ -230,7 +230,12 @@ async function handleUnlockLoginLog(username: string) {
 <template>
   <div class="min-h-500px flex-col-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
     <LoginLogSearch v-model:model="searchParams" @search="getDataByPage" />
-    <NCard :title="$t('page.log.loginlog.listTitle')" :bordered="false" size="small" class="card-wrapper sm:flex-1-hidden">
+    <NCard
+      :title="$t('page.log.loginlog.listTitle')"
+      :bordered="false"
+      size="small"
+      class="card-wrapper sm:flex-1-hidden"
+    >
       <template #header-extra>
         <TableHeaderOperation
           v-model:columns="columnChecks"
@@ -244,13 +249,7 @@ async function handleUnlockLoginLog(username: string) {
           @refresh="getData"
         >
           <template #prefix>
-            <NButton
-              v-if="hasAuth('log:loginlog:remove')"
-              type="error"
-              ghost
-              size="small"
-              @click="handleCleanLoginLog"
-            >
+            <NButton v-if="hasAuth('log:loginlog:remove')" type="error" ghost size="small" @click="handleCleanLoginLog">
               <template #icon>
                 <icon-material-symbols-warning-outline-rounded />
               </template>

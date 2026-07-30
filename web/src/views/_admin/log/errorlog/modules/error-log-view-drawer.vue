@@ -31,10 +31,10 @@ const levelLabelMap: Record<string, string> = {
 };
 
 const statusTagMap: Record<string, 'info' | 'warning' | 'success' | 'error'> = {
-  '未处理': 'info',
-  '处理中': 'warning',
-  '处理完成': 'success',
-  '处理失败': 'error'
+  未处理: 'info',
+  处理中: 'warning',
+  处理完成: 'success',
+  处理失败: 'error'
 };
 </script>
 
@@ -62,14 +62,22 @@ const statusTagMap: Record<string, 'info' | 'warning' | 'success' | 'error'> = {
           {{ props.rowData?.trace_id || '-' }}
         </NDescriptionsItem>
         <NDescriptionsItem :label="$t('page.log.errorlog.createTime')">
-          <NTime v-if="props.rowData?.createTime" :time="Date.parse(props.rowData.createTime)" format="yyyy-MM-dd HH:mm:ss" />
+          <NTime
+            v-if="props.rowData?.createTime"
+            :time="Date.parse(props.rowData.createTime)"
+            format="yyyy-MM-dd HH:mm:ss"
+          />
           <template v-else>-</template>
         </NDescriptionsItem>
         <NDescriptionsItem :label="$t('page.log.errorlog.info')">
-          <pre class="whitespace-pre-wrap break-words max-h-400px overflow-auto text-13px">{{ props.rowData?.info || '-' }}</pre>
+          <pre class="whitespace-pre-wrap break-words max-h-400px overflow-auto text-13px">{{
+            props.rowData?.info || '-'
+          }}</pre>
         </NDescriptionsItem>
         <NDescriptionsItem :label="$t('page.log.errorlog.solution')">
-          <pre class="whitespace-pre-wrap break-words max-h-400px overflow-auto text-13px">{{ props.rowData?.solution || '-' }}</pre>
+          <pre class="whitespace-pre-wrap break-words max-h-400px overflow-auto text-13px">{{
+            props.rowData?.solution || '-'
+          }}</pre>
         </NDescriptionsItem>
       </NDescriptions>
       <template #footer>

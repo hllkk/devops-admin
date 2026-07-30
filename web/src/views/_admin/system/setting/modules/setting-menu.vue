@@ -36,10 +36,11 @@ function handleSelect(key: string) {
       :class="[
         props.activeKey === item.key
           ? [
-            'border-solid border-0 rounded-r-none border-r-3 border-primary-600',
-            'bg-gradient-to-r from-primary-200/80 to-primary-100/60',
-            'dark:border-primary-400 dark:from-primary-800/60 dark:to-primary-900/40',
-            'shadow-sm']
+              'border-solid border-0 rounded-r-none border-r-3 border-primary-600',
+              'bg-gradient-to-r from-primary-200/80 to-primary-100/60',
+              'dark:border-primary-400 dark:from-primary-800/60 dark:to-primary-900/40',
+              'shadow-sm'
+            ]
           : 'border-transparent'
       ]"
       @click="handleSelect(item.key)"
@@ -56,7 +57,16 @@ function handleSelect(key: string) {
         >
           {{ item.label }}
         </span>
-        <span class="select-none text-xs transition-colors" :class="[props.activeKey === item.key ? 'text-primary-700/80 dark:text-primary-300/80' : 'text-base-text/70 opacity-75']">{{ item.desc }}</span>
+        <span
+          class="select-none text-xs transition-colors"
+          :class="[
+            props.activeKey === item.key
+              ? 'text-primary-700/80 dark:text-primary-300/80'
+              : 'text-base-text/70 opacity-75'
+          ]"
+        >
+          {{ item.desc }}
+        </span>
       </div>
     </div>
   </DarkModeContainer>

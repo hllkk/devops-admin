@@ -26,11 +26,11 @@ interface Props {
 }
 
 withDefaults(defineProps<Props>(), {
-    showLogo: false,
-    showMenuToggler: false,
-    showMenu: false,
-    showThemeControls: true
-  });
+  showLogo: false,
+  showMenuToggler: false,
+  showMenu: false,
+  showThemeControls: true
+});
 
 const appStore = useAppStore();
 const themeStore = useThemeStore();

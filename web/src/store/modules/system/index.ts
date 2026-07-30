@@ -43,7 +43,12 @@ export const useSystemStore = defineStore(SetupStoreId.System, () => {
 
   /** 是否有任意第三方登录已启用 */
   const hasAnyThirdPartyLogin = computed(() =>
-    Boolean(setting.value?.wecomEnabled || setting.value?.wechatEnabled || setting.value?.giteeEnabled || setting.value?.githubEnabled)
+    Boolean(
+      setting.value?.wecomEnabled ||
+      setting.value?.wechatEnabled ||
+      setting.value?.giteeEnabled ||
+      setting.value?.githubEnabled
+    )
   );
 
   /** 是否开放注册 */

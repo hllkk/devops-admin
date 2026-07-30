@@ -122,7 +122,13 @@ watch(visible, () => {
 </script>
 
 <template>
-  <NDrawer v-model:show="visible" :title="$t('page.system.timer.logTitle')" display-directive="show" :width="900" class="max-w-90%">
+  <NDrawer
+    v-model:show="visible"
+    :title="$t('page.system.timer.logTitle')"
+    display-directive="show"
+    :width="900"
+    class="max-w-90%"
+  >
     <NDrawerContent :title="$t('page.system.timer.logTitle')" :native-scrollbar="false" closable>
       <NDataTable
         :columns="logColumns"

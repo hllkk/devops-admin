@@ -115,7 +115,13 @@ function handleClose() {
       </div>
     </div>
 
-    <NModal v-model:show="showModal" preset="card" :title="$t('page.userCenter.avatar.title')" class="w-400px" @close="handleClose">
+    <NModal
+      v-model:show="showModal"
+      preset="card"
+      :title="$t('page.userCenter.avatar.title')"
+      class="w-400px"
+      @close="handleClose"
+    >
       <div class="flex-col-center gap-20px py-20px">
         <div class="h-300px w-full">
           <Cropper
@@ -129,7 +135,9 @@ function handleClose() {
           <NUpload accept=".jpg,.jpeg,.png,.gif" :max="1" :show-file-list="false" @before-upload="handleFileSelect">
             <NButton class="min-w-100px">{{ $t('page.userCenter.avatar.selectImage') }}</NButton>
           </NUpload>
-          <NButton type="primary" class="min-w-100px" :loading="loading" @click="handleCrop">{{ $t('page.userCenter.avatar.confirmCrop') }}</NButton>
+          <NButton type="primary" class="min-w-100px" :loading="loading" @click="handleCrop">
+            {{ $t('page.userCenter.avatar.confirmCrop') }}
+          </NButton>
         </div>
       </div>
     </NModal>

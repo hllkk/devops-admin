@@ -11,8 +11,6 @@ interface Props {
   rowData: Api.Log.LoginLog | null;
 }
 
-
-
 const props = defineProps<Props>();
 
 const visible = defineModel<boolean>('visible', {

@@ -266,7 +266,8 @@ const local: App.I18n.Schema = {
     disk: '网盘',
     server: '服务器管理',
     gateway: 'AI 网关',
-    init: '系统初始化'
+    init: '系统初始化',
+    home: '我的主页'
   },
   module: {
     admin: '后台管理',
@@ -525,7 +526,49 @@ const local: App.I18n.Schema = {
         desc4: 'Soybean 正在忙于为soybean-admin写项目说明文档！',
         desc5: 'Soybean 刚才把工作台页面随便写了一些，凑合能看了！'
       },
-      creativity: '创意'
+      creativity: '创意',
+      identity: {
+        cardTitle: 'AI 身份证',
+        active: '已激活',
+        inactive: '未激活',
+        noIdentity: '暂无 AI 身份',
+        apiKeyLabel: 'API KEY',
+        budgetLabel: '预算',
+        modelsLabel: '模型',
+        mcpLabel: 'MCP',
+        skillLabel: 'Skill',
+        copy: '复制',
+        copied: '已复制',
+        budgetUnlimited: '不限',
+        budgetModels: '模型 ¥{amount}',
+        budgetMcps: 'MCP ¥{amount}',
+        budgetPerResource: '按资源',
+        resModel: '可用模型',
+        resMcp: 'MCP 服务',
+        resSkill: '技能',
+        resCount: '共 {count} 项',
+        resEmptyModels: '暂无可用模型',
+        resEmptyMarket: '暂未开通',
+        overviewTitle: '用量概览',
+        overviewMonthBudget: '本月预算',
+        overviewSpent: '已花费',
+        overviewRequests: '请求数',
+        overviewDailyAvg: '日均花费',
+        overviewBudgetUsage: '预算使用率',
+        appsTitle: '我的申请',
+        appsEmpty: '暂无申请记录',
+        typeModel: '模型',
+        typeMcp: 'MCP',
+        typeSkill: '技能',
+        typeAgent: '智能体',
+        statusPending: '待审批',
+        statusApproved: '已通过',
+        statusRejected: '已驳回',
+        navIdentity: '我的AI身份',
+        navMarket: 'AI市场',
+        navModels: '模型广场',
+        comingSoon: '即将上线，敬请期待'
+      }
     },
     system: {
       user: {
@@ -680,7 +723,8 @@ const local: App.I18n.Schema = {
         diskAllowedExtensions: '允许的文件类型',
         diskAllowedExtensionsTip: '留空表示允许所有文件类型。填写文件扩展名（不含点号），多个用逗号分隔。',
         diskBlockedExtensions: '禁止的文件类型',
-        diskBlockedExtensionsTip: '填写禁止上传的文件扩展名（不含点号），优先级高于"允许的文件类型"。留空表示不禁止任何类型。',
+        diskBlockedExtensionsTip:
+          '填写禁止上传的文件扩展名（不含点号），优先级高于"允许的文件类型"。留空表示不禁止任何类型。',
         diskRecycleBinRetentionDays: '回收站保留天数',
         diskUnitMB: 'MB',
         diskUnitGB: 'GB',
@@ -693,13 +737,15 @@ const local: App.I18n.Schema = {
         diskOnlyOfficeEnabled: '启用 OnlyOffice',
         diskOnlyOfficeServerUrl: 'OnlyOffice 地址',
         diskOnlyOfficeServerUrlPlaceholder: '/office 或 https://domain.com/office',
-        diskOnlyOfficeServerUrlTip: 'Document Server 的浏览器访问地址。开发环境填写 nginx 代理地址，生产环境填写代理路径。',
+        diskOnlyOfficeServerUrlTip:
+          'Document Server 的浏览器访问地址。开发环境填写 nginx 代理地址，生产环境填写代理路径。',
         diskOnlyOfficeTokenSecret: 'Secret 密钥',
         diskOnlyOfficeTokenSecretPlaceholder: '与 OnlyOffice 容器 JWT_SECRET 一致',
         diskOnlyOfficeTokenSecretTip: '与 Document Server 容器的 JWT_SECRET 环境变量保持一致。留空则不使用 JWT 签名。',
         diskOnlyOfficeCallbackUrl: '回调地址',
         diskOnlyOfficeCallbackUrlPlaceholder: 'http://后端IP:端口/api',
-        diskOnlyOfficeCallbackUrlTip: 'OnlyOffice 容器需要能访问此地址来保存文档。请填写后端服务的完整地址（含协议和端口）。',
+        diskOnlyOfficeCallbackUrlTip:
+          'OnlyOffice 容器需要能访问此地址来保存文档。请填写后端服务的完整地址（含协议和端口）。',
         tabDiskBasic: '基础配置',
         tabDiskDisplay: '个性化',
         tabDiskOnlyOffice: 'OnlyOffice',
@@ -750,14 +796,16 @@ const local: App.I18n.Schema = {
         authOAuthClientSecretPlaceholder: '请输入应用 Client Secret',
         authOAuthCallbackUrl: '回调地址',
         authOAuthCallbackUrlPlaceholder: '请输入 OAuth2 回调地址',
-        authOAuthCallbackUrlTip: '格式：https://your-domain.com/auth/callback/<provider>。请确保已在第三方平台配置此回调地址。',
+        authOAuthCallbackUrlTip:
+          '格式：https://your-domain.com/auth/callback/<provider>。请确保已在第三方平台配置此回调地址。',
         authWecomCorpId: '企业 ID',
         authWecomCorpIdPlaceholder: 'Corp ID，如 ww1234567890abcdef',
         authWecomAgentId: '应用 AgentId',
         authWecomAgentIdPlaceholder: '请输入应用 AgentId',
         authWecomDomainVerifyTitle: '⚠️ 可信域名校验',
         authWecomDomainVerifyTip1: '1. 用于企业微信自建应用"网页授权及JS-SDK"中可信域名校验。',
-        authWecomDomainVerifyTip2: '2. 填写文件名与内容后，系统自动响应 /WW_verify_*.txt，无需手动放置文件或重新构建前端。',
+        authWecomDomainVerifyTip2:
+          '2. 填写文件名与内容后，系统自动响应 /WW_verify_*.txt，无需手动放置文件或重新构建前端。',
         authWecomDomainVerifyTip3: '3. 验证通过后可清空此处配置。',
         authWecomDomainFileName: '文件名',
         authWecomDomainFileNamePlaceholder: '如 WW_verify_xxxx.txt',
@@ -805,7 +853,8 @@ const local: App.I18n.Schema = {
         perms: '权限标识',
         permsTip: '控制器中定义的权限字符，如：system:user:list',
         apiPrefix: '接口路径',
-        apiPrefixTip: '该菜单对应后端接口的 casbin 策略路径(逗号分隔多个),如：/system/user, /system/user/*；角色授权菜单时自动推导为接口权限',
+        apiPrefixTip:
+          '该菜单对应后端接口的 casbin 策略路径(逗号分隔多个),如：/system/user, /system/user/*；角色授权菜单时自动推导为接口权限',
         status: '菜单状态',
         statusTip: '选择停用则该菜单及其子菜单都不可见',
         emptyMenu: '暂无菜单数据',
@@ -1031,7 +1080,7 @@ const local: App.I18n.Schema = {
         addTimer: '新增定时任务',
         editTimer: '编辑定时任务',
         params: '参数(JSON)',
-        paramsPlaceholder: "自由 JSON, 由方法自行解析, 如 {'{\"days\": 30}'}; 留空则不传",
+        paramsPlaceholder: '自由 JSON, 由方法自行解析, 如 {\'{"days": 30}\'}; 留空则不传',
         specPreset: '常用模板',
         specHint: '合法性由后端校验；保存失败时错误会回显',
         deleteConfirm: '确认删除该任务？',
@@ -1045,7 +1094,7 @@ const local: App.I18n.Schema = {
           methodName: '选择已注册方法',
           httpUrl: 'https://example.com/hook',
           httpBody: '请求体原文',
-          httpHeader: "{'{\"Authorization\":\"Bearer xxx\"}'}; 留空则不加"
+          httpHeader: '{\'{"Authorization":"Bearer xxx"}\'}; 留空则不加'
         },
         form: {
           name: { required: '请输入任务名', invalid: '任务名不能为空' },

@@ -94,11 +94,7 @@ async function handleTestEmail() {
             />
           </NFormItem>
           <NFormItem :label="$t('page.system.setting.notifyEmailSSLMode')" path="emailSSLMode">
-            <NSelect
-              v-model:value="config.emailSSLMode"
-              :options="sslModeOptions"
-              class="max-w-200px"
-            />
+            <NSelect v-model:value="config.emailSSLMode" :options="sslModeOptions" class="max-w-200px" />
           </NFormItem>
           <NDivider />
           <NFormItem :label="$t('page.system.setting.notifyTestEmailTo')" path="testTo">
@@ -109,7 +105,11 @@ async function handleTestEmail() {
                 class="flex-1"
               />
               <NButton type="primary" :loading="testLoading" @click="handleTestEmail">
-                {{ testLoading ? $t('page.system.setting.notifyTestEmailSending') : $t('page.system.setting.notifyTestEmail') }}
+                {{
+                  testLoading
+                    ? $t('page.system.setting.notifyTestEmailSending')
+                    : $t('page.system.setting.notifyTestEmail')
+                }}
               </NButton>
             </div>
           </NFormItem>
