@@ -283,7 +283,7 @@ onMounted(async () => {
           ref="fileGridRef"
           :files="fileList"
           :loading="loading"
-          class="h-full"
+          class="flex-1 min-h-0"
         />
         <FileList v-else ref="fileListRef" :files="fileList" :loading="loading" class="flex-1 min-h-0" />
         <!-- 加载更多状态 -->

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch, onUnmounted } from 'vue';
 import { $t } from '@/locales';
 import { useDiskStore } from '@/store/modules/disk';
 import SvgIcon from '@/components/custom/svg-icon.vue';
@@ -85,9 +85,66 @@ const capacityColor = computed(() => {
   return '#d03050';
 });
 
-/** 容量环 conic-gradient —— 动态角度经 :style 绑定，后半透明露出底层 bg 作未用色 */
+// === 入场动画：displayedPercent 从 0 平滑插值到 usedPercent，驱动 conic 角度 + 中心数字 ===
+const displayedPercent = ref(0);
+const displayedPercentInt = computed(() => Math.round(displayedPercent.value));
+
+let rafId: number | null = null;
+const ANIM_DURATION = 900; // ms
+const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+
+/** 把 displayedPercent 从当前值平滑过渡到 target */
+function animateToPercent(target: number) {
+  if (rafId !== null) cancelAnimationFrame(rafId);
+  const from = displayedPercent.value;
+  const delta = target - from;
+  if (Math.abs(delta) < 0.5) {
+    displayedPercent.value = target;
+    return;
+  }
+  const start = performance.now();
+  const tick = (now: number) => {
+    const t = Math.min(1, (now - start) / ANIM_DURATION);
+    displayedPercent.value = from + delta * easeOutCubic(t);
+    if (t < 1) {
+      rafId = requestAnimationFrame(tick);
+    } else {
+      rafId = null;
+    }
+  };
+  rafId = requestAnimationFrame(tick);
+}
+
+/** 是否应展示容量环（开关开 + 数据就绪 + 非无限） */
+const shouldAnimate = computed(
+  () => props.showCapacity && !props.quotaLoading && !props.quotaInfo.unlimited
+);
+
+// 开关关闭/数据未就绪时归零，便于下次重新从 0 展开
+watch(shouldAnimate, val => {
+  if (!val && displayedPercent.value !== 0) {
+    if (rafId !== null) cancelAnimationFrame(rafId);
+    rafId = null;
+    displayedPercent.value = 0;
+  }
+});
+
+// 显示 + 数据变化时驱动动画
+watch(
+  [shouldAnimate, usedPercent],
+  () => {
+    if (shouldAnimate.value) animateToPercent(usedPercent.value);
+  },
+  { immediate: true }
+);
+
+onUnmounted(() => {
+  if (rafId !== null) cancelAnimationFrame(rafId);
+});
+
+/** 容量环 conic-gradient —— 角度取自动画值 displayedPercent，后半透明露出底层 bg 作未用色 */
 const ringGradient = computed(() => {
-  const deg = usedPercent.value * 3.6;
+  const deg = displayedPercent.value * 3.6;
   return `conic-gradient(${capacityColor.value} 0deg, ${capacityColor.value} ${deg}deg, transparent ${deg}deg, transparent 360deg)`;
 });
 </script>
@@ -124,7 +181,7 @@ const ringGradient = computed(() => {
             <div class="absolute inset-4px rd-full" :style="{ background: ringGradient }" />
             <div class="absolute inset-12px flex-center rd-full bg-[var(--n-color)]">
               <span class="text-22px font-600">
-                {{ usedPercent }}
+                {{ displayedPercentInt }}
                 <span class="ml-2px text-12px opacity-60">%</span>
               </span>
             </div>
