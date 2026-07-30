@@ -3,7 +3,6 @@ import { computed, onMounted, ref } from 'vue';
 import { useClipboard } from '@vueuse/core';
 import { useAuthStore } from '@/store/modules/auth';
 import { useEcharts } from '@/hooks/common/echarts';
-import { useRouterPush } from '@/hooks/common/router';
 import { useSvgIcon } from '@/hooks/common/icon';
 import { $t } from '@/locales';
 import SvgIcon from '@/components/custom/svg-icon.vue';
@@ -14,7 +13,6 @@ defineOptions({ name: 'Home' });
 
 const authStore = useAuthStore();
 const user = computed(() => authStore.userInfo.user);
-const { routerPushByKey } = useRouterPush();
 const { SvgIconVNode } = useSvgIcon();
 const { copy: copyText, copied } = useClipboard({ legacy: true, copiedDuring: 2000 });
 
@@ -42,8 +40,6 @@ function handleNav(key: NavKey) {
 
 // ===== 用户下拉（个人中心 / 退出登录）=====
 const dropdownOptions = computed(() => [
-  { label: $t('common.userCenter'), key: 'user-center', icon: SvgIconVNode({ icon: 'ph:user-circle', fontSize: 18 }) },
-  { type: 'divider', key: 'divider' },
   { label: $t('common.logout'), key: 'logout', icon: SvgIconVNode({ icon: 'ph:sign-out', fontSize: 18 }) }
 ]);
 
@@ -62,8 +58,6 @@ function handleLogout() {
 function handleUserMenu(key: string) {
   if (key === 'logout') {
     handleLogout();
-  } else if (key === 'user-center') {
-    routerPushByKey('user-center');
   }
 }
 
