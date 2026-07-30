@@ -30,11 +30,19 @@ const activeMenu = computed(() => {
   return menuMap[themeStore.effectiveLayoutMode];
 });
 
-const reRenderVertical = computed(() => themeStore.effectiveLayoutMode === 'vertical' && appStore.isMobile);
+/**
+ * 菜单强制重建 key：所有菜单均经 <Teleport> 挂到 #GLOBAL_SIDER_MENU_ID / #GLOBAL_HEADER_MENU_ID。
+ * is-mobile 切换会让 AdminLayout 重建 sider/header 的 DOM，原 target 节点销毁后以新节点重建，
+ * 而 Teleport 不会自动把内容回挂到新 target —— 菜单及其顶部 logo 图标会因此永久消失
+ * （典型复现：缩小到手机再放大窗口）。
+ * 借 :key 随 isMobile 翻转强制重建菜单组件，使其 Teleport 在 target 恢复后重新解析挂载。
+ * 原仅 vertical 模式有此补丁，vertical-mix(disk 定死) 等其余 Teleport 菜单遗漏，故放大后菜单消失。
+ */
+const reRenderMenu = computed(() => appStore.isMobile);
 </script>
 
 <template>
-  <component :is="activeMenu" :key="reRenderVertical" />
+  <component :is="activeMenu" :key="reRenderMenu" />
 </template>
 
 <style scoped></style>

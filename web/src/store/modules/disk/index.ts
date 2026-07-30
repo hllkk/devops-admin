@@ -24,7 +24,7 @@ export const useDiskStore = defineStore(SetupStoreId.Disk, () => {
   const viewMode = ref<'grid' | 'list'>('grid');
 
   // 网格图标大小档位：large 大图（参照 remote 80px）/ small 小图（56px）
-  const gridSize = ref<'small' | 'large'>('small');
+  const gridSize = ref<'small' | 'large'>('large');
 
   // 移动端适配：进入移动端强制列表模式；回到桌面恢复用户此前的视图偏好。
   // 复用 appStore.isMobile（与全局布局同一断点 tailwind sm=640），避免在本 store 重复维护 breakpoints。
