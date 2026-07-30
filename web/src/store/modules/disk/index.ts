@@ -1,9 +1,9 @@
 import { computed, ref, watch } from 'vue';
-import { useBreakpoints } from '@vueuse/core';
 import { defineStore } from 'pinia';
 import { SetupStoreId } from '@/enum';
 import { router } from '@/router';
 import { fetchResolvePath } from '@/service/api/disk/file';
+import { useAppStore } from '@/store/modules/app';
 
 /**
  * 网盘 store（第1期精简版）
@@ -26,12 +26,27 @@ export const useDiskStore = defineStore(SetupStoreId.Disk, () => {
   // 网格图标大小档位：large 大图（参照 remote 80px）/ small 小图（56px）
   const gridSize = ref<'small' | 'large'>('small');
 
-  // 移动端强制列表模式
-  const breakpoints = useBreakpoints({ sm: 640 });
-  const isMobile = breakpoints.smaller('sm');
-  watch(isMobile, mobile => {
-    if (mobile) viewMode.value = 'list';
-  }, { immediate: true });
+  // 移动端适配：进入移动端强制列表模式；回到桌面恢复用户此前的视图偏好。
+  // 复用 appStore.isMobile（与全局布局同一断点 tailwind sm=640），避免在本 store 重复维护 breakpoints。
+  const appStore = useAppStore();
+  // 桌面态用户偏好的视图模式：进入移动端前记录、回到桌面时恢复
+  const desktopViewPref = ref<'grid' | 'list'>('grid');
+  watch(
+    () => appStore.isMobile,
+    (mobile, prevMobile) => {
+      if (mobile) {
+        // 由桌面进入移动端：记下当前视图作为偏好（仅边界触发，避免移动端内重复覆盖）
+        if (!prevMobile) {
+          desktopViewPref.value = viewMode.value;
+        }
+        viewMode.value = 'list';
+      } else if (prevMobile) {
+        // 由移动端回到桌面：恢复偏好
+        viewMode.value = desktopViewPref.value;
+      }
+    },
+    { immediate: true }
+  );
 
   // 排序设置
   const sortSettings = ref<{

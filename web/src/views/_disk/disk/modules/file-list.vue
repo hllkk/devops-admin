@@ -1,6 +1,5 @@
 <script setup lang="tsx">
 import { ref, computed, onMounted, nextTick } from 'vue';
-import type { ComponentPublicInstance } from 'vue';
 import { NTime, type DataTableColumns } from 'naive-ui';
 import { useDiskStore } from '@/store/modules/disk';
 import { $t } from '@/locales';
@@ -17,15 +16,21 @@ interface Props {
 const props = defineProps<Props>();
 const diskStore = useDiskStore();
 
-const scrollbarRef = ref<ComponentPublicInstance | null>(null);
+/**
+ * NScrollbar 外层包装容器 ref（原生 div，必定是 Element）。
+ * 不直接读 NScrollbar 实例的 $el：NScrollbar 是多层组件包装（外层 Scrollbar → 内部 Scrollbar → VResizeObserver → div），
+ * $el 需沿组件链穿透到真实 DOM，在 v-if 切换重挂的时序下可能解析为注释占位节点，
+ * 导致 querySelector 不存在而抛 “root?.querySelector is not a function”。
+ * 改用自有 div 作 querySelector 起点，起点必为 Element，彻底规避该报错。
+ */
+const wrapperRef = ref<HTMLElement | null>(null);
 
 /** NScrollbar 内部真实滚动容器，供父组件无限滚动 hook 监听（scroll 事件 + scrollHeight 等） */
 const scrollContainer = ref<HTMLElement | null>(null);
 
 onMounted(async () => {
   await nextTick();
-  const root = scrollbarRef.value?.$el as HTMLElement | undefined;
-  scrollContainer.value = root?.querySelector<HTMLElement>('.n-scrollbar-container') ?? null;
+  scrollContainer.value = wrapperRef.value?.querySelector<HTMLElement>('.n-scrollbar-container') ?? null;
 });
 
 defineExpose({ scrollContainer });
@@ -78,16 +83,18 @@ const rowClassName = (row: Api.Disk.FileItem) => (diskStore.selectedFiles.includ
 </script>
 
 <template>
-  <NScrollbar ref="scrollbarRef" class="h-full">
-    <NDataTable
-      :columns="columns"
-      :data="props.files"
-      :loading="props.loading"
-      :bordered="false"
-      :row-props="rowProps"
-      :row-class-name="rowClassName"
-    />
-  </NScrollbar>
+  <div ref="wrapperRef" class="h-full">
+    <NScrollbar class="h-full">
+      <NDataTable
+        :columns="columns"
+        :data="props.files"
+        :loading="props.loading"
+        :bordered="false"
+        :row-props="rowProps"
+        :row-class-name="rowClassName"
+      />
+    </NScrollbar>
+  </div>
 </template>
 
 <style scoped>
