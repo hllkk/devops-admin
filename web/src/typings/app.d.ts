@@ -535,6 +535,10 @@ declare namespace App {
             searchPlaceholder: string;
             refresh: string;
             sort: string;
+            gridView: string;
+            listView: string;
+            largeGrid: string;
+            smallGrid: string;
           };
           sort: {
             name: string;

@@ -23,6 +23,9 @@ export const useDiskStore = defineStore(SetupStoreId.Disk, () => {
   // 视图模式
   const viewMode = ref<'grid' | 'list'>('grid');
 
+  // 网格图标大小档位：large 大图（参照 remote 80px）/ small 小图（56px）
+  const gridSize = ref<'small' | 'large'>('small');
+
   // 移动端强制列表模式
   const breakpoints = useBreakpoints({ sm: 640 });
   const isMobile = breakpoints.smaller('sm');
@@ -153,6 +156,11 @@ export const useDiskStore = defineStore(SetupStoreId.Disk, () => {
     viewMode.value = mode;
   }
 
+  // 切换网格图标大小档位
+  function setGridSize(size: 'small' | 'large') {
+    gridSize.value = size;
+  }
+
   // 设置排序
   function setSort(field: 'name' | 'size' | 'modifyTime' | 'type' | null, order: 'asc' | 'desc') {
     sortSettings.value = { field, order };
@@ -179,6 +187,7 @@ export const useDiskStore = defineStore(SetupStoreId.Disk, () => {
     currentPath.value = [];
     currentParentId.value = null;
     viewMode.value = 'grid';
+    gridSize.value = 'small';
     sortSettings.value = { field: null, order: 'asc' };
     selectedFiles.value = [];
   }
@@ -189,6 +198,7 @@ export const useDiskStore = defineStore(SetupStoreId.Disk, () => {
     currentPath,
     currentParentId,
     viewMode,
+    gridSize,
     sortSettings,
     currentFileList,
     selectedFiles,
@@ -201,6 +211,7 @@ export const useDiskStore = defineStore(SetupStoreId.Disk, () => {
     goBack,
     resetPath,
     setViewMode,
+    setGridSize,
     setSort,
     setSelectedFiles,
     clearSelection,

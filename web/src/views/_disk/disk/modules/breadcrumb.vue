@@ -33,7 +33,7 @@ function handleClick(c: Crumb) {
 </script>
 
 <template>
-  <div class="flex-center-y gap-4px px-12px py-6px text-13px">
+  <div class="flex-y-center gap-4px px-12px py-6px text-13px">
     <template v-for="(c, i) in crumbs" :key="`${c.index}-${i}`">
       <SvgIcon v-if="i > 0" icon="material-symbols:chevron-right" class="text-16px opacity-50" />
       <span

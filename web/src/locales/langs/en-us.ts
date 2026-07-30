@@ -348,7 +348,11 @@ const local: App.I18n.Schema = {
         search: 'Search',
         searchPlaceholder: 'Search file name',
         refresh: 'Refresh',
-        sort: 'Sort'
+        sort: 'Sort',
+        gridView: 'Grid view',
+        listView: 'List view',
+        largeGrid: 'Large',
+        smallGrid: 'Small'
       },
       sort: {
         name: 'Name',

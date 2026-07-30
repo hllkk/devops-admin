@@ -16,6 +16,9 @@ const diskStore = useDiskStore();
 
 const selected = computed(() => diskStore.selectedFiles.includes(props.file.fileId));
 
+/** 图标尺寸随网格大小档位（大图 80 / 小图 56） */
+const iconSize = computed(() => (diskStore.gridSize === 'large' ? 80 : 56));
+
 function handleClick() {
   const id = props.file.fileId;
   if (selected.value) {
@@ -38,7 +41,7 @@ function handleDblClick() {
     @click="handleClick"
     @dblclick="handleDblClick"
   >
-    <FileIcon :file-type="file.fileType" :extension="file.fileExtension" :size="56" />
+    <FileIcon :file-type="file.fileType" :extension="file.fileExtension" :size="iconSize" />
     <span class="w-full truncate text-center text-13px" :title="file.fileName">{{ file.fileName }}</span>
     <span v-if="!file.isFolder" class="text-11px opacity-50">{{ formatFileSize(file.fileSize) }}</span>
     <span v-else class="text-11px opacity-50">{{ $t('page.disk.file.folder') }}</span>

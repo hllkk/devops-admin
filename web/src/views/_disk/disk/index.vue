@@ -178,6 +178,18 @@ function handleRefresh() {
   getFileList();
 }
 
+function handleSort(field: 'name' | 'size' | 'modifyTime', order: 'asc' | 'desc') {
+  diskStore.setSort(field, order);
+}
+
+function handleToggleView() {
+  diskStore.setViewMode(diskStore.viewMode === 'grid' ? 'list' : 'grid');
+}
+
+function handleToggleGridSize() {
+  diskStore.setGridSize(diskStore.gridSize === 'large' ? 'small' : 'large');
+}
+
 // 同步 fileList 到 diskStore（供其他组件读取 currentFileList）
 watch(
   fileList,
@@ -245,7 +257,13 @@ onMounted(async () => {
         :content-style="{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column' }"
       >
         <!-- 工具栏 -->
-        <Toolbar @search="handleSearch" @refresh="handleRefresh" />
+        <Toolbar
+          @search="handleSearch"
+          @refresh="handleRefresh"
+          @sort="handleSort"
+          @toggle-view="handleToggleView"
+          @toggle-grid-size="handleToggleGridSize"
+        />
         <!-- 面包屑 -->
         <Breadcrumb v-if="fileList.length > 0 || diskStore.currentPath.length > 0" :total-count="totalCount" />
         <!-- 文件内容 -->

@@ -344,7 +344,11 @@ const local: App.I18n.Schema = {
         search: '搜索',
         searchPlaceholder: '搜索文件名',
         refresh: '刷新',
-        sort: '排序'
+        sort: '排序',
+        gridView: '网格视图',
+        listView: '列表视图',
+        largeGrid: '大图',
+        smallGrid: '小图'
       },
       sort: {
         name: '名称',
