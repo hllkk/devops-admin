@@ -26,5 +26,6 @@ type UserInfoResponse struct {
 	User          system.SysUser `json:"user"`
 	Roles         []string       `json:"roles"`
 	Permissions   []string       `json:"permissions"`
+	Apps          []string       `json:"apps"`          // 可见应用(业务模块标识:admin/disk/server/gateway;按模块菜单权限聚合)
 	DefaultRouter string         `json:"defaultRouter"` // 默认路由(主角色 DefaultRouter;登录入口)
 }

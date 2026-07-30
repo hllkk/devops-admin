@@ -183,13 +183,13 @@ func (b *BaseApi) Register(c *gin.Context) {
 // GetUserInfo 获取当前登录用户信息（/auth/getUserInfo）返回 user + roles(roleKey) + permissions(perms)
 func (b *BaseApi) GetUserInfo(c *gin.Context) {
 	userId := utils.GetUserID(c)
-	user, roles, perms, defaultRouter, err := userService.GetUserDetail(c.Request.Context(), userId)
+	user, roles, perms, apps, defaultRouter, err := userService.GetUserDetail(c.Request.Context(), userId)
 	if err != nil {
 		response.FailWithMessage("获取用户信息失败", c)
 		return
 	}
 	response.OkWithDetailed(systemRes.UserInfoResponse{
-		User: user, Roles: roles, Permissions: perms, DefaultRouter: defaultRouter,
+		User: user, Roles: roles, Permissions: perms, Apps: apps, DefaultRouter: defaultRouter,
 	}, "获取成功", c)
 }
 

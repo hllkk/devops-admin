@@ -753,9 +753,10 @@ declare namespace App {
             statusApproved: string;
             statusRejected: string;
             navIdentity: string;
-            navMarket: string;
-            navModels: string;
-            comingSoon: string;
+          };
+          myApps: {
+            title: string;
+            empty: string;
           };
         };
         system: {

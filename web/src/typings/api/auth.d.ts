@@ -67,6 +67,8 @@ declare namespace Api {
       roles: string[];
       /** 菜单权限 */
       permissions: string[];
+      /** 可见应用(业务模块标识 admin/disk/server/gateway;后端按模块菜单权限聚合随 getUserInfo 下发) */
+      apps: string[];
       /** 默认路由(主角色 DefaultRouter;登录入口) */
       defaultRouter: string;
     }

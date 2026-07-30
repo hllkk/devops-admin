@@ -64,9 +64,28 @@ func (userService *UserService) GetUserInfo(ctx context.Context, userId int64) (
 	return
 }
 
-// GetUserDetail 组装 getUserInfo 响应所需:用户实体(含 roles/dept) + roleKey 列表 + perms 列表。
-// 超管(任一角色 SuperAdmin)permissions=["*:*:*"];其余按 角色→sys_role_menu→sys_menu.perms 聚合去重。
-func (userService *UserService) GetUserDetail(ctx context.Context, userId int64) (user system.SysUser, roles []string, permissions []string, defaultRouter string, err error) {
+// validAppModules 业务模块标识固定顺序(与前端 ALL_MODULES 对齐);新增模块在此追加一行。
+var validAppModules = []string{"admin", "disk", "server", "gateway"}
+
+// filterAppModules 仅保留合法模块并按固定顺序输出(剔除历史脏值/非法 module)。
+func filterAppModules(modules []string) []string {
+	seen := make(map[string]bool, len(modules))
+	for _, m := range modules {
+		seen[m] = true
+	}
+	apps := make([]string, 0, len(validAppModules))
+	for _, m := range validAppModules {
+		if seen[m] {
+			apps = append(apps, m)
+		}
+	}
+	return apps
+}
+
+// GetUserDetail 组装 getUserInfo 响应所需:用户实体(含 roles/dept) + roleKey 列表 + perms 列表 + 可见应用(apps)。
+// 超管(任一角色 SuperAdmin)permissions=["*:*:*"]、apps=全部模块;其余按 角色→sys_role_menu→sys_menu 聚合:
+// perms 去重;apps 按 module 去重(该模块下有任意一个授权菜单即视为有该模块权限)。
+func (userService *UserService) GetUserDetail(ctx context.Context, userId int64) (user system.SysUser, roles []string, permissions []string, apps []string, defaultRouter string, err error) {
 	user, err = userService.GetUserInfo(ctx, userId)
 	if err != nil {
 		return
@@ -89,6 +108,7 @@ func (userService *UserService) GetUserDetail(ctx context.Context, userId int64)
 	}
 	if isSuper {
 		permissions = []string{"*:*:*"}
+		apps = append([]string{}, validAppModules...) // 超管可见全部模块
 		return
 	}
 	if len(roleIds) > 0 {
@@ -105,9 +125,27 @@ func (userService *UserService) GetUserDetail(ctx context.Context, userId int64)
 		if err != nil {
 			return
 		}
+		// 可见应用(APP):复用同一角色→菜单授权关系,按 module 去重;该模块下有任意授权菜单即算有权限
+		var modules []string
+		err = global.OPS_DB.WithContext(ctx).Model(&system.SysMenu{}).
+			Where("menu_id IN (?)",
+				global.OPS_DB.Model(&system.SysRoleMenu{}).
+					Where("sys_role_id IN ?", roleIds).
+					Select("sys_menu_id")).
+			Where("status = ?", "0").
+			Where("module <> ''").
+			Distinct("module").
+			Pluck("module", &modules).Error
+		if err != nil {
+			return
+		}
+		apps = filterAppModules(modules)
 	}
 	if permissions == nil {
 		permissions = []string{}
+	}
+	if apps == nil {
+		apps = []string{}
 	}
 	return
 }

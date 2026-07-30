@@ -568,10 +568,11 @@ const local: App.I18n.Schema = {
         statusPending: 'Pending',
         statusApproved: 'Approved',
         statusRejected: 'Rejected',
-        navIdentity: 'My AI Identity',
-        navMarket: 'AI Market',
-        navModels: 'Model Hub',
-        comingSoon: 'Coming soon'
+        navIdentity: 'My AI Identity'
+      },
+      myApps: {
+        title: 'My Apps',
+        empty: 'No apps available'
       }
     },
     system: {

@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useClipboard } from '@vueuse/core';
+import type { LastLevelRouteKey } from '@elegant-router/types';
 import { useAuthStore } from '@/store/modules/auth';
+import { useTabStore } from '@/store/modules/tab';
+import { useRouterPush } from '@/hooks/common/router';
 import { useEcharts } from '@/hooks/common/echarts';
 import { useSvgIcon } from '@/hooks/common/icon';
+import { ALL_MODULES, MODULE_CONFIG, type RouteModule } from '@/constants/module';
 import { $t } from '@/locales';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import SystemLogo from '@/components/common/system-logo.vue';
@@ -19,24 +23,30 @@ const { copy: copyText, copied } = useClipboard({ legacy: true, copiedDuring: 20
 const showFullKey = ref(false);
 const isLoading = ref(true);
 
-// ===== 顶部导航（AI 市场 / 模型广场尚未上线，仅占位提示）=====
-type NavKey = 'identity' | 'market' | 'models';
-type NavI18nKey = 'page.home.identity.navIdentity' | 'page.home.identity.navMarket' | 'page.home.identity.navModels';
-const navItems: { key: NavKey; i18nKey: NavI18nKey }[] = [
-  { key: 'identity', i18nKey: 'page.home.identity.navIdentity' },
-  { key: 'market', i18nKey: 'page.home.identity.navMarket' },
-  { key: 'models', i18nKey: 'page.home.identity.navModels' }
-];
-const activeNav = ref<NavKey>('identity');
+const tabStore = useTabStore();
+const { routerPushByKey } = useRouterPush();
 
-function handleNav(key: NavKey) {
-  if (key === 'identity') {
-    activeNav.value = key;
-    return;
-  }
-  // AI 市场 / 模型广场尚未上线
-  window.$message?.info($t('page.home.identity.comingSoon'));
+// ===== 我的应用：数据由后端 getUserInfo.apps 下发（按模块菜单权限聚合），前端只渲染 =====
+// 再与 ALL_MODULES 对齐:保证类型安全 + 兜底后端可能下发的非法/历史脏值。
+const myApps = computed<RouteModule[]>(() =>
+  (authStore.userInfo.apps ?? []).filter((m): m is RouteModule => ALL_MODULES.includes(m as RouteModule))
+);
+
+/** 点击模块卡片 → 清空旧模块 Tab → 重建 homeTab → 导航到模块首页（与 module-select 一致） */
+function handleOpenApp(module: RouteModule) {
+  const homeRoute = MODULE_CONFIG[module].home as LastLevelRouteKey;
+  tabStore.resetTabs(homeRoute);
+  routerPushByKey(homeRoute);
 }
+
+// ===== 顶部 Tab：我的应用 / 我的AI身份 =====
+type HomeTab = 'apps' | 'identity';
+type HomeTabI18nKey = 'page.home.myApps.title' | 'page.home.identity.navIdentity';
+const homeTabs: { key: HomeTab; i18nKey: HomeTabI18nKey }[] = [
+  { key: 'apps', i18nKey: 'page.home.myApps.title' },
+  { key: 'identity', i18nKey: 'page.home.identity.navIdentity' }
+];
+const activeTab = ref<HomeTab>('apps');
 
 // ===== 用户下拉（个人中心 / 退出登录）=====
 const dropdownOptions = computed(() => [
@@ -295,20 +305,20 @@ onMounted(async () => {
           <span class="text-18px font-bold text-slate-900 dark:text-slate-100">{{ $t('route.home') }}</span>
         </div>
 
-        <!-- 中：导航（绝对水平居中）-->
+        <!-- 中：Tab 切换（我的应用 / 我的AI身份）-->
         <nav class="absolute left-1/2 flex -translate-x-1/2 items-center gap-4px">
           <button
-            v-for="item in navItems"
-            :key="item.key"
+            v-for="tab in homeTabs"
+            :key="tab.key"
             class="rounded-8px px-16px py-8px text-14px font-medium transition-colors"
             :class="
-              activeNav === item.key
+              activeTab === tab.key
                 ? 'bg-[#7C3AED]/10 text-[#7C3AED] dark:bg-[#7C3AED]/15'
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/60'
             "
-            @click="handleNav(item.key)"
+            @click="activeTab = tab.key"
           >
-            {{ $t(item.i18nKey) }}
+            {{ $t(tab.i18nKey) }}
           </button>
         </nav>
 
@@ -340,8 +350,46 @@ onMounted(async () => {
         </template>
 
         <template v-else>
+          <!-- 我的应用：按权限展示可访问的业务模块 -->
+          <section v-show="activeTab === 'apps'" class="flex flex-col gap-12px">
+            <div class="flex items-center gap-8px px-4px">
+              <SvgIcon icon="mdi:apps" class="text-20px text-[#7C3AED]" />
+              <span class="text-16px font-bold text-slate-900 dark:text-slate-100">
+                {{ $t('page.home.myApps.title') }}
+              </span>
+            </div>
+            <div v-if="myApps.length" class="grid grid-cols-2 gap-12px sm:grid-cols-3 lg:grid-cols-4">
+              <div
+                v-for="m in myApps"
+                :key="m"
+                class="group flex cursor-pointer items-center gap-12px rounded-16px border border-slate-200/60 bg-white/80 p-16px shadow-sm backdrop-blur-xl transition-all hover:-translate-y-1px hover:border-[#7C3AED]/40 hover:shadow-md dark:border-slate-700/60 dark:bg-slate-800/60"
+                @click="handleOpenApp(m)"
+              >
+                <div
+                  class="flex size-40px shrink-0 items-center justify-center rounded-12px bg-[#7C3AED]/10 text-24px text-[#7C3AED] transition-colors group-hover:bg-[#7C3AED]/15 dark:bg-[#7C3AED]/15"
+                >
+                  <SvgIcon :icon="MODULE_CONFIG[m].icon" />
+                </div>
+                <span class="min-w-0 flex-1 truncate text-14px font-semibold text-slate-900 dark:text-slate-100">
+                  {{ $t(`module.${m}`) }}
+                </span>
+                <SvgIcon
+                  icon="lucide:arrow-right"
+                  class="shrink-0 text-16px text-slate-300 transition-colors group-hover:text-[#7C3AED]"
+                />
+              </div>
+            </div>
+            <p
+              v-else
+              class="rounded-16px bg-white/60 px-16px py-24px text-center text-14px text-slate-400 dark:bg-slate-800/40"
+            >
+              {{ $t('page.home.myApps.empty') }}
+            </p>
+          </section>
+
           <!-- AI 身份证卡片 -->
           <section
+            v-show="activeTab === 'identity'"
             class="rounded-24px border border-slate-200/60 bg-white/80 p-10px shadow-md backdrop-blur-xl dark:border-slate-700/60 dark:bg-slate-800/60"
           >
             <div
@@ -465,7 +513,7 @@ onMounted(async () => {
           </section>
 
           <!-- 我的资源 -->
-          <section v-if="mainKey" class="flex flex-col gap-12px">
+          <section v-if="mainKey" v-show="activeTab === 'identity'" class="flex flex-col gap-12px">
             <NCard :bordered="false" size="small" class="card-wrapper shadow-md">
               <div class="mb-12px flex items-center gap-8px">
                 <SvgIcon icon="lucide:cpu" class="text-16px text-[#7C3AED]" />
@@ -518,6 +566,7 @@ onMounted(async () => {
           <!-- 用量概览 -->
           <NCard
             v-if="kpi"
+            v-show="activeTab === 'identity'"
             :bordered="false"
             size="small"
             class="card-wrapper shadow-md"
@@ -577,6 +626,7 @@ onMounted(async () => {
           <!-- 我的申请 -->
           <NCard
             v-if="applications.length"
+            v-show="activeTab === 'identity'"
             :bordered="false"
             size="small"
             class="card-wrapper shadow-md"

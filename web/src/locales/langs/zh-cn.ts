@@ -564,10 +564,11 @@ const local: App.I18n.Schema = {
         statusPending: '待审批',
         statusApproved: '已通过',
         statusRejected: '已驳回',
-        navIdentity: '我的AI身份',
-        navMarket: 'AI市场',
-        navModels: '模型广场',
-        comingSoon: '即将上线，敬请期待'
+        navIdentity: '我的AI身份'
+      },
+      myApps: {
+        title: '我的应用',
+        empty: '暂无可用的应用'
       }
     },
     system: {
