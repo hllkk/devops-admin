@@ -277,7 +277,8 @@ const local: App.I18n.Schema = {
     admin: 'Admin',
     disk: 'Disk',
     server: 'Server',
-    gateway: 'AI Gateway'
+    gateway: 'AI Gateway',
+    common: 'Common'
   },
   dict: {
     sys_common_status: { success: 'Success', fail: 'Fail' },

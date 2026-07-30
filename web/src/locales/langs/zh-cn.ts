@@ -273,7 +273,8 @@ const local: App.I18n.Schema = {
     admin: '后台管理',
     disk: '网盘',
     server: '服务器管理',
-    gateway: 'AI 网关'
+    gateway: 'AI 网关',
+    common: '公共页面'
   },
   dict: {
     sys_common_status: { success: '成功', fail: '失败' },
@@ -564,7 +565,7 @@ const local: App.I18n.Schema = {
         statusPending: '待审批',
         statusApproved: '已通过',
         statusRejected: '已驳回',
-        navIdentity: '我的AI身份'
+        navIdentity: 'AI身份'
       },
       myApps: {
         title: '我的应用',

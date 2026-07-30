@@ -28,8 +28,12 @@ const props = withDefaults(defineProps<Props>(), {
 
 const { bool: expandAll } = useBoolean();
 const { bool: checkAll } = useBoolean();
-// 初始展开到模块分组层(根 0 + 四个模块组 -1..-4),进来即可见各模块菜单
-const expandedKeys = ref<CommonType.IdType[]>([0, -1, -2, -3, -4]);
+// 公共页面分组节点 id(module 缺失的跨模块全局页如 home 归此);负值不与真实菜单雪花 id 冲突,
+// 后端 saveRoleMenus 过滤 mid<=0 不入库。admin=-1/disk=-2/server=-3/gateway=-4/公共页面=-5。
+const COMMON_GROUP_ID = -(ALL_MODULES.length + 1);
+// 初始展开到分组层(根 0 + 四模块组 -1..-4 + 公共组),进来即可见各模块菜单
+const DEFAULT_EXPANDED_KEYS: CommonType.IdType[] = [0, -1, -2, -3, -4, COMMON_GROUP_ID];
+const expandedKeys = ref<CommonType.IdType[]>([...DEFAULT_EXPANDED_KEYS]);
 
 const menuTreeRef = ref<TreeSelectInst | null>(null);
 const checkedKeys = defineModel<CommonType.IdType[]>('checkedKeys', { required: false, default: [] });
@@ -44,12 +48,17 @@ const defaultRouter = defineModel<string>('defaultRouter', { required: false, de
 function buildGroupedOptions(menus: Api.System.MenuList): Api.System.MenuList {
   const buckets = new Map<RouteModule, Api.System.MenuList>();
   ALL_MODULES.forEach(m => buckets.set(m, []));
+  // module 缺失/非法(如 home 跨模块全局页)归「公共页面」组,不再兜底 admin 造成归属歧义
+  const common: Api.System.MenuList = [];
   menus.forEach(m => {
-    // module 缺失(老库未回填)兜底归 admin
-    const mod: RouteModule = m.module && ALL_MODULES.includes(m.module) ? m.module : 'admin';
-    buckets.get(mod)!.push(m);
+    if (m.module && ALL_MODULES.includes(m.module as RouteModule)) {
+      buckets.get(m.module as RouteModule)!.push(m);
+    } else {
+      common.push(m);
+    }
   });
-  return ALL_MODULES.map((mod, idx) => ({
+
+  const moduleGroups: Api.System.MenuList = ALL_MODULES.map((mod, idx) => ({
     id: -(idx + 1),
     label: $t(`module.${mod}` as App.I18n.I18nKey),
     icon: MODULE_CONFIG[mod].icon,
@@ -57,6 +66,20 @@ function buildGroupedOptions(menus: Api.System.MenuList): Api.System.MenuList {
     module: mod,
     children: buckets.get(mod)!
   })) as Api.System.MenuList;
+
+  // 公共页面组仅在存在空 module 菜单时出现,置顶显示
+  if (!common.length) return moduleGroups;
+  return [
+    {
+      id: COMMON_GROUP_ID,
+      label: $t('module.common' as App.I18n.I18nKey),
+      icon: 'mdi:earth',
+      menuType: 'M',
+      module: '',
+      children: common
+    },
+    ...moduleGroups
+  ] as Api.System.MenuList;
 }
 
 // 渲染树:把 options(平铺顶层菜单)包根 + 按模块分组。
@@ -86,8 +109,8 @@ onMounted(() => {
 });
 
 watch(expandAll, newVal => {
-  // 展开=全部节点;折叠=根 + 四个模块分组层(仍可见各模块顶层菜单)
-  expandedKeys.value = newVal ? getAllMenuIds(treeData.value) : [0, -1, -2, -3, -4];
+  // 展开=全部节点;折叠=根 + 各分组层(仍可见各模块顶层菜单)
+  expandedKeys.value = newVal ? getAllMenuIds(treeData.value) : [...DEFAULT_EXPANDED_KEYS];
 });
 
 // 由菜单 path 推导 routeKey(与后端 routeKey 规则一致:去首尾斜杠,/ 换 _)

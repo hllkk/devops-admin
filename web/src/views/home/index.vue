@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useClipboard } from '@vueuse/core';
 import type { LastLevelRouteKey } from '@elegant-router/types';
 import { useAuthStore } from '@/store/modules/auth';
 import { useTabStore } from '@/store/modules/tab';
+import { useThemeStore } from '@/store/modules/theme';
 import { useRouterPush } from '@/hooks/common/router';
 import { useEcharts } from '@/hooks/common/echarts';
 import { useSvgIcon } from '@/hooks/common/icon';
+import { getRgb } from '@sa/color';
 import { ALL_MODULES, MODULE_CONFIG, type RouteModule } from '@/constants/module';
 import { $t } from '@/locales';
 import SvgIcon from '@/components/custom/svg-icon.vue';
@@ -194,45 +196,72 @@ const dailyAvgCost = computed(() => {
   return day > 0 ? cost / day : 0;
 });
 
-const { domRef: trendChartRef, updateOptions: updateTrendChart } = useEcharts(() => ({
-  tooltip: { trigger: 'axis' },
-  grid: { top: 20, right: 20, bottom: 30, left: 50 },
-  xAxis: {
-    type: 'category',
-    data: [] as string[],
-    axisLabel: { fontSize: 10, color: '#94a3b8' },
-    axisLine: { lineStyle: { color: '#e2e8f0' } }
-  },
-  yAxis: {
-    type: 'value',
-    axisLabel: { fontSize: 10, color: '#94a3b8', formatter: '¥{value}' },
-    splitLine: { lineStyle: { color: '#f1f5f9' } }
-  },
-  series: [
-    {
-      type: 'line',
-      data: [] as number[],
-      smooth: true,
-      symbol: 'circle',
-      symbolSize: 4,
-      lineStyle: { color: '#8b5cf6', width: 2 },
-      itemStyle: { color: '#8b5cf6' },
-      areaStyle: {
-        color: {
-          type: 'linear',
-          x: 0,
-          y: 0,
-          x2: 0,
-          y2: 1,
-          colorStops: [
-            { offset: 0, color: 'rgba(139,92,246,0.15)' },
-            { offset: 1, color: 'rgba(139,92,246,0)' }
-          ]
+const themeStore = useThemeStore();
+/** 图表主色:跟随主题(Echarts 用 canvas 渲染,不解析 CSS 变量,故取实际色值) */
+const chartColor = computed(() => themeStore.themeColors.primary);
+const chartColorRgb = computed(() => getRgb(chartColor.value));
+
+const { domRef: trendChartRef, updateOptions: updateTrendChart } = useEcharts(() => {
+  const { r, g, b } = chartColorRgb.value;
+  return {
+    tooltip: { trigger: 'axis' },
+    grid: { top: 20, right: 20, bottom: 30, left: 50 },
+    xAxis: {
+      type: 'category',
+      data: [] as string[],
+      axisLabel: { fontSize: 10, color: '#94a3b8' },
+      axisLine: { lineStyle: { color: '#e2e8f0' } }
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: { fontSize: 10, color: '#94a3b8', formatter: '¥{value}' },
+      splitLine: { lineStyle: { color: '#f1f5f9' } }
+    },
+    series: [
+      {
+        type: 'line',
+        data: [] as number[],
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: 4,
+        lineStyle: { color: chartColor.value, width: 2 },
+        itemStyle: { color: chartColor.value },
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              { offset: 0, color: `rgba(${r},${g},${b},0.15)` },
+              { offset: 1, color: `rgba(${r},${g},${b},0)` }
+            ]
+          }
         }
       }
+    ]
+  };
+});
+
+/** 图表主色随主题切换重绘 */
+function applyChartColor() {
+  const { r, g, b } = chartColorRgb.value;
+  updateTrendChart(opts => {
+    opts.series[0].lineStyle.color = chartColor.value;
+    opts.series[0].itemStyle.color = chartColor.value;
+    const gradient = opts.series[0].areaStyle?.color as { colorStops?: { color: string }[] } | undefined;
+    if (gradient?.colorStops) {
+      gradient.colorStops[0].color = `rgba(${r},${g},${b},0.15)`;
+      gradient.colorStops[1].color = `rgba(${r},${g},${b},0)`;
     }
-  ]
-}));
+    return opts;
+  });
+}
+
+watch(chartColorRgb, () => {
+  if (trend.value.length) applyChartColor();
+});
 
 function getTypeLabel(type: ResourceApplication['resourceType']): string {
   const map: Record<ResourceApplication['resourceType'], string> = {
@@ -286,13 +315,14 @@ onMounted(async () => {
       opts.series[0].data = trend.value.map(item => item.cost);
       return opts;
     });
+    applyChartColor();
   }
 });
 </script>
 
 <template>
   <div
-    class="min-h-screen bg-gradient-to-br from-[#ddd6fe] via-[#c7d2fe] to-[#e9d5ff] dark:from-[#1e1b2e] dark:via-[#1a1426] dark:to-[#15102a]"
+    class="home-page min-h-screen"
   >
     <!-- 自定义 header（不使用 global-header）-->
     <header
@@ -313,7 +343,7 @@ onMounted(async () => {
             class="rounded-8px px-16px py-8px text-14px font-medium transition-colors"
             :class="
               activeTab === tab.key
-                ? 'bg-[#7C3AED]/10 text-[#7C3AED] dark:bg-[#7C3AED]/15'
+                ? 'home-accent-box'
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/60'
             "
             @click="activeTab = tab.key"
@@ -353,7 +383,7 @@ onMounted(async () => {
           <!-- 我的应用：按权限展示可访问的业务模块 -->
           <section v-show="activeTab === 'apps'" class="flex flex-col gap-12px">
             <div class="flex items-center gap-8px px-4px">
-              <SvgIcon icon="mdi:apps" class="text-20px text-[#7C3AED]" />
+              <SvgIcon icon="mdi:apps" class="home-accent text-20px" />
               <span class="text-16px font-bold text-slate-900 dark:text-slate-100">
                 {{ $t('page.home.myApps.title') }}
               </span>
@@ -362,11 +392,11 @@ onMounted(async () => {
               <div
                 v-for="m in myApps"
                 :key="m"
-                class="group flex cursor-pointer items-center gap-12px rounded-16px border border-slate-200/60 bg-white/80 p-16px shadow-sm backdrop-blur-xl transition-all hover:-translate-y-1px hover:border-[#7C3AED]/40 hover:shadow-md dark:border-slate-700/60 dark:bg-slate-800/60"
+                class="home-app-card group flex cursor-pointer items-center gap-12px rounded-16px border border-slate-200/60 bg-white/80 p-16px shadow-sm backdrop-blur-xl transition-all hover:-translate-y-1px hover:shadow-md dark:border-slate-700/60 dark:bg-slate-800/60"
                 @click="handleOpenApp(m)"
               >
                 <div
-                  class="flex size-40px shrink-0 items-center justify-center rounded-12px bg-[#7C3AED]/10 text-24px text-[#7C3AED] transition-colors group-hover:bg-[#7C3AED]/15 dark:bg-[#7C3AED]/15"
+                  class="home-app-icon flex size-40px shrink-0 items-center justify-center rounded-12px text-24px transition-colors"
                 >
                   <SvgIcon :icon="MODULE_CONFIG[m].icon" />
                 </div>
@@ -375,7 +405,7 @@ onMounted(async () => {
                 </span>
                 <SvgIcon
                   icon="lucide:arrow-right"
-                  class="shrink-0 text-16px text-slate-300 transition-colors group-hover:text-[#7C3AED]"
+                  class="home-app-arrow shrink-0 text-16px text-slate-300 transition-colors"
                 />
               </div>
             </div>
@@ -393,11 +423,11 @@ onMounted(async () => {
             class="rounded-24px border border-slate-200/60 bg-white/80 p-10px shadow-md backdrop-blur-xl dark:border-slate-700/60 dark:bg-slate-800/60"
           >
             <div
-              class="relative min-h-280px overflow-hidden rounded-18px bg-gradient-to-br from-white to-purple-50 dark:from-slate-800 dark:to-[#2a1f3d]"
+              class="home-card-inner relative min-h-280px overflow-hidden rounded-18px"
             >
               <!-- 右侧品牌渐变区 -->
               <div
-                class="absolute right-0 top-0 h-full w-30% bg-gradient-to-br from-[#7C3AED] to-[#5B21B6]"
+                class="home-brand-gradient absolute right-0 top-0 h-full w-30%"
                 style="clip-path: polygon(30% 0, 100% 0, 100% 100%, 0 100%)"
               >
                 <div
@@ -413,7 +443,7 @@ onMounted(async () => {
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-10px">
                     <div
-                      class="flex h-36px w-36px items-center justify-center rounded-12px bg-gradient-to-br from-[#7C3AED] to-[#5B21B6] text-14px font-bold text-white"
+                      class="home-brand-gradient flex h-36px w-36px items-center justify-center rounded-12px text-14px font-bold text-white"
                     >
                       AI
                     </div>
@@ -447,11 +477,11 @@ onMounted(async () => {
                 <!-- API Key 区 -->
                 <div
                   v-if="mainKey"
-                  class="mt-20px rounded-16px border border-[#7C3AED]/12 bg-white/80 px-20px py-16px backdrop-blur-10px dark:bg-slate-900/60"
+                  class="home-accent-border mt-20px rounded-16px border bg-white/80 px-20px py-16px backdrop-blur-10px dark:bg-slate-900/60"
                 >
                   <div class="flex items-center justify-between gap-12px">
                     <div class="min-w-0 flex-1">
-                      <div class="text-11px tracking-1px font-bold text-[#7C3AED]">
+                      <div class="home-accent text-11px tracking-1px font-bold">
                         {{ $t('page.home.identity.apiKeyLabel') }}
                       </div>
                       <code class="mt-6px block break-all text-14px font-bold text-slate-900 dark:text-slate-100">
@@ -516,7 +546,7 @@ onMounted(async () => {
           <section v-if="mainKey" v-show="activeTab === 'identity'" class="flex flex-col gap-12px">
             <NCard :bordered="false" size="small" class="card-wrapper shadow-md">
               <div class="mb-12px flex items-center gap-8px">
-                <SvgIcon icon="lucide:cpu" class="text-16px text-[#7C3AED]" />
+                <SvgIcon icon="lucide:cpu" class="home-accent text-16px" />
                 <span class="text-14px font-medium">{{ $t('page.home.identity.resModel') }}</span>
                 <span class="ml-auto text-12px text-slate-400">
                   {{ $t('page.home.identity.resCount', { count: mainKey.models.length }) }}
@@ -610,7 +640,7 @@ onMounted(async () => {
                 <div
                   class="h-full rounded-full transition-all"
                   :class="
-                    budgetUsedPercent > 100 ? 'bg-red-500' : budgetUsedPercent > 80 ? 'bg-amber-500' : 'bg-[#8b5cf6]'
+                    budgetUsedPercent > 100 ? 'bg-red-500' : budgetUsedPercent > 80 ? 'bg-amber-500' : 'home-progress-accent'
                   "
                   :style="{ width: `${Math.min(budgetUsedPercent, 100)}%` }"
                 />
@@ -662,3 +692,42 @@ onMounted(async () => {
     </main>
   </div>
 </template>
+
+<style scoped>
+/* home 色调:全部经主题 CSS 变量派生,自动跟随 themeColor 与 dark/light 切换(dark 下色阶由主题注入) */
+.home-page {
+  background-color: rgb(var(--layout-bg-color));
+}
+.home-card-inner {
+  background-image: linear-gradient(to bottom right, rgb(var(--container-bg-color)), rgb(var(--primary-600-color) / 0.08));
+}
+.home-accent {
+  color: rgb(var(--primary-600-color));
+}
+.home-accent-box {
+  background-color: rgb(var(--primary-600-color) / 0.10);
+  color: rgb(var(--primary-600-color));
+}
+.home-accent-border {
+  border-color: rgb(var(--primary-600-color) / 0.12);
+}
+.home-brand-gradient {
+  background-image: linear-gradient(to bottom right, rgb(var(--primary-600-color)), rgb(var(--primary-700-color)));
+}
+.home-app-icon {
+  background-color: rgb(var(--primary-600-color) / 0.10);
+  color: rgb(var(--primary-600-color));
+}
+.home-app-card:hover {
+  border-color: rgb(var(--primary-600-color) / 0.40);
+}
+.home-app-card:hover .home-app-icon {
+  background-color: rgb(var(--primary-600-color) / 0.18);
+}
+.home-app-card:hover .home-app-arrow {
+  color: rgb(var(--primary-600-color));
+}
+.home-progress-accent {
+  background-color: rgb(var(--primary-500-color));
+}
+</style>

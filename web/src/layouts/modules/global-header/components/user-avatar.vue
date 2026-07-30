@@ -30,7 +30,7 @@ function handleAvatarError() {
   setError();
 }
 
-type DropdownKey = 'user-center' | 'logout';
+type DropdownKey = 'home' | 'user-center' | 'logout';
 
 type DropdownOption =
   | {
@@ -45,6 +45,11 @@ type DropdownOption =
 
 const options = computed(() => {
   const opts: DropdownOption[] = [
+    {
+      label: $t('route.home'),
+      key: 'home',
+      icon: SvgIconVNode({ icon: 'ph:house', fontSize: 18 })
+    },
     {
       label: $t('common.userCenter'),
       key: 'user-center',

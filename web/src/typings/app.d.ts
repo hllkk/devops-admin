@@ -507,6 +507,7 @@ declare namespace App {
         disk: string;
         server: string;
         gateway: string;
+        common: string;
       };
       /** 字典数据值的动态国际化键：dict.{dictType}.{value}，与后端 dictLabel 约定一致 */
       dict: {
