@@ -64,6 +64,23 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 
 	// 根级菜单: M=目录(有子菜单) / C=菜单(实际页面)
 	rootMenus := []sysModel.SysMenu{
+		// 个人中心首页(顶层单级 C·blank 布局·隐藏菜单):AI 网关身份/用量门户页,走 layout.blank
+		// 无全局 header/sider/tab。Component 含 layout.blank 触发 blank 布局,view 段由 routeKey(home)
+		// 规范化为 home,转换后 = layout.blank$view.home(对齐前端 routes.ts)。Visible=1 对应前端 hideInMenu:
+		// home 不进侧边栏,经头像下拉/URL 进入,故授权后全员可访问(见 sys_role_menu.go user 授权)。
+		// Module 留空:home 是跨模块全局页(同 user-center),对齐前端 routes.ts 无 meta.module。
+		// resolveModuleFromRoute 返回 null → global route(所有模块可见),且不更新 currentModule,
+		// 避免从 disk/server/gateway 模块进 home 时 currentModule 跳到 admin 导致 tearing。
+		{
+			ParentId:  0,
+			MenuName:  "route.home",
+			MenuType:  "C",
+			Path:      "home",
+			Component: "layout.blank$view.home",
+			Icon:      "mdi:card-account-details-outline",
+			Visible:   "1",
+			OrderNum:  0,
+		},
 		{
 			ParentId:  0,
 			MenuName:  "route.admin",

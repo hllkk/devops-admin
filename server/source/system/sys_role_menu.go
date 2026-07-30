@@ -103,16 +103,21 @@ func (i *initRoleMenu) InitializeData(ctx context.Context) (next context.Context
 		adminLinks = append(adminLinks, sysModel.SysRoleMenu{SysRoleId: adminRoleID, SysMenuId: m.MenuId})
 	}
 
-	// ── user: 仅分配首页(dashboard)菜单权限 ──
+	// ── user: 分配首页(dashboard) + 个人中心首页(home)菜单权限 ──
+	// home 是 AI 个人中心首页,登录用户基础页,动态模式下需显式授权才能生成路由,故全员可访问。
 	var adminMenuID int64 // route.admin 的 MenuId
+	var homeMenuID int64  // route.home 的 MenuId
 	for _, m := range menuEntities {
-		if m.MenuName == "route.admin" {
+		switch m.MenuName {
+		case "route.admin":
 			adminMenuID = m.MenuId
-			break
+		case "route.home":
+			homeMenuID = m.MenuId
 		}
 	}
 	userLinks := []sysModel.SysRoleMenu{
 		{SysRoleId: userRoleID, SysMenuId: adminMenuID},
+		{SysRoleId: userRoleID, SysMenuId: homeMenuID},
 	}
 
 	// 合并所有角色菜单关联并批量写入

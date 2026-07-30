@@ -15,9 +15,9 @@ import (
 type RouteService struct{}
 
 const (
-	routeLocalIconPrefix = "local-icon-" // SysMenu.Icon 本地图标前缀,转 meta.localIcon("menu-<name>")
-	routeIconNone        = "#"           // RuoYi 无图标占位,转换时忽略
-	routeHomeDefault     = "admin"        // 落地页 key,对齐 web/.env VITE_ROUTE_HOME=admin
+	routeLocalIconPrefix = "local-icon-"  // SysMenu.Icon 本地图标前缀,转 meta.localIcon("menu-<name>")
+	routeIconNone        = "#"            // RuoYi 无图标占位,转换时忽略
+	routeHomeDefault     = "home"         // 落地页 key,对齐 web/.env VITE_ROUTE_HOME=home(所有角色 DefaultRouter=home)
 	routeLayoutBlank     = "layout.blank" // 空白布局标记(菜单管理"空白布局"录入时编码进 component)
 	routeLayoutDisk      = "layout.disk"  // 网盘布局标记(菜单管理"网盘布局"录入时编码进 component)
 )
@@ -197,7 +197,7 @@ func (s *RouteService) GetUserRoutes(ctx context.Context, userId int64) (result 
 	}
 
 	result.Routes = s.menusToRoutes(menus)
-	// 主角色默认路由(登录入口;用户无权访问时 resolveHome 兜底 admin)
+	// 主角色默认路由(登录入口;用户无权访问时 resolveHome 兜底 home)
 	defaultRouter := routeHomeDefault
 	for _, r := range user.Roles {
 		if r.RoleId == user.RoleId && r.DefaultRouter != "" {
@@ -209,8 +209,7 @@ func (s *RouteService) GetUserRoutes(ctx context.Context, userId int64) (result 
 	return
 }
 
-// resolveHome 落地页 key:优先 admin(对齐 VITE_ROUTE_HOME),否则取第一个顶层路由 key。
-// resolveHome 落地页 key:优先角色默认路由(需用户有权访问),其次 admin,再次第一个顶层路由。
+// resolveHome 落地页 key:优先角色默认路由(需用户有权访问),其次 routeHomeDefault(home),再次第一个顶层路由。
 func (s *RouteService) resolveHome(routes []system.MenuRoute, defaultRouter string) string {
 	if defaultRouter != "" && containsRouteName(routes, defaultRouter) {
 		return defaultRouter

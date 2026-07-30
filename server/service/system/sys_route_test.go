@@ -50,9 +50,9 @@ func TestRoutePath(t *testing.T) {
 
 func TestResolveIcon(t *testing.T) {
 	cases := []struct {
-		in              string
-		wantIcon        string
-		wantLocalIcon   string
+		in            string
+		wantIcon      string
+		wantLocalIcon string
 	}{
 		{"mdi:monitor-dashboard", "mdi:monitor-dashboard", ""},
 		{"local-icon-log", "", "menu-log"},
@@ -82,13 +82,16 @@ func TestMenusToRoutes(t *testing.T) {
 		{MenuId: 7, ParentId: 0, MenuType: "C", MenuName: "route.disk", Path: "disk", Icon: "mdi:harddisk", Visible: "0", IsCache: "1", IsFrame: "1", OrderNum: 5, Module: "disk"},
 		{MenuId: 8, ParentId: 0, MenuType: "C", MenuName: "route.server", Path: "server", Icon: "mdi:server-network", Visible: "0", IsCache: "1", IsFrame: "1", OrderNum: 6, Module: "server"},
 		{MenuId: 9, ParentId: 0, MenuType: "C", MenuName: "route.gateway", Path: "gateway", Icon: "mdi:robot-outline", Visible: "0", IsCache: "1", IsFrame: "1", OrderNum: 7, Module: "gateway"},
+		// home:顶层单级·blank 布局·隐藏菜单·跨模块全局页(AI 个人中心首页),无 module(global route)。
+		// 验证 Component 含 layout.blank 触发 blank 布局、Visible=1->hideInMenu、Module 留空。
+		{MenuId: 10, ParentId: 0, MenuType: "C", MenuName: "route.home", Path: "home", Component: "layout.blank$view.home", Icon: "mdi:card-account-details-outline", Visible: "1", IsCache: "1", IsFrame: "1", OrderNum: 0},
 	}
 
 	s := RouteService{}
 	routes := s.menusToRoutes(menus)
 
-	// 顶层 7 个(admin/system/timer/log/disk/server/gateway),F 按钮不进路由
-	if want := 7; len(routes) != want {
+	// 顶层 8 个(home/admin/system/timer/log/disk/server/gateway),F 按钮不进路由
+	if want := 8; len(routes) != want {
 		t.Fatalf("顶层路由数 = %d, want %d (F 按钮应被过滤)", len(routes), want)
 	}
 
@@ -139,6 +142,28 @@ func TestMenusToRoutes(t *testing.T) {
 	}
 	if len(admin.Children) != 0 {
 		t.Errorf("admin 不应有 children, got %d", len(admin.Children))
+	}
+
+	// home:顶层单级·blank 布局 -> layout.blank$view.home(对齐前端 routes.ts 的 home 路由)
+	// Component 含 layout.blank 触发 blank 布局,view 段由 routeKey(home) 规范化;Visible=1 -> hideInMenu
+	home := findRoute(routes, "home")
+	if home == nil {
+		t.Fatal("缺少 home 路由")
+	}
+	if home.Component != "layout.blank$view.home" {
+		t.Errorf("home.Component = %q, want layout.blank$view.home", home.Component)
+	}
+	if home.Path != "/home" {
+		t.Errorf("home.Path = %q, want /home", home.Path)
+	}
+	if home.Meta.I18nKey != "route.home" {
+		t.Errorf("home.I18nKey = %q, want route.home", home.Meta.I18nKey)
+	}
+	if !home.Meta.HideInMenu {
+		t.Error("home.Visible=1 应映射 hideInMenu=true")
+	}
+	if home.Meta.Module != "" {
+		t.Errorf("home.Module = %q, want 空(global route 跨模块可见,对齐前端无 meta.module)", home.Meta.Module)
 	}
 
 	// system:顶层多级目录 -> layout.base,有 children
@@ -208,25 +233,25 @@ func TestMenusToRoutesMetaFlags(t *testing.T) {
 
 func TestResolveHome(t *testing.T) {
 	s := RouteService{}
-	// 含 admin -> home=admin
-	if h := s.resolveHome([]system.MenuRoute{{Name: "system"}, {Name: "admin"}}, ""); h != "admin" {
-		t.Errorf("resolveHome(含 admin) = %q, want admin", h)
-	}
-	// 不含 admin -> 取第一个
-	if h := s.resolveHome([]system.MenuRoute{{Name: "system"}, {Name: "log"}}, ""); h != "system" {
-		t.Errorf("resolveHome(无 admin) = %q, want system", h)
-	}
-	// 空 -> 默认 admin
-	if h := s.resolveHome(nil, ""); h != "admin" {
-		t.Errorf("resolveHome(空) = %q, want admin", h)
-	}
 	// defaultRouter 优先(且在路由里)
-	if h := s.resolveHome([]system.MenuRoute{{Name: "admin"}, {Name: "disk"}}, "disk"); h != "disk" {
-		t.Errorf("resolveHome(defaultRouter=disk) = %q, want disk", h)
+	if h := s.resolveHome([]system.MenuRoute{{Name: "home"}, {Name: "admin"}}, "admin"); h != "admin" {
+		t.Errorf("resolveHome(defaultRouter=admin) = %q, want admin", h)
 	}
-	// defaultRouter 不在路由里 -> 兜底 admin
-	if h := s.resolveHome([]system.MenuRoute{{Name: "admin"}}, "disk"); h != "admin" {
-		t.Errorf("resolveHome(defaultRouter 无权) = %q, want admin", h)
+	// defaultRouter 为空 + 含 home -> home(落地页兜底)
+	if h := s.resolveHome([]system.MenuRoute{{Name: "system"}, {Name: "home"}}, ""); h != "home" {
+		t.Errorf("resolveHome(含 home,无 defaultRouter) = %q, want home", h)
+	}
+	// defaultRouter 不在路由里 + 含 home -> 兜底 home
+	if h := s.resolveHome([]system.MenuRoute{{Name: "home"}, {Name: "admin"}}, "disk"); h != "home" {
+		t.Errorf("resolveHome(defaultRouter=disk 无权) = %q, want home", h)
+	}
+	// 不含 home,无 defaultRouter -> 取第一个顶层路由
+	if h := s.resolveHome([]system.MenuRoute{{Name: "system"}, {Name: "log"}}, ""); h != "system" {
+		t.Errorf("resolveHome(无 home) = %q, want system", h)
+	}
+	// 空 -> 默认 home(routeHomeDefault)
+	if h := s.resolveHome(nil, ""); h != "home" {
+		t.Errorf("resolveHome(空) = %q, want home", h)
 	}
 }
 
@@ -252,9 +277,9 @@ func TestResolveLayout(t *testing.T) {
 		{"layout.disk$view._admin_disk", "disk"},
 		{"layout.disk", "disk"},
 		{"layout.base$view.admin", "base"},
-		{"Layout", "base"},     // RuoYi 目录占位
+		{"Layout", "base"},                   // RuoYi 目录占位
 		{"_admin/system/user/index", "base"}, // RuoYi 普通菜单路径
-		{"FrameView", "base"},  // RuoYi 外链/iframe 占位
+		{"FrameView", "base"},                // RuoYi 外链/iframe 占位
 		{"", "base"},
 	}
 	for _, c := range cases {
