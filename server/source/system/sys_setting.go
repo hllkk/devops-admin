@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/hllkk/devops-admin/server/global"
+	diskModel "github.com/hllkk/devops-admin/server/model/disk"
 	sysModel "github.com/hllkk/devops-admin/server/model/system"
 	"github.com/hllkk/devops-admin/server/service/system"
 	"github.com/pkg/errors"
@@ -48,6 +49,7 @@ func (i *initSetting) MigrateTable(ctx context.Context) (context.Context, error)
 		&sysModel.SysNoticeRecord{},
 		&sysModel.SysSocial{},
 		&sysModel.SysError{},
+		&diskModel.DiskFile{},
 	)
 }
 

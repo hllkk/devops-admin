@@ -5,6 +5,8 @@
 # Build output
 /web/dist
 /server/tmp
+# 上传暂存(网盘分片/媒体上传运行时产物)
+/server/uploads
 
 # OS
 .DS_Store

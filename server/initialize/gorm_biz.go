@@ -2,7 +2,6 @@ package initialize
 
 import (
 	"github.com/hllkk/devops-admin/server/global"
-	"github.com/hllkk/devops-admin/server/model/system"
 )
 
 // bizModel 业务表建表(纯业务表、无种子数据、不走 /initdb 的表在此注册)。
@@ -10,9 +9,7 @@ import (
 // 详见 aiDoc/modules/backend-layer-rules.md「表注册与新增 model 的建表维护点」。
 func bizModel() error {
 	db := global.OPS_DB
-	err := db.AutoMigrate(
-		system.SysSocial{},
-	)
+	err := db.AutoMigrate()
 	if err != nil {
 		return err
 	}

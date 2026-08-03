@@ -374,6 +374,69 @@ const local: App.I18n.Schema = {
         usedLabel: '已使用',
         totalLabel: '总容量',
         unlimited: '无限制'
+      },
+      action: {
+        newFolder: '新建文件夹',
+        rename: '重命名',
+        move: '移动',
+        copy: '复制',
+        delete: '删除',
+        more: '更多',
+        upload: '上传',
+        create: '新建',
+        uploadFile: '上传文件',
+        uploadFolder: '上传文件夹',
+        createFile: '新建文件',
+        transferList: '传输列表'
+      },
+      createInline: {
+        defaultFileName: '新建文件.txt',
+        defaultFolderName: '新建文件夹',
+        nameExists: '当前目录下已存在“{name}”，继续创建将自动添加后缀编号。',
+        confirmCreate: '继续创建',
+        cancelCreate: '取消'
+      },
+      modal: {
+        newFolderTitle: '新建文件夹',
+        renameTitle: '重命名',
+        moveTitle: '移动到',
+        copyTitle: '复制到',
+        nameLabel: '名称',
+        namePlaceholder: '请输入名称',
+        targetLabel: '目标目录',
+        confirm: '确定',
+        cancel: '取消'
+      },
+      msg: {
+        newFolderSuccess: '创建成功',
+        renameSuccess: '重命名成功',
+        moveSuccess: '移动成功',
+        copySuccess: '复制成功',
+        deleteSuccess: '已移入回收站',
+        nameRequired: '名称不能为空',
+        deleteConfirmContent: '将移入回收站，确定删除选中的 {count} 项吗？',
+        operateFail: '操作失败'
+      },
+      transfer: {
+        title: '传输列表',
+        clear: '清空已完成',
+        close: '关闭',
+        taskCount: '{n} 个任务',
+        pause: '暂停',
+        resume: '继续',
+        retry: '重试',
+        cancel: '取消',
+        pauseAll: '全部暂停',
+        resumeAll: '全部继续',
+        pending: '等待',
+        hashing: '计算中',
+        uploading: '上传中',
+        merging: '合并中',
+        paused: '已暂停',
+        success: '完成',
+        error: '失败',
+        sphereView: '水波纹球视图',
+        remaining: '剩余 {v}'
       }
     },
     login: {

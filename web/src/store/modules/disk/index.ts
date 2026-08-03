@@ -71,6 +71,12 @@ export const useDiskStore = defineStore(SetupStoreId.Disk, () => {
     quotaSource: 'none'
   });
 
+  // 行内创建/重命名状态(列表与网格视图共用同一份创建态)
+  // creatingType: 行内新建类型;renamingId: 行内重命名目标 fileId;creatingName: 输入框值
+  const creatingType = ref<'file' | 'folder' | null>(null);
+  const renamingId = ref<CommonType.IdType | null>(null);
+  const creatingName = ref('');
+
   // 计算属性：面包屑路径显示
   const breadcrumbPath = computed(() => currentPath.value.map(item => item.fileName));
 
@@ -190,6 +196,34 @@ export const useDiskStore = defineStore(SetupStoreId.Disk, () => {
     selectedFiles.value = [];
   }
 
+  // 开始行内新建(file/folder):置 creatingType,清重命名与选中
+  function startCreating(type: 'file' | 'folder') {
+    creatingType.value = type;
+    renamingId.value = null;
+    creatingName.value = '';
+    selectedFiles.value = [];
+  }
+
+  // 开始行内重命名:置 renamingId,预填旧名
+  function startRenaming(file: Api.Disk.FileItem) {
+    renamingId.value = file.fileId;
+    creatingType.value = null;
+    creatingName.value = file.fileName;
+    selectedFiles.value = [];
+  }
+
+  // 设置行内输入框值
+  function setCreatingName(name: string) {
+    creatingName.value = name;
+  }
+
+  // 退出创建/重命名态
+  function cancelCreating() {
+    creatingType.value = null;
+    renamingId.value = null;
+    creatingName.value = '';
+  }
+
   // 更新配额信息
   function updateQuotaInfo(info: Api.Disk.QuotaInfo) {
     quotaInfo.value = info;
@@ -204,6 +238,9 @@ export const useDiskStore = defineStore(SetupStoreId.Disk, () => {
     gridSize.value = 'small';
     sortSettings.value = { field: null, order: 'asc' };
     selectedFiles.value = [];
+    creatingType.value = null;
+    renamingId.value = null;
+    creatingName.value = '';
   }
 
   return {
@@ -217,6 +254,9 @@ export const useDiskStore = defineStore(SetupStoreId.Disk, () => {
     currentFileList,
     selectedFiles,
     quotaInfo,
+    creatingType,
+    renamingId,
+    creatingName,
     // computed
     breadcrumbPath,
     // actions
@@ -229,6 +269,10 @@ export const useDiskStore = defineStore(SetupStoreId.Disk, () => {
     setSort,
     setSelectedFiles,
     clearSelection,
+    startCreating,
+    startRenaming,
+    setCreatingName,
+    cancelCreating,
     updateQuotaInfo,
     getCurrentPathString,
     syncStoreToUrl,

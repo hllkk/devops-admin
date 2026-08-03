@@ -1,16 +1,21 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, reactive, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useLoading } from '@sa/hooks';
+import { useDialog, useMessage } from 'naive-ui';
 import { useDiskStore } from '@/store/modules/disk';
-import { fetchGetFileList, mapBackendFileList, fetchGetQuota } from '@/service/api/disk';
+import { fetchGetFileList, mapBackendFileList, fetchGetQuota, fetchDelete, fetchMove, fetchCopy } from '@/service/api/disk';
 import { useInfiniteScroll } from '@/hooks/business/use-infinite-scroll';
+import { useDiskUpload } from '@/hooks/business/disk/use-disk-upload';
+import { useDiskCreate } from '@/hooks/business/disk/use-disk-create';
 import { $t } from '@/locales';
 import FileTypeMenu from './modules/file-type-menu.vue';
 import Toolbar from './modules/toolbar.vue';
 import Breadcrumb from './modules/breadcrumb.vue';
 import FileGrid from './modules/file-grid.vue';
 import FileList from './modules/file-list.vue';
+import MoveCopyModal from './modules/move-copy-modal.vue';
+import TransferPanel from './modules/transfer-panel.vue';
 
 defineOptions({
   name: 'DiskHome'
@@ -20,6 +25,10 @@ const diskStore = useDiskStore();
 const route = useRoute();
 const router = useRouter();
 const { loading, startLoading, endLoading } = useLoading();
+const dialog = useDialog();
+const message = useMessage();
+const { uploadFiles } = useDiskUpload();
+const { beginCreate, beginRename, registerRefresh } = useDiskCreate();
 
 // 显示容量开关
 const showCapacity = ref(true);
@@ -179,6 +188,17 @@ function handleRefresh() {
   getFileList();
 }
 
+/** 工具栏触发上传:传当前目录,每个文件成功后刷新列表;type 区分文件/文件夹。
+ *  文件夹模式额外传 dirs(含空目录的目录路径列表),由引擎先调 ensure-folders 预建目录树。 */
+function handleUpload(type: 'file' | 'folder', files: File[], dirs?: string[]) {
+  uploadFiles(files, diskStore.getCurrentPathString(), dirs, getFileList);
+}
+
+/** 工具栏触发行内新建 */
+function handleCreate(type: 'file' | 'folder') {
+  beginCreate(type);
+}
+
 function handleSort(field: 'name' | 'size' | 'modifyTime', order: 'asc' | 'desc') {
   diskStore.setSort(field, order);
 }
@@ -189,6 +209,74 @@ function handleToggleView() {
 
 function handleToggleGridSize() {
   diskStore.setGridSize(diskStore.gridSize === 'large' ? 'small' : 'large');
+}
+
+// === 第2期 文件 CRUD(删除;移动/复制 A2) ===
+// 注:新建文件夹 / 新建文件 / 重命名 已改为行内输入,逻辑见 use-disk-create。
+
+function confirmDelete(file: Api.Disk.FileItem) {
+  dialog.warning({
+    title: $t('page.disk.action.delete'),
+    content: $t('page.disk.msg.deleteConfirmContent', { count: 1 }),
+    positiveText: $t('page.disk.modal.confirm'),
+    negativeText: $t('page.disk.modal.cancel'),
+    onPositiveClick: async () => {
+      const { error } = await fetchDelete({ fileIds: [file.fileId] });
+      if (error) {
+        message.error($t('page.disk.msg.operateFail'));
+        return;
+      }
+      message.success($t('page.disk.msg.deleteSuccess'));
+      getFileList();
+    }
+  });
+}
+
+/** 移动/复制弹窗 */
+const moveCopyModal = reactive({
+  visible: false,
+  mode: 'move' as 'move' | 'copy',
+  source: null as Api.Disk.FileItem | null
+});
+
+function openMoveCopy(file: Api.Disk.FileItem, mode: 'move' | 'copy') {
+  moveCopyModal.mode = mode;
+  moveCopyModal.source = file;
+  moveCopyModal.visible = true;
+}
+
+async function confirmMoveCopy(targetPath: string) {
+  const source = moveCopyModal.source;
+  if (!source) return;
+  const params = { fileIds: [source.fileId], targetPath };
+  const { error } = moveCopyModal.mode === 'move' ? await fetchMove(params) : await fetchCopy(params);
+  if (error) {
+    message.error($t('page.disk.msg.operateFail'));
+    return;
+  }
+  message.success(moveCopyModal.mode === 'move' ? $t('page.disk.msg.moveSuccess') : $t('page.disk.msg.copySuccess'));
+  moveCopyModal.visible = false;
+  getFileList();
+}
+
+/** 文件项操作菜单分发 */
+function handleAction(type: Api.Disk.DiskActionType, file: Api.Disk.FileItem) {
+  switch (type) {
+    case 'rename':
+      beginRename(file);
+      break;
+    case 'delete':
+      confirmDelete(file);
+      break;
+    case 'move':
+      openMoveCopy(file, 'move');
+      break;
+    case 'copy':
+      openMoveCopy(file, 'copy');
+      break;
+    default:
+      break;
+  }
 }
 
 // 同步 fileList 到 diskStore（供其他组件读取 currentFileList）
@@ -242,6 +330,7 @@ onMounted(async () => {
       router.replace({ name: 'disk' });
     }
   }
+  registerRefresh(getFileList);
   getFileList();
   loadQuotaInfo();
 });
@@ -274,6 +363,8 @@ onMounted(async () => {
           @sort="handleSort"
           @toggle-view="handleToggleView"
           @toggle-grid-size="handleToggleGridSize"
+          @create="handleCreate"
+          @upload="handleUpload"
         />
         <!-- 面包屑 -->
         <Breadcrumb v-if="fileList.length > 0 || diskStore.currentPath.length > 0" :total-count="totalCount" />
@@ -284,8 +375,18 @@ onMounted(async () => {
           :files="fileList"
           :loading="loading"
           class="flex-1 min-h-0"
+          @action="handleAction"
         />
-        <FileList v-else ref="fileListRef" :files="fileList" :loading="loading" class="flex-1 min-h-0" />
+        <FileList
+          v-else
+          ref="fileListRef"
+          :files="fileList"
+          :loading="loading"
+          class="flex-1 min-h-0"
+          @action="handleAction"
+        />
+        <!-- 上传传输面板(有任务时显示) -->
+        <TransferPanel />
         <!-- 加载更多状态 -->
         <div v-if="loadingMore" class="flex-center gap-8px py-12px">
           <NSpin size="small" />
@@ -295,6 +396,14 @@ onMounted(async () => {
           {{ $t('page.disk.allLoaded', { count: totalCount }) }}
         </div>
       </NCard>
+
+      <!-- 移动/复制 目录树选择弹窗 -->
+      <MoveCopyModal
+        v-model:visible="moveCopyModal.visible"
+        :mode="moveCopyModal.mode"
+        :source="moveCopyModal.source"
+        @confirm="confirmMoveCopy"
+      />
     </div>
   </TableSiderLayout>
 </template>

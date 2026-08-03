@@ -564,6 +564,69 @@ declare namespace App {
             totalLabel: string;
             unlimited: string;
           };
+          action: {
+            newFolder: string;
+            rename: string;
+            move: string;
+            copy: string;
+            delete: string;
+            more: string;
+            upload: string;
+            create: string;
+            uploadFile: string;
+            uploadFolder: string;
+            createFile: string;
+            transferList: string;
+          };
+          createInline: {
+            defaultFileName: string;
+            defaultFolderName: string;
+            nameExists: string;
+            confirmCreate: string;
+            cancelCreate: string;
+          };
+          modal: {
+            newFolderTitle: string;
+            renameTitle: string;
+            moveTitle: string;
+            copyTitle: string;
+            nameLabel: string;
+            namePlaceholder: string;
+            targetLabel: string;
+            confirm: string;
+            cancel: string;
+          };
+          msg: {
+            newFolderSuccess: string;
+            renameSuccess: string;
+            moveSuccess: string;
+            copySuccess: string;
+            deleteSuccess: string;
+            nameRequired: string;
+            deleteConfirmContent: string;
+            operateFail: string;
+          };
+          transfer: {
+            title: string;
+            clear: string;
+            close: string;
+            taskCount: string;
+            pause: string;
+            resume: string;
+            retry: string;
+            cancel: string;
+            pauseAll: string;
+            resumeAll: string;
+            pending: string;
+            hashing: string;
+            uploading: string;
+            merging: string;
+            paused: string;
+            success: string;
+            error: string;
+            sphereView: string;
+            remaining: string;
+          };
         };
         login: {
           common: {

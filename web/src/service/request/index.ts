@@ -181,6 +181,9 @@ export const request = createFlatRequest(
 );
 
 function handleRepeatSubmit(config: InternalAxiosRequestConfig) {
+  // FormData(multipart 分片/多文件上传)不参与防抖:JSON.stringify(FormData)==='{}',
+  // 并发分片/批量上传 url 相同会被误判为"相同 body 重复提交"而遭拦截。
+  if (config.data instanceof FormData) return;
   // 是否需要防止数据重复提交
   const isRepeatSubmit = config.headers?.repeatSubmit === false;
 

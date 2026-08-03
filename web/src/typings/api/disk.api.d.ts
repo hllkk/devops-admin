@@ -206,5 +206,148 @@ declare namespace Api {
       /** 配额来源 */
       quotaSource: 'personal' | 'global' | 'none';
     };
+
+    /** 文件操作类型(右键菜单/操作按钮) */
+    type DiskActionType = 'rename' | 'move' | 'copy' | 'delete';
+
+    /** 新建文件夹请求(POST /file-meta/mkdir) */
+    type MkdirParams = {
+      /** 父目录全路径(根='/') */
+      parentPath: string;
+      /** 文件夹名 */
+      folderName: string;
+    };
+
+    /** 重命名请求(POST /file-meta/rename) */
+    type RenameParams = {
+      /** 文件ID */
+      fileId: CommonType.IdType;
+      /** 新名称 */
+      newName: string;
+    };
+
+    /** 新建空文件请求(POST /file-meta/create-file) */
+    type CreateFileParams = {
+      /** 父目录全路径(根='/') */
+      parentPath: string;
+      /** 文件名(含扩展名) */
+      fileName: string;
+    };
+
+    /** 新建空文件结果 */
+    type CreateFileResult = {
+      /** 新建的 fileId */
+      fileId: string;
+    };
+
+    /** 移动请求(PUT /file-meta/move,A2) */
+    type MoveParams = {
+      fileIds: CommonType.IdType[];
+      targetPath: string;
+    };
+
+    /** 复制请求(POST /file-meta/copy,A2) */
+    type CopyParams = {
+      fileIds: CommonType.IdType[];
+      targetPath: string;
+    };
+
+    /** 删除(移入回收站)请求(POST /file-meta/delete) */
+    type DeleteParams = {
+      fileIds: CommonType.IdType[];
+    };
+
+    /** 目录树节点(GET /file-meta/folder-tree,移动/复制目标选择器) */
+    type FolderTreeNode = {
+      id: string;
+      name: string;
+      path: string;
+      children: FolderTreeNode[];
+    };
+
+    /** 上传检测请求(GET /file-meta/upload) */
+    type UploadCheckParams = {
+      identifier: string;
+      quickHash: string;
+      strongHash: string;
+      /** 中间2MB MD5(>4MB 文件,秒传二次校验防首尾碰撞) */
+      midHash: string;
+      fileName: string;
+      totalSize: number;
+      totalChunks: number;
+      chunkSize: number;
+      currentDirectory: string;
+      relativePath?: string;
+    };
+
+    /** 上传检测结果(秒传 pass=true / 续传 resume[]=已收分片) */
+    type UploadCheckResp = {
+      pass: boolean;
+      fileId?: string;
+      /** 秒传源文件ID(pass=true 时有值,前端 merge(instant=true) 透传复用) */
+      sourceFileId?: string;
+      uploadId: string;
+      resume: number[];
+      merge: boolean;
+    };
+
+    /** 上传分片请求(POST /file-meta/upload,multipart) */
+    type UploadChunkParams = {
+      uploadId: string;
+      chunkNumber: number;
+      chunkHash: string;
+      file: Blob;
+    };
+
+    /** 合并请求(POST /file-meta/merge) */
+    type UploadMergeParams = {
+      identifier: string;
+      fileName: string;
+      totalSize: number;
+      totalChunks: number;
+      currentDirectory: string;
+      relativePath?: string;
+      quickHash: string;
+      strongHash: string;
+      /** 中间2MB MD5(秒传二次校验) */
+      midHash: string;
+      /** 秒传复用模式(Check 命中 pass=true 时前端置 true,后端不合并分片直接建引用节点) */
+      instant?: boolean;
+    };
+
+    /** 合并结果 */
+    type UploadMergeResp = {
+      fileId: string;
+      url: string;
+    };
+
+    /** 批量预建目录请求(POST /file-meta/ensure-folders,文件夹上传前预建含空目录) */
+    type EnsureFoldersParams = {
+      currentDirectory: string;
+      /** 相对 currentDirectory 的目录路径列表(如 ['a/b','a/c'],含空目录) */
+      paths: string[];
+    };
+
+    /** 上传任务状态 */
+    type UploadTaskStatus = 'pending' | 'hashing' | 'uploading' | 'paused' | 'merging' | 'success' | 'error';
+
+    /** 上传任务(传输面板) */
+    type UploadTask = {
+      id: string;
+      name: string;
+      size: number;
+      progress: number; // 0-100
+      status: UploadTaskStatus;
+      errorMsg?: string;
+      relativePath?: string;
+      /** 已传字节数(详情展示用) */
+      transferredSize?: number;
+      /** 上传速度 bytes/s(详情展示用) */
+      speed?: number;
+      /** 分片进度文案,如 "12/30" */
+      chunkProgress?: string;
+      /** 预计剩余秒数 */
+      remainingTime?: number;
+    };
   }
 }

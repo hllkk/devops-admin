@@ -1,10 +1,8 @@
 package upload
 
 import (
-	"bytes"
 	"context"
 	"errors"
-	"io"
 	"mime"
 	"mime/multipart"
 	"net/http"
@@ -47,19 +45,11 @@ func (m *Minio) UploadFile(ctx context.Context, file *multipart.FileHeader) (fil
 	}
 
 	f, openError := file.Open()
-	// mutipart.File to os.File
 	if openError != nil {
 		logger.WithCtx(ctx).Mod("upload").Err(openError).Error("function file.Open() Failed")
 		return "", "", errors.New("function file.Open() Failed, err:" + openError.Error())
 	}
-
-	filecontent := bytes.Buffer{}
-	_, err = io.Copy(&filecontent, f)
-	if err != nil {
-		logger.WithCtx(ctx).Mod("upload").Err(err).Error("读取文件失败")
-		return "", "", errors.New("读取文件失败, err:" + err.Error())
-	}
-	f.Close() // 创建文件 defer 关闭
+	defer f.Close() // 流式读取完毕关闭;不再整文件读入内存
 
 	// 对文件名进行加密存储
 	ext := filepath.Ext(file.Filename)
@@ -81,7 +71,8 @@ func (m *Minio) UploadFile(ctx context.Context, file *multipart.FileHeader) (fil
 	defer cancel()
 
 	// Upload the file with PutObject   大文件自动切换为分片上传
-	info, err := client.PutObject(putCtx, global.OPS_CONFIG.Minio.BucketName, filePathres, &filecontent, file.Size, minio.PutObjectOptions{ContentType: contentType})
+	// Upload the file with PutObject   大文件自动切换为分片上传;直接流式喂 multipart.File,内存恒定
+	info, err := client.PutObject(putCtx, global.OPS_CONFIG.Minio.BucketName, filePathres, f, file.Size, minio.PutObjectOptions{ContentType: contentType})
 	if err != nil {
 		logger.WithCtx(ctx).Mod("upload").Err(err).Error("上传文件到minio失败")
 		return "", "", errors.New("上传文件到minio失败, err:" + err.Error())

@@ -66,6 +66,7 @@ func Routers() *gin.Engine {
 
 	systemRouter := router.RouterGroupApp.System
 	// mediaRouter := router.RouterGroupApp.Media
+	diskRouter := router.RouterGroupApp.Disk
 	// 如果想要不使用nginx代理前端网页，可以修改 web/.env.production 下的
 	// VUE_APP_BASE_API = /
 	// VUE_APP_BASE_PATH = http://localhost
@@ -90,6 +91,7 @@ func Routers() *gin.Engine {
 
 	PublicGroup := Router.Group(global.OPS_CONFIG.System.RouterPrefix)
 	PrivateGroup := Router.Group(global.OPS_CONFIG.System.RouterPrefix)
+	DiskGroup := Router.Group(global.OPS_CONFIG.System.RouterPrefix)
 
 	// OperationRecord 置于 JWTAuth 之后:operName 已可用,且可记录授权拒绝(403)与业务结果
 	PrivateGroup.Use(middleware.JWTAuth()).
@@ -97,6 +99,8 @@ func Routers() *gin.Engine {
 		Use(middleware.MustChangePwdGuard()).
 		Use(middleware.CasbinHandler()).
 		Use(middleware.DataScope())
+	DiskGroup.Use(middleware.JWTAuth()).
+		Use(middleware.OperationRecord())
 
 	{
 		// 健康监测
@@ -127,6 +131,13 @@ func Routers() *gin.Engine {
 		systemRouter.InitWecomRouter(PublicGroup)                  // 企业微信扫码登录(/auth/wecomLogin|/auth/qrCodeStatus|/wecomCallback|/auth/wecomWebviewLogin 全公开)
 		systemRouter.InitTimedTaskRouter(PrivateGroup)             // 定时任务(/timedTask/*)
 		systemRouter.InitOnlineRouter(PrivateGroup)                // 在线设备(/monitor/online,个人中心视角:仅当前用户自己)
+	}
+
+	{
+		// 网盘模块(/file-meta/*):个人自有数据操作,每个登录用户管理自己的文件,
+		// service 层按 JWT userId 强制隔离(防 IDOR)。不挂 Casbin 角色门控与 DataScope 部门数据权限
+		// (个人文件非角色/部门维度),仅鉴权(JWTAuth)+审计(OperationRecord)。仿 SSE 组建专用组。
+		diskRouter.InitDiskFileRouter(DiskGroup)
 	}
 
 	{

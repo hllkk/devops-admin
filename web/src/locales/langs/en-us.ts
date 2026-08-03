@@ -378,6 +378,69 @@ const local: App.I18n.Schema = {
         usedLabel: 'Used',
         totalLabel: 'Total',
         unlimited: 'Unlimited'
+      },
+      action: {
+        newFolder: 'New Folder',
+        rename: 'Rename',
+        move: 'Move',
+        copy: 'Copy',
+        delete: 'Delete',
+        more: 'More',
+        upload: 'Upload',
+        create: 'New',
+        uploadFile: 'Upload File',
+        uploadFolder: 'Upload Folder',
+        createFile: 'New File',
+        transferList: 'Transfers'
+      },
+      createInline: {
+        defaultFileName: 'New File.txt',
+        defaultFolderName: 'New Folder',
+        nameExists: '"{name}" already exists in this folder. A numeric suffix will be added if you continue.',
+        confirmCreate: 'Continue',
+        cancelCreate: 'Cancel'
+      },
+      modal: {
+        newFolderTitle: 'New Folder',
+        renameTitle: 'Rename',
+        moveTitle: 'Move to',
+        copyTitle: 'Copy to',
+        nameLabel: 'Name',
+        namePlaceholder: 'Enter a name',
+        targetLabel: 'Target folder',
+        confirm: 'Confirm',
+        cancel: 'Cancel'
+      },
+      msg: {
+        newFolderSuccess: 'Created',
+        renameSuccess: 'Renamed',
+        moveSuccess: 'Moved',
+        copySuccess: 'Copied',
+        deleteSuccess: 'Moved to trash',
+        nameRequired: 'Name cannot be empty',
+        deleteConfirmContent: 'Move {count} selected item(s) to trash?',
+        operateFail: 'Operation failed'
+      },
+      transfer: {
+        title: 'Transfers',
+        clear: 'Clear finished',
+        close: 'Close',
+        taskCount: '{n} task(s)',
+        pause: 'Pause',
+        resume: 'Resume',
+        retry: 'Retry',
+        cancel: 'Cancel',
+        pauseAll: 'Pause all',
+        resumeAll: 'Resume all',
+        pending: 'Pending',
+        hashing: 'Hashing',
+        uploading: 'Uploading',
+        merging: 'Merging',
+        paused: 'Paused',
+        success: 'Done',
+        error: 'Failed',
+        sphereView: 'Sphere view',
+        remaining: '{v} left'
       }
     },
     login: {

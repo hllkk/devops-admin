@@ -71,6 +71,9 @@ importers:
       qrcode:
         specifier: ^1.5.4
         version: 1.5.4
+      spark-md5:
+        specifier: ^3.0.2
+        version: 3.0.2
       tailwind-merge:
         specifier: 3.6.0
         version: 3.6.0
@@ -114,6 +117,9 @@ importers:
       '@types/qrcode':
         specifier: ^1.5.5
         version: 1.5.6
+      '@types/spark-md5':
+        specifier: ^3.0.5
+        version: 3.0.5
       '@types/streamsaver':
         specifier: ^2.0.5
         version: 2.0.5
@@ -1438,6 +1444,9 @@ packages:
 
   '@types/sortablejs@1.15.9':
     resolution: {integrity: sha512-7HP+rZGE2p886PKV9c9OJzLBI6BBJu1O7lJGYnPyG3fS4/duUCcngkNCjsLwIMV+WMqANe3tt4irrXHSIe68OQ==}
+
+  '@types/spark-md5@3.0.5':
+    resolution: {integrity: sha512-lWf05dnD42DLVKQJZrDHtWFidcLrHuip01CtnC2/S6AMhX4t9ZlEUj4iuRlAnts0PQk7KESOqKxeGE/b6sIPGg==}
 
   '@types/streamsaver@2.0.5':
     resolution: {integrity: sha512-93o0zjV8swEhR2YI57h/2ytbJF8bJh7sI9GNB02TLJHdM4fWDxZuChwfWhyD8vt2ub4kw4rsfZ0C0yAUX+3gcg==}
@@ -3976,6 +3985,9 @@ packages:
     resolution: {integrity: sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==}
     engines: {node: '>=0.10.0'}
 
+  spark-md5@3.0.2:
+    resolution: {integrity: sha512-wcFzz9cDfbuqe0FZzfi2or1sgyIrsDwmPwfZC4hiNidPdPINjeUwNfv5kldczoEAcjl9Y1L3SM7Uz2PUEQzxQw==}
+
   speakingurl@14.0.1:
     resolution: {integrity: sha512-1POYv7uv2gXoyGFpBCmpDVSNV74IfsWlDW216UPjbWufNf+bSU6GdbDsxdcxtfwb4xlI3yxzOTKClUosxARYrQ==}
     engines: {node: '>=0.10.0'}
@@ -5430,6 +5442,8 @@ snapshots:
   '@types/retry@0.12.2': {}
 
   '@types/sortablejs@1.15.9': {}
+
+  '@types/spark-md5@3.0.5': {}
 
   '@types/streamsaver@2.0.5': {}
 
@@ -8336,6 +8350,8 @@ snapshots:
   source-map@0.5.7: {}
 
   source-map@0.6.1: {}
+
+  spark-md5@3.0.2: {}
 
   speakingurl@14.0.1: {}
 

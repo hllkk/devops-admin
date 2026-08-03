@@ -75,7 +75,7 @@ hua-wei-obs:
     access-key: you-access-key
     secret-key: you-secret-key
 jwt:
-    signing-key: 8cf9f8ce-81d9-4a05-a9ca-19ad4102a616
+    signing-key: bb07e53d-5d54-4fb4-99d2-3b126e77ed51
     expires-time: 7d
     buffer-time: 1d
     issuer: devops-admin
@@ -194,7 +194,7 @@ redis:
     name: default
     addr: 127.0.0.1:16379
     password: ""
-    db: 1
+    db: 0
     useCluster: false
     clusterAddrs: []
 redis-list:

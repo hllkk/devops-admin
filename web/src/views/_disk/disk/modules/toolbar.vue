@@ -4,12 +4,15 @@ import { $t } from '@/locales';
 import { useDiskStore } from '@/store/modules/disk';
 import { useAppStore } from '@/store/modules/app';
 import { useSvgIcon } from '@/hooks/common/icon';
+import { useDiskUpload } from '@/hooks/business/disk/use-disk-upload';
+import { collectFolderDirs } from '@/utils/disk';
 import type { DropdownOption } from 'naive-ui';
 
 defineOptions({ name: 'DiskToolbar' });
 
 type SortField = 'name' | 'size' | 'modifyTime';
 type SortOrder = 'asc' | 'desc';
+type CreateType = 'file' | 'folder';
 
 interface Emits {
   (e: 'search', keyword: string): void;
@@ -17,6 +20,8 @@ interface Emits {
   (e: 'sort', field: SortField, order: SortOrder): void;
   (e: 'toggleView'): void;
   (e: 'toggleGridSize'): void;
+  (e: 'create', type: CreateType): void;
+  (e: 'upload', type: CreateType, files: File[], dirs?: string[]): void;
 }
 
 const emit = defineEmits<Emits>();
@@ -24,8 +29,64 @@ const emit = defineEmits<Emits>();
 const diskStore = useDiskStore();
 const appStore = useAppStore();
 const { SvgIconVNode } = useSvgIcon();
+const { uploadingCount, togglePanel } = useDiskUpload();
 
 const keyword = ref('');
+
+/** 上传下拉:上传文件 / 上传文件夹 */
+const uploadOptions = computed<DropdownOption[]>(() => [
+  { key: 'uploadFile', label: $t('page.disk.action.uploadFile'), icon: SvgIconVNode({ localIcon: 'disk-upload-file', fontSize: 18 }) },
+  { key: 'uploadFolder', label: $t('page.disk.action.uploadFolder'), icon: SvgIconVNode({ localIcon: 'disk-upload-folder', fontSize: 18 }) }
+]);
+
+/** 新建下拉:新建文件夹 / 新建文件 */
+const createOptions = computed<DropdownOption[]>(() => [
+  { key: 'createFolder', label: $t('page.disk.action.newFolder'), icon: SvgIconVNode({ localIcon: 'disk-create-folder', fontSize: 18 }) },
+  { key: 'createFile', label: $t('page.disk.action.createFile'), icon: SvgIconVNode({ localIcon: 'disk-create-file', fontSize: 18 }) }
+]);
+
+/** 移动端 + 号合并下拉:上传 + 分隔 + 新建 */
+const mobilePlusOptions = computed<DropdownOption[]>(() => [
+  ...uploadOptions.value,
+  { type: 'divider', key: 'mobile-divider' } as DropdownOption,
+  ...createOptions.value
+]);
+
+function handleUploadSelect(key: string) {
+  if (key === 'uploadFile') pickFiles('file');
+  else if (key === 'uploadFolder') pickFiles('folder');
+}
+
+function handleCreateSelect(key: string) {
+  if (key === 'createFile') emit('create', 'file');
+  else if (key === 'createFolder') emit('create', 'folder');
+}
+
+function handleMobilePlusSelect(key: string) {
+  if (key === 'uploadFile' || key === 'uploadFolder') handleUploadSelect(key);
+  else handleCreateSelect(key);
+}
+
+/** 动态创建 file input 选文件/文件夹(文件夹用 webkitdirectory 保留层级)。
+ *  文件夹模式额外用 webkitEntries 递归收集所有目录(含空目录),随 emit 上传供 ensure-folders 预建。 */
+function pickFiles(type: CreateType) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.multiple = true;
+  if (type === 'folder') {
+    input.setAttribute('webkitdirectory', '');
+    input.setAttribute('directory', '');
+  }
+  input.addEventListener('change', async () => {
+    if (input.files && input.files.length) {
+      // 文件夹模式:从 webkitEntries 递归收集所有目录(含空目录),供 ensure-folders 预建目录树
+      const dirs = type === 'folder' ? await collectFolderDirs(input) : [];
+      emit('upload', type, Array.from(input.files), dirs);
+    }
+    input.remove();
+  });
+  input.click();
+}
 
 /** 排序下拉：字段 × 方向合一，一次点选；方向以 ↑/↓ 表达，复用现有 i18n key */
 const sortOptions = computed<DropdownOption[]>(() => {
@@ -77,22 +138,61 @@ function handleToggleGridSize() {
 
 <template>
   <div class="flex-y-center justify-between gap-8px px-12px py-8px flex-wrap">
-    <!-- 搜索：靠 justify-between 分布到左端，功能组到右端；flex-1 + max-w 让桌面保持合理宽度，窄屏自适应收缩 -->
-    <NInputGroup class="flex-1 max-w-240px">
-      <NInput
-        v-model:value="keyword"
-        :placeholder="$t('page.disk.toolbar.searchPlaceholder')"
-        clearable
-        @keyup.enter="handleSearch"
-        @clear="handleSearch"
-      />
-      <NButton type="primary" :focusable="false" @click="handleSearch">
-        <SvgIcon icon="material-symbols:search" class="text-16px" />
-      </NButton>
-    </NInputGroup>
+    <!-- 左侧分组:主操作 + 搜索,内部 gap 紧凑排列,避免被外层 justify-between 拉散 -->
+    <div class="flex-y-center gap-8px flex-wrap">
+      <!-- 主操作 -->
+      <template v-if="!appStore.isMobile">
+        <!-- 上传 -->
+        <NDropdown :options="uploadOptions" trigger="click" @select="handleUploadSelect">
+          <NButton type="primary" :focusable="false">
+            <SvgIcon icon="material-symbols:cloud-upload" class="text-18px" />
+            <span class="text-13px">{{ $t('page.disk.action.upload') }}</span>
+          </NButton>
+        </NDropdown>
+        <!-- 新建 -->
+        <NDropdown :options="createOptions" trigger="click" @select="handleCreateSelect">
+          <NButton type="primary" :focusable="false">
+            <SvgIcon icon="material-symbols:add" class="text-18px" />
+            <span class="text-13px">{{ $t('page.disk.action.create') }}</span>
+          </NButton>
+        </NDropdown>
+      </template>
+      <!-- 移动端:合并 + 号下拉 -->
+      <NDropdown v-else :options="mobilePlusOptions" trigger="click" @select="handleMobilePlusSelect">
+        <NButton type="primary" :focusable="false">
+          <SvgIcon icon="material-symbols:add" class="text-18px" />
+        </NButton>
+      </NDropdown>
+
+      <!-- 搜索:flex-1 + max-w 让桌面保持合理宽度,窄屏自适应收缩,min-w 防塌缩 -->
+      <NInputGroup class="flex-1 max-w-240px min-w-120px">
+        <NInput
+          v-model:value="keyword"
+          :placeholder="$t('page.disk.toolbar.searchPlaceholder')"
+          clearable
+          @keyup.enter="handleSearch"
+          @clear="handleSearch"
+        />
+        <NButton type="primary" :focusable="false" @click="handleSearch">
+          <SvgIcon icon="material-symbols:search" class="text-16px" />
+        </NButton>
+      </NInputGroup>
+    </div>
 
     <!-- 功能按钮组 -->
     <NButtonGroup>
+      <!-- 传输列表(角标显示上传中数量) -->
+      <NTooltip v-if="!appStore.isMobile" trigger="hover">
+        <template #trigger>
+          <NButton quaternary :focusable="false" @click="togglePanel">
+            <NBadge :value="uploadingCount" :max="99" :show="uploadingCount > 0" :offset="[4, -2]">
+              <SvgIcon icon="material-symbols:swap-vert" class="text-18px" />
+            </NBadge>
+          </NButton>
+        </template>
+        {{ $t('page.disk.action.transferList') }}
+      </NTooltip>
+
       <!-- 排序：字段×方向合一 -->
       <NDropdown :options="sortOptions" trigger="click" @select="handleSortSelect">
         <NTooltip trigger="hover">

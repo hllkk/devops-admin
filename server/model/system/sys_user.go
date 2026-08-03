@@ -47,6 +47,7 @@ type SysUser struct {
 	LoginIp     string     `json:"loginIp" gorm:"comment:最后登录IP"`                                                   // 最后登录IP
 	LoginDate   *time.Time `json:"loginDate" gorm:"comment:最后登录时间"`                                                 // 最后登录时间
 	Remark      string     `json:"remark" gorm:"comment:备注"`                                                        // 备注
+	TakeUpSpace float64    `json:"takeUpSpace" gorm:"default:0;comment:网盘已用空间(字节,上传对账用)"`                        // 网盘已用空间(字节,上传扣减/删除释放对账)
 	UUID        uuid.UUID  `json:"uuid" gorm:"index;comment:用户UUID"`                                                // 用户UUID(登录链路)
 	// 关联(多角色/多部门/多岗位走显式连接表)
 	RoleId      int64           `json:"-" gorm:"default:0;comment:用户主角色ID(登录链路claims用,前端不输出;0=未指定,Create 取所选角色首项回填)"` // 主角色ID

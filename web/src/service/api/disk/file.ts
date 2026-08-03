@@ -1,3 +1,4 @@
+import type { AxiosProgressEvent } from 'axios';
 import { useAuthStore } from '@/store/modules/auth';
 import { useDiskStore } from '@/store/modules/disk';
 import { request } from '@/service/request';
@@ -9,7 +10,7 @@ import { request } from '@/service/request';
  *   fetchGetFileList / fetchResolvePath 返回前端构造的假数据以跑通只读列表。
  *   后端 /file-meta/list、/file-meta/path-resolve 就绪后，将 USE_MOCK 改为 false 即可切换真实接口。
  */
-const USE_MOCK = true;
+const USE_MOCK = false;
 
 // ============ 类型/图标映射 ============
 
@@ -270,7 +271,7 @@ export function fetchGetFileList(params?: Api.Disk.FileSearchParams) {
       currentDirectory,
       queryType,
       keyword: params?.keyword || '',
-      page: params?.pageNum || 1,
+      pageNum: params?.pageNum || 1,
       pageSize: params?.pageSize || 50,
       sortBy: params?.sortField === 'modifyTime' ? 'time' : params?.sortField,
       sortOrder: params?.sortOrder
@@ -289,5 +290,128 @@ export function fetchResolvePath(path: string) {
     url: '/file-meta/path-resolve',
     method: 'get',
     params: { path }
+  });
+}
+
+// ============ 第2期 文件 CRUD ============
+// userId 由后端从 JWT 取;fileId/fileIds 统一转 string 对齐后端 int64 json ",string" 契约。
+
+/** 新建文件夹(POST /file-meta/mkdir) */
+export function fetchMkdir(params: Api.Disk.MkdirParams) {
+  return request<boolean>({
+    url: '/file-meta/mkdir',
+    method: 'post',
+    data: params
+  });
+}
+
+/** 重命名(POST /file-meta/rename) */
+export function fetchRename(params: Api.Disk.RenameParams) {
+  return request<boolean>({
+    url: '/file-meta/rename',
+    method: 'post',
+    data: { fileId: String(params.fileId), newName: params.newName }
+  });
+}
+
+/** 新建空文件(POST /file-meta/create-file),返回新 fileId */
+export function fetchCreateFile(params: Api.Disk.CreateFileParams) {
+  return request<Api.Disk.CreateFileResult>({
+    url: '/file-meta/create-file',
+    method: 'post',
+    data: params
+  });
+}
+
+/** 移动(PUT /file-meta/move,A2) */
+export function fetchMove(params: Api.Disk.MoveParams) {
+  return request<boolean>({
+    url: '/file-meta/move',
+    method: 'put',
+    data: { fileIds: params.fileIds.map(String), targetPath: params.targetPath }
+  });
+}
+
+/** 复制(POST /file-meta/copy,A2) */
+export function fetchCopy(params: Api.Disk.CopyParams) {
+  return request<boolean>({
+    url: '/file-meta/copy',
+    method: 'post',
+    data: { fileIds: params.fileIds.map(String), targetPath: params.targetPath }
+  });
+}
+
+/** 删除(移入回收站,POST /file-meta/delete) */
+export function fetchDelete(params: Api.Disk.DeleteParams) {
+  return request<boolean>({
+    url: '/file-meta/delete',
+    method: 'post',
+    data: { fileIds: params.fileIds.map(String) }
+  });
+}
+
+/** 目录树(移动/复制目标选择器,GET /file-meta/folder-tree) */
+export function fetchFolderTree() {
+  return request<Api.Disk.FolderTreeNode[]>({
+    url: '/file-meta/folder-tree',
+    method: 'get'
+  });
+}
+
+// ============ 第3期 文件上传(分片/秒传/断点续传) ============
+
+/** 秒传/续传检测(GET /file-meta/upload) */
+export function fetchCheckUpload(params: Api.Disk.UploadCheckParams) {
+  return request<Api.Disk.UploadCheckResp>({
+    url: '/file-meta/upload',
+    method: 'get',
+    params
+  });
+}
+
+/** 上传分片(POST /file-meta/upload,multipart) */
+export function fetchUploadChunk(params: Api.Disk.UploadChunkParams, onUploadProgress?: (e: AxiosProgressEvent) => void) {
+  const form = new FormData();
+  form.append('uploadId', params.uploadId);
+  form.append('chunkNumber', String(params.chunkNumber));
+  form.append('chunkHash', params.chunkHash);
+  form.append('file', params.file);
+  return request<boolean>({
+    url: '/file-meta/upload',
+    method: 'post',
+    data: form,
+    // 单分片最大 32MB,慢网下可能超过 @sa/axios 默认 10s 超时 → 关闭单请求超时
+    timeout: 0,
+    // 字节级进度回调:实时回传已上传字节,进度条平滑增长(治分片粒度顿挫)
+    onUploadProgress
+  });
+}
+
+/** 合并(POST /file-meta/merge) */
+export function fetchMergeUpload(params: Api.Disk.UploadMergeParams) {
+  return request<Api.Disk.UploadMergeResp>({
+    url: '/file-meta/merge',
+    method: 'post',
+    data: params,
+    // 合并需流式拼接全部分片 + 算完整 MD5 + 整文件推 OSS,大文件耗时远超 @sa/axios 默认 10s 超时 → 关闭单请求超时
+    timeout: 0
+  });
+}
+
+/** 取消上传(DELETE /file-meta/upload) */
+export function fetchCancelUpload(identifier: string) {
+  return request<boolean>({
+    url: '/file-meta/upload',
+    method: 'delete',
+    data: { identifier }
+  });
+}
+
+/** 批量预建目录(POST /file-meta/ensure-folders,文件夹上传前预建含空目录) */
+export function fetchEnsureFolders(params: Api.Disk.EnsureFoldersParams) {
+  return request<boolean>({
+    url: '/file-meta/ensure-folders',
+    method: 'post',
+    data: params
   });
 }

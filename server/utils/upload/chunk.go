@@ -1,7 +1,6 @@
 package upload
 
 import (
-	"bytes"
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
@@ -89,8 +88,8 @@ func ReceivedIndexes(uploadID uint) []int {
 	return idx
 }
 
-// BuildFileHeader 从本地文件构造 *multipart.FileHeader(内存安全:大文件落临时盘)。
-// 返回 cleanup 用于释放临时表单。
+// BuildFileHeader 从本地文件构造 *multipart.FileHeader(内存安全:multipart 写临时盘,源文件流式拷入,大文件不入内存)。
+// 返回 cleanup 用于释放临时表单 + multipart 临时文件。
 func BuildFileHeader(localPath, fieldName, fileName string) (*multipart.FileHeader, func(), error) {
 	src, err := os.Open(localPath)
 	if err != nil {
@@ -98,27 +97,47 @@ func BuildFileHeader(localPath, fieldName, fileName string) (*multipart.FileHead
 	}
 	defer src.Close()
 
-	body := &bytes.Buffer{}
-	mw := multipart.NewWriter(body)
+	// 用临时文件做 multipart 容器(替代 bytes.Buffer):源文件流式拷入,内存恒定。
+	tmp, err := os.CreateTemp("", "buildfh-*")
+	if err != nil {
+		return nil, nil, err
+	}
+	tmpName := tmp.Name()
+	cleanupTmp := func() { _ = tmp.Close(); _ = os.Remove(tmpName) }
+
+	mw := multipart.NewWriter(tmp)
 	part, err := mw.CreateFormFile(fieldName, fileName)
 	if err != nil {
+		cleanupTmp()
 		return nil, nil, err
 	}
 	if _, err = io.Copy(part, src); err != nil {
+		cleanupTmp()
 		return nil, nil, err
 	}
 	if err = mw.Close(); err != nil {
+		cleanupTmp()
 		return nil, nil, err
 	}
-	reader := multipart.NewReader(body, mw.Boundary())
-	form, err := reader.ReadForm(1 << 20) // 1MB 以上落临时盘,避免大文件 OOM
+	// 回到文件首供 multipart.Reader 解析
+	if _, err = tmp.Seek(0, io.SeekStart); err != nil {
+		cleanupTmp()
+		return nil, nil, err
+	}
+	reader := multipart.NewReader(tmp, mw.Boundary())
+	form, err := reader.ReadForm(1 << 20) // >1MB 落临时盘
 	if err != nil {
+		cleanupTmp()
 		return nil, nil, err
 	}
 	files := form.File[fieldName]
 	if len(files) == 0 {
 		_ = form.RemoveAll()
+		cleanupTmp()
 		return nil, nil, fmt.Errorf("构造 FileHeader 失败")
 	}
-	return files[0], func() { _ = form.RemoveAll() }, nil
+	return files[0], func() {
+		_ = form.RemoveAll()
+		cleanupTmp()
+	}, nil
 }
