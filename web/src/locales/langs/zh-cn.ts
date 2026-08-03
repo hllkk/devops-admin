@@ -391,6 +391,11 @@ const local: App.I18n.Schema = {
         createFile: '新建文件',
         transferList: '传输列表'
       },
+      dropZone: {
+        hint: '释放文件以上传到当前目录',
+        truncatedCount: '拖入文件过多,仅上传前 {max} 个,请分批拖入',
+        truncatedSize: '拖入文件总体积过大,仅上传部分文件,请分批拖入'
+      },
       createInline: {
         defaultFileName: '新建文件.txt',
         defaultFolderName: '新建文件夹',

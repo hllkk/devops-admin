@@ -79,3 +79,102 @@ function readEntriesP(reader: FileSystemDirectoryReader): Promise<FileSystemEntr
     reader.readEntries(resolve, reject);
   });
 }
+
+/**
+ * 拖拽落下的 FileSystemEntry 树 → 扁平 {file, relativePath}[] + 目录路径[](含空目录)。
+ *
+ * 与 collectFolderDirs(input) 的区别:后者从 webkitdirectory 的 input 取数据,浏览器已自动给每个 File
+ * 填充 webkitRelativePath;而拖拽(dataTransfer.items[i].webkitGetAsEntry())拿到的 File **没有**
+ * webkitRelativePath,必须在递归 entry 树时手动记录相对路径。
+ *
+ * 调用约束:webkitGetAsEntry() 必须在 drop 事件同步期内、任何 await 之前调完(否则浏览器清空拖拽数据
+ * 存储,后续返回 null,导致多文件拖拽只产生一个任务)。本函数接收的已是稳定 entry 引用,可安全异步读取。
+ *
+ * - file entry → file() 取 File,relativePath = "目录前缀/文件名";顶层文件(prefix 空)relativePath 留空,
+ *   与单文件无目录语义一致,uploadFiles 据此归入散文件而非文件夹聚合。
+ * - dir entry  → 收集路径(含空目录:readEntries 返回空仍记录),供 ensure-folders 预建目录树。
+ */
+/** 拖拽落下的截断原因:超数量上限 / 超累计体积上限 */
+export type DropTruncated = 'count' | 'size';
+
+/**
+ * 拖拽落下的 FileSystemEntry 树 → 扁平 {file, relativePath}[] + 目录路径[](含空目录)。
+ *
+ * 与 collectFolderDirs(input) 的区别:后者从 webkitdirectory 的 input 取数据,浏览器已自动给每个 File
+ * 填充 webkitRelativePath;而拖拽(dataTransfer.items[i].webkitGetAsEntry())拿到的 File **没有**
+ * webkitRelativePath,必须在递归 entry 树时手动记录相对路径。
+ *
+ * 调用约束:webkitGetAsEntry() 必须在 drop 事件同步期内、任何 await 之前调完(否则浏览器清空拖拽数据
+ * 存储,后续返回 null,导致多文件拖拽只产生一个任务)。本函数接收的已是稳定 entry 引用,可安全异步读取。
+ *
+ * - file entry → file() 取 File,relativePath = "目录前缀/文件名";顶层文件(prefix 空)relativePath 留空,
+ *   与单文件无目录语义一致,uploadFiles 据此归入散文件而非文件夹聚合。
+ * - dir entry  → 收集路径(含空目录:readEntries 返回空仍记录),供 ensure-folders 预建目录树。
+ * - limits(可选):递归过程中即时截断,防海量小文件全量读入 OOM;超限即停止收集并返回 truncated 原因。
+ */
+export async function collectDropEntries(
+  entries: FileSystemEntry[],
+  limits?: { maxCount?: number; maxSize?: number }
+): Promise<{
+  files: { file: File; relativePath?: string }[];
+  dirs: string[];
+  truncated?: DropTruncated;
+}> {
+  const files: { file: File; relativePath?: string }[] = [];
+  const dirs = new Set<string>();
+  const state = { count: 0, size: 0, truncated: undefined as DropTruncated | undefined };
+  await Promise.all(entries.map(entry => traverseDropEntry(entry, '', files, dirs, limits, state)));
+  return { files, dirs: [...dirs].filter(Boolean), truncated: state.truncated };
+}
+
+/** 递归遍历拖拽 entry:file → 取 File + 记 relativePath(超 limits 即截断);directory → 记路径(含空目录)+ 递归子 */
+async function traverseDropEntry(
+  entry: FileSystemEntry,
+  prefix: string,
+  files: { file: File; relativePath?: string }[],
+  dirs: Set<string>,
+  limits: { maxCount?: number; maxSize?: number } | undefined,
+  state: { count: number; size: number; truncated?: DropTruncated }
+): Promise<void> {
+  if (state.truncated) return; // 已截断,剩余 entry 跳过
+  if (entry.isFile) {
+    if (limits?.maxCount && state.count >= limits.maxCount) {
+      state.truncated = 'count';
+      return;
+    }
+    const file = await fileEntryToFile(entry as FileSystemFileEntry);
+    if (limits?.maxSize && state.size + file.size > limits.maxSize) {
+      state.truncated = 'size';
+      return;
+    }
+    state.count += 1;
+    state.size += file.size;
+    // 顶层文件(prefix 空)relativePath 留空 → uploadFiles 归入散文件,不误判为文件夹
+    const relativePath = prefix ? `${prefix}/${entry.name}` : '';
+    files.push({ file, relativePath });
+    return;
+  }
+  if (!entry.isDirectory) return;
+  const path = prefix ? `${prefix}/${entry.name}` : entry.name;
+  if (path) dirs.add(path);
+  const reader = (entry as FileSystemDirectoryEntry).createReader();
+  // readEntries 单次最多返回 100 条,需循环读到空数组(与 traverseEntry 一致)
+  const children: FileSystemEntry[] = [];
+  let batch: FileSystemEntry[] = [];
+  do {
+    batch = await readEntriesP(reader);
+    children.push(...batch);
+  } while (batch.length > 0);
+  // 串行递归子:便于截断时及时 break(并发下截断不及时,海量小文件仍可能瞬间占用内存)
+  for (const child of children) {
+    if (state.truncated) break;
+    await traverseDropEntry(child, path, files, dirs, limits, state);
+  }
+}
+
+/** 将 FileSystemFileEntry 的回调式 file() 包装为 Promise<File> */
+function fileEntryToFile(entry: FileSystemFileEntry): Promise<File> {
+  return new Promise((resolve, reject) => {
+    entry.file(resolve, reject);
+  });
+}

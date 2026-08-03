@@ -580,6 +580,14 @@ declare namespace App {
             createFile: string;
             transferList: string;
           };
+          dropZone: {
+            /** 拖拽蒙层提示文案 */
+            hint: string;
+            /** 超数量上限截断警告({max} 占位) */
+            truncatedCount: string;
+            /** 超累计体积上限截断警告 */
+            truncatedSize: string;
+          };
           createInline: {
             defaultFileName: string;
             defaultFolderName: string;

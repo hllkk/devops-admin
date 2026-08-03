@@ -17,6 +17,7 @@ import FileGrid from './modules/file-grid.vue';
 import FileList from './modules/file-list.vue';
 import MoveCopyModal from './modules/move-copy-modal.vue';
 import TransferPanel from './modules/transfer-panel.vue';
+import DropZone from './modules/drop-zone.vue';
 
 defineOptions({
   name: 'DiskHome'
@@ -193,6 +194,11 @@ function handleRefresh() {
 /** 工具栏触发上传:传当前目录,每个文件成功后刷新列表;type 区分文件/文件夹。
  *  文件夹模式额外传 dirs(含空目录的目录路径列表),由引擎先调 ensure-folders 预建目录树。 */
 function handleUpload(type: 'file' | 'folder', files: File[], dirs?: string[]) {
+  uploadFiles(files, diskStore.getCurrentPathString(), dirs, getFileList);
+}
+
+/** 拖拽落下:复用 uploadFiles,上传到当前目录(基础版;与 toolbar 文件夹上传同等机制,含空目录预建) */
+function handleDrop(files: { file: File; relativePath?: string }[], dirs: string[]) {
   uploadFiles(files, diskStore.getCurrentPathString(), dirs, getFileList);
 }
 
@@ -413,6 +419,9 @@ onMounted(async () => {
           <span class="text-13px opacity-60">{{ $t('page.disk.loadingMore') }}</span>
         </div>
       </NCard>
+
+      <!-- 拖拽上传落区(document 监听 + 全屏蒙层,仅本页 mount 时生效) -->
+      <DropZone @drop="handleDrop" />
 
       <!-- 移动/复制 目录树选择弹窗 -->
       <MoveCopyModal

@@ -395,6 +395,11 @@ const local: App.I18n.Schema = {
         createFile: 'New File',
         transferList: 'Transfers'
       },
+      dropZone: {
+        hint: 'Drop files to upload to the current folder',
+        truncatedCount: 'Too many files dropped. Only the first {max} will be uploaded. Please drop in batches.',
+        truncatedSize: 'Total size of dropped files is too large. Only part will be uploaded. Please drop in batches.'
+      },
       createInline: {
         defaultFileName: 'New File.txt',
         defaultFolderName: 'New Folder',

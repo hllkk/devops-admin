@@ -361,5 +361,9 @@ declare namespace Api {
       /** 文件夹已传大小(聚合条目用) */
       folderTransferredSize?: number;
     };
+
+    /** uploadFiles 入参项:原生 File(toolbar webkitdirectory 路径,读其 webkitRelativePath)
+     *  或拖拽显式项(拖拽 File 无 webkitRelativePath,故带显式 relativePath)。 */
+    type UploadFileItem = File | { file: File; relativePath?: string };
   }
 }

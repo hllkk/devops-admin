@@ -550,10 +550,20 @@ export function useDiskUpload() {
     scheduleNext();
   }
 
+  /** 归一化上传项:File(toolbar webkitdirectory 路径,读 webkitRelativePath)或拖拽显式项 → 统一 {file, relativePath} */
+  type NormItem = { file: File; relativePath?: string };
+  function normalizeUploadItem(item: Api.Disk.UploadFileItem): NormItem {
+    if (item instanceof File) {
+      const rel = (item as File & { webkitRelativePath?: string }).webkitRelativePath || undefined;
+      return { file: item, relativePath: rel };
+    }
+    return { file: item.file, relativePath: item.relativePath };
+  }
+
   /** 建文件夹聚合条目:占位 task(isFolderAgg)汇总同顶层 relativePath 的子文件 */
-  function createFolderAgg(folderName: string, groupFiles: File[], currentDirectory: string, onFileDone?: () => void) {
+  function createFolderAgg(folderName: string, groupFiles: NormItem[], currentDirectory: string, onFileDone?: () => void) {
     const folderId = genId();
-    const folderTotalSize = groupFiles.reduce((s, f) => s + f.size, 0);
+    const folderTotalSize = groupFiles.reduce((s, n) => s + n.file.size, 0);
     tasks.value.push({
       id: folderId,
       name: folderName,
@@ -570,17 +580,16 @@ export function useDiskUpload() {
       relativePath: folderName
     });
     showPanel();
-    for (const f of groupFiles) {
-      const rel = (f as File & { webkitRelativePath?: string }).webkitRelativePath || undefined;
-      enqueueUpload({ file: f, currentDirectory, relativePath: rel, onFileDone, folderId });
+    for (const n of groupFiles) {
+      enqueueUpload({ file: n.file, currentDirectory, relativePath: n.relativePath, onFileDone, folderId });
     }
   }
 
   /** 批量上传入口。
-   *  文件夹上传时:先调 ensure-folders 预建所有目录(含空目录),再逐文件上传;
-   *  每个 File 的 webkitRelativePath 透传给后端 merge 阶段懒建中间目录(双保险)。
-   *  dirs 为空(单文件上传或降级)时跳过预建。 */
-  async function uploadFiles(files: File[], currentDirectory: string, dirs?: string[], onFileDone?: () => void) {
+   *  入参 items 兼容两种来源:toolbar 的原生 File(读其 webkitRelativePath)与拖拽的 {file, relativePath}
+   *  显式项(拖拽 File 无 webkitRelativePath)。先 ensure-folders 预建目录(含空目录),再逐文件上传;
+   *  relativePath 透传给后端 merge 阶段懒建中间目录(双保险)。dirs 为空(单文件/降级)时跳过预建。 */
+  async function uploadFiles(items: Api.Disk.UploadFileItem[], currentDirectory: string, dirs?: string[], onFileDone?: () => void) {
     await ensureConcurrentConfig(); // 先加载并发配置,再入队(避免首次上传在配置未就绪时全量启动)
     // 文件夹预建目录(含空目录):best effort,失败不阻断后续文件上传(merge 阶段仍会懒建中间目录)
     if (dirs && dirs.length) {
@@ -590,24 +599,24 @@ export function useDiskUpload() {
         /* 预建失败:merge 阶段仍懒建中间目录,仅空目录可能丢失 */
       }
     }
-    // 按 webkitRelativePath 顶层段分组:同顶层的归一个文件夹聚合条目,避免大文件夹刷屏
-    const folderGroups = new Map<string, File[]>();
-    const standalone: File[] = [];
-    for (const f of files) {
-      const rel = (f as File & { webkitRelativePath?: string }).webkitRelativePath || '';
+    const normalized = items.map(normalizeUploadItem);
+    // 按 relativePath 顶层段分组:同顶层的归一个文件夹聚合条目,避免大文件夹刷屏
+    const folderGroups = new Map<string, NormItem[]>();
+    const standalone: NormItem[] = [];
+    for (const n of normalized) {
+      const rel = n.relativePath || '';
       const segs = rel.split('/');
       if (rel && segs.length > 1) {
         const top = segs[0]!;
         const arr = folderGroups.get(top);
-        if (arr) arr.push(f);
-        else folderGroups.set(top, [f]);
+        if (arr) arr.push(n);
+        else folderGroups.set(top, [n]);
       } else {
-        standalone.push(f);
+        standalone.push(n);
       }
     }
-    for (const f of standalone) {
-      const rel = (f as File & { webkitRelativePath?: string }).webkitRelativePath || undefined;
-      enqueueUpload({ file: f, currentDirectory, relativePath: rel, onFileDone });
+    for (const n of standalone) {
+      enqueueUpload({ file: n.file, currentDirectory, relativePath: n.relativePath || undefined, onFileDone });
     }
     for (const [folderName, groupFiles] of folderGroups) {
       createFolderAgg(folderName, groupFiles, currentDirectory, onFileDone);
