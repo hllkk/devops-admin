@@ -8,6 +8,7 @@ import { formatFileSize } from '@/utils/format';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import FileIcon from './file-icon.vue';
 import FileEmpty from './file-empty.vue';
+import DiskContextMenu from './context-menu.vue';
 
 defineOptions({ name: 'FileList' });
 
@@ -19,6 +20,7 @@ interface Props {
 const props = defineProps<Props>();
 interface Emits {
   (e: 'action', type: Api.Disk.DiskActionType, file: Api.Disk.FileItem): void;
+  (e: 'refresh'): void;
 }
 const emit = defineEmits<Emits>();
 const diskStore = useDiskStore();
@@ -97,6 +99,71 @@ watch(
 );
 
 defineExpose({ scrollContainer });
+
+/** 右键菜单状态(文件/空白双类型,本视图单例) */
+interface ContextMenuState {
+  visible: boolean;
+  x: number;
+  y: number;
+  type: 'file' | 'area';
+  targetFile: Api.Disk.FileItem | null;
+}
+const ctxState = ref<ContextMenuState>({
+  visible: false,
+  x: 0,
+  y: 0,
+  type: 'area',
+  targetFile: null
+});
+
+/** 空白处右键:弹出区域菜单(loading 时不弹,避免数据未就绪误操作) */
+function onAreaContextMenu(e: MouseEvent) {
+  if (props.loading) return;
+  ctxState.value = { visible: true, x: e.clientX, y: e.clientY, type: 'area', targetFile: null };
+}
+
+/** 右键菜单选中项分发:文件操作透传上层,视图/排序/刷新内部消化 */
+function handleContextSelect(key: string) {
+  const file = ctxState.value.targetFile;
+  switch (key) {
+    case 'download':
+    case 'copy':
+    case 'move':
+    case 'rename':
+    case 'delete':
+      if (file) emit('action', key as Api.Disk.DiskActionType, file);
+      break;
+    case 'view-grid':
+      diskStore.setViewMode('grid');
+      break;
+    case 'view-list':
+      diskStore.setViewMode('list');
+      break;
+    case 'sort-name':
+    case 'sort-size':
+    case 'sort-modifyTime':
+      applySort(key.slice('sort-'.length) as 'name' | 'size' | 'modifyTime');
+      break;
+    case 'refresh':
+      emit('refresh');
+      break;
+    case 'reload':
+      window.location.reload();
+      break;
+    default:
+      break;
+  }
+}
+
+/** 排序:同字段翻转方向,否则默认升序(对齐 remote 右键排序交互) */
+function applySort(field: 'name' | 'size' | 'modifyTime') {
+  const cur = diskStore.sortSettings;
+  if (cur.field === field) {
+    diskStore.setSort(field, cur.order === 'asc' ? 'desc' : 'asc');
+  } else {
+    diskStore.setSort(field, 'asc');
+  }
+}
 
 const columns = computed<DataTableColumns<Api.Disk.FileItem>>(() => [
   {
@@ -230,6 +297,15 @@ const rowProps = (row: Api.Disk.FileItem) => {
     // 选中交由 selection 列复选框负责（避免行点击与 selection 双重 toggle 抵消）
     onDblclick: () => {
       if (row.isFolder) diskStore.enterFolder(row);
+    },
+    onContextmenu: (e: MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      // 右键未选中的文件:替换选中为该文件;已在选中集则保留(支持对多选批量操作)
+      if (!diskStore.selectedFiles.includes(row.fileId)) {
+        diskStore.setSelectedFiles([row.fileId]);
+      }
+      ctxState.value = { visible: true, x: e.clientX, y: e.clientY, type: 'file', targetFile: row };
     }
   };
 };
@@ -242,7 +318,7 @@ const rowClassName = (row: Api.Disk.FileItem) => {
 </script>
 
 <template>
-  <div ref="wrapperRef" class="h-full">
+  <div ref="wrapperRef" class="h-full" @contextmenu.prevent="onAreaContextMenu">
     <!-- 首次加载:撑满双居中 -->
     <div v-if="props.loading && tableData.length === 0" class="h-full flex-center">
       <NSpin />
@@ -263,6 +339,15 @@ const rowClassName = (row: Api.Disk.FileItem) => {
         @update:checked-row-keys="onCheckedRowKeysChange"
       />
     </NScrollbar>
+    <!-- 右键菜单(文件/空白双类型,统一挂载点;NDropdown teleport 到 body 不占位) -->
+    <DiskContextMenu
+      v-model:visible="ctxState.visible"
+      :x="ctxState.x"
+      :y="ctxState.y"
+      :type="ctxState.type"
+      :file-is-favorite="ctxState.targetFile?.isFavorite"
+      @select="handleContextSelect"
+    />
   </div>
 </template>
 

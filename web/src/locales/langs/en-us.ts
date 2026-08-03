@@ -395,6 +395,27 @@ const local: App.I18n.Schema = {
         createFile: 'New File',
         transferList: 'Transfers'
       },
+      contextMenu: {
+        open: 'Open',
+        addFavorite: 'Add to Favorites',
+        removeFavorite: 'Remove from Favorites',
+        download: 'Download',
+        share: 'Share',
+        copy: 'Copy',
+        move: 'Move',
+        rename: 'Rename',
+        delete: 'Delete',
+        detail: 'Details',
+        view: 'View',
+        viewGrid: 'Grid View',
+        viewList: 'List View',
+        sortBy: 'Sort by',
+        sortName: 'Name',
+        sortSize: 'Size',
+        sortTime: 'Modified Time',
+        refresh: 'Refresh',
+        reload: 'Reload'
+      },
       dropZone: {
         hint: 'Drop files to upload to the current folder',
         truncatedCount: 'Too many files dropped. Only the first {max} will be uploaded. Please drop in batches.',

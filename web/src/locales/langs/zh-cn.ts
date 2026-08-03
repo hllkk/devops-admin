@@ -391,6 +391,27 @@ const local: App.I18n.Schema = {
         createFile: '新建文件',
         transferList: '传输列表'
       },
+      contextMenu: {
+        open: '打开',
+        addFavorite: '添加收藏',
+        removeFavorite: '取消收藏',
+        download: '下载',
+        share: '分享',
+        copy: '复制',
+        move: '移动',
+        rename: '重命名',
+        delete: '删除',
+        detail: '详情',
+        view: '查看',
+        viewGrid: '网格视图',
+        viewList: '列表视图',
+        sortBy: '排序方式',
+        sortName: '名称',
+        sortSize: '大小',
+        sortTime: '修改时间',
+        refresh: '刷新',
+        reload: '重新加载'
+      },
       dropZone: {
         hint: '释放文件以上传到当前目录',
         truncatedCount: '拖入文件过多,仅上传前 {max} 个,请分批拖入',

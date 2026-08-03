@@ -7,6 +7,7 @@ import { useDiskCreate } from '@/hooks/business/disk/use-disk-create';
 import FileIcon from './file-icon.vue';
 import FileCard from './file-card.vue';
 import FileEmpty from './file-empty.vue';
+import DiskContextMenu from './context-menu.vue';
 
 defineOptions({ name: 'FileGrid' });
 
@@ -17,6 +18,7 @@ interface Props {
 
 interface Emits {
   (e: 'action', type: Api.Disk.DiskActionType, file: Api.Disk.FileItem): void;
+  (e: 'refresh'): void;
 }
 
 const props = defineProps<Props>();
@@ -107,10 +109,91 @@ watch(
 );
 
 defineExpose({ scrollContainer });
+
+/** 右键菜单状态(文件/空白双类型,本视图单例) */
+interface ContextMenuState {
+  visible: boolean;
+  x: number;
+  y: number;
+  type: 'file' | 'area';
+  targetFile: Api.Disk.FileItem | null;
+}
+const ctxState = ref<ContextMenuState>({
+  visible: false,
+  x: 0,
+  y: 0,
+  type: 'area',
+  targetFile: null
+});
+
+/**
+ * 右键统一入口:靠命中元素的 data-file-id 区分文件/空白。
+ * FileCard 根 div 经 attrs fallthrough 带 data-file-id;命中即文件,否则空白。
+ */
+function handleContextMenu(e: MouseEvent) {
+  if (props.loading) return;
+  const target = (e.target as HTMLElement).closest<HTMLElement>('[data-file-id]');
+  if (target) {
+    const fileId = target.dataset.fileId;
+    const file = props.files.find(f => String(f.fileId) === fileId);
+    if (file) {
+      // 右键未选中的文件:替换选中为该文件;已在选中集则保留(支持对多选批量操作)
+      if (!diskStore.selectedFiles.includes(file.fileId)) {
+        diskStore.setSelectedFiles([file.fileId]);
+      }
+      ctxState.value = { visible: true, x: e.clientX, y: e.clientY, type: 'file', targetFile: file };
+      return;
+    }
+  }
+  ctxState.value = { visible: true, x: e.clientX, y: e.clientY, type: 'area', targetFile: null };
+}
+
+/** 右键菜单选中项分发:文件操作透传上层,视图/排序/刷新内部消化 */
+function handleContextSelect(key: string) {
+  const file = ctxState.value.targetFile;
+  switch (key) {
+    case 'download':
+    case 'copy':
+    case 'move':
+    case 'rename':
+    case 'delete':
+      if (file) emit('action', key as Api.Disk.DiskActionType, file);
+      break;
+    case 'view-grid':
+      diskStore.setViewMode('grid');
+      break;
+    case 'view-list':
+      diskStore.setViewMode('list');
+      break;
+    case 'sort-name':
+    case 'sort-size':
+    case 'sort-modifyTime':
+      applySort(key.slice('sort-'.length) as 'name' | 'size' | 'modifyTime');
+      break;
+    case 'refresh':
+      emit('refresh');
+      break;
+    case 'reload':
+      window.location.reload();
+      break;
+    default:
+      break;
+  }
+}
+
+/** 排序:同字段翻转方向,否则默认升序(对齐 remote 右键排序交互) */
+function applySort(field: 'name' | 'size' | 'modifyTime') {
+  const cur = diskStore.sortSettings;
+  if (cur.field === field) {
+    diskStore.setSort(field, cur.order === 'asc' ? 'desc' : 'asc');
+  } else {
+    diskStore.setSort(field, 'asc');
+  }
+}
 </script>
 
 <template>
-  <div ref="wrapperRef" class="h-full flex flex-col">
+  <div ref="wrapperRef" class="h-full flex flex-col" @contextmenu.prevent="handleContextMenu">
     <!-- 全选行:固定顶部,不随滚动(有文件时显示) -->
     <div v-if="files.length > 0" class="flex-y-center gap-8px px-12px pt-8px pb-8px">
       <NCheckbox :checked="allChecked" :indeterminate="indeterminate" @update:checked="toggleAll" />
@@ -153,9 +236,18 @@ defineExpose({ scrollContainer });
               />
             </div>
           </div>
-          <FileCard v-for="f in files" :key="f.fileId" :file="f" @action="onAction" />
+          <FileCard v-for="f in files" :key="f.fileId" :file="f" :data-file-id="String(f.fileId)" @action="onAction" />
         </div>
       </div>
     </NScrollbar>
+    <!-- 右键菜单(文件/空白双类型,统一挂载点;NDropdown teleport 到 body 不占位) -->
+    <DiskContextMenu
+      v-model:visible="ctxState.visible"
+      :x="ctxState.x"
+      :y="ctxState.y"
+      :type="ctxState.type"
+      :file-is-favorite="ctxState.targetFile?.isFavorite"
+      @select="handleContextSelect"
+    />
   </div>
 </template>

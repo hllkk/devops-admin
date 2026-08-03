@@ -402,6 +402,7 @@ onMounted(async () => {
           :loading="loading"
           class="flex-1 min-h-0"
           @action="handleAction"
+          @refresh="handleRefresh"
         />
         <FileList
           v-else
@@ -410,6 +411,7 @@ onMounted(async () => {
           :loading="loading"
           class="flex-1 min-h-0"
           @action="handleAction"
+          @refresh="handleRefresh"
         />
         <!-- 上传传输面板(有任务时显示) -->
         <TransferPanel />

@@ -580,6 +580,27 @@ declare namespace App {
             createFile: string;
             transferList: string;
           };
+          contextMenu: {
+            open: string;
+            addFavorite: string;
+            removeFavorite: string;
+            download: string;
+            share: string;
+            copy: string;
+            move: string;
+            rename: string;
+            delete: string;
+            detail: string;
+            view: string;
+            viewGrid: string;
+            viewList: string;
+            sortBy: string;
+            sortName: string;
+            sortSize: string;
+            sortTime: string;
+            refresh: string;
+            reload: string;
+          };
           dropZone: {
             /** 拖拽蒙层提示文案 */
             hint: string;
