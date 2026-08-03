@@ -35,6 +35,22 @@ watch(isRenaming, renaming => {
 
 const selected = computed(() => diskStore.selectedFiles.includes(props.file.fileId));
 
+/**
+ * 文件夹展示创建时间(月-日 时:分),卡片底部紧凑格式。
+ * 文件展示大小、文件夹展示创建时间,二者占用同一行位。
+ */
+const folderCreateTime = computed(() => {
+  const t = props.file.createTime;
+  if (!t) return '';
+  const d = new Date(t);
+  if (Number.isNaN(d.getTime())) return '';
+  const mo = String(d.getMonth() + 1).padStart(2, '0');
+  const da = String(d.getDate()).padStart(2, '0');
+  const h = String(d.getHours()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+  return `${mo}-${da} ${h}:${mi}`;
+});
+
 /** 图标尺寸随网格大小档位（大图 120 / 缩略 80） */
 const iconSize = computed(() => (diskStore.gridSize === 'large' ? 120 : 80));
 
@@ -125,7 +141,7 @@ function handleAction(key: string) {
         :title="file.fileName"
       >{{ file.fileName }}</span>
       <span v-if="!file.isFolder" class="text-11px opacity-50">{{ formatFileSize(file.fileSize) }}</span>
-      <span v-else class="text-11px opacity-50">{{ $t('page.disk.file.folder') }}</span>
+      <span v-else class="text-11px opacity-50">{{ folderCreateTime }}</span>
     </template>
   </div>
 </template>

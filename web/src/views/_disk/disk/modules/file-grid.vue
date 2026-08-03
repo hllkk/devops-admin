@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick, watch } from 'vue';
+import { ref, computed, nextTick, watch } from 'vue';
 import { NCheckbox } from 'naive-ui';
 import { $t } from '@/locales';
 import { useDiskStore } from '@/store/modules/disk';
 import { useDiskCreate } from '@/hooks/business/disk/use-disk-create';
 import FileIcon from './file-icon.vue';
 import FileCard from './file-card.vue';
+import FileEmpty from './file-empty.vue';
 
 defineOptions({ name: 'FileGrid' });
 
@@ -83,10 +84,27 @@ const wrapperRef = ref<HTMLElement | null>(null);
 /** NScrollbar 内部真实滚动容器，供父组件无限滚动 hook 监听（scroll 事件 + scrollHeight 等） */
 const scrollContainer = ref<HTMLElement | null>(null);
 
-onMounted(async () => {
-  await nextTick();
-  scrollContainer.value = wrapperRef.value?.querySelector<HTMLElement>('.n-scrollbar-container') ?? null;
-});
+/**
+ * NScrollbar 仅在"有文件或行内新建"分支渲染（loading/空态走 NSpin/FileEmpty）。
+ * 滚动容器需随该分支挂载/卸载动态重取，而非 onMounted 一次性获取——
+ * 否则首次进入(loading 态)或空文件夹时拿不到容器，无限滚动失效。
+ */
+const scrollbarVisible = computed(
+  () => !(props.loading && props.files.length === 0) && !(props.files.length === 0 && !diskStore.creatingType)
+);
+
+watch(
+  scrollbarVisible,
+  async visible => {
+    if (!visible) {
+      scrollContainer.value = null;
+      return;
+    }
+    await nextTick();
+    scrollContainer.value = wrapperRef.value?.querySelector<HTMLElement>('.n-scrollbar-container') ?? null;
+  },
+  { immediate: true }
+);
 
 defineExpose({ scrollContainer });
 </script>
@@ -98,50 +116,45 @@ defineExpose({ scrollContainer });
       <NCheckbox :checked="allChecked" :indeterminate="indeterminate" @update:checked="toggleAll" />
       <span class="text-13px">{{ selectAllLabel }}</span>
     </div>
-    <NScrollbar class="flex-1 min-h-0">
+    <!-- 首次加载:撑满双居中 -->
+    <div v-if="loading && files.length === 0" class="flex-1 min-h-0 flex-center">
+      <NSpin />
+    </div>
+    <!-- 空状态(无文件且非新建态):撑满双居中,不走 NScrollbar -->
+    <FileEmpty v-else-if="files.length === 0 && !diskStore.creatingType" class="flex-1 min-h-0" />
+    <!-- 有文件或行内新建:滚动区 -->
+    <NScrollbar v-else class="flex-1 min-h-0">
       <div class="px-12px py-8px">
-        <!-- 首次加载 -->
-        <div v-if="loading && files.length === 0" class="flex-center py-40px">
-          <NSpin />
-        </div>
-        <!-- 空状态(无文件且非新建态) -->
-        <div v-else-if="files.length === 0 && !diskStore.creatingType" class="flex-col-center py-40px opacity-50">
-          <SvgIcon icon="material-symbols:folder-off-outline" class="text-56px" />
-          <span class="mt-8px text-14px">{{ $t('page.disk.empty') }}</span>
-        </div>
-        <!-- 网格(有文件或行内新建时显示) -->
-        <template v-else>
-          <div class="grid gap-16px" :style="{ gridTemplateColumns: gridTemplate }">
-            <!-- 行内新建占位卡 -->
-            <div
-              v-if="diskStore.creatingType"
-              class="relative flex-col-center gap-6px p-10px rd-8px bg-primary/5"
-              @click.stop
-            >
-              <div class="absolute right-4px top-4px z-1 flex items-center gap-2px" @click.stop @mousedown.prevent>
-                <NButton text size="tiny" :focusable="false" @click="submit">
-                  <SvgIcon icon="material-symbols:check" class="text-16px text-primary" />
-                </NButton>
-                <NButton text size="tiny" :focusable="false" @click="cancel">
-                  <SvgIcon icon="material-symbols:close" class="text-16px opacity-50" />
-                </NButton>
-              </div>
-              <FileIcon :file-type="diskStore.creatingType === 'folder' ? 'folder' : 'other'" :size="diskStore.gridSize === 'large' ? 120 : 80" />
-              <div class="w-full px-4px">
-                <NInput
-                  ref="createInputRef"
-                  :value="diskStore.creatingName"
-                  size="small"
-                  :placeholder="$t('page.disk.modal.namePlaceholder')"
-                  @update:value="(v: string) => diskStore.setCreatingName(v)"
-                  @keydown="keydown"
-                  @blur="blur"
-                />
-              </div>
+        <div class="grid gap-16px" :style="{ gridTemplateColumns: gridTemplate }">
+          <!-- 行内新建占位卡 -->
+          <div
+            v-if="diskStore.creatingType"
+            class="relative flex-col-center gap-6px p-10px rd-8px bg-primary/5"
+            @click.stop
+          >
+            <div class="absolute right-4px top-4px z-1 flex items-center gap-2px" @click.stop @mousedown.prevent>
+              <NButton text size="tiny" :focusable="false" @click="submit">
+                <SvgIcon icon="material-symbols:check" class="text-16px text-primary" />
+              </NButton>
+              <NButton text size="tiny" :focusable="false" @click="cancel">
+                <SvgIcon icon="material-symbols:close" class="text-16px opacity-50" />
+              </NButton>
             </div>
-            <FileCard v-for="f in files" :key="f.fileId" :file="f" @action="onAction" />
+            <FileIcon :file-type="diskStore.creatingType === 'folder' ? 'folder' : 'other'" :size="diskStore.gridSize === 'large' ? 120 : 80" />
+            <div class="w-full px-4px">
+              <NInput
+                ref="createInputRef"
+                :value="diskStore.creatingName"
+                size="small"
+                :placeholder="$t('page.disk.modal.namePlaceholder')"
+                @update:value="(v: string) => diskStore.setCreatingName(v)"
+                @keydown="keydown"
+                @blur="blur"
+              />
+            </div>
           </div>
-        </template>
+          <FileCard v-for="f in files" :key="f.fileId" :file="f" @action="onAction" />
+        </div>
       </div>
     </NScrollbar>
   </div>

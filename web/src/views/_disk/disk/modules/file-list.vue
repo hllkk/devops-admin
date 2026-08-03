@@ -1,5 +1,5 @@
 <script setup lang="tsx">
-import { ref, computed, onMounted, nextTick, watch } from 'vue';
+import { ref, computed, nextTick, watch } from 'vue';
 import { NTime, NDropdown, NButton, NInput, type DataTableColumns } from 'naive-ui';
 import { useDiskStore } from '@/store/modules/disk';
 import { useDiskCreate } from '@/hooks/business/disk/use-disk-create';
@@ -7,6 +7,7 @@ import { $t } from '@/locales';
 import { formatFileSize } from '@/utils/format';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import FileIcon from './file-icon.vue';
+import FileEmpty from './file-empty.vue';
 
 defineOptions({ name: 'FileList' });
 
@@ -31,11 +32,22 @@ const createInputRef = ref<{ focus: () => void; select: () => void } | null>(nul
 const tableData = computed<Api.Disk.FileItem[]>(() => {
   if (!diskStore.creatingType) return props.files;
   const isFolder = diskStore.creatingType === 'folder';
+  // 字段补全:虚拟行只填 4 字段就 as FileItem,会导致 modifyTime/fileSize 等列读到 undefined——
+  // NTime(Date.parse(''))=NaN、formatFileSize(undefined) 触发渲染异常,创建行整行不显示。
+  // 补全为安全空值,配合下方各列对 CREATE_ID 的占位返回,杜绝渲染崩溃。
   const creationRow = {
     fileId: CREATE_ID,
     fileName: '',
     isFolder,
-    fileType: isFolder ? 'folder' : 'other'
+    fileType: isFolder ? 'folder' : 'other',
+    fileSize: 0,
+    fileExtension: '',
+    modifyTime: '',
+    createTime: '',
+    updateTime: '',
+    createBy: '',
+    updateBy: '',
+    parentId: null
   } as Api.Disk.FileItem;
   return [creationRow, ...props.files];
 });
@@ -64,10 +76,25 @@ const wrapperRef = ref<HTMLElement | null>(null);
 /** NScrollbar 内部真实滚动容器，供父组件无限滚动 hook 监听（scroll 事件 + scrollHeight 等） */
 const scrollContainer = ref<HTMLElement | null>(null);
 
-onMounted(async () => {
-  await nextTick();
-  scrollContainer.value = wrapperRef.value?.querySelector<HTMLElement>('.n-scrollbar-container') ?? null;
-});
+/**
+ * NScrollbar 仅在"有数据/新建态"分支渲染（loading/空态走 NSpin/FileEmpty）。
+ * 滚动容器需随该分支挂载/卸载动态重取，而非 onMounted 一次性获取——
+ * 否则首次进入(loading 态)或空文件夹时拿不到容器，无限滚动失效。
+ */
+const scrollbarVisible = computed(() => tableData.value.length > 0);
+
+watch(
+  scrollbarVisible,
+  async visible => {
+    if (!visible) {
+      scrollContainer.value = null;
+      return;
+    }
+    await nextTick();
+    scrollContainer.value = wrapperRef.value?.querySelector<HTMLElement>('.n-scrollbar-container') ?? null;
+  },
+  { immediate: true }
+);
 
 defineExpose({ scrollContainer });
 
@@ -147,13 +174,18 @@ const columns = computed<DataTableColumns<Api.Disk.FileItem>>(() => [
     key: 'fileSize',
     title: $t('page.disk.column.size'),
     width: 120,
-    render: row => (row.isFolder ? '-' : formatFileSize(row.fileSize))
+    render: row => (row.fileId === CREATE_ID || row.isFolder ? '-' : formatFileSize(row.fileSize))
   },
   {
     key: 'modifyTime',
     title: $t('page.disk.column.modifyTime'),
     width: 180,
-    render: row => <NTime time={Date.parse(row.modifyTime ?? '')} format="yyyy-MM-dd HH:mm:ss" />
+    render: row =>
+      row.fileId === CREATE_ID ? (
+        '-'
+      ) : (
+        <NTime time={Date.parse(row.modifyTime ?? '')} format="yyyy-MM-dd HH:mm:ss" />
+      )
   },
   {
     key: 'actions',
@@ -201,12 +233,23 @@ const rowProps = (row: Api.Disk.FileItem) => {
   };
 };
 
-const rowClassName = (row: Api.Disk.FileItem) => (diskStore.selectedFiles.includes(row.fileId) ? 'disk-row-active' : '');
+const rowClassName = (row: Api.Disk.FileItem) => {
+  // 创建行:整行高亮(对齐 grid 占位卡 bg-primary/5 的视觉提示),优先于选中态
+  if (row.fileId === CREATE_ID) return 'disk-row-creating';
+  return diskStore.selectedFiles.includes(row.fileId) ? 'disk-row-active' : '';
+};
 </script>
 
 <template>
   <div ref="wrapperRef" class="h-full">
-    <NScrollbar class="h-full">
+    <!-- 首次加载:撑满双居中 -->
+    <div v-if="props.loading && tableData.length === 0" class="h-full flex-center">
+      <NSpin />
+    </div>
+    <!-- 空状态(无数据):撑满双居中,不渲染表格→表头自然消失 -->
+    <FileEmpty v-else-if="tableData.length === 0" class="h-full" />
+    <!-- 有数据/新建态:表格 -->
+    <NScrollbar v-else class="h-full">
       <NDataTable
         :columns="columns"
         :data="tableData"
@@ -225,5 +268,9 @@ const rowClassName = (row: Api.Disk.FileItem) => (diskStore.selectedFiles.includ
 <style scoped>
 :deep(.disk-row-active td) {
   background-color: rgba(var(--primary-color-rgb), 0.1) !important;
+}
+/* 行内新建虚拟行:整行浅色高亮,对齐 grid 占位卡的视觉提示 */
+:deep(.disk-row-creating td) {
+  background-color: rgba(var(--primary-color-rgb), 0.06) !important;
 }
 </style>

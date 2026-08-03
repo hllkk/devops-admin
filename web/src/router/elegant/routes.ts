@@ -58,6 +58,7 @@ export const generatedRoutes: GeneratedRoute[] = [
     meta: {
       title: 'disk',
       i18nKey: 'route.disk',
+      icon: 'mdi:harddisk',
       module: 'disk'
     }
   },
