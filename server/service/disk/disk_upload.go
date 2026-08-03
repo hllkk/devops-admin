@@ -459,7 +459,7 @@ func (s *DiskUploadService) mergeInstant(ctx context.Context, userId int64, req 
 }
 
 // CleanupStaleChunks 清理过期上传会话的分片(定时任务调用,M3)。
-// 扫描 disk_upload_sessions 中 status=uploading/merging 且 updated_at 早于 ttl 的会话:
+// 扫描 disk_upload_sessions 中 status=uploading/merging 且 update_time 早于 ttl 的会话:
 // 删分片目录 + 删 chunks 记录 + 标 session failed(留痕排查,不物理删 session)。
 func (s *DiskUploadService) CleanupStaleChunks(ctx context.Context, ttlHours int) error {
 	if ttlHours <= 0 {
@@ -468,7 +468,7 @@ func (s *DiskUploadService) CleanupStaleChunks(ctx context.Context, ttlHours int
 	cutoff := time.Now().Add(-time.Duration(ttlHours) * time.Hour)
 	var sessions []disk.DiskUploadSession
 	if err := global.OPS_DB.WithContext(ctx).
-		Where("status IN ? AND updated_at < ?", []string{disk.UploadStatusUploading, disk.UploadStatusMerging}, cutoff).
+		Where("status IN ? AND update_time < ?", []string{disk.UploadStatusUploading, disk.UploadStatusMerging}, cutoff).
 		Find(&sessions).Error; err != nil {
 		return err
 	}
