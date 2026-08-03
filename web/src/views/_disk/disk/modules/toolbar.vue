@@ -13,13 +13,14 @@ defineOptions({ name: 'DiskToolbar' });
 type SortField = 'name' | 'size' | 'modifyTime';
 type SortOrder = 'asc' | 'desc';
 type CreateType = 'file' | 'folder';
+/** 视图模式：列表 / 缩略(网格小图) / 大图(网格大图) */
+type ViewMode = 'list' | 'thumbnail' | 'large';
 
 interface Emits {
   (e: 'search', keyword: string): void;
   (e: 'refresh'): void;
   (e: 'sort', field: SortField, order: SortOrder): void;
-  (e: 'toggleView'): void;
-  (e: 'toggleGridSize'): void;
+  (e: 'set-view', mode: ViewMode): void;
   (e: 'create', type: CreateType): void;
   (e: 'upload', type: CreateType, files: File[], dirs?: string[]): void;
 }
@@ -127,12 +128,36 @@ function handleSortSelect(key: string) {
   emit('sort', field, order);
 }
 
-function handleToggleView() {
-  emit('toggleView');
-}
+/** 视图模式三档图标：列表 / 缩略(网格小图) / 大图(网格大图) */
+const VIEW_ICONS: Record<ViewMode, string> = {
+  list: 'material-symbols:view-list',
+  thumbnail: 'material-symbols:apps',
+  large: 'material-symbols:grid-view'
+};
 
-function handleToggleGridSize() {
-  emit('toggleGridSize');
+/** 当前视图模式（由 store 双维度 viewMode + gridSize 组合反推） */
+const currentViewMode = computed<ViewMode>(() => {
+  if (diskStore.viewMode === 'list') return 'list';
+  return diskStore.gridSize === 'large' ? 'large' : 'thumbnail';
+});
+
+/** 视图下拉：当前模式项前缀 ✓ 标识选中态 */
+const viewOptions = computed<DropdownOption[]>(() => {
+  const cur = currentViewMode.value;
+  const items: { key: ViewMode; label: string; icon: string }[] = [
+    { key: 'list', label: $t('page.disk.toolbar.viewList'), icon: VIEW_ICONS.list },
+    { key: 'thumbnail', label: $t('page.disk.toolbar.viewThumbnail'), icon: VIEW_ICONS.thumbnail },
+    { key: 'large', label: $t('page.disk.toolbar.viewLarge'), icon: VIEW_ICONS.large }
+  ];
+  return items.map(it => ({
+    key: it.key,
+    label: it.key === cur ? `✓ ${it.label}` : it.label,
+    icon: SvgIconVNode({ icon: it.icon, fontSize: 18 })
+  }));
+});
+
+function handleViewSelect(key: string) {
+  emit('set-view', key as ViewMode);
 }
 </script>
 
@@ -184,7 +209,7 @@ function handleToggleGridSize() {
       <!-- 传输列表(角标显示上传中数量) -->
       <NTooltip v-if="!appStore.isMobile" trigger="hover">
         <template #trigger>
-          <NButton quaternary :focusable="false" @click="togglePanel">
+          <NButton ghost :focusable="false" @click="togglePanel">
             <NBadge :value="uploadingCount" :max="99" :show="uploadingCount > 0" :offset="[4, -2]">
               <SvgIcon icon="material-symbols:swap-vert" class="text-18px" />
             </NBadge>
@@ -197,7 +222,7 @@ function handleToggleGridSize() {
       <NDropdown :options="sortOptions" trigger="click" @select="handleSortSelect">
         <NTooltip trigger="hover">
           <template #trigger>
-            <NButton quaternary :focusable="false">
+            <NButton ghost :focusable="false">
               <SvgIcon icon="material-symbols:sort" class="text-18px" />
             </NButton>
           </template>
@@ -205,36 +230,17 @@ function handleToggleGridSize() {
         </NTooltip>
       </NDropdown>
 
-      <!-- 视图切换：单按钮 toggle（移动端隐藏，固定列表） -->
-      <NTooltip v-if="!appStore.isMobile" trigger="hover">
-        <template #trigger>
-          <NButton quaternary :focusable="false" @click="handleToggleView">
-            <SvgIcon
-              :icon="diskStore.viewMode === 'grid' ? 'material-symbols:grid-view' : 'material-symbols:view-list'"
-              class="text-18px"
-            />
-          </NButton>
-        </template>
-        {{ diskStore.viewMode === 'grid' ? $t('page.disk.toolbar.listView') : $t('page.disk.toolbar.gridView') }}
-      </NTooltip>
-
-      <!-- 大图/小图切换：仅 grid 模式 + 非移动端 -->
-      <NTooltip v-if="!appStore.isMobile && diskStore.viewMode === 'grid'" trigger="hover">
-        <template #trigger>
-          <NButton quaternary :focusable="false" @click="handleToggleGridSize">
-            <SvgIcon
-              :icon="diskStore.gridSize === 'large' ? 'material-symbols:apps' : 'material-symbols:grid-view'"
-              class="text-18px"
-            />
-          </NButton>
-        </template>
-        {{ diskStore.gridSize === 'large' ? $t('page.disk.toolbar.smallGrid') : $t('page.disk.toolbar.largeGrid') }}
-      </NTooltip>
+      <!-- 视图模式：hover 下拉(列表 / 缩略 / 大图)，移动端隐藏固定列表 -->
+      <NDropdown v-if="!appStore.isMobile" :options="viewOptions" trigger="hover" @select="handleViewSelect">
+        <NButton ghost :focusable="false">
+          <SvgIcon :icon="VIEW_ICONS[currentViewMode]" class="text-18px" />
+        </NButton>
+      </NDropdown>
 
       <!-- 刷新 -->
       <NTooltip trigger="hover">
         <template #trigger>
-          <NButton quaternary :focusable="false" @click="handleRefresh">
+          <NButton ghost :focusable="false" @click="handleRefresh">
             <SvgIcon icon="material-symbols:refresh" class="text-18px" />
           </NButton>
         </template>
@@ -243,3 +249,13 @@ function handleToggleGridSize() {
     </NButtonGroup>
   </div>
 </template>
+
+<style scoped lang="scss">
+/* 暗黑模式下 Naive 对 type="primary" 按钮的文字色按"浅色 primary"推算(其内置 darkTheme 的 primaryColor 为浅蓝),
+   会配深色文字;而本项目 primary 为深紫 #646cff,深紫底 + 深色文字对比度极低,看起来就是黑字。
+   这里显式锁定 primary 按钮内容为白色(图标用 currentColor 会一并跟随),保证上传/新建/搜索等按钮文字在明暗主题下都清晰。
+   Naive themeOverrides 不暴露 primary 按钮文字色,故只能在组件层约束。 */
+:deep(.n-button--primary-type .n-button__content) {
+  color: #fff;
+}
+</style>

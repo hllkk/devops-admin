@@ -331,7 +331,6 @@ const local: App.I18n.Schema = {
       title: '网盘',
       empty: '暂无文件',
       loadingMore: '加载更多中...',
-      allLoaded: '已加载全部 {count} 项',
       fileType: {
         title: '文件类型',
         all: '全部',
@@ -347,10 +346,10 @@ const local: App.I18n.Schema = {
         searchPlaceholder: '搜索文件名',
         refresh: '刷新',
         sort: '排序',
-        gridView: '网格视图',
         listView: '列表视图',
-        largeGrid: '大图',
-        smallGrid: '小图'
+        viewList: '列表模式',
+        viewThumbnail: '缩略模式',
+        viewLarge: '大图模式'
       },
       sort: {
         name: '名称',
@@ -358,13 +357,15 @@ const local: App.I18n.Schema = {
         modifyTime: '修改时间'
       },
       breadcrumb: {
-        root: '根目录',
+        root: '全部文件',
+        backToPrev: '返回上一级',
         count: '共 {count} 项'
       },
       column: {
         name: '名称',
         size: '大小',
-        modifyTime: '修改时间'
+        modifyTime: '修改时间',
+        selectedCount: '已选中 {count} 个文件/文件夹'
       },
       file: {
         folder: '文件夹'

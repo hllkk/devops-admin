@@ -520,7 +520,6 @@ declare namespace App {
           title: string;
           empty: string;
           loadingMore: string;
-          allLoaded: string;
           fileType: {
             title: string;
             all: string;
@@ -536,10 +535,10 @@ declare namespace App {
             searchPlaceholder: string;
             refresh: string;
             sort: string;
-            gridView: string;
             listView: string;
-            largeGrid: string;
-            smallGrid: string;
+            viewList: string;
+            viewThumbnail: string;
+            viewLarge: string;
           };
           sort: {
             name: string;
@@ -548,12 +547,14 @@ declare namespace App {
           };
           breadcrumb: {
             root: string;
+            backToPrev: string;
             count: string;
           };
           column: {
             name: string;
             size: string;
             modifyTime: string;
+            selectedCount: string;
           };
           file: {
             folder: string;

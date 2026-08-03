@@ -34,6 +34,15 @@ function handleClick(c: Crumb) {
 
 <template>
   <div class="flex-y-center gap-4px px-12px py-6px text-13px">
+    <!-- 返回上一级:进入子目录后才显示,位于面包屑最前 -->
+    <template v-if="diskStore.currentPath.length > 0">
+      <span class="flex-y-center gap-2px cursor-pointer hover:text-primary" @click="diskStore.goBack()">
+        <SvgIcon icon="material-symbols:arrow-upward" class="text-16px" />
+        {{ $t('page.disk.breadcrumb.backToPrev') }}
+      </span>
+      <span class="opacity-30">|</span>
+    </template>
+    <!-- 路径:全部文件 > 文件夹A > 文件夹B -->
     <template v-for="(c, i) in crumbs" :key="`${c.index}-${i}`">
       <SvgIcon v-if="i > 0" icon="material-symbols:chevron-right" class="text-16px opacity-50" />
       <span

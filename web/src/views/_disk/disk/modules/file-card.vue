@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch, nextTick } from 'vue';
-import type { DropdownOption } from 'naive-ui';
+import { NCheckbox, type DropdownOption } from 'naive-ui';
 import { useDiskStore } from '@/store/modules/disk';
 import { useDiskCreate } from '@/hooks/business/disk/use-disk-create';
 import { $t } from '@/locales';
@@ -35,15 +35,16 @@ watch(isRenaming, renaming => {
 
 const selected = computed(() => diskStore.selectedFiles.includes(props.file.fileId));
 
-/** 图标尺寸随网格大小档位（大图 80 / 小图 56） */
-const iconSize = computed(() => (diskStore.gridSize === 'large' ? 80 : 56));
+/** 图标尺寸随网格大小档位（大图 120 / 缩略 80） */
+const iconSize = computed(() => (diskStore.gridSize === 'large' ? 120 : 80));
 
-function handleClick() {
+/** 左上角复选框勾选/取消：同步到 store */
+function toggleSelect(checked: boolean) {
   const id = props.file.fileId;
-  if (selected.value) {
-    diskStore.setSelectedFiles(diskStore.selectedFiles.filter(f => f !== id));
-  } else {
+  if (checked) {
     diskStore.setSelectedFiles([...diskStore.selectedFiles, id]);
+  } else {
+    diskStore.setSelectedFiles(diskStore.selectedFiles.filter(f => f !== id));
   }
 }
 
@@ -68,11 +69,19 @@ function handleAction(key: string) {
 
 <template>
   <div
-    class="relative group flex-col-center cursor-pointer gap-6px p-10px rd-8px transition-colors"
-    :class="selected ? 'disk-card-active' : 'hover:bg-layout'"
-    @click="handleClick"
+    class="relative group flex-col-center cursor-pointer gap-6px p-10px rd-8px overflow-hidden transition-colors"
+    :class="selected ? 'bg-primary/15 hover:bg-primary/20' : 'hover:bg-primary/10'"
     @dblclick="handleDblClick"
   >
+    <!-- 左上角选中复选框:hover 浮现,选中后常驻;重命名态隐藏 -->
+    <NCheckbox
+      v-if="!isRenaming"
+      :checked="selected"
+      class="absolute left-4px top-4px z-1 transition-opacity"
+      :class="selected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
+      @click.stop
+      @update:checked="toggleSelect"
+    />
     <!-- ⋯ 操作菜单(hover 显示;重命名态隐藏) -->
     <NDropdown v-if="!isRenaming" :options="opOptions" trigger="click" placement="bottom-end" @select="handleAction">
       <NButton
@@ -111,15 +120,12 @@ function handleAction(key: string) {
     </template>
     <template v-else>
       <FileIcon :file-type="file.fileType" :extension="file.fileExtension" :size="iconSize" />
-      <span class="w-full truncate text-center text-13px" :title="file.fileName">{{ file.fileName }}</span>
+      <span
+        class="w-full line-clamp-2 break-all text-center text-13px leading-18px min-h-36px"
+        :title="file.fileName"
+      >{{ file.fileName }}</span>
       <span v-if="!file.isFolder" class="text-11px opacity-50">{{ formatFileSize(file.fileSize) }}</span>
       <span v-else class="text-11px opacity-50">{{ $t('page.disk.file.folder') }}</span>
     </template>
   </div>
 </template>
-
-<style scoped>
-.disk-card-active {
-  background-color: rgba(var(--primary-color-rgb), 0.1);
-}
-</style>

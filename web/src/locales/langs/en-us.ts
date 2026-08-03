@@ -335,7 +335,6 @@ const local: App.I18n.Schema = {
       title: 'Disk',
       empty: 'No files',
       loadingMore: 'Loading more...',
-      allLoaded: 'All {count} items loaded',
       fileType: {
         title: 'File Type',
         all: 'All',
@@ -351,10 +350,10 @@ const local: App.I18n.Schema = {
         searchPlaceholder: 'Search file name',
         refresh: 'Refresh',
         sort: 'Sort',
-        gridView: 'Grid view',
         listView: 'List view',
-        largeGrid: 'Large',
-        smallGrid: 'Small'
+        viewList: 'List',
+        viewThumbnail: 'Thumbnail',
+        viewLarge: 'Large'
       },
       sort: {
         name: 'Name',
@@ -362,13 +361,15 @@ const local: App.I18n.Schema = {
         modifyTime: 'Modified'
       },
       breadcrumb: {
-        root: 'Root',
+        root: 'All Files',
+        backToPrev: 'Up',
         count: '{count} items'
       },
       column: {
         name: 'Name',
         size: 'Size',
-        modifyTime: 'Modified'
+        modifyTime: 'Modified',
+        selectedCount: 'Selected {count} item(s)'
       },
       file: {
         folder: 'Folder'

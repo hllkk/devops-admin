@@ -203,12 +203,14 @@ function handleSort(field: 'name' | 'size' | 'modifyTime', order: 'asc' | 'desc'
   diskStore.setSort(field, order);
 }
 
-function handleToggleView() {
-  diskStore.setViewMode(diskStore.viewMode === 'grid' ? 'list' : 'grid');
-}
-
-function handleToggleGridSize() {
-  diskStore.setGridSize(diskStore.gridSize === 'large' ? 'small' : 'large');
+/** 视图模式三选一：list 列表 / thumbnail 缩略(grid small) / large 大图(grid large) */
+function handleSetView(mode: 'list' | 'thumbnail' | 'large') {
+  if (mode === 'list') {
+    diskStore.setViewMode('list');
+    return;
+  }
+  diskStore.setViewMode('grid');
+  diskStore.setGridSize(mode === 'large' ? 'large' : 'small');
 }
 
 // === 第2期 文件 CRUD(删除;移动/复制 A2) ===
@@ -361,8 +363,7 @@ onMounted(async () => {
           @search="handleSearch"
           @refresh="handleRefresh"
           @sort="handleSort"
-          @toggle-view="handleToggleView"
-          @toggle-grid-size="handleToggleGridSize"
+          @set-view="handleSetView"
           @create="handleCreate"
           @upload="handleUpload"
         />
@@ -391,9 +392,6 @@ onMounted(async () => {
         <div v-if="loadingMore" class="flex-center gap-8px py-12px">
           <NSpin size="small" />
           <span class="text-13px opacity-60">{{ $t('page.disk.loadingMore') }}</span>
-        </div>
-        <div v-else-if="!hasMore && fileList.length > 0" class="py-12px text-center text-13px opacity-60">
-          {{ $t('page.disk.allLoaded', { count: totalCount }) }}
         </div>
       </NCard>
 

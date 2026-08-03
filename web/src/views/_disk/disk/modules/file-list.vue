@@ -73,8 +73,16 @@ defineExpose({ scrollContainer });
 
 const columns = computed<DataTableColumns<Api.Disk.FileItem>>(() => [
   {
+    // selection 列：名称左侧独立复选框列，表头自带全选；受控于 store.selectedFiles
+    type: 'selection',
+    disabled: (row: Api.Disk.FileItem) => row.fileId === CREATE_ID
+  },
+  {
     key: 'fileName',
-    title: $t('page.disk.column.name'),
+    title:
+      diskStore.selectedFiles.length > 0
+        ? $t('page.disk.column.selectedCount', { count: diskStore.selectedFiles.length })
+        : $t('page.disk.column.name'),
     render: row => {
       const isCreating = row.fileId === CREATE_ID;
       const isRenaming = !!diskStore.renamingId && diskStore.renamingId === row.fileId;
@@ -173,21 +181,20 @@ const columns = computed<DataTableColumns<Api.Disk.FileItem>>(() => [
   }
 ]);
 
-function toggleSelect(row: Api.Disk.FileItem) {
-  const id = row.fileId;
-  if (diskStore.selectedFiles.includes(id)) {
-    diskStore.setSelectedFiles(diskStore.selectedFiles.filter(f => f !== id));
-  } else {
-    diskStore.setSelectedFiles([...diskStore.selectedFiles, id]);
-  }
+/** NDataTable selection 列行 key */
+const rowKey = (row: Api.Disk.FileItem) => row.fileId;
+
+/** selection 列选中变更：同步到 store（受控，表头全选/单行勾选均走这里） */
+function onCheckedRowKeysChange(keys: Array<string | number>) {
+  diskStore.setSelectedFiles(keys as CommonType.IdType[]);
 }
 
 const rowProps = (row: Api.Disk.FileItem) => {
-  // 创建行不参与选中/进入
+  // 创建行不参与进入
   if (row.fileId === CREATE_ID) return { style: '' };
   return {
     style: 'cursor: pointer;',
-    onClick: () => toggleSelect(row),
+    // 选中交由 selection 列复选框负责（避免行点击与 selection 双重 toggle 抵消）
     onDblclick: () => {
       if (row.isFolder) diskStore.enterFolder(row);
     }
@@ -205,8 +212,11 @@ const rowClassName = (row: Api.Disk.FileItem) => (diskStore.selectedFiles.includ
         :data="tableData"
         :loading="props.loading"
         :bordered="false"
+        :row-key="rowKey"
+        :checked-row-keys="diskStore.selectedFiles"
         :row-props="rowProps"
         :row-class-name="rowClassName"
+        @update:checked-row-keys="onCheckedRowKeysChange"
       />
     </NScrollbar>
   </div>
