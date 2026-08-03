@@ -3,6 +3,7 @@ package upload
 import (
 	"context"
 	"errors"
+	"io"
 	"mime"
 	"mime/multipart"
 	"net/http"
@@ -78,6 +79,53 @@ func (m *Minio) UploadFile(ctx context.Context, file *multipart.FileHeader) (fil
 		return "", "", errors.New("上传文件到minio失败, err:" + err.Error())
 	}
 	return global.OPS_CONFIG.Minio.BucketUrl + "/" + info.Key, filePathres, nil
+}
+
+// UploadStream 流式上传到指定前缀（网盘私有文件用 "file" 前缀，脱离公开的 uploads/）。
+// 直接喂 io.Reader（如合并产物句柄），省掉 BuildFileHeader 的临时 multipart 文件，内存恒定；
+// reader 须只读到 size 字节。仅 Minio 实现：网盘依赖 minio/rustfs 存储后端（dev/prod 均 oss-type=minio）。
+func (m *Minio) UploadStream(ctx context.Context, reader io.Reader, size int64, prefix, filename string) (urlStr, key string, uploadErr error) {
+	client, err := newMinioClient()
+	if err != nil {
+		logger.WithCtx(ctx).Mod("upload").Err(err).Error("minio client 初始化失败")
+		return "", "", errors.New("minio client 初始化失败, err:" + err.Error())
+	}
+
+	// 对文件名做与 UploadFile 一致的 MD5 化名存储，避免原始文件名泄露/冲突
+	ext := filepath.Ext(filename)
+	stem := utils.MD5V([]byte(strings.TrimSuffix(filename, ext)))
+	objectName := prefix + "/" + time.Now().Format("2006-01-02") + "/" + stem + ext
+	contentType := mime.TypeByExtension(ext)
+	if contentType == "" {
+		contentType = "application/octet-stream"
+	}
+
+	putCtx, cancel := context.WithTimeout(ctx, time.Minute*10)
+	defer cancel()
+
+	info, err := client.PutObject(putCtx, global.OPS_CONFIG.Minio.BucketName, objectName, reader, size, minio.PutObjectOptions{ContentType: contentType})
+	if err != nil {
+		logger.WithCtx(ctx).Mod("upload").Err(err).Error("流式上传到minio失败")
+		return "", "", errors.New("流式上传到minio失败, err:" + err.Error())
+	}
+	return global.OPS_CONFIG.Minio.BucketUrl + "/" + info.Key, info.Key, nil
+}
+
+// GetObject 取对象 reader(后端代理下载用:鉴权后流式回写,支持 Range 续传)。
+// 返回 *minio.Object(实现 io.ReadSeeker,http.ServeContent 据此自动处理 Range/206/Content-Length);
+// 调用方须 defer Close。仅 Minio 实现——网盘下载依赖 minio/rustfs 存储后端。
+func (m *Minio) GetObject(ctx context.Context, key string) (*minio.Object, error) {
+	client, err := newMinioClient()
+	if err != nil {
+		logger.WithCtx(ctx).Mod("upload").Err(err).Error("minio client 初始化失败")
+		return nil, errors.New("minio client 初始化失败, err:" + err.Error())
+	}
+	obj, err := client.GetObject(ctx, global.OPS_CONFIG.Minio.BucketName, key, minio.GetObjectOptions{})
+	if err != nil {
+		logger.WithCtx(ctx).Mod("upload").Err(err).Error("minio GetObject 失败")
+		return nil, errors.New("读取对象失败, err:" + err.Error())
+	}
+	return obj, nil
 }
 
 func (m *Minio) DeleteFile(ctx context.Context, key string) error {

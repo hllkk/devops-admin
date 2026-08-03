@@ -69,6 +69,23 @@ async function computeSampleHashes(
   return { quickHash, strongHash, midHash };
 }
 
+/**
+ * 分片 MD5 流式计算:按 STEP 步长逐块 arrayBuffer + SparkMD5 增量 append。
+ * SparkMD5.ArrayBuffer 内部按 64 字节块增量更新 state、只保留不足一块的尾部,
+ * 故内存峰值 ≈ STEP 而非整片——原实现 await blob.arrayBuffer() 把最大 50MB 整片一次性读入,
+ * 多分片并发(Worker 池 × 分片并发)时 Worker 内存压力大,移动端/低端机易触发标签页崩溃。
+ * sample/mid 采样量小(≤4MB)不需流式,仅 chunk 走此路径。
+ */
+async function chunkMd5Stream(blob: Blob): Promise<string> {
+  const spark = new SparkMD5.ArrayBuffer();
+  const STEP = 1024 * 1024; // 1MB 步长:内存峰值 ~1MB,平衡循环次数与内存
+  const total = blob.size;
+  for (let off = 0; off < total; off += STEP) {
+    spark.append(await blob.slice(off, Math.min(off + STEP, total)).arrayBuffer());
+  }
+  return spark.end();
+}
+
 ctx.onmessage = async (e: MessageEvent) => {
   const data = e.data as { id: number; kind?: 'chunk' | 'sample'; blob?: Blob; file?: File };
   const { id, kind = 'chunk' } = data;
@@ -79,10 +96,7 @@ ctx.onmessage = async (e: MessageEvent) => {
       ctx.postMessage({ ok: true, id, kind: 'sample', quickHash, strongHash, midHash });
     } else {
       if (!data.blob) throw new Error('chunk 任务缺少 blob');
-      const buf = await data.blob.arrayBuffer();
-      const spark = new SparkMD5.ArrayBuffer();
-      spark.append(buf);
-      ctx.postMessage({ ok: true, id, md5: spark.end() });
+      ctx.postMessage({ ok: true, id, md5: await chunkMd5Stream(data.blob) });
     }
   } catch (err) {
     ctx.postMessage({ ok: false, id, error: (err as Error).message });

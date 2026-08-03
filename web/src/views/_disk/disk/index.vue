@@ -6,6 +6,7 @@ import { useDialog, useMessage } from 'naive-ui';
 import { useDiskStore } from '@/store/modules/disk';
 import { fetchGetFileList, mapBackendFileList, fetchGetQuota, fetchDelete, fetchMove, fetchCopy } from '@/service/api/disk';
 import { useInfiniteScroll } from '@/hooks/business/use-infinite-scroll';
+import { useDownload } from '@/hooks/business/download';
 import { useDiskUpload } from '@/hooks/business/disk/use-disk-upload';
 import { useDiskCreate } from '@/hooks/business/disk/use-disk-create';
 import { $t } from '@/locales';
@@ -28,6 +29,7 @@ const { loading, startLoading, endLoading } = useLoading();
 const dialog = useDialog();
 const message = useMessage();
 const { uploadFiles } = useDiskUpload();
+const { zip: downloadFile } = useDownload();
 const { beginCreate, beginRename, registerRefresh } = useDiskCreate();
 
 // 显示容量开关
@@ -275,6 +277,10 @@ function handleAction(type: Api.Disk.DiskActionType, file: Api.Disk.FileItem) {
       break;
     case 'copy':
       openMoveCopy(file, 'copy');
+      break;
+    case 'download':
+      // 后端代理流式下载(GET /file-meta/download,cookie 鉴权 + Range);复用通用 zip 下载 hook
+      downloadFile(`/file-meta/download?fileId=${file.id ?? ''}`, file.name ?? '');
       break;
     default:
       break;

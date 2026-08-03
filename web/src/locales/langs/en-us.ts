@@ -382,6 +382,7 @@ const local: App.I18n.Schema = {
       },
       action: {
         newFolder: 'New Folder',
+        download: 'Download',
         rename: 'Rename',
         move: 'Move',
         copy: 'Copy',

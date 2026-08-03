@@ -370,7 +370,11 @@ export function fetchCheckUpload(params: Api.Disk.UploadCheckParams) {
 }
 
 /** 上传分片(POST /file-meta/upload,multipart) */
-export function fetchUploadChunk(params: Api.Disk.UploadChunkParams, onUploadProgress?: (e: AxiosProgressEvent) => void) {
+export function fetchUploadChunk(
+  params: Api.Disk.UploadChunkParams,
+  onUploadProgress?: (e: AxiosProgressEvent) => void,
+  signal?: AbortSignal
+) {
   const form = new FormData();
   form.append('uploadId', params.uploadId);
   form.append('chunkNumber', String(params.chunkNumber));
@@ -383,7 +387,9 @@ export function fetchUploadChunk(params: Api.Disk.UploadChunkParams, onUploadPro
     // 单分片最大 32MB,慢网下可能超过 @sa/axios 默认 10s 超时 → 关闭单请求超时
     timeout: 0,
     // 字节级进度回调:实时回传已上传字节,进度条平滑增长(治分片粒度顿挫)
-    onUploadProgress
+    onUploadProgress,
+    // 取消信号:透传给 axios(@sa/axios 拦截器在 config.signal 已存在时不覆盖),取消/暂停 abort 即时中断当前分片,不必等其传完
+    signal
   });
 }
 

@@ -567,6 +567,7 @@ declare namespace App {
           };
           action: {
             newFolder: string;
+            download: string;
             rename: string;
             move: string;
             copy: string;

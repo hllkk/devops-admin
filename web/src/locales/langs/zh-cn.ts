@@ -378,6 +378,7 @@ const local: App.I18n.Schema = {
       },
       action: {
         newFolder: '新建文件夹',
+        download: '下载',
         rename: '重命名',
         move: '移动',
         copy: '复制',

@@ -1,7 +1,10 @@
 package disk
 
 import (
+	"net/http"
+	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -9,6 +12,7 @@ import (
 	diskReq "github.com/hllkk/devops-admin/server/model/disk/request"
 	"github.com/hllkk/devops-admin/server/utils"
 	"github.com/hllkk/devops-admin/server/utils/logger"
+	"github.com/hllkk/devops-admin/server/utils/upload"
 )
 
 // DiskFileApi 网盘文件管理(对齐前端 /file-meta/* 资源)。
@@ -42,6 +46,58 @@ func (d *DiskFileApi) GetFileList(c *gin.Context) {
 		return
 	}
 	response.OkWithDetailed(resp, "获取成功", c)
+}
+
+// Download
+// @Tags      DiskFile
+// @Summary   下载文件(后端代理流式 + Range)
+// @Description 鉴权后从对象存储流式回写;userId 由 JWT 取防 IDOR;支持 Range 续传(http.ServeContent)。
+//
+//	生产 RustFS 桶仅 uploads/ 前缀公开,网盘文件存私有 file/ 前缀,经此接口鉴权代理下载(不走 /oss/ 公开反代)。
+//
+// @Produce   application/octet-stream
+// @Param     fileId  query  int  true  "文件ID"
+// @Router    /file-meta/download [get]
+func (d *DiskFileApi) Download(c *gin.Context) {
+	var q diskReq.DownloadReq
+	if err := c.ShouldBindQuery(&q); err != nil {
+		response.FailWithMessage("无效的 fileId", c)
+		return
+	}
+	f, err := diskFileService.GetFileForDownload(c.Request.Context(), utils.GetUserID(c), q.FileId)
+	if err != nil {
+		response.FailWithMessage("文件不存在或已删除", c)
+		return
+	}
+	oss := upload.NewOss()
+	mn, ok := oss.(*upload.Minio)
+	if !ok {
+		response.FailWithMessage("网盘需要 minio/rustfs 存储后端", c)
+		return
+	}
+	obj, err := mn.GetObject(c.Request.Context(), f.StoragePath)
+	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("biz").Err(err).Error("网盘下载取对象失败")
+		response.FailWithMessage("文件读取失败", c)
+		return
+	}
+	defer obj.Close()
+	// Stat 预检:对象不存在/损坏时在写 body 前返回错误(此时 header 未发,Fail 安全)
+	if _, err := obj.Stat(); err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("biz").Err(err).Error("网盘下载对象 Stat 失败")
+		response.FailWithMessage("文件存储异常", c)
+		return
+	}
+	// 文件名 RFC5987 编码(中文/特殊字符安全,对标 jmal 范式,避 ISO-8859-1 乱码)
+	c.Header("Content-Disposition", `attachment; filename*=UTF-8''`+url.PathEscape(f.Name))
+	// 下载统一 octet-stream(attachment 语义):避免 .json 等文件被前端下载拦截器按
+	// Content-Type: application/json 误判为错误响应;文件名靠 Content-Disposition filename* 传达。
+	// (http.ServeContent 见 Content-Type 已设则不嗅探覆盖)
+	c.Header("Content-Type", "application/octet-stream")
+	// http.ServeContent 自动处理 Range 请求(206 + Content-Range)、Content-Length;
+	// *minio.Object 实现 io.ReadSeeker,Seek 时按需向 rustfs 发 Range 请求,内存恒定。
+	// modtime 传零值:不设 Last-Modified、跳过 If-Modified-Since 304 协商(私有文件无需缓存协商)。
+	http.ServeContent(c.Writer, c.Request, f.Name, time.Time{}, obj)
 }
 
 // ResolvePath

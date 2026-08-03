@@ -131,6 +131,27 @@ func (s *DiskFileService) GetFileList(ctx context.Context, userId int64, q diskR
 	return diskRes.FileListResponse{List: list, Total: total, Page: q.PageNum, Size: q.PageSize}, nil
 }
 
+// GetFileForDownload 下载预检:按 fileId + JWT userId 取文件(防 IDOR),校验正常状态 + 非目录 + 有存储路径。
+// 仅做元数据查询(Select 限定列),物理读取由 handler 经 OSS 抽象 GetObject 流式输出。
+func (s *DiskFileService) GetFileForDownload(ctx context.Context, userId, fileId int64) (disk.DiskFile, error) {
+	var f disk.DiskFile
+	err := global.OPS_DB.WithContext(ctx).
+		Select("file_id", "user_id", "name", "is_directory", "content_type", "storage_path").
+		Where("file_id = ? AND user_id = ?", fileId, userId).
+		Where("status = ?", disk.DiskFileStatusNormal).
+		Take(&f).Error
+	if err != nil {
+		return f, errors.New("文件不存在或已删除")
+	}
+	if f.IsDirectory {
+		return f, errors.New("暂不支持下载目录") // 目录打包下载属后续增强
+	}
+	if f.StoragePath == "" {
+		return f, errors.New("文件存储路径为空")
+	}
+	return f, nil
+}
+
 // toFileItem 将 DiskFile 模型转为前端 FileItem DTO。
 func toFileItem(f disk.DiskFile, filePath string) diskRes.FileItem {
 	return diskRes.FileItem{

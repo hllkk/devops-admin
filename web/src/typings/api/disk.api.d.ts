@@ -208,7 +208,7 @@ declare namespace Api {
     };
 
     /** 文件操作类型(右键菜单/操作按钮) */
-    type DiskActionType = 'rename' | 'move' | 'copy' | 'delete';
+    type DiskActionType = 'rename' | 'move' | 'copy' | 'delete' | 'download';
 
     /** 新建文件夹请求(POST /file-meta/mkdir) */
     type MkdirParams = {

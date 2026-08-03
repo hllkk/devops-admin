@@ -20,10 +20,12 @@ function getConcurrency(): number {
   return chunkConcurrency > 0 ? chunkConcurrency : Math.min(4, Math.max(2, (navigator.hardwareConcurrency || 4) - 2));
 }
 
-/** 文件级并发池:多文件上传时限制同时跑的任务数(由 sys_disk_config.maxConcurrentUploads 配置,0=不限)。
- *  旧实现 uploadFiles 循环 fire-and-forget,所有文件同时启动 → N×分片并发压垮浏览器/后端。
- *  现入队受控调度,超出的排队等待(pending 态可见)。retry 绕过池直接跑(单任务手动重试,瞬时+1可接受)。 */
-let maxConcurrent = 0;
+/** 文件级并发池:多文件上传时限制同时跑的任务数。
+ *  默认 DEFAULT_MAX_CONCURRENT(安全默认:防一次选 N 个文件全量并发 → N×分片并发压垮浏览器/后端);
+ *  sys_disk_config.maxConcurrentUploads>0 时覆盖。入队受控调度,超出的排队等待(pending 态可见)。
+ *  uploadFiles 与 retryTask 均入队,受同一池限流(批量重试也不会瞬时超并发)。 */
+const DEFAULT_MAX_CONCURRENT = 3;
+let maxConcurrent = DEFAULT_MAX_CONCURRENT;
 let concurrentConfigLoaded = false;
 interface QueuedTask {
   id: string;
@@ -70,6 +72,9 @@ interface Ctrl {
   sleepTimer?: ReturnType<typeof setTimeout>;
   /** 退避 sleep 的 reject 句柄,cancel 时调用以立即打断等待 */
   rejectSleep?: (e: CancelledSentinel) => void;
+  /** 当前进行中分片上传的 AbortController;pause/cancel 调 abort 中断正在传的分片(不必等其传完),
+   *  resume/retry/runUpload 开头重建(已 abort 的 controller 不可复用)。 */
+  abortController?: AbortController;
 }
 const controllers = new Map<string, Ctrl>();
 
@@ -308,6 +313,9 @@ export function useDiskUpload() {
   async function runUpload(id: string, ctrl: Ctrl, onEnd?: () => void) {
     const { file, currentDirectory, relativePath, onFileDone } = ctrl;
     if (!file) return;
+    // 重建 abortController:每次 runUpload(含 retry 重跑)给本次生命周期一个新句柄;
+    // 旧的(可能已被 pause/cancel abort 过)不可复用。分片上传 fetchUploadChunk 用它的 signal。
+    ctrl.abortController = new AbortController();
     updateTask(id, { status: 'hashing', progress: 0, errorMsg: undefined, transferredSize: 0 });
     try {
       const { quickHash, strongHash, midHash } = await computeSampleHashes(file);
@@ -417,17 +425,31 @@ export function useDiskUpload() {
           let success = false;
           for (let attempt = 0; attempt <= chunkMaxRetries; attempt += 1) {
             if (ctrl.cancelled) throw new CancelledSentinel();
+            // 重试前尊重暂停:pause abort 当前分片后 fetchUploadChunk 返回 error,命中下方 paused 分支;
+            // 此处 await 让 worker 挂起,resume 后重传当前分片(不消耗重试额度)。
+            await ctrlWaitPause(ctrl);
+            if (ctrl.cancelled) throw new CancelledSentinel();
             const { error } = await fetchUploadChunk(
               { uploadId, chunkNumber: i, chunkHash: hash, file: blob },
               e => {
                 // 该分片实时已传字节(限幅到分片大小,防超界)
                 chunkLoaded.set(i, Math.min(e.loaded || 0, end - start));
                 reportProgress();
-              }
+              },
+              ctrl.abortController?.signal
             );
             if (!error) {
               success = true;
               break;
+            }
+            // 失败区分 pause/cancel 的主动 abort 与网络抖动:前者立即处理,不浪费退避/重试额度
+            if (ctrl.cancelled) throw new CancelledSentinel();
+            if (ctrl.paused) {
+              // 暂停中断(分片可能只传了一半):挂起到 resume,恢复后重传当前分片
+              await ctrlWaitPause(ctrl);
+              if (ctrl.cancelled) throw new CancelledSentinel();
+              attempt = -1; // for 自增回 0:resume 后重传当前分片,pause 不算失败、不消耗重试额度
+              continue;
             }
             if (attempt < chunkMaxRetries) {
               await ctrlSleep(ctrl, retryDelay(attempt)); // 退避;期间取消则 reject CancelledSentinel
@@ -605,6 +627,8 @@ export function useDiskUpload() {
     if (!ctrl) return;
     ctrl.paused = true;
     ctrl.pausedAt = Date.now(); // 记录暂停起点,恢复时累加进 pausedMs,从活动时间里扣除
+    // abort 当前进行中的分片上传:不必等其传完,fetchUploadChunk 立即返回 error → worker 命中 paused 分支挂起
+    ctrl.abortController?.abort();
     updateTask(id, { status: 'paused' });
   }
   function resumeTask(id: string) {
@@ -622,6 +646,8 @@ export function useDiskUpload() {
       ctrl.pausedMs += Date.now() - ctrl.pausedAt;
       ctrl.pausedAt = undefined;
     }
+    // 重建 abortController:pause 时旧的已 abort,后续分片上传需新句柄
+    ctrl.abortController = new AbortController();
     ctrlResume(ctrl);
     // 速度采样基线重置:恢复后重新首采,避免暂停时长被计入段时长导致速度偏低
     ctrl.speedLastTs = undefined;
@@ -639,10 +665,16 @@ export function useDiskUpload() {
     }
     const ctrl = controllers.get(id);
     if (!ctrl) return;
+    // 已在队列则不重复入队(防双跑);正在跑/排队中的任务不应被 retry
+    if (uploadQueue.some(q => q.id === id)) return;
     ctrl.cancelled = false;
     ctrl.paused = false;
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    runUpload(id, ctrl);
+    // 入队受并发池调度(P1-3 修复:旧实现直接 runUpload 绕过池 → 批量重试瞬时超并发)。
+    // 池有空闲时 scheduleNext 立即启动(单 retry 仍是即时的);池满则显示 pending 排队,有空闲再启动。
+    // runUpload 由 scheduleNext 传 onEnd,正确增减 activeUploads 并续调度下一个。
+    uploadQueue.push({ id, ctrl });
+    updateTask(id, { status: 'pending', errorMsg: undefined });
+    scheduleNext();
   }
   async function cancelTask(id: string) {
     const agg = tasks.value.find(t => t.id === id);
@@ -657,6 +689,7 @@ export function useDiskUpload() {
     const ctrl = controllers.get(id);
     if (ctrl) {
       ctrl.cancelled = true;
+      ctrl.abortController?.abort(); // 中断当前进行中的分片上传,无需等其传完(配合下方 rejectSleep 打断退避)
       ctrlResume(ctrl); // 唤醒可能 paused 的 worker,使其退出
       if (ctrl.rejectSleep) ctrl.rejectSleep(new CancelledSentinel()); // 打断退避 sleep,无需等完
       if (ctrl.identifier) {

@@ -252,14 +252,19 @@ func (s *DiskUploadService) Merge(ctx context.Context, userId int64, req diskReq
 		return fail(fmt.Errorf("合并大小不一致: 实测 %d / 声明 %d", mergedSize, sess.TotalSize))
 	}
 
-	// 经 OSS 接口推送(local/rustfs 由 System.OssType 决定)
-	fh, cleanup, err := upload.BuildFileHeader(merged, "file", sess.FileName)
-	if err != nil {
-		return fail(err)
-	}
-	defer cleanup()
+	// 经 OSS 接口流式推送到私有前缀 file/(脱离公开 uploads/——网盘文件必须私有)。
+	// 网盘依赖 minio/rustfs 存储后端;直接喂合并产物句柄,省 BuildFileHeader 临时文件,内存恒定。
 	oss := upload.NewOss()
-	urlStr, key, err := oss.UploadFile(ctx, fh)
+	mn, ok := oss.(*upload.Minio)
+	if !ok {
+		return fail(fmt.Errorf("网盘需要 minio/rustfs 存储后端, 当前为 %s", global.OPS_CONFIG.System.OssType))
+	}
+	mergedFile, oerr := os.Open(merged)
+	if oerr != nil {
+		return fail(oerr)
+	}
+	defer mergedFile.Close()
+	urlStr, key, err := mn.UploadStream(ctx, mergedFile, mergedSize, "file", sess.FileName)
 	if err != nil {
 		return fail(err)
 	}
