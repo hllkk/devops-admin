@@ -23,6 +23,7 @@ interface Emits {
   (e: 'set-view', mode: ViewMode): void;
   (e: 'create', type: CreateType): void;
   (e: 'upload', type: CreateType, files: File[], dirs?: string[]): void;
+  (e: 'batch-download'): void;
 }
 
 const emit = defineEmits<Emits>();
@@ -189,6 +190,11 @@ function handleViewSelect(key: string) {
         </NButton>
       </NDropdown>
 
+      <!-- 批量下载(选中时显示,打包选中项) -->
+      <NButton v-if="diskStore.selectedFiles.length" type="primary" ghost :focusable="false" @click="emit('batch-download')">
+        <SvgIcon icon="material-symbols:download" class="text-18px" />
+        <span class="text-13px">{{ $t('page.disk.action.download') }} ({{ diskStore.selectedFiles.length }})</span>
+      </NButton>
       <!-- 搜索:flex-1 + max-w 让桌面保持合理宽度,窄屏自适应收缩,min-w 防塌缩 -->
       <NInputGroup class="flex-1 max-w-240px min-w-120px">
         <NInput

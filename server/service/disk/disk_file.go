@@ -152,6 +152,55 @@ func (s *DiskFileService) GetFileForDownload(ctx context.Context, userId, fileId
 	return f, nil
 }
 
+// PackageEntry 打包下载中的一个文件条目:zip 内相对路径 + 对象存储 key。
+type PackageEntry struct {
+	RelPath     string // zip 内相对路径(disk_files.path 去前导 "/",跨根天然唯一)
+	StoragePath string // 对象存储 key
+}
+
+// CollectPackageFiles 打包预检:按 fileIds + JWT userId 收集所有待打包文件(递归目录后代,校验全归属 user)。
+// 返回扁平文件条目列表供 handler 流式压缩(zip.NewWriter 套 c.Writer 边读边压边写,不落临时盘)。
+func (s *DiskFileService) CollectPackageFiles(ctx context.Context, userId int64, fileIds []int64) ([]PackageEntry, error) {
+	var roots []disk.DiskFile
+	err := global.OPS_DB.WithContext(ctx).
+		Where("file_id IN ?", fileIds).
+		Where("user_id = ?", userId).
+		Where("status = ?", disk.DiskFileStatusNormal).
+		Find(&roots).Error
+	if err != nil {
+		return nil, err
+	}
+	if len(roots) == 0 {
+		return nil, errors.New("文件不存在或已删除")
+	}
+	entries := make([]PackageEntry, 0)
+	for _, root := range roots {
+		s.collectPackageEntry(ctx, userId, root, &entries)
+	}
+	if len(entries) == 0 {
+		return nil, errors.New("没有可下载的文件")
+	}
+	return entries, nil
+}
+
+// collectPackageEntry 递归收集:目录下钻所有后代文件,文件直接收。
+// relPath 取 f.Path 去前导 "/"(disk_files.path 为全路径,同用户目录树内唯一,跨根不冲突)。
+func (s *DiskFileService) collectPackageEntry(ctx context.Context, userId int64, f disk.DiskFile, entries *[]PackageEntry) {
+	if f.IsDirectory {
+		var children []disk.DiskFile
+		global.OPS_DB.WithContext(ctx).
+			Where("parent_id = ? AND user_id = ? AND status = ?", f.FileId, userId, disk.DiskFileStatusNormal).
+			Find(&children)
+		for _, ch := range children {
+			s.collectPackageEntry(ctx, userId, ch, entries)
+		}
+		return
+	}
+	if f.StoragePath != "" {
+		*entries = append(*entries, PackageEntry{RelPath: strings.TrimPrefix(f.Path, "/"), StoragePath: f.StoragePath})
+	}
+}
+
 // toFileItem 将 DiskFile 模型转为前端 FileItem DTO。
 func toFileItem(f disk.DiskFile, filePath string) diskRes.FileItem {
 	return diskRes.FileItem{

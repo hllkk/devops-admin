@@ -157,9 +157,25 @@ export function useDownload() {
       contentType: 'application/octet-stream'
     });
 
+  /** 原生 a 标签下载(GET 接口专用:单文件下载 / 打包下载)。
+   *  httpOnly x-token cookie 同源自动携带(JWTAuth 从 cookie 取 token),浏览器下载管理器接管:
+   *  大文件零 JS 内存、可取消/原生续传(后端 ServeContent 已支持 Range)。
+   *  与 download(POST 导出,fetch+StreamSaver)区分——GET 下载必须走原生,否则 http 生产下
+   *  StreamSaver isHttps()=false 会降级 downloadByData(blob),GB 级文件全量入内存致 tab OOM。 */
+  const direct = (url: string, filename?: string) => {
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = `${baseURL}${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}`;
+    if (filename) a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   return {
     oss,
     zip,
-    download
+    download,
+    direct
   };
 }

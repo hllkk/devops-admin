@@ -1,6 +1,8 @@
 package disk
 
 import (
+	"archive/zip"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -98,6 +100,62 @@ func (d *DiskFileApi) Download(c *gin.Context) {
 	// *minio.Object 实现 io.ReadSeeker,Seek 时按需向 rustfs 发 Range 请求,内存恒定。
 	// modtime 传零值:不设 Last-Modified、跳过 If-Modified-Since 304 协商(私有文件无需缓存协商)。
 	http.ServeContent(c.Writer, c.Request, f.Name, time.Time{}, obj)
+}
+
+// PackageDownload
+// @Tags      DiskFile
+// @Summary   打包下载(多文件/文件夹,流式 Zip)
+// @Description 鉴权后递归收集选中项(含目录后代),流式 Zip 边读对象边压缩边写响应,不落临时盘。支持 OSS 对象打包(jmal 仅本地)。
+// @Produce   application/zip
+// @Param     fileIds  query  []string  true  "文件/文件夹ID列表(重复传 fileIds=N)"
+// @Router    /file-meta/package-download [get]
+func (d *DiskFileApi) PackageDownload(c *gin.Context) {
+	// query array: ?fileIds=1&fileIds=2(原生 a 标签/window.open 同源带 httpOnly cookie 鉴权)
+	rawIds := c.QueryArray("fileIds")
+	fileIds := make([]int64, 0, len(rawIds))
+	for _, s := range rawIds {
+		if id, err := strconv.ParseInt(s, 10, 64); err == nil && id > 0 {
+			fileIds = append(fileIds, id)
+		}
+	}
+	if len(fileIds) == 0 {
+		response.FailWithMessage("未选择有效文件", c)
+		return
+	}
+	entries, err := diskFileService.CollectPackageFiles(c.Request.Context(), utils.GetUserID(c), fileIds)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	oss := upload.NewOss()
+	mn, ok := oss.(*upload.Minio)
+	if !ok {
+		response.FailWithMessage("网盘需要 minio/rustfs 存储后端", c)
+		return
+	}
+	// header 必须在写 body 前设;此后 GetObject/Zip 失败只能跳过该文件(已发 header 无法改返回错误)
+	c.Header("Content-Disposition", `attachment; filename*=UTF-8''`+url.PathEscape("disk-download.zip"))
+	c.Header("Content-Type", "application/zip")
+	zw := zip.NewWriter(c.Writer)
+	for _, e := range entries {
+		obj, err := mn.GetObject(c.Request.Context(), e.StoragePath)
+		if err != nil {
+			logger.WithCtx(c.Request.Context()).Mod("biz").Err(err).Error("打包下载取对象失败: " + e.RelPath)
+			continue
+		}
+		w, err := zw.Create(e.RelPath)
+		if err != nil {
+			_ = obj.Close()
+			continue
+		}
+		if _, err := io.Copy(w, obj); err != nil {
+			logger.WithCtx(c.Request.Context()).Mod("biz").Err(err).Error("打包下载写入失败: " + e.RelPath)
+		}
+		_ = obj.Close()
+	}
+	if err := zw.Close(); err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("biz").Err(err).Error("打包下载关闭 zip 失败")
+	}
 }
 
 // ResolvePath

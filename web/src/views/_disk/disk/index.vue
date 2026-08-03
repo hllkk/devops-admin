@@ -29,7 +29,7 @@ const { loading, startLoading, endLoading } = useLoading();
 const dialog = useDialog();
 const message = useMessage();
 const { uploadFiles } = useDiskUpload();
-const { zip: downloadFile } = useDownload();
+const { direct: downloadLink } = useDownload();
 const { beginCreate, beginRename, registerRefresh } = useDiskCreate();
 
 // 显示容量开关
@@ -279,12 +279,24 @@ function handleAction(type: Api.Disk.DiskActionType, file: Api.Disk.FileItem) {
       openMoveCopy(file, 'copy');
       break;
     case 'download':
-      // 后端代理流式下载(GET /file-meta/download,cookie 鉴权 + Range);复用通用 zip 下载 hook
-      downloadFile(`/file-meta/download?fileId=${file.id ?? ''}`, file.name ?? '');
+      if (file.isFolder) {
+        // 目录 → 打包下载(递归后代流式 Zip)
+        downloadLink(`/file-meta/package-download?fileIds=${file.id ?? ''}`, `${file.name ?? 'download'}.zip`);
+      } else {
+        // 文件 → 原生单文件下载(GET + httpOnly cookie 鉴权,浏览器接管,大文件零内存可续传)
+        downloadLink(`/file-meta/download?fileId=${file.id ?? ''}`, file.name ?? '');
+      }
       break;
     default:
       break;
   }
+}
+
+/** 批量下载选中项(打包,流式 Zip) */
+function handleBatchDownload() {
+  const ids = diskStore.selectedFiles;
+  if (ids.length === 0) return;
+  downloadLink(`/file-meta/package-download?${ids.map(id => `fileIds=${id}`).join('&')}`, `disk-download-${ids.length}.zip`);
 }
 
 // 同步 fileList 到 diskStore（供其他组件读取 currentFileList）
@@ -372,6 +384,7 @@ onMounted(async () => {
           @set-view="handleSetView"
           @create="handleCreate"
           @upload="handleUpload"
+          @batch-download="handleBatchDownload"
         />
         <!-- 面包屑 -->
         <Breadcrumb v-if="fileList.length > 0 || diskStore.currentPath.length > 0" :total-count="totalCount" />

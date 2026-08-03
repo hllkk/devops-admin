@@ -70,21 +70,14 @@ function handleDblClick() {
   if (props.file.isFolder) diskStore.enterFolder(props.file);
 }
 
-/** ⋯ 操作菜单(第2期:重命名/删除;移动/复制 A2;下载仅文件) */
-const opOptions = computed<DropdownOption[]>(() => {
-  const opts: DropdownOption[] = [];
-  // 仅文件可下载(后端拒绝目录下载);目录无此项
-  if (!props.file.isFolder) {
-    opts.push({ label: $t('page.disk.action.download'), key: 'download' });
-  }
-  opts.push(
-    { label: $t('page.disk.action.rename'), key: 'rename' },
-    { label: $t('page.disk.action.move'), key: 'move' },
-    { label: $t('page.disk.action.copy'), key: 'copy' },
-    { label: $t('page.disk.action.delete'), key: 'delete' }
-  );
-  return opts;
-});
+/** ⋯ 操作菜单(下载:文件→原生下载,目录→打包下载;第2期:重命名/删除;移动/复制) */
+const opOptions = computed<DropdownOption[]>(() => [
+  { label: $t('page.disk.action.download'), key: 'download' },
+  { label: $t('page.disk.action.rename'), key: 'rename' },
+  { label: $t('page.disk.action.move'), key: 'move' },
+  { label: $t('page.disk.action.copy'), key: 'copy' },
+  { label: $t('page.disk.action.delete'), key: 'delete' }
+]);
 
 function handleAction(key: string) {
   emit('action', key as Api.Disk.DiskActionType, props.file);

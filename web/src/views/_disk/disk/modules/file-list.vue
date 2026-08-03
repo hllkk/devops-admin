@@ -197,7 +197,7 @@ const columns = computed<DataTableColumns<Api.Disk.FileItem>>(() => [
         <NDropdown
           trigger="click"
           options={[
-            ...(!row.isFolder ? [{ label: $t('page.disk.action.download'), key: 'download' }] : []),
+            { label: $t('page.disk.action.download'), key: 'download' },
             { label: $t('page.disk.action.rename'), key: 'rename' },
             { label: $t('page.disk.action.move'), key: 'move' },
             { label: $t('page.disk.action.copy'), key: 'copy' },
