@@ -10,6 +10,7 @@ import DiskSetting from './modules/disk-setting.vue';
 import NotifySetting from './modules/notify-setting.vue';
 import AuthSetting from './modules/auth-setting.vue';
 import { useAuth } from '@/hooks/business/auth';
+import { useDiskUpload } from '@/hooks/business/disk/use-disk-upload';
 import { fetchGetSetting, fetchUpdateSetting } from '@/service/api/system/setting';
 import { useAppStore } from '@/store/modules/app/index.js';
 
@@ -124,6 +125,8 @@ async function handleSave() {
     window.$message?.error(t('page.system.setting.saveFail'));
   } else {
     window.$message?.success(t('page.system.setting.saveSuccess'));
+    // 热更新上传配置(并发/分片并发/重试),无需刷新即对新任务生效
+    useDiskUpload().reloadConfig();
   }
   endLoading();
 }

@@ -979,6 +979,12 @@ declare namespace App {
             diskBlockedExtensions: string;
             diskBlockedExtensionsTip: string;
             diskRecycleBinRetentionDays: string;
+            diskMaxConcurrentUploads: string;
+            diskMaxConcurrentUploadsSuffix: string;
+            diskMaxChunkConcurrency: string;
+            diskMaxChunkConcurrencySuffix: string;
+            diskMaxChunkRetries: string;
+            diskMaxChunkRetriesSuffix: string;
             diskUnitMB: string;
             diskUnitGB: string;
             diskUnitTB: string;

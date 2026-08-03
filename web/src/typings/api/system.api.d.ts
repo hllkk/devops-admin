@@ -624,6 +624,12 @@ declare namespace Api {
       blockedExtensions: string;
       /** 回收站自动清理天数 */
       recycleBinRetentionDays: number;
+      /** 最大同时上传文件数（0=不限） */
+      maxConcurrentUploads: number;
+      /** 单文件分片并发数（0=按设备自适应） */
+      maxChunkConcurrency: number;
+      /** 单分片上传失败重试次数（0=不重试） */
+      maxChunkRetries: number;
       /** 网盘名称 */
       diskName: string;
       /** Logo URL */

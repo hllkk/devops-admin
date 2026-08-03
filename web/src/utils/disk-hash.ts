@@ -1,63 +1,26 @@
-import SparkMD5 from 'spark-md5';
-
 /**
  * 网盘上传哈希工具(对齐后端 disk_upload:quickHash=MD5 采样、strongHash=SHA-256 采样、chunkHash=分片 MD5)。
  * 与后端 service/disk 的秒传(quick_hash+strong_hash 命中)、SaveChunk(md5 校验)契约一致。
+ *
+ * 所有哈希(chunkMd5 / 秒传采样指纹)均调度到 disk-hash-worker.ts 的 Web Worker 池后台计算,
+ * 主线程不直接算 MD5/SHA-256,避免大文件 hashing 阶段阻塞 UI。
  */
-
-const SAMPLE = 2 * 1024 * 1024; // 2MB 采样
-
-/** 构造采样缓冲:首 2MB + size(8 字节小端) + 尾 2MB(>2MB 时)。固定写入 size 防碰撞。 */
-async function buildSampleBuffer(file: File): Promise<ArrayBuffer> {
-  const parts: BlobPart[] = [file.slice(0, Math.min(SAMPLE, file.size))];
-  const sizeBuf = new ArrayBuffer(8);
-  new DataView(sizeBuf).setBigUint64(0, BigInt(file.size), true);
-  parts.push(sizeBuf);
-  if (file.size > SAMPLE) {
-    parts.push(file.slice(Math.max(SAMPLE, file.size - SAMPLE)));
-  }
-  return new Blob(parts).arrayBuffer();
-}
-
-/** bytes → hex */
-function toHex(bytes: Uint8Array): string {
-  return Array.from(bytes)
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
-}
 
 /**
- * 计算秒传指纹:quickHash(MD5 采样) + strongHash(SHA-256 采样,防碰撞)。
- * crypto.subtle 不可用(非安全上下文)时 strongHash 留空,后端按 quickHash+strongHash 查询仍自洽。
+ * 计算秒传指纹(quickHash/strongHash/midHash):投递 File 到 Worker 池后台算,不阻塞主线程。
+ * 哈希实现(采样缓冲构造 + MD5/SHA-256)在 disk-hash-worker.ts,本函数仅投递 + 按 id 收结果。
  */
-export async function computeSampleHashes(
+export function computeSampleHashes(
   file: File
 ): Promise<{ quickHash: string; strongHash: string; midHash: string }> {
-  const buf = await buildSampleBuffer(file);
-  const spark = new SparkMD5.ArrayBuffer();
-  spark.append(buf);
-  const quickHash = spark.end();
-  let strongHash = '';
-  if (globalThis.crypto?.subtle) {
-    try {
-      const digest = await globalThis.crypto.subtle.digest('SHA-256', buf);
-      strongHash = toHex(new Uint8Array(digest));
-    } catch {
-      strongHash = '';
-    }
-  }
-  // 中间块 MD5(秒传二次校验,防首尾采样碰撞致内容张冠李戴):
-  // 仅 >4MB 文件有中间盲区(首尾各2MB 之外的中间段),<=4MB 首尾已全覆盖,置空跳过校验。
-  let midHash = '';
-  if (file.size > 4 * 1024 * 1024) {
-    const midStart = Math.max(0, Math.floor(file.size / 2) - 1024 * 1024);
-    const midEnd = Math.min(file.size, midStart + 2 * 1024 * 1024);
-    const midBuf = await file.slice(midStart, midEnd).arrayBuffer();
-    const midSpark = new SparkMD5.ArrayBuffer();
-    midSpark.append(midBuf);
-    midHash = midSpark.end();
-  }
-  return { quickHash, strongHash, midHash };
+  const pool = ensureWorkerPool();
+  const worker = pool[workerIdx % pool.length]!;
+  workerIdx += 1;
+  const id = nextReqId++;
+  return new Promise<{ quickHash: string; strongHash: string; midHash: string }>((resolve, reject) => {
+    pendingJobs.set(id, { resolve: resolve as (v: unknown) => void, reject });
+    worker.postMessage({ id, kind: 'sample', file });
+  });
 }
 
 // Web Worker 池(M2):chunkMd5 走后台计算,避免大分片(最大 50MB)全量入内存算 MD5 阻塞主线程 UI。
@@ -70,7 +33,7 @@ let workerPool: Worker[] | null = null;
 let workerIdx = 0;
 let nextReqId = 1;
 interface PendingJob {
-  resolve: (md5: string) => void;
+  resolve: (value: unknown) => void;
   reject: (err: Error) => void;
 }
 const pendingJobs = new Map<number, PendingJob>();
@@ -83,12 +46,28 @@ function ensureWorkerPool(): Worker[] {
     const w = new Worker(new URL('./disk-hash-worker.ts', import.meta.url), { type: 'module' });
     // 每 Worker 单个 onmessage:按 id 取出对应调用的 resolve/reject,响应与到达顺序无关。
     w.onmessage = (e: MessageEvent) => {
-      const data = e.data as { ok: boolean; id: number; md5?: string; error?: string };
+      const data = e.data as {
+        ok: boolean;
+        id: number;
+        md5?: string;
+        quickHash?: string;
+        strongHash?: string;
+        midHash?: string;
+        error?: string;
+      };
       const job = pendingJobs.get(data.id);
       if (!job) return; // 找不到 id:重复响应或调用方已放弃,丢弃
       pendingJobs.delete(data.id);
-      if (data.ok) job.resolve(data.md5 as string);
-      else job.reject(new Error(data.error || 'hash worker 失败'));
+      if (!data.ok) {
+        job.reject(new Error(data.error || 'hash worker 失败'));
+        return;
+      }
+      // sample 任务回指纹对象,chunk 任务回 md5 字符串(按有无 quickHash 区分)
+      if (data.quickHash !== undefined) {
+        job.resolve({ quickHash: data.quickHash, strongHash: data.strongHash || '', midHash: data.midHash || '' });
+      } else {
+        job.resolve(data.md5 as string);
+      }
     };
     return w;
   });
@@ -103,14 +82,23 @@ export function chunkMd5(blob: Blob): Promise<string> {
   workerIdx += 1;
   const id = nextReqId++;
   return new Promise<string>((resolve, reject) => {
-    pendingJobs.set(id, { resolve, reject });
-    worker.postMessage({ id, blob });
+    pendingJobs.set(id, { resolve: resolve as (v: unknown) => void, reject });
+    worker.postMessage({ id, kind: 'chunk', blob });
   });
 }
 
-/** 动态分片大小(按文件大小,与 remote 思路一致,前端简化档)。 */
+/** 设备内存(GB)。navigator.deviceMemory 仅部分浏览器支持,且只返回离散值(0.25/0.5/1/2/4/8)。 */
+function deviceMemGB(): number {
+  const m = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
+  return typeof m === 'number' && m > 0 ? m : 4; // 不可用时默认按 4GB
+}
+/**
+ * 动态分片大小:按文件大小分级,再按设备内存缩放。
+ * 低内存设备(<2GB,多为移动端)整体降一档,控单片内存峰值;与 remote 设备感知思路一致。
+ */
 export function getChunkSize(fileSize: number): number {
-  if (fileSize < 100 * 1024 * 1024) return 10 * 1024 * 1024; // <100MB → 10MB
-  if (fileSize < 1024 * 1024 * 1024) return 20 * 1024 * 1024; // <1GB → 20MB
-  return 50 * 1024 * 1024; // ≥1GB → 50MB
+  const MB = 1024 * 1024;
+  const base = fileSize < 100 * MB ? 10 * MB : fileSize < 1024 * MB ? 20 * MB : 50 * MB;
+  const scale = deviceMemGB() < 2 ? 0.5 : 1;
+  return Math.round(base * scale);
 }

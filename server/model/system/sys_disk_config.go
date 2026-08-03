@@ -18,6 +18,9 @@ type SysDiskConfig struct {
 	AllowedExtensions       string  `json:"allowedExtensions" gorm:"comment:允许上传扩展名(逗号分隔,空=允许全部)"`
 	BlockedExtensions       string  `json:"blockedExtensions" gorm:"comment:禁止上传扩展名(逗号分隔,优先级高于允许)"`
 	RecycleBinRetentionDays int     `json:"recycleBinRetentionDays" gorm:"default:30;comment:回收站自动清理天数"`
+	MaxConcurrentUploads    int     `json:"maxConcurrentUploads" gorm:"default:3;comment:最大同时上传文件数(0=不限)"`
+	MaxChunkConcurrency     int     `json:"maxChunkConcurrency" gorm:"default:0;comment:单文件分片并发数(0=按设备自适应)"`
+	MaxChunkRetries         int     `json:"maxChunkRetries" gorm:"default:3;comment:单分片上传失败重试次数(0=不重试)"`
 	// 展示配置
 	DiskName string `json:"diskName" gorm:"default:DevOps Disk;comment:网盘名称"`
 	DiskLogo string `json:"diskLogo" gorm:"comment:Logo URL"`
@@ -42,6 +45,9 @@ func DefaultDiskConfig() SysDiskConfig {
 		AllowedExtensions:       "",
 		BlockedExtensions:       "",
 		RecycleBinRetentionDays: 30,
+		MaxConcurrentUploads:    3,
+		MaxChunkConcurrency:     0,
+		MaxChunkRetries:         3,
 		DiskName:                "",
 		DiskLogo:                "",
 		OnlyOfficeEnabled:       false,

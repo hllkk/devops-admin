@@ -344,10 +344,22 @@ declare namespace Api {
       transferredSize?: number;
       /** 上传速度 bytes/s(详情展示用) */
       speed?: number;
-      /** 分片进度文案,如 "12/30" */
-      chunkProgress?: string;
       /** 预计剩余秒数 */
       remainingTime?: number;
+      /** 所属文件夹聚合组 id(子文件有;聚合条目自身 id===folderId) */
+      folderId?: string;
+      /** 是否文件夹聚合条目(汇总其 folderId 下子文件) */
+      isFolderAgg?: boolean;
+      /** 文件夹名(聚合条目用) */
+      folderName?: string;
+      /** 子文件完成数(聚合条目用) */
+      completedCount?: number;
+      /** 子文件总数(聚合条目用) */
+      totalCount?: number;
+      /** 文件夹总大小(聚合条目用) */
+      folderTotalSize?: number;
+      /** 文件夹已传大小(聚合条目用) */
+      folderTransferredSize?: number;
     };
   }
 }

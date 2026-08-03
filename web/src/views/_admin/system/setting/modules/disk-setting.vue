@@ -32,6 +32,21 @@ const sizeUnitOptions = computed(() => [
             <NSelect v-model:value="configModel.storageQuotaUnit" :options="sizeUnitOptions" class="w-80px" />
           </NFlex>
         </NFormItem>
+        <NFormItem :label="$t('page.system.setting.diskMaxConcurrentUploads')" path="maxConcurrentUploads">
+          <NInputNumber v-model:value="configModel.maxConcurrentUploads" :min="0" :max="50" :precision="0" class="max-w-200px">
+            <template #suffix>{{ $t('page.system.setting.diskMaxConcurrentUploadsSuffix') }}</template>
+          </NInputNumber>
+        </NFormItem>
+        <NFormItem :label="$t('page.system.setting.diskMaxChunkConcurrency')" path="maxChunkConcurrency">
+          <NInputNumber v-model:value="configModel.maxChunkConcurrency" :min="0" :max="16" :precision="0" class="max-w-200px">
+            <template #suffix>{{ $t('page.system.setting.diskMaxChunkConcurrencySuffix') }}</template>
+          </NInputNumber>
+        </NFormItem>
+        <NFormItem :label="$t('page.system.setting.diskMaxChunkRetries')" path="maxChunkRetries">
+          <NInputNumber v-model:value="configModel.maxChunkRetries" :min="0" :max="10" :precision="0" class="max-w-200px">
+            <template #suffix>{{ $t('page.system.setting.diskMaxChunkRetriesSuffix') }}</template>
+          </NInputNumber>
+        </NFormItem>
         <NFormItem path="allowedExtensions">
           <template #label>
             <NTooltip trigger="hover">
