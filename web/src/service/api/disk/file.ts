@@ -325,19 +325,19 @@ export function fetchCreateFile(params: Api.Disk.CreateFileParams) {
 
 /** 移动(PUT /file-meta/move,A2) */
 export function fetchMove(params: Api.Disk.MoveParams) {
-  return request<boolean>({
+  return request<Api.Disk.MoveCopyResult>({
     url: '/file-meta/move',
     method: 'put',
-    data: { fileIds: params.fileIds.map(String), targetPath: params.targetPath }
+    data: { fileIds: params.fileIds.map(String), targetPath: params.targetPath, ...(params.conflict ? { conflict: params.conflict } : {}) }
   });
 }
 
 /** 复制(POST /file-meta/copy,A2) */
 export function fetchCopy(params: Api.Disk.CopyParams) {
-  return request<boolean>({
+  return request<Api.Disk.MoveCopyResult>({
     url: '/file-meta/copy',
     method: 'post',
-    data: { fileIds: params.fileIds.map(String), targetPath: params.targetPath }
+    data: { fileIds: params.fileIds.map(String), targetPath: params.targetPath, ...(params.conflict ? { conflict: params.conflict } : {}) }
   });
 }
 

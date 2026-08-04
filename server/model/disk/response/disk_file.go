@@ -58,3 +58,10 @@ type FolderTreeNode struct {
 	Path     string           `json:"path"`     // 全路径
 	Children []FolderTreeNode `json:"children"` // 子目录
 }
+
+// MoveCopyResult 移动/复制结果。Conflict=true 表示命中同名且采用默认拒绝策略,
+// 前端据此弹选择框(覆盖/保留两者),而非走错误拦截器(避免"同名项"+"操作失败"双提示)。
+type MoveCopyResult struct {
+	Conflict      bool     `json:"conflict"`      // 是否命中同名冲突(仅 Conflict=="" 时可能为 true)
+	ConflictFiles []string `json:"conflictFiles"` // 冲突的文件名列表(前端展示用)
+}

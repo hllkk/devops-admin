@@ -393,7 +393,9 @@ const local: App.I18n.Schema = {
         uploadFile: 'Upload File',
         uploadFolder: 'Upload Folder',
         createFile: 'New File',
-        transferList: 'Transfers'
+        transferList: 'Transfers',
+        share: 'Share',
+        batchShare: 'Batch Share'
       },
       contextMenu: {
         open: 'Open',
@@ -447,7 +449,12 @@ const local: App.I18n.Schema = {
         deleteSuccess: 'Moved to trash',
         nameRequired: 'Name cannot be empty',
         deleteConfirmContent: 'Move {count} selected item(s) to trash?',
-        operateFail: 'Operation failed'
+        conflictTitle: 'Same-name item exists',
+        conflictDesc: '"{names}" already exists in the target folder. Choose how to handle:',
+        overwrite: 'Overwrite',
+        keepBoth: 'Keep both',
+        operateFail: 'Operation failed',
+        featureDeveloping: 'Feature under development'
       },
       transfer: {
         title: 'Transfers',

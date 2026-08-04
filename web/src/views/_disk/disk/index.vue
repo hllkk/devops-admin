@@ -224,19 +224,21 @@ function handleSetView(mode: 'list' | 'thumbnail' | 'large') {
 // === 第2期 文件 CRUD(删除;移动/复制 A2) ===
 // 注:新建文件夹 / 新建文件 / 重命名 已改为行内输入,逻辑见 use-disk-create。
 
-function confirmDelete(file: Api.Disk.FileItem) {
+function confirmDelete(fileIds: Api.Disk.FileItem['fileId'][]) {
+  if (fileIds.length === 0) return;
   dialog.warning({
     title: $t('page.disk.action.delete'),
-    content: $t('page.disk.msg.deleteConfirmContent', { count: 1 }),
+    content: $t('page.disk.msg.deleteConfirmContent', { count: fileIds.length }),
     positiveText: $t('page.disk.modal.confirm'),
     negativeText: $t('page.disk.modal.cancel'),
     onPositiveClick: async () => {
-      const { error } = await fetchDelete({ fileIds: [file.fileId] });
+      const { error } = await fetchDelete({ fileIds });
       if (error) {
         message.error($t('page.disk.msg.operateFail'));
         return;
       }
       message.success($t('page.disk.msg.deleteSuccess'));
+      diskStore.clearSelection();
       getFileList();
     }
   });
@@ -246,27 +248,46 @@ function confirmDelete(file: Api.Disk.FileItem) {
 const moveCopyModal = reactive({
   visible: false,
   mode: 'move' as 'move' | 'copy',
-  source: null as Api.Disk.FileItem | null
+  sources: [] as Api.Disk.FileItem[]
 });
 
-function openMoveCopy(file: Api.Disk.FileItem, mode: 'move' | 'copy') {
+function openMoveCopy(files: Api.Disk.FileItem[], mode: 'move' | 'copy') {
+  if (files.length === 0) return;
   moveCopyModal.mode = mode;
-  moveCopyModal.source = file;
+  moveCopyModal.sources = files;
   moveCopyModal.visible = true;
 }
 
-async function confirmMoveCopy(targetPath: string) {
-  const source = moveCopyModal.source;
-  if (!source) return;
-  const params = { fileIds: [source.fileId], targetPath };
-  const { error } = moveCopyModal.mode === 'move' ? await fetchMove(params) : await fetchCopy(params);
+async function doMoveCopy(targetPath: string, conflict?: 'overwrite' | 'rename') {
+  const sources = moveCopyModal.sources;
+  if (sources.length === 0) return;
+  const base = { fileIds: sources.map(f => f.fileId), targetPath };
+  const req = conflict ? { ...base, conflict } : base;
+  const { data, error } = moveCopyModal.mode === 'move' ? await fetchMove(req) : await fetchCopy(req);
   if (error) {
-    message.error($t('page.disk.msg.operateFail'));
+    return; // 拦截器已提示错误,不再重复弹"操作失败"(消除双提示)
+  }
+  if (data?.conflict) {
+    // 命中同名:弹选择框。覆盖=整体替换(目标项进回收站),保留两者=加序号;关闭/取消=不做任何操作。
+    // 第二次调用带 conflict,后端执行策略不再返回 conflict。
+    dialog.warning({
+      title: $t('page.disk.msg.conflictTitle'),
+      content: $t('page.disk.msg.conflictDesc', { names: data.conflictFiles.join(', ') }),
+      positiveText: $t('page.disk.msg.overwrite'),
+      negativeText: $t('page.disk.msg.keepBoth'),
+      onPositiveClick: () => doMoveCopy(targetPath, 'overwrite'),
+      onNegativeClick: () => doMoveCopy(targetPath, 'rename')
+    });
     return;
   }
   message.success(moveCopyModal.mode === 'move' ? $t('page.disk.msg.moveSuccess') : $t('page.disk.msg.copySuccess'));
   moveCopyModal.visible = false;
+  diskStore.clearSelection();
   getFileList();
+}
+
+function confirmMoveCopy(targetPath: string) {
+  doMoveCopy(targetPath);
 }
 
 /** 文件项操作菜单分发 */
@@ -276,13 +297,13 @@ function handleAction(type: Api.Disk.DiskActionType, file: Api.Disk.FileItem) {
       beginRename(file);
       break;
     case 'delete':
-      confirmDelete(file);
+      confirmDelete([file.fileId]);
       break;
     case 'move':
-      openMoveCopy(file, 'move');
+      openMoveCopy([file], 'move');
       break;
     case 'copy':
-      openMoveCopy(file, 'copy');
+      openMoveCopy([file], 'copy');
       break;
     case 'download':
       if (file.isFolder) {
@@ -303,6 +324,24 @@ function handleBatchDownload() {
   const ids = diskStore.selectedFiles;
   if (ids.length === 0) return;
   downloadLink(`/file-meta/package-download?${ids.map(id => `fileIds=${id}`).join('&')}`, `disk-download-${ids.length}.zip`);
+}
+
+/** 批量删除选中项 */
+function handleBatchDelete() {
+  confirmDelete(diskStore.selectedFiles);
+}
+
+/** 批量重命名:仅单选可用,从当前列表反查 FileItem 进入行内重命名 */
+function handleBatchRename() {
+  if (diskStore.selectedFiles.length !== 1) return;
+  const target = diskStore.currentFileList.find(f => f.fileId === diskStore.selectedFiles[0]);
+  if (target) beginRename(target);
+}
+
+/** 批量移动/复制:对全部选中项 */
+function handleBatchMoveCopy(mode: 'move' | 'copy') {
+  const files = diskStore.currentFileList.filter(f => diskStore.selectedFiles.includes(f.fileId));
+  openMoveCopy(files, mode);
 }
 
 // 同步 fileList 到 diskStore（供其他组件读取 currentFileList）
@@ -391,6 +430,10 @@ onMounted(async () => {
           @create="handleCreate"
           @upload="handleUpload"
           @batch-download="handleBatchDownload"
+          @batch-delete="handleBatchDelete"
+          @batch-rename="handleBatchRename"
+          @batch-move="handleBatchMoveCopy('move')"
+          @batch-copy="handleBatchMoveCopy('copy')"
         />
         <!-- 面包屑 -->
         <Breadcrumb v-if="fileList.length > 0 || diskStore.currentPath.length > 0" :total-count="totalCount" />
@@ -429,7 +472,7 @@ onMounted(async () => {
       <MoveCopyModal
         v-model:visible="moveCopyModal.visible"
         :mode="moveCopyModal.mode"
-        :source="moveCopyModal.source"
+        :sources="moveCopyModal.sources"
         @confirm="confirmMoveCopy"
       />
     </div>

@@ -48,12 +48,14 @@ type RenameReq struct {
 type MoveReq struct {
 	FileIds    []string `json:"fileIds" binding:"required,min=1"` // 待移动文件ID列表
 	TargetPath string   `json:"targetPath" binding:"required"`    // 目标文件夹全路径
+	Conflict   string   `json:"conflict"`                         // 同名冲突策略:""默认拒绝(返回冲突标记) / "overwrite"覆盖 / "rename"加序号
 }
 
 // CopyReq 复制。结构与 MoveReq 一致。
 type CopyReq struct {
 	FileIds    []string `json:"fileIds" binding:"required,min=1"` // 待复制文件ID列表
 	TargetPath string   `json:"targetPath" binding:"required"`    // 目标文件夹全路径
+	Conflict   string   `json:"conflict"`                         // 同名冲突策略:""默认拒绝(返回冲突标记) / "overwrite"覆盖 / "rename"加序号
 }
 
 // DeleteReq 删除(移入回收站)。FileIds 批量。

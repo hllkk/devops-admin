@@ -244,12 +244,20 @@ declare namespace Api {
     type MoveParams = {
       fileIds: CommonType.IdType[];
       targetPath: string;
+      conflict?: 'overwrite' | 'rename'; // 同名冲突策略:overwrite 覆盖 / rename 保留两者(加序号);不传=默认拒绝(返回冲突标记)
     };
 
     /** 复制请求(POST /file-meta/copy,A2) */
     type CopyParams = {
       fileIds: CommonType.IdType[];
       targetPath: string;
+      conflict?: 'overwrite' | 'rename';
+    };
+
+    /** 移动/复制结果。conflict=true 表示命中同名(默认拒绝策略),前端据此弹选择框(覆盖/保留两者) */
+    type MoveCopyResult = {
+      conflict: boolean;
+      conflictFiles: string[];
     };
 
     /** 删除(移入回收站)请求(POST /file-meta/delete) */

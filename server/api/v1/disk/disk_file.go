@@ -300,11 +300,16 @@ func (d *DiskFileApi) Move(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	if err := diskFileService.Move(c.Request.Context(), utils.GetUserID(c), req); err != nil {
+	res, err := diskFileService.Move(c.Request.Context(), utils.GetUserID(c), req)
+	if err != nil {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	response.OkWithDetailed(true, "移动成功", c)
+	msg := "移动成功"
+	if res.Conflict {
+		msg = "目标目录下存在同名项"
+	}
+	response.OkWithDetailed(res, msg, c)
 }
 
 // Copy
@@ -321,11 +326,16 @@ func (d *DiskFileApi) Copy(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	if err := diskFileService.Copy(c.Request.Context(), utils.GetUserID(c), req); err != nil {
+	res, err := diskFileService.Copy(c.Request.Context(), utils.GetUserID(c), req)
+	if err != nil {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	response.OkWithDetailed(true, "复制成功", c)
+	msg := "复制成功"
+	if res.Conflict {
+		msg = "目标目录下存在同名项"
+	}
+	response.OkWithDetailed(res, msg, c)
 }
 
 // Delete

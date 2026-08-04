@@ -389,7 +389,9 @@ const local: App.I18n.Schema = {
         uploadFile: '上传文件',
         uploadFolder: '上传文件夹',
         createFile: '新建文件',
-        transferList: '传输列表'
+        transferList: '传输列表',
+        share: '分享',
+        batchShare: '批量分享'
       },
       contextMenu: {
         open: '打开',
@@ -443,7 +445,12 @@ const local: App.I18n.Schema = {
         deleteSuccess: '已移入回收站',
         nameRequired: '名称不能为空',
         deleteConfirmContent: '将移入回收站，确定删除选中的 {count} 项吗？',
-        operateFail: '操作失败'
+        conflictTitle: '目标位置存在同名项',
+        conflictDesc: '「{names}」在目标目录已存在，请选择处理方式',
+        overwrite: '覆盖',
+        keepBoth: '保留两者',
+        operateFail: '操作失败',
+        featureDeveloping: '功能开发中'
       },
       transfer: {
         title: '传输列表',

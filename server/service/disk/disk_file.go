@@ -608,99 +608,197 @@ func (s *DiskFileService) Rename(ctx context.Context, userId int64, req diskReq.
 }
 
 // Move 移动(对齐 PUT /file-meta/move)。批量;循环校验(不能移入自身/后代);文件夹级联后代 path。
-func (s *DiskFileService) Move(ctx context.Context, userId int64, req diskReq.MoveReq) error {
+// 同名冲突按 Conflict 策略处理:""默认拒绝(预检收集冲突名,整批不执行,返回 Conflict 标记交前端决策);
+// "overwrite"把目标同名项(含子树)移入回收站后让位;"rename"在目标目录生成不重名新名(对齐前端 resolveNameConflict)。
+func (s *DiskFileService) Move(ctx context.Context, userId int64, req diskReq.MoveReq) (diskRes.MoveCopyResult, error) {
+	var result diskRes.MoveCopyResult
 	ids := parseFileIds(req.FileIds)
 	if len(ids) == 0 {
-		return errors.New("未选择文件")
+		return result, errors.New("未选择文件")
 	}
 	if strings.Contains(req.TargetPath, "..") {
-		return errors.New("非法目标路径")
+		return result, errors.New("非法目标路径")
 	}
 	target, found, err := s.resolveFolderByPath(ctx, userId, req.TargetPath)
 	if err != nil {
-		return err
+		return result, err
 	}
 	if !found {
-		return errors.New("目标目录不存在")
+		return result, errors.New("目标目录不存在")
 	}
-	return global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		for _, id := range ids {
-			var f disk.DiskFile
-			if e := global.OPS_DB.WithContext(ctx).Where("file_id = ? AND user_id = ?", id, userId).Take(&f).Error; e != nil {
-				return errors.New("文件不存在(fileId=" + strconv.FormatInt(id, 10) + ")")
-			}
-			// 循环校验:目标不能是自身或自身后代
-			if req.TargetPath == f.Path || strings.HasPrefix(req.TargetPath, f.Path+"/") {
-				return errors.New("不能将文件夹移动到自身或其子目录中")
-			}
+	// 预读所有源文件 + 循环校验(目标不能是自身或自身后代)
+	files := make([]disk.DiskFile, 0, len(ids))
+	for _, id := range ids {
+		var f disk.DiskFile
+		if e := global.OPS_DB.WithContext(ctx).Where("file_id = ? AND user_id = ?", id, userId).Take(&f).Error; e != nil {
+			return result, errors.New("文件不存在(fileId=" + strconv.FormatInt(id, 10) + ")")
+		}
+		if req.TargetPath == f.Path || strings.HasPrefix(req.TargetPath, f.Path+"/") {
+			return result, errors.New("不能将文件夹移动到自身或其子目录中")
+		}
+		files = append(files, f)
+	}
+	// 默认策略:仅预检冲突,不执行。命中任一同名即整批返回 Conflict 标记,交前端弹框决策。
+	if req.Conflict == "" {
+		conflictFiles := make([]string, 0)
+		for _, f := range files {
 			dup, e := s.sameNameExists(ctx, userId, target.FileId, f.Name, 0)
 			if e != nil {
-				return e
+				return result, e
 			}
 			if dup {
-				return errors.New("目标目录下已存在同名项: " + f.Name)
+				conflictFiles = append(conflictFiles, f.Name)
+			}
+		}
+		if len(conflictFiles) > 0 {
+			return diskRes.MoveCopyResult{Conflict: true, ConflictFiles: conflictFiles}, nil
+		}
+	}
+	totalRelease := int64(0)
+	e := global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		for i := range files {
+			f := files[i]
+			name := f.Name
+			dup, de := s.sameNameExists(ctx, userId, target.FileId, name, 0)
+			if de != nil {
+				return de
+			}
+			if dup {
+				switch req.Conflict {
+				case "overwrite":
+					rel, te := s.trashTargetByName(tx, ctx, userId, target.FileId, name)
+					if te != nil {
+						return te
+					}
+					totalRelease += rel
+				case "rename":
+					newName, ne := s.uniqueNameForTarget(ctx, userId, target.FileId, name)
+					if ne != nil {
+						return ne
+					}
+					name = newName
+				default:
+					// 默认策略预检已拦截;事务内再遇 dup 仅竞态可能,跳过避免覆盖
+					continue
+				}
 			}
 			srcFullPath := f.Path
-			newFullPath := joinPath(target.Path, f.Name)
-			if e := tx.Model(&disk.DiskFile{}).Where("file_id = ?", f.FileId).
-				Updates(map[string]interface{}{"parent_id": target.FileId, "path": newFullPath, "update_by": userId}).Error; e != nil {
-				return e
+			newFullPath := joinPath(target.Path, name)
+			if ue := tx.Model(&disk.DiskFile{}).Where("file_id = ?", f.FileId).
+				Updates(map[string]interface{}{"name": name, "parent_id": target.FileId, "path": newFullPath, "update_by": userId}).Error; ue != nil {
+				return ue
 			}
 			if f.IsDirectory {
 				sql := "UPDATE disk_files SET path = CONCAT(?, SUBSTR(path, ?)) WHERE user_id = ? AND path LIKE ? AND deleted_at IS NULL"
-				if e := tx.Exec(sql, newFullPath, len(srcFullPath)+1, userId, srcFullPath+"/%").Error; e != nil {
-					return e
+				if ee := tx.Exec(sql, newFullPath, len(srcFullPath)+1, userId, srcFullPath+"/%").Error; ee != nil {
+					return ee
 				}
 			}
 		}
 		return nil
 	})
+	if e != nil {
+		return result, e
+	}
+	// 覆盖让位的目标同名项已进回收站,释放其占用配额(对齐 MoveToTrash)
+	if totalRelease > 0 {
+		releaseUserSpace(ctx, userId, totalRelease)
+	}
+	return result, nil
 }
 
 // Copy 复制(对齐 POST /file-meta/copy)。批量;文件夹递归深拷贝整棵子树。
 // 复制共享物理对象(storage_path 复用):新节点 ref_count=1,源文件节点 ref_count++(与 mergeInstant 秒传复用一致)。
-func (s *DiskFileService) Copy(ctx context.Context, userId int64, req diskReq.CopyReq) error {
+// 同名冲突按 Conflict 策略处理(语义同 Move):""默认拒绝返回 Conflict 标记;"overwrite"回收目标同名项;"rename"加序号。
+func (s *DiskFileService) Copy(ctx context.Context, userId int64, req diskReq.CopyReq) (diskRes.MoveCopyResult, error) {
+	var result diskRes.MoveCopyResult
 	ids := parseFileIds(req.FileIds)
 	if len(ids) == 0 {
-		return errors.New("未选择文件")
+		return result, errors.New("未选择文件")
 	}
 	if strings.Contains(req.TargetPath, "..") {
-		return errors.New("非法目标路径")
+		return result, errors.New("非法目标路径")
 	}
 	target, found, err := s.resolveFolderByPath(ctx, userId, req.TargetPath)
 	if err != nil {
-		return err
+		return result, err
 	}
 	if !found {
-		return errors.New("目标目录不存在")
+		return result, errors.New("目标目录不存在")
 	}
-	return global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		for _, id := range ids {
-			var f disk.DiskFile
-			if e := global.OPS_DB.WithContext(ctx).Where("file_id = ? AND user_id = ?", id, userId).Take(&f).Error; e != nil {
-				return errors.New("文件不存在(fileId=" + strconv.FormatInt(id, 10) + ")")
-			}
+	files := make([]disk.DiskFile, 0, len(ids))
+	for _, id := range ids {
+		var f disk.DiskFile
+		if e := global.OPS_DB.WithContext(ctx).Where("file_id = ? AND user_id = ?", id, userId).Take(&f).Error; e != nil {
+			return result, errors.New("文件不存在(fileId=" + strconv.FormatInt(id, 10) + ")")
+		}
+		files = append(files, f)
+	}
+	// 默认策略:仅预检冲突,不执行。
+	if req.Conflict == "" {
+		conflictFiles := make([]string, 0)
+		for _, f := range files {
 			dup, e := s.sameNameExists(ctx, userId, target.FileId, f.Name, 0)
 			if e != nil {
-				return e
+				return result, e
 			}
 			if dup {
-				return errors.New("目标目录下已存在同名项: " + f.Name)
+				conflictFiles = append(conflictFiles, f.Name)
 			}
+		}
+		if len(conflictFiles) > 0 {
+			return diskRes.MoveCopyResult{Conflict: true, ConflictFiles: conflictFiles}, nil
+		}
+	}
+	totalRelease := int64(0)
+	e := global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		for i := range files {
+			f := files[i]
+			name := f.Name
+			dup, de := s.sameNameExists(ctx, userId, target.FileId, name, 0)
+			if de != nil {
+				return de
+			}
+			if dup {
+				switch req.Conflict {
+				case "overwrite":
+					rel, te := s.trashTargetByName(tx, ctx, userId, target.FileId, name)
+					if te != nil {
+						return te
+					}
+					totalRelease += rel
+				case "rename":
+					newName, ne := s.uniqueNameForTarget(ctx, userId, target.FileId, name)
+					if ne != nil {
+						return ne
+					}
+					name = newName
+				default:
+					continue
+				}
+			}
+			f.Name = name // rename 时改局部拷贝,供 copyOne 落库新名
 			srcFullPath := f.Path
-			newFullPath := joinPath(target.Path, f.Name)
-			newId, e := s.copyOne(tx, &f, target.FileId, newFullPath, userId)
-			if e != nil {
-				return e
+			newFullPath := joinPath(target.Path, name)
+			newId, ce := s.copyOne(tx, &f, target.FileId, newFullPath, userId)
+			if ce != nil {
+				return ce
 			}
 			if f.IsDirectory {
-				if e := s.copyDescendants(tx, ctx, userId, srcFullPath, newFullPath, newId); e != nil {
-					return e
+				if ee := s.copyDescendants(tx, ctx, userId, srcFullPath, newFullPath, newId); ee != nil {
+					return ee
 				}
 			}
 		}
 		return nil
 	})
+	if e != nil {
+		return result, e
+	}
+	if totalRelease > 0 {
+		releaseUserSpace(ctx, userId, totalRelease)
+	}
+	return result, nil
 }
 
 // copyOne 在事务内复制单条记录(新 file_id 自增),返回新 id。
@@ -830,6 +928,73 @@ func (s *DiskFileService) MoveToTrash(ctx context.Context, userId int64, req dis
 	// 释放配额(子树文件 size 之和,GREATEST 下限兜底防负;best effort 不阻断删除)
 	releaseUserSpace(ctx, userId, totalSize)
 	return nil
+}
+
+// trashTargetByName 把目标目录(parentId)下指定名字的正常项移入回收站(文件夹连后代),
+// 返回释放的字节数(项自身 size + 子树文件 size 之和),供事务后配额对账。
+// 用于移动/复制"覆盖"策略:整体替换语义下让位目标同名项(可从回收站恢复,与删除一致)。
+// 调用前已 sameNameExists 确认存在;事务内取不到(NotFound)视作已处理,幂等返回 0。
+func (s *DiskFileService) trashTargetByName(tx *gorm.DB, ctx context.Context, userId, parentId int64, name string) (int64, error) {
+	var f disk.DiskFile
+	if e := tx.WithContext(ctx).
+		Where("user_id = ? AND parent_id = ? AND name = ? AND status = ?", userId, parentId, name, disk.DiskFileStatusNormal).
+		Take(&f).Error; e != nil {
+		if errors.Is(e, gorm.ErrRecordNotFound) {
+			return 0, nil
+		}
+		return 0, e
+	}
+	// 子树文件 size 之和(改 status 前的正常口径,对齐 MoveToTrash)
+	var subSum float64
+	if e := tx.Raw("SELECT COALESCE(SUM(size), 0) FROM disk_files WHERE user_id = ? AND path LIKE ? AND is_directory = ? AND status = ?",
+		userId, f.Path+"/%", false, disk.DiskFileStatusNormal).Scan(&subSum).Error; e != nil {
+		return 0, e
+	}
+	release := f.Size + int64(subSum)
+	if e := tx.Model(&disk.DiskFile{}).Where("file_id = ?", f.FileId).
+		Updates(map[string]interface{}{"status": disk.DiskFileStatusTrashed, "update_by": userId}).Error; e != nil {
+		return 0, e
+	}
+	if f.IsDirectory {
+		if e := tx.Model(&disk.DiskFile{}).
+			Where("user_id = ? AND path LIKE ? AND deleted_at IS NULL", userId, f.Path+"/%").
+			Updates(map[string]interface{}{"status": disk.DiskFileStatusTrashed}).Error; e != nil {
+			return 0, e
+		}
+	}
+	return release, nil
+}
+
+// uniqueNameForTarget 在目标目录(parentId)下为 name 生成不重名的新名,对齐前端 resolveNameConflict:
+// 基名 → 基名(1) → 基名(2)...;保留最后一个扩展名段(a.txt→a(1).txt,a.tar.gz→a.tar(1).gz);大小写不敏感。
+// 一次 Pluck 目标目录全部正常项名,内存比对,避免逐候选 N 次查询。用于移动/复制"保留两者(加序号)"策略。
+func (s *DiskFileService) uniqueNameForTarget(ctx context.Context, userId, parentId int64, name string) (string, error) {
+	var names []string
+	if e := global.OPS_DB.WithContext(ctx).Model(&disk.DiskFile{}).
+		Where("user_id = ? AND parent_id = ? AND status = ?", userId, parentId, disk.DiskFileStatusNormal).
+		Pluck("name", &names).Error; e != nil {
+		return "", e
+	}
+	lower := make(map[string]struct{}, len(names))
+	for _, n := range names {
+		lower[strings.ToLower(n)] = struct{}{}
+	}
+	if _, ok := lower[strings.ToLower(name)]; !ok {
+		return name, nil
+	}
+	dot := strings.LastIndex(name, ".")
+	stem := name
+	ext := ""
+	if dot > 0 {
+		stem = name[:dot]
+		ext = name[dot:]
+	}
+	for i := 1; ; i++ {
+		candidate := stem + "(" + strconv.Itoa(i) + ")" + ext
+		if _, ok := lower[strings.ToLower(candidate)]; !ok {
+			return candidate, nil
+		}
+	}
 }
 
 // GetFolderTree 返回用户全部正常目录的树(对齐 GET /file-meta/folder-tree,移动/复制目标选择器用)。

@@ -24,6 +24,10 @@ interface Emits {
   (e: 'create', type: CreateType): void;
   (e: 'upload', type: CreateType, files: File[], dirs?: string[]): void;
   (e: 'batch-download'): void;
+  (e: 'batch-delete'): void;
+  (e: 'batch-rename'): void;
+  (e: 'batch-move'): void;
+  (e: 'batch-copy'): void;
 }
 
 const emit = defineEmits<Emits>();
@@ -160,54 +164,114 @@ const viewOptions = computed<DropdownOption[]>(() => {
 function handleViewSelect(key: string) {
   emit('set-view', key as ViewMode);
 }
+
+/** 选中态"更多"下拉:复制 / 移动 */
+const moreOptions = computed<DropdownOption[]>(() => [
+  { key: 'copy', label: $t('page.disk.action.copy'), icon: SvgIconVNode({ icon: 'material-symbols:content-copy', fontSize: 18 }) },
+  { key: 'move', label: $t('page.disk.action.move'), icon: SvgIconVNode({ icon: 'material-symbols:drive-file-move-outline', fontSize: 18 }) }
+]);
+
+function handleMoreSelect(key: string) {
+  if (key === 'copy') emit('batch-copy');
+  else if (key === 'move') emit('batch-move');
+}
 </script>
 
 <template>
   <div class="flex-y-center justify-between gap-8px px-12px py-8px flex-wrap">
     <!-- 左侧分组:主操作 + 搜索,内部 gap 紧凑排列,避免被外层 justify-between 拉散 -->
     <div class="flex-y-center gap-8px flex-wrap">
-      <!-- 主操作 -->
-      <template v-if="!appStore.isMobile">
-        <!-- 上传 -->
-        <NDropdown :options="uploadOptions" trigger="click" @select="handleUploadSelect">
-          <NButton type="primary" :focusable="false">
-            <SvgIcon icon="material-symbols:cloud-upload" class="text-18px" />
-            <span class="text-13px">{{ $t('page.disk.action.upload') }}</span>
+      <!-- 选中态:隐藏上传/新建/搜索,显示批量操作按钮组(参照百度网盘) -->
+      <template v-if="diskStore.selectedFiles.length > 0">
+        <NButtonGroup>
+          <!-- 分享(暂未实现,占位禁用) -->
+          <NTooltip trigger="hover">
+            <template #trigger>
+              <NButton ghost disabled :focusable="false">
+                <SvgIcon icon="material-symbols:ios-share" class="text-18px" />
+                <span class="text-13px">{{ $t('page.disk.action.share') }}</span>
+              </NButton>
+            </template>
+            {{ $t('page.disk.msg.featureDeveloping') }}
+          </NTooltip>
+          <!-- 批量分享(选中超过 1 项时显示,暂未实现,占位禁用) -->
+          <NTooltip v-if="diskStore.selectedFiles.length > 1" trigger="hover">
+            <template #trigger>
+              <NButton ghost disabled :focusable="false">
+                <SvgIcon icon="material-symbols:ios-share" class="text-18px" />
+                <span class="text-13px">{{ $t('page.disk.action.batchShare') }}</span>
+              </NButton>
+            </template>
+            {{ $t('page.disk.msg.featureDeveloping') }}
+          </NTooltip>
+          <!-- 下载(打包选中项) -->
+          <NButton ghost :focusable="false" @click="emit('batch-download')">
+            <SvgIcon icon="material-symbols:download" class="text-18px" />
+            <span class="text-13px">{{ $t('page.disk.action.download') }}</span>
           </NButton>
-        </NDropdown>
-        <!-- 新建 -->
-        <NDropdown :options="createOptions" trigger="click" @select="handleCreateSelect">
+          <!-- 删除 -->
+          <NButton ghost :focusable="false" @click="emit('batch-delete')">
+            <SvgIcon icon="material-symbols:delete-outline" class="text-18px" />
+            <span class="text-13px">{{ $t('page.disk.action.delete') }}</span>
+          </NButton>
+          <!-- 重命名(仅单选可用,多选时禁用) -->
+          <NTooltip trigger="hover">
+            <template #trigger>
+              <NButton ghost :disabled="diskStore.selectedFiles.length > 1" :focusable="false" @click="emit('batch-rename')">
+                <SvgIcon icon="material-symbols:edit" class="text-18px" />
+                <span class="text-13px">{{ $t('page.disk.action.rename') }}</span>
+              </NButton>
+            </template>
+            {{ $t('page.disk.action.rename') }}
+          </NTooltip>
+          <!-- 更多:复制 / 移动 -->
+          <NDropdown :options="moreOptions" trigger="click" @select="handleMoreSelect">
+            <NButton ghost :focusable="false">
+              <SvgIcon icon="material-symbols:more-vert" class="text-18px" />
+              <span class="text-13px">{{ $t('page.disk.action.more') }}</span>
+            </NButton>
+          </NDropdown>
+        </NButtonGroup>
+      </template>
+
+      <!-- 默认态:上传 / 新建 / 搜索 -->
+      <template v-else>
+        <template v-if="!appStore.isMobile">
+          <!-- 上传 -->
+          <NDropdown :options="uploadOptions" trigger="click" @select="handleUploadSelect">
+            <NButton type="primary" :focusable="false">
+              <SvgIcon icon="material-symbols:cloud-upload" class="text-18px" />
+              <span class="text-13px">{{ $t('page.disk.action.upload') }}</span>
+            </NButton>
+          </NDropdown>
+          <!-- 新建 -->
+          <NDropdown :options="createOptions" trigger="click" @select="handleCreateSelect">
+            <NButton type="primary" :focusable="false">
+              <SvgIcon icon="material-symbols:add" class="text-18px" />
+              <span class="text-13px">{{ $t('page.disk.action.create') }}</span>
+            </NButton>
+          </NDropdown>
+        </template>
+        <!-- 移动端:合并 + 号下拉 -->
+        <NDropdown v-else :options="mobilePlusOptions" trigger="click" @select="handleMobilePlusSelect">
           <NButton type="primary" :focusable="false">
             <SvgIcon icon="material-symbols:add" class="text-18px" />
-            <span class="text-13px">{{ $t('page.disk.action.create') }}</span>
           </NButton>
         </NDropdown>
+        <!-- 搜索:flex-1 + max-w 让桌面保持合理宽度,窄屏自适应收缩,min-w 防塌缩 -->
+        <NInputGroup class="flex-1 max-w-240px min-w-120px">
+          <NInput
+            v-model:value="keyword"
+            :placeholder="$t('page.disk.toolbar.searchPlaceholder')"
+            clearable
+            @keyup.enter="handleSearch"
+            @clear="handleSearch"
+          />
+          <NButton type="primary" :focusable="false" @click="handleSearch">
+            <SvgIcon icon="material-symbols:search" class="text-16px" />
+          </NButton>
+        </NInputGroup>
       </template>
-      <!-- 移动端:合并 + 号下拉 -->
-      <NDropdown v-else :options="mobilePlusOptions" trigger="click" @select="handleMobilePlusSelect">
-        <NButton type="primary" :focusable="false">
-          <SvgIcon icon="material-symbols:add" class="text-18px" />
-        </NButton>
-      </NDropdown>
-
-      <!-- 批量下载(选中时显示,打包选中项) -->
-      <NButton v-if="diskStore.selectedFiles.length" type="primary" ghost :focusable="false" @click="emit('batch-download')">
-        <SvgIcon icon="material-symbols:download" class="text-18px" />
-        <span class="text-13px">{{ $t('page.disk.action.download') }} ({{ diskStore.selectedFiles.length }})</span>
-      </NButton>
-      <!-- 搜索:flex-1 + max-w 让桌面保持合理宽度,窄屏自适应收缩,min-w 防塌缩 -->
-      <NInputGroup class="flex-1 max-w-240px min-w-120px">
-        <NInput
-          v-model:value="keyword"
-          :placeholder="$t('page.disk.toolbar.searchPlaceholder')"
-          clearable
-          @keyup.enter="handleSearch"
-          @clear="handleSearch"
-        />
-        <NButton type="primary" :focusable="false" @click="handleSearch">
-          <SvgIcon icon="material-symbols:search" class="text-16px" />
-        </NButton>
-      </NInputGroup>
     </div>
 
     <!-- 功能按钮组 -->

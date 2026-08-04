@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import type { TreeOption } from 'naive-ui';
 import { $t } from '@/locales';
 import { fetchFolderTree } from '@/service/api/disk';
@@ -9,7 +9,7 @@ defineOptions({ name: 'MoveCopyModal' });
 interface Props {
   visible: boolean;
   mode: 'move' | 'copy';
-  source: Api.Disk.FileItem | null;
+  sources: Api.Disk.FileItem[];
 }
 
 interface Emits {
@@ -23,6 +23,14 @@ const emit = defineEmits<Emits>();
 const treeData = ref<TreeOption[]>([]);
 const selectedKeys = ref<string[]>(['/']);
 const loading = ref(false);
+
+/** 源项标签:单个显示文件名,多个显示"已选中 N 个" */
+const sourceLabel = computed(() => {
+  const list = props.sources;
+  if (list.length === 0) return '';
+  if (list.length === 1) return list[0].fileName;
+  return $t('page.disk.column.selectedCount', { count: list.length });
+});
 
 watch(
   () => props.visible,
@@ -73,7 +81,7 @@ function confirm() {
     @update:show="(v: boolean) => emit('update:visible', v)"
   >
     <div class="mb-4px text-13px">
-      <span class="opacity-70">{{ source?.fileName }}</span>
+      <span class="opacity-70">{{ sourceLabel }}</span>
       <span class="mx-4px opacity-40">→</span>
       <span class="opacity-70">{{ $t('page.disk.modal.targetLabel') }}</span>
     </div>

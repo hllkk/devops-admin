@@ -579,6 +579,8 @@ declare namespace App {
             uploadFolder: string;
             createFile: string;
             transferList: string;
+            share: string;
+            batchShare: string;
           };
           contextMenu: {
             open: string;
@@ -635,7 +637,12 @@ declare namespace App {
             deleteSuccess: string;
             nameRequired: string;
             deleteConfirmContent: string;
+            conflictTitle: string;
+            conflictDesc: string;
+            overwrite: string;
+            keepBoth: string;
             operateFail: string;
+            featureDeveloping: string;
           };
           transfer: {
             title: string;
