@@ -2232,6 +2232,40 @@ const docTemplate = `{
                 }
             }
         },
+        "/system/dict/type/refreshCache": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysDictType"
+                ],
+                "summary": "刷新字典缓存",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/system/dict/type/{ids}": {
             "delete": {
                 "produces": [
@@ -5893,9 +5927,6 @@ const docTemplate = `{
                 "auth": {
                     "$ref": "#/definitions/system.SysAuthConfig"
                 },
-                "disk": {
-                    "$ref": "#/definitions/system.SysDiskConfig"
-                },
                 "general": {
                     "$ref": "#/definitions/system.SysGeneralConfig"
                 },
@@ -6748,65 +6779,6 @@ const docTemplate = `{
                 "updateBy": {
                     "type": "string",
                     "example": "0"
-                },
-                "updateTime": {
-                    "type": "string"
-                }
-            }
-        },
-        "system.SysDiskConfig": {
-            "type": "object",
-            "properties": {
-                "allowedExtensions": {
-                    "type": "string"
-                },
-                "blockedExtensions": {
-                    "type": "string"
-                },
-                "createTime": {
-                    "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
-                    "type": "string"
-                },
-                "diskLogo": {
-                    "type": "string"
-                },
-                "diskName": {
-                    "description": "展示配置",
-                    "type": "string"
-                },
-                "id": {
-                    "description": "主键(过渡保留,未改造系统表用)",
-                    "type": "string",
-                    "example": "0"
-                },
-                "maxUploadSize": {
-                    "description": "基础存储配置",
-                    "type": "number"
-                },
-                "maxUploadSizeUnit": {
-                    "type": "string"
-                },
-                "onlyOfficeCallbackUrl": {
-                    "type": "string"
-                },
-                "onlyOfficeEnabled": {
-                    "description": "OnlyOffice 协同编辑",
-                    "type": "boolean"
-                },
-                "onlyOfficeServerUrl": {
-                    "type": "string"
-                },
-                "onlyOfficeTokenSecret": {
-                    "type": "string"
-                },
-                "recycleBinRetentionDays": {
-                    "type": "integer"
-                },
-                "storageQuota": {
-                    "type": "number"
-                },
-                "storageQuotaUnit": {
-                    "type": "string"
                 },
                 "updateTime": {
                     "type": "string"

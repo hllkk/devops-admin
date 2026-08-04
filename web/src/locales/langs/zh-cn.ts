@@ -325,153 +325,6 @@ const local: App.I18n.Schema = {
     }
   },
   page: {
-    disk: {
-      title: '网盘',
-      empty: '暂无文件',
-      loadingMore: '加载更多中...',
-      fileType: {
-        title: '文件类型',
-        all: '全部',
-        image: '图片',
-        document: '文档',
-        video: '视频',
-        audio: '音频',
-        other: '其他'
-      },
-      toolbar: {
-        showCapacity: '显示容量',
-        search: '搜索',
-        searchPlaceholder: '搜索文件名',
-        refresh: '刷新',
-        sort: '排序',
-        listView: '列表视图',
-        viewList: '列表模式',
-        viewThumbnail: '缩略模式',
-        viewLarge: '大图模式'
-      },
-      sort: {
-        name: '名称',
-        size: '大小',
-        modifyTime: '修改时间'
-      },
-      breadcrumb: {
-        root: '全部文件',
-        backToPrev: '返回上一级',
-        count: '共 {count} 项'
-      },
-      column: {
-        name: '名称',
-        size: '大小',
-        modifyTime: '修改时间',
-        selectedCount: '已选中 {count} 个文件/文件夹'
-      },
-      file: {
-        folder: '文件夹'
-      },
-      capacity: {
-        title: '存储空间',
-        usedLabel: '已使用',
-        totalLabel: '总容量',
-        unlimited: '无限制'
-      },
-      action: {
-        newFolder: '新建文件夹',
-        download: '下载',
-        rename: '重命名',
-        move: '移动',
-        copy: '复制',
-        delete: '删除',
-        more: '更多',
-        upload: '上传',
-        create: '新建',
-        uploadFile: '上传文件',
-        uploadFolder: '上传文件夹',
-        createFile: '新建文件',
-        transferList: '传输列表',
-        share: '分享',
-        batchShare: '批量分享'
-      },
-      contextMenu: {
-        open: '打开',
-        addFavorite: '添加收藏',
-        removeFavorite: '取消收藏',
-        download: '下载',
-        share: '分享',
-        copy: '复制',
-        move: '移动',
-        rename: '重命名',
-        delete: '删除',
-        detail: '详情',
-        view: '查看',
-        viewGrid: '网格视图',
-        viewList: '列表视图',
-        sortBy: '排序方式',
-        sortName: '名称',
-        sortSize: '大小',
-        sortTime: '修改时间',
-        refresh: '刷新',
-        reload: '重新加载'
-      },
-      dropZone: {
-        hint: '释放文件以上传到当前目录',
-        truncatedCount: '拖入文件过多,仅上传前 {max} 个,请分批拖入',
-        truncatedSize: '拖入文件总体积过大,仅上传部分文件,请分批拖入'
-      },
-      createInline: {
-        defaultFileName: '新建文件.txt',
-        defaultFolderName: '新建文件夹',
-        nameExists: '当前目录下已存在“{name}”，继续创建将自动添加后缀编号。',
-        confirmCreate: '继续创建',
-        cancelCreate: '取消'
-      },
-      modal: {
-        newFolderTitle: '新建文件夹',
-        renameTitle: '重命名',
-        moveTitle: '移动到',
-        copyTitle: '复制到',
-        nameLabel: '名称',
-        namePlaceholder: '请输入名称',
-        targetLabel: '目标目录',
-        confirm: '确定',
-        cancel: '取消'
-      },
-      msg: {
-        newFolderSuccess: '创建成功',
-        renameSuccess: '重命名成功',
-        moveSuccess: '移动成功',
-        copySuccess: '复制成功',
-        deleteSuccess: '已移入回收站',
-        nameRequired: '名称不能为空',
-        deleteConfirmContent: '将移入回收站，确定删除选中的 {count} 项吗？',
-        conflictTitle: '目标位置存在同名项',
-        conflictDesc: '「{names}」在目标目录已存在，请选择处理方式',
-        overwrite: '覆盖',
-        keepBoth: '保留两者',
-        operateFail: '操作失败',
-        featureDeveloping: '功能开发中'
-      },
-      transfer: {
-        title: '传输列表',
-        clear: '清空已完成',
-        close: '关闭',
-        taskCount: '{n} 个任务',
-        pause: '暂停',
-        resume: '继续',
-        retry: '重试',
-        cancel: '取消',
-        pauseAll: '全部暂停',
-        resumeAll: '全部继续',
-        pending: '排队中',
-        hashing: '计算中',
-        uploading: '上传中',
-        merging: '合并中',
-        paused: '已暂停',
-        success: '完成',
-        error: '失败',
-        sphereView: '水波纹球视图',
-        remaining: '剩余 {v}'
-      }
-    },
     login: {
       common: {
         title: '欢迎登录',
@@ -711,8 +564,6 @@ const local: App.I18n.Schema = {
         securityDesc: '系统安全配置，增强系统防护',
         ldap: 'LDAP 配置',
         ldapDesc: 'LDAP 目录服务，统一身份认证',
-        disk: '网盘配置',
-        diskDesc: '网盘存储与配额，文件管理',
         notify: '通知配置',
         notifyDesc: '通知渠道与模板，消息推送',
         auth: '认证配置',
@@ -774,7 +625,6 @@ const local: App.I18n.Schema = {
         tabGeneral: '常规',
         tabLog: '日志清理',
         tabLdap: 'LDAP',
-        tabDisk: '网盘',
         tabNotify: '通知',
         tabAuth: '认证',
         // LDAP 配置表单
@@ -815,44 +665,6 @@ const local: App.I18n.Schema = {
         limitCount: '窗口最大次数',
         pwdExpireEnable: '启用密码过期',
         pwdExpireDays: '密码有效天数',
-        // 网盘配置
-        diskMaxUploadSize: '最大上传大小',
-        diskStorageQuota: '存储配额',
-        diskAllowedExtensions: '允许的文件类型',
-        diskAllowedExtensionsTip: '留空表示允许所有文件类型。填写文件扩展名（不含点号），多个用逗号分隔。',
-        diskBlockedExtensions: '禁止的文件类型',
-        diskBlockedExtensionsTip:
-          '填写禁止上传的文件扩展名（不含点号），优先级高于"允许的文件类型"。留空表示不禁止任何类型。',
-        diskRecycleBinRetentionDays: '回收站保留天数',
-        diskMaxConcurrentUploads: '最大同时上传文件数',
-        diskMaxConcurrentUploadsSuffix: '个(0=不限)',
-        diskMaxChunkConcurrency: '分片并发数',
-        diskMaxChunkConcurrencySuffix: '(0=自适应)',
-        diskMaxChunkRetries: '分片重试次数',
-        diskMaxChunkRetriesSuffix: '次(0=不重试)',
-        diskUnitMB: 'MB',
-        diskUnitGB: 'GB',
-        diskUnitTB: 'TB',
-        diskName: '网盘名称',
-        diskNamePlaceholder: '请输入网盘名称',
-        diskLogo: '网盘 Logo',
-        diskLogoPlaceholder: '请输入网盘 Logo 地址',
-        diskSectionOnlyOffice: 'OnlyOffice 协同编辑',
-        diskOnlyOfficeEnabled: '启用 OnlyOffice',
-        diskOnlyOfficeServerUrl: 'OnlyOffice 地址',
-        diskOnlyOfficeServerUrlPlaceholder: '/office 或 https://domain.com/office',
-        diskOnlyOfficeServerUrlTip:
-          'Document Server 的浏览器访问地址。开发环境填写 nginx 代理地址，生产环境填写代理路径。',
-        diskOnlyOfficeTokenSecret: 'Secret 密钥',
-        diskOnlyOfficeTokenSecretPlaceholder: '与 OnlyOffice 容器 JWT_SECRET 一致',
-        diskOnlyOfficeTokenSecretTip: '与 Document Server 容器的 JWT_SECRET 环境变量保持一致。留空则不使用 JWT 签名。',
-        diskOnlyOfficeCallbackUrl: '回调地址',
-        diskOnlyOfficeCallbackUrlPlaceholder: 'http://后端IP:端口/api',
-        diskOnlyOfficeCallbackUrlTip:
-          'OnlyOffice 容器需要能访问此地址来保存文档。请填写后端服务的完整地址（含协议和端口）。',
-        tabDiskBasic: '基础配置',
-        tabDiskDisplay: '个性化',
-        tabDiskOnlyOffice: 'OnlyOffice',
         // 通知配置
         notifyEmailEnabled: '启用邮件通知',
         notifyEmailHost: 'SMTP 服务器',

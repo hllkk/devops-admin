@@ -515,156 +515,6 @@ declare namespace App {
         };
       };
       page: {
-        disk: {
-          title: string;
-          empty: string;
-          loadingMore: string;
-          fileType: {
-            title: string;
-            all: string;
-            image: string;
-            document: string;
-            video: string;
-            audio: string;
-            other: string;
-          };
-          toolbar: {
-            showCapacity: string;
-            search: string;
-            searchPlaceholder: string;
-            refresh: string;
-            sort: string;
-            listView: string;
-            viewList: string;
-            viewThumbnail: string;
-            viewLarge: string;
-          };
-          sort: {
-            name: string;
-            size: string;
-            modifyTime: string;
-          };
-          breadcrumb: {
-            root: string;
-            backToPrev: string;
-            count: string;
-          };
-          column: {
-            name: string;
-            size: string;
-            modifyTime: string;
-            selectedCount: string;
-          };
-          file: {
-            folder: string;
-          };
-          capacity: {
-            title: string;
-            usedLabel: string;
-            totalLabel: string;
-            unlimited: string;
-          };
-          action: {
-            newFolder: string;
-            download: string;
-            rename: string;
-            move: string;
-            copy: string;
-            delete: string;
-            more: string;
-            upload: string;
-            create: string;
-            uploadFile: string;
-            uploadFolder: string;
-            createFile: string;
-            transferList: string;
-            share: string;
-            batchShare: string;
-          };
-          contextMenu: {
-            open: string;
-            addFavorite: string;
-            removeFavorite: string;
-            download: string;
-            share: string;
-            copy: string;
-            move: string;
-            rename: string;
-            delete: string;
-            detail: string;
-            view: string;
-            viewGrid: string;
-            viewList: string;
-            sortBy: string;
-            sortName: string;
-            sortSize: string;
-            sortTime: string;
-            refresh: string;
-            reload: string;
-          };
-          dropZone: {
-            /** 拖拽蒙层提示文案 */
-            hint: string;
-            /** 超数量上限截断警告({max} 占位) */
-            truncatedCount: string;
-            /** 超累计体积上限截断警告 */
-            truncatedSize: string;
-          };
-          createInline: {
-            defaultFileName: string;
-            defaultFolderName: string;
-            nameExists: string;
-            confirmCreate: string;
-            cancelCreate: string;
-          };
-          modal: {
-            newFolderTitle: string;
-            renameTitle: string;
-            moveTitle: string;
-            copyTitle: string;
-            nameLabel: string;
-            namePlaceholder: string;
-            targetLabel: string;
-            confirm: string;
-            cancel: string;
-          };
-          msg: {
-            newFolderSuccess: string;
-            renameSuccess: string;
-            moveSuccess: string;
-            copySuccess: string;
-            deleteSuccess: string;
-            nameRequired: string;
-            deleteConfirmContent: string;
-            conflictTitle: string;
-            conflictDesc: string;
-            overwrite: string;
-            keepBoth: string;
-            operateFail: string;
-            featureDeveloping: string;
-          };
-          transfer: {
-            title: string;
-            clear: string;
-            close: string;
-            taskCount: string;
-            pause: string;
-            resume: string;
-            retry: string;
-            cancel: string;
-            pauseAll: string;
-            resumeAll: string;
-            pending: string;
-            hashing: string;
-            uploading: string;
-            merging: string;
-            paused: string;
-            success: string;
-            error: string;
-            sphereView: string;
-            remaining: string;
-          };
-        };
         login: {
           common: {
             title: string;
@@ -903,8 +753,6 @@ declare namespace App {
             securityDesc: string;
             ldap: string;
             ldapDesc: string;
-            disk: string;
-            diskDesc: string;
             notify: string;
             notifyDesc: string;
             auth: string;
@@ -966,7 +814,6 @@ declare namespace App {
             tabGeneral: string;
             tabLog: string;
             tabLdap: string;
-            tabDisk: string;
             tabNotify: string;
             tabAuth: string;
             captchaEnabled: string;
@@ -1008,40 +855,6 @@ declare namespace App {
             tabLdapAttrMap: string;
             tabLdapUserPolicy: string;
             // 网盘配置
-            diskMaxUploadSize: string;
-            diskStorageQuota: string;
-            diskAllowedExtensions: string;
-            diskAllowedExtensionsTip: string;
-            diskBlockedExtensions: string;
-            diskBlockedExtensionsTip: string;
-            diskRecycleBinRetentionDays: string;
-            diskMaxConcurrentUploads: string;
-            diskMaxConcurrentUploadsSuffix: string;
-            diskMaxChunkConcurrency: string;
-            diskMaxChunkConcurrencySuffix: string;
-            diskMaxChunkRetries: string;
-            diskMaxChunkRetriesSuffix: string;
-            diskUnitMB: string;
-            diskUnitGB: string;
-            diskUnitTB: string;
-            diskName: string;
-            diskNamePlaceholder: string;
-            diskLogo: string;
-            diskLogoPlaceholder: string;
-            diskSectionOnlyOffice: string;
-            diskOnlyOfficeEnabled: string;
-            diskOnlyOfficeServerUrl: string;
-            diskOnlyOfficeServerUrlPlaceholder: string;
-            diskOnlyOfficeServerUrlTip: string;
-            diskOnlyOfficeTokenSecret: string;
-            diskOnlyOfficeTokenSecretPlaceholder: string;
-            diskOnlyOfficeTokenSecretTip: string;
-            diskOnlyOfficeCallbackUrl: string;
-            diskOnlyOfficeCallbackUrlPlaceholder: string;
-            diskOnlyOfficeCallbackUrlTip: string;
-            tabDiskBasic: string;
-            tabDiskDisplay: string;
-            tabDiskOnlyOffice: string;
             // 通知配置
             notifyEmailEnabled: string;
             notifyEmailHost: string;

@@ -329,153 +329,6 @@ const local: App.I18n.Schema = {
     }
   },
   page: {
-    disk: {
-      title: 'Disk',
-      empty: 'No files',
-      loadingMore: 'Loading more...',
-      fileType: {
-        title: 'File Type',
-        all: 'All',
-        image: 'Images',
-        document: 'Documents',
-        video: 'Videos',
-        audio: 'Audio',
-        other: 'Other'
-      },
-      toolbar: {
-        showCapacity: 'Show Capacity',
-        search: 'Search',
-        searchPlaceholder: 'Search file name',
-        refresh: 'Refresh',
-        sort: 'Sort',
-        listView: 'List view',
-        viewList: 'List',
-        viewThumbnail: 'Thumbnail',
-        viewLarge: 'Large'
-      },
-      sort: {
-        name: 'Name',
-        size: 'Size',
-        modifyTime: 'Modified'
-      },
-      breadcrumb: {
-        root: 'All Files',
-        backToPrev: 'Up',
-        count: '{count} items'
-      },
-      column: {
-        name: 'Name',
-        size: 'Size',
-        modifyTime: 'Modified',
-        selectedCount: 'Selected {count} item(s)'
-      },
-      file: {
-        folder: 'Folder'
-      },
-      capacity: {
-        title: 'Storage',
-        usedLabel: 'Used',
-        totalLabel: 'Total',
-        unlimited: 'Unlimited'
-      },
-      action: {
-        newFolder: 'New Folder',
-        download: 'Download',
-        rename: 'Rename',
-        move: 'Move',
-        copy: 'Copy',
-        delete: 'Delete',
-        more: 'More',
-        upload: 'Upload',
-        create: 'New',
-        uploadFile: 'Upload File',
-        uploadFolder: 'Upload Folder',
-        createFile: 'New File',
-        transferList: 'Transfers',
-        share: 'Share',
-        batchShare: 'Batch Share'
-      },
-      contextMenu: {
-        open: 'Open',
-        addFavorite: 'Add to Favorites',
-        removeFavorite: 'Remove from Favorites',
-        download: 'Download',
-        share: 'Share',
-        copy: 'Copy',
-        move: 'Move',
-        rename: 'Rename',
-        delete: 'Delete',
-        detail: 'Details',
-        view: 'View',
-        viewGrid: 'Grid View',
-        viewList: 'List View',
-        sortBy: 'Sort by',
-        sortName: 'Name',
-        sortSize: 'Size',
-        sortTime: 'Modified Time',
-        refresh: 'Refresh',
-        reload: 'Reload'
-      },
-      dropZone: {
-        hint: 'Drop files to upload to the current folder',
-        truncatedCount: 'Too many files dropped. Only the first {max} will be uploaded. Please drop in batches.',
-        truncatedSize: 'Total size of dropped files is too large. Only part will be uploaded. Please drop in batches.'
-      },
-      createInline: {
-        defaultFileName: 'New File.txt',
-        defaultFolderName: 'New Folder',
-        nameExists: '"{name}" already exists in this folder. A numeric suffix will be added if you continue.',
-        confirmCreate: 'Continue',
-        cancelCreate: 'Cancel'
-      },
-      modal: {
-        newFolderTitle: 'New Folder',
-        renameTitle: 'Rename',
-        moveTitle: 'Move to',
-        copyTitle: 'Copy to',
-        nameLabel: 'Name',
-        namePlaceholder: 'Enter a name',
-        targetLabel: 'Target folder',
-        confirm: 'Confirm',
-        cancel: 'Cancel'
-      },
-      msg: {
-        newFolderSuccess: 'Created',
-        renameSuccess: 'Renamed',
-        moveSuccess: 'Moved',
-        copySuccess: 'Copied',
-        deleteSuccess: 'Moved to trash',
-        nameRequired: 'Name cannot be empty',
-        deleteConfirmContent: 'Move {count} selected item(s) to trash?',
-        conflictTitle: 'Same-name item exists',
-        conflictDesc: '"{names}" already exists in the target folder. Choose how to handle:',
-        overwrite: 'Overwrite',
-        keepBoth: 'Keep both',
-        operateFail: 'Operation failed',
-        featureDeveloping: 'Feature under development'
-      },
-      transfer: {
-        title: 'Transfers',
-        clear: 'Clear finished',
-        close: 'Close',
-        taskCount: '{n} task(s)',
-        pause: 'Pause',
-        resume: 'Resume',
-        retry: 'Retry',
-        cancel: 'Cancel',
-        pauseAll: 'Pause all',
-        resumeAll: 'Resume all',
-        pending: 'Queued',
-        hashing: 'Hashing',
-        uploading: 'Uploading',
-        merging: 'Merging',
-        paused: 'Paused',
-        success: 'Done',
-        error: 'Failed',
-        sphereView: 'Sphere view',
-        remaining: '{v} left'
-      }
-    },
     login: {
       common: {
         title: 'Welcome',
@@ -715,8 +568,6 @@ const local: App.I18n.Schema = {
         securityDesc: 'System security settings to enhance system protection',
         ldap: 'LDAP',
         ldapDesc: 'LDAP directory service for unified authentication',
-        disk: 'Disk',
-        diskDesc: 'Disk storage, quota and file management',
         notify: 'Notification',
         notifyDesc: 'Notification channels and templates for message delivery',
         auth: 'Authentication',
@@ -778,7 +629,6 @@ const local: App.I18n.Schema = {
         tabGeneral: 'General',
         tabLog: 'Log Retention',
         tabLdap: 'LDAP',
-        tabDisk: 'Disk',
         tabNotify: 'Notification',
         tabAuth: 'Authentication',
         // LDAP Configuration Form
@@ -819,44 +669,6 @@ const local: App.I18n.Schema = {
         limitCount: 'Max Requests Per Window',
         pwdExpireEnable: 'Enable Password Expiry',
         pwdExpireDays: 'Password Valid Days',
-        // Disk Configuration
-        diskMaxUploadSize: 'Max Upload Size',
-        diskStorageQuota: 'Storage Quota',
-        diskAllowedExtensions: 'Allowed File Types',
-        diskAllowedExtensionsTip:
-          'Leave empty to allow all types. Enter file extensions (without dot), separated by commas.',
-        diskBlockedExtensions: 'Blocked File Types',
-        diskBlockedExtensionsTip:
-          'Enter blocked file extensions (without dot), takes priority over allowed types. Leave empty to allow all.',
-        diskRecycleBinRetentionDays: 'Recycle Bin Retention Days',
-        diskMaxConcurrentUploads: 'Max Concurrent Uploads',
-        diskMaxConcurrentUploadsSuffix: 'files (0=unlimited)',
-        diskMaxChunkConcurrency: 'Chunk Concurrency',
-        diskMaxChunkConcurrencySuffix: '(0=auto)',
-        diskMaxChunkRetries: 'Chunk Retries',
-        diskMaxChunkRetriesSuffix: 'times (0=no retry)',
-        diskUnitMB: 'MB',
-        diskUnitGB: 'GB',
-        diskUnitTB: 'TB',
-        diskName: 'Disk Name',
-        diskNamePlaceholder: 'Enter disk name',
-        diskLogo: 'Disk Logo',
-        diskLogoPlaceholder: 'Enter disk logo URL',
-        diskSectionOnlyOffice: 'OnlyOffice',
-        diskOnlyOfficeEnabled: 'Enable OnlyOffice',
-        diskOnlyOfficeServerUrl: 'OnlyOffice URL',
-        diskOnlyOfficeServerUrlPlaceholder: '/office or https://domain.com/office',
-        diskOnlyOfficeServerUrlTip: 'The browser-accessible URL of the Document Server.',
-        diskOnlyOfficeTokenSecret: 'Secret Key',
-        diskOnlyOfficeTokenSecretPlaceholder: 'Same as the JWT_SECRET of the OnlyOffice container',
-        diskOnlyOfficeTokenSecretTip:
-          'Must match the JWT_SECRET env var of the Document Server container. Leave empty to disable JWT signing.',
-        diskOnlyOfficeCallbackUrl: 'Callback URL',
-        diskOnlyOfficeCallbackUrlPlaceholder: 'http://backend-ip:port/api',
-        diskOnlyOfficeCallbackUrlTip: 'The OnlyOffice container must be able to reach this URL to save documents.',
-        tabDiskBasic: 'Basic',
-        tabDiskDisplay: 'Display',
-        tabDiskOnlyOffice: 'OnlyOffice',
         // Notification Configuration
         notifyEmailEnabled: 'Enable Email',
         notifyEmailHost: 'SMTP Server',
