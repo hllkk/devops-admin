@@ -193,7 +193,7 @@ function handleRefresh() {
 
 /** 工具栏触发上传:传当前目录,每个文件成功后刷新列表;type 区分文件/文件夹。
  *  文件夹模式额外传 dirs(含空目录的目录路径列表),由引擎先调 ensure-folders 预建目录树。 */
-function handleUpload(type: 'file' | 'folder', files: File[], dirs?: string[]) {
+function handleUpload(_type: 'file' | 'folder', files: File[], dirs?: string[]) {
   uploadFiles(files, diskStore.getCurrentPathString(), dirs, getFileList);
 }
 
@@ -376,10 +376,11 @@ watch(
 watch(
   () => route.query.path,
   async newPath => {
-    const decodedNewPath = newPath ? decodeURIComponent(newPath as string) : '/';
-    if (decodedNewPath !== diskStore.getCurrentPathString()) {
-      const success = await diskStore.restoreFromPath(decodedNewPath);
-      if (!success && decodedNewPath !== '/') {
+    // route.query.path 已由 vue-router 的 parseQuery 解码,无需再 decodeURIComponent
+    const pathStr = (newPath as string) || '/';
+    if (pathStr !== diskStore.getCurrentPathString()) {
+      const success = await diskStore.restoreFromPath(pathStr);
+      if (!success && pathStr !== '/') {
         router.replace({ name: 'disk' });
       }
       getFileList();
@@ -390,7 +391,7 @@ watch(
 onMounted(async () => {
   const pathParam = route.query.path as string;
   if (pathParam) {
-    const success = await diskStore.restoreFromPath(decodeURIComponent(pathParam));
+    const success = await diskStore.restoreFromPath(pathParam);
     if (!success) {
       router.replace({ name: 'disk' });
     }
