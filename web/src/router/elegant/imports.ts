@@ -8,13 +8,11 @@ import type { LastLevelRouteKey, RouteLayout } from "@elegant-router/types";
 
 import BaseLayout from "@/layouts/base-layout/index.vue";
 import BlankLayout from "@/layouts/blank-layout/index.vue";
-import DiskLayout from "@/layouts/disk-layout/index.vue";
 import AutoLayout from "@/layouts/auto-layout/index.vue";
 
 export const layouts: Record<RouteLayout, RouteComponent | (() => Promise<RouteComponent>)> = {
   base: BaseLayout,
   blank: BlankLayout,
-  disk: DiskLayout,
   auto: AutoLayout,
 };
 
@@ -40,7 +38,6 @@ export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<Ro
   login: () => import("@/views/_builtin/login/index.vue"),
   "social-callback": () => import("@/views/_builtin/social-callback/index.vue"),
   "user-center": () => import("@/views/_builtin/user-center/index.vue"),
-  disk: () => import("@/views/_disk/disk/index.vue"),
   gateway: () => import("@/views/_gateway/gateway/index.vue"),
   server: () => import("@/views/_server/server/index.vue"),
   home: () => import("@/views/home/index.vue"),

@@ -263,7 +263,6 @@ const local: App.I18n.Schema = {
     log_loginlog: '登录日志',
     log_operlog: '操作日志',
     log_errorlog: '错误日志',
-    disk: '网盘',
     server: '服务器管理',
     gateway: 'AI 网关',
     init: '系统初始化',
@@ -271,7 +270,6 @@ const local: App.I18n.Schema = {
   },
   module: {
     admin: '后台管理',
-    disk: '网盘',
     server: '服务器管理',
     gateway: 'AI 网关',
     common: '公共页面'

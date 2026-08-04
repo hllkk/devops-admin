@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/hllkk/devops-admin/server/global"
-	diskModel "github.com/hllkk/devops-admin/server/model/disk"
 	sysModel "github.com/hllkk/devops-admin/server/model/system"
 	"github.com/hllkk/devops-admin/server/service/system"
 	"github.com/pkg/errors"
@@ -42,14 +41,12 @@ func (i *initSetting) MigrateTable(ctx context.Context) (context.Context, error)
 		&sysModel.SysGeneralConfig{},
 		&sysModel.SysSecurityConfig{},
 		&sysModel.SysLdapConfig{},
-		&sysModel.SysDiskConfig{},
 		&sysModel.SysNotifyConfig{},
 		&sysModel.SysAuthConfig{},
 		&sysModel.SysNotice{},
 		&sysModel.SysNoticeRecord{},
 		&sysModel.SysSocial{},
 		&sysModel.SysError{},
-		&diskModel.DiskFile{},
 	)
 }
 
@@ -86,12 +83,6 @@ func (i *initSetting) InitializeData(ctx context.Context) (context.Context, erro
 	ldap.ID = 1
 	if err := ensureConfigRow(db, &sysModel.SysLdapConfig{}, &ldap); err != nil {
 		return ctx, errors.Wrap(err, "sys_ldap_config 默认配置初始化失败")
-	}
-
-	disk := sysModel.DefaultDiskConfig()
-	disk.ID = 1
-	if err := ensureConfigRow(db, &sysModel.SysDiskConfig{}, &disk); err != nil {
-		return ctx, errors.Wrap(err, "sys_disk_config 默认配置初始化失败")
 	}
 
 	notify := sysModel.DefaultNotifyConfig()

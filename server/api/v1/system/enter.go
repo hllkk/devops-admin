@@ -27,7 +27,6 @@ var (
 	initDBService         = service.ServiceGroupApp.SystemServiceGroup.InitDBService
 	securityConfigService = service.ServiceGroupApp.SystemServiceGroup.SecurityConfigService
 	ldapConfigService     = service.ServiceGroupApp.SystemServiceGroup.LdapConfigService
-	diskConfigService     = service.ServiceGroupApp.SystemServiceGroup.DiskConfigService
 	notifyConfigService   = service.ServiceGroupApp.SystemServiceGroup.NotifyConfigService
 	userService           = service.ServiceGroupApp.SystemServiceGroup.UserService
 	loginLogService       = service.ServiceGroupApp.SystemServiceGroup.LoginLogService

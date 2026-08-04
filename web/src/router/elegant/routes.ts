@@ -52,17 +52,6 @@ export const generatedRoutes: GeneratedRoute[] = [
     }
   },
   {
-    name: 'disk',
-    path: '/disk',
-    component: 'layout.disk$view.disk',
-    meta: {
-      title: 'disk',
-      i18nKey: 'route.disk',
-      icon: 'mdi:harddisk',
-      module: 'disk'
-    }
-  },
-  {
     name: 'gateway',
     path: '/gateway',
     component: 'layout.base$view.gateway',

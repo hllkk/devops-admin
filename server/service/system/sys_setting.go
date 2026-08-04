@@ -23,10 +23,6 @@ func (s *SettingService) Get(ctx context.Context) (systemReq.SettingConfig, erro
 	if err != nil {
 		return systemReq.SettingConfig{}, err
 	}
-	disk, err := (&DiskConfigService{}).Get(ctx)
-	if err != nil {
-		return systemReq.SettingConfig{}, err
-	}
 	notify, err := (&NotifyConfigService{}).Get(ctx)
 	if err != nil {
 		return systemReq.SettingConfig{}, err
@@ -35,7 +31,7 @@ func (s *SettingService) Get(ctx context.Context) (systemReq.SettingConfig, erro
 	if err != nil {
 		return systemReq.SettingConfig{}, err
 	}
-	return systemReq.SettingConfig{General: &general, Security: &security, Ldap: &ldap, Disk: &disk, Notify: &notify, Auth: &auth}, nil
+	return systemReq.SettingConfig{General: &general, Security: &security, Ldap: &ldap, Notify: &notify, Auth: &auth}, nil
 }
 
 // Set 聚合保存:按段落非空分发到对应配置表,各自刷内存缓存。
@@ -53,11 +49,6 @@ func (s *SettingService) Set(ctx context.Context, req systemReq.SettingConfig) e
 	}
 	if req.Ldap != nil {
 		if err := (&LdapConfigService{}).Set(ctx, *req.Ldap); err != nil {
-			return err
-		}
-	}
-	if req.Disk != nil {
-		if err := (&DiskConfigService{}).Set(ctx, *req.Disk); err != nil {
 			return err
 		}
 	}

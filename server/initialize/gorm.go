@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/hllkk/devops-admin/server/global"
-	"github.com/hllkk/devops-admin/server/model/disk"
 	"github.com/hllkk/devops-admin/server/model/media"
 	"github.com/hllkk/devops-admin/server/model/system"
 	"github.com/hllkk/devops-admin/server/utils/logger"
@@ -64,7 +63,6 @@ func RegisterTables() {
 		system.SysLdapConfig{},
 		system.SysNotifyConfig{},
 		system.SysAuthConfig{},
-		system.SysDiskConfig{},
 		system.SysTimedTask{},
 		system.SysTimedTaskLog{},
 
@@ -72,10 +70,6 @@ func RegisterTables() {
 		media.MediaUploadChunk{},
 		media.FileUploadAndDownload{},
 		media.AttachmentCategory{},
-
-		disk.DiskFile{},
-		disk.DiskUploadSession{},
-		disk.DiskUploadChunk{},
 	)
 
 	if err != nil {

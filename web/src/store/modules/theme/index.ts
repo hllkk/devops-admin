@@ -34,16 +34,9 @@ export const useThemeStore = defineStore(SetupStoreId.Theme, () => {
   const routeStore = useRouteStore();
 
   /**
-   * 对外生效的菜单模式:disk 场景定死 vertical-mix,其余用用户主题设置。
-   * 两种 disk 场景:① disk 模块路由(component 含 layout.disk → tagLayoutMeta 打 meta.useDiskLayout);
-   * ② 全局公共页(layout.auto)在 disk 模块下——auto 不含 layout.disk 字符串打不到标,按 currentModule 兜底。
-   * base-layout/global-menu/global-sider 统一读它,避免 disk 外壳与菜单组件模式不一致。
+   * 对外生效的菜单模式:用用户主题设置。
    */
-  const effectiveLayoutMode = computed<UnionKey.ThemeLayoutMode>(() => {
-    if (router.currentRoute.value.meta?.useDiskLayout) return 'vertical-mix';
-    if (routeStore.currentModule === 'disk') return 'vertical-mix';
-    return settings.value.layout.mode;
-  });
+  const effectiveLayoutMode = computed<UnionKey.ThemeLayoutMode>(() => settings.value.layout.mode);
 
   /**
    * Global (admin / default module) structural snapshot — the base every module inherits.

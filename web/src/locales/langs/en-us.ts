@@ -267,7 +267,6 @@ const local: App.I18n.Schema = {
     log_loginlog: 'Login Log',
     log_operlog: 'Operation Log',
     log_errorlog: 'Error Log',
-    disk: 'Disk',
     server: 'Server',
     gateway: 'AI Gateway',
     init: 'System Init',
@@ -275,7 +274,6 @@ const local: App.I18n.Schema = {
   },
   module: {
     admin: 'Admin',
-    disk: 'Disk',
     server: 'Server',
     gateway: 'AI Gateway',
     common: 'Common'

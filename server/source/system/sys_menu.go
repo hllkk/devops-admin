@@ -127,18 +127,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			OrderNum:  4,
 			Module:    "admin",
 		},
-		// 业务模块占位首页(顶层单级 C,对齐前端 views 的 _disk/_server/_gateway 占位页)
-		{
-			ParentId:  0,
-			MenuName:  "route.disk",
-			MenuType:  "C",
-			Path:      "disk",
-			Component: "layout.disk$view._disk/disk",
-			Icon:      "mdi:harddisk",
-			Visible:   "0",
-			OrderNum:  5,
-			Module:    "disk",
-		},
+		// 业务模块占位首页(顶层单级 C,对齐前端 views 的 _server/_gateway 占位页)
 		{
 			ParentId:  0,
 			MenuName:  "route.server",

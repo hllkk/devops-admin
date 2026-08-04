@@ -6,11 +6,9 @@ import SettingMenu from './modules/setting-menu.vue';
 import GeneralSetting from './modules/general-setting.vue';
 import SecuritySetting from './modules/security-setting.vue';
 import LdapSetting from './modules/ldap-setting.vue';
-import DiskSetting from './modules/disk-setting.vue';
 import NotifySetting from './modules/notify-setting.vue';
 import AuthSetting from './modules/auth-setting.vue';
 import { useAuth } from '@/hooks/business/auth';
-import { useDiskUpload } from '@/hooks/business/disk/use-disk-upload';
 import { fetchGetSetting, fetchUpdateSetting } from '@/service/api/system/setting';
 import { useAppStore } from '@/store/modules/app/index.js';
 
@@ -20,7 +18,7 @@ const { t } = useI18n();
 const { hasAuth } = useAuth();
 const { loading, startLoading, endLoading } = useLoading();
 
-type SettingKey = 'general' | 'security' | 'ldap' | 'disk' | 'notify' | 'auth';
+type SettingKey = 'general' | 'security' | 'ldap' | 'notify' | 'auth';
 
 interface SettingMenuItem {
   key: SettingKey;
@@ -42,14 +40,12 @@ const config = ref<{
   general: Api.System.GeneralSettingConfig;
   security: Api.System.SecuritySettingConfig;
   ldap: Api.System.LdapSettingConfig;
-  disk: Api.System.DiskSettingConfig;
   notify: Api.System.NotifySettingConfig;
   auth: Api.System.AuthSettingConfig;
 }>({
   general: {} as Api.System.GeneralSettingConfig,
   security: {} as Api.System.SecuritySettingConfig,
   ldap: {} as Api.System.LdapSettingConfig,
-  disk: {} as Api.System.DiskSettingConfig,
   notify: {} as Api.System.NotifySettingConfig,
   auth: {} as Api.System.AuthSettingConfig
 });
@@ -73,12 +69,6 @@ const menuItems = computed<SettingMenuItem[]>(() => [
     label: t('page.system.setting.ldap'),
     desc: t('page.system.setting.ldapDesc'),
     icon: 'fluent-emoji-flat:globe-with-meridians'
-  },
-  {
-    key: 'disk',
-    label: t('page.system.setting.disk'),
-    desc: t('page.system.setting.diskDesc'),
-    icon: 'fluent-emoji-flat:floppy-disk'
   },
   {
     key: 'notify',
@@ -105,7 +95,6 @@ async function loadConfig() {
   config.value.general = data?.general ?? config.value.general;
   config.value.security = data?.security ?? config.value.security;
   config.value.ldap = data?.ldap ?? config.value.ldap;
-  config.value.disk = data?.disk ?? config.value.disk;
   config.value.notify = data?.notify ?? config.value.notify;
   config.value.auth = data?.auth ?? config.value.auth;
   loaded.value = true;
@@ -117,7 +106,6 @@ async function handleSave() {
     general: { ...config.value.general },
     security: { ...config.value.security },
     ldap: { ...config.value.ldap },
-    disk: { ...config.value.disk },
     notify: { ...config.value.notify },
     auth: { ...config.value.auth }
   });
@@ -125,8 +113,6 @@ async function handleSave() {
     window.$message?.error(t('page.system.setting.saveFail'));
   } else {
     window.$message?.success(t('page.system.setting.saveSuccess'));
-    // 热更新上传配置(并发/分片并发/重试),无需刷新即对新任务生效
-    useDiskUpload().reloadConfig();
   }
   endLoading();
 }
@@ -164,7 +150,6 @@ onMounted(() => {
           <GeneralSetting v-if="activeKey === 'general'" v-model:config="config.general" />
           <SecuritySetting v-else-if="activeKey === 'security'" v-model:security-config="config.security" />
           <LdapSetting v-else-if="activeKey === 'ldap'" v-model:config="config.ldap" />
-          <DiskSetting v-else-if="activeKey === 'disk'" v-model:config="config.disk" />
           <NotifySetting v-else-if="activeKey === 'notify'" v-model:config="config.notify" />
           <AuthSetting v-else-if="activeKey === 'auth'" v-model:config="config.auth" />
         </div>
@@ -195,7 +180,6 @@ onMounted(() => {
             <GeneralSetting v-if="activeKey === 'general'" v-model:config="config.general" />
             <SecuritySetting v-else-if="activeKey === 'security'" v-model:security-config="config.security" />
             <LdapSetting v-else-if="activeKey === 'ldap'" v-model:config="config.ldap" />
-            <DiskSetting v-else-if="activeKey === 'disk'" v-model:config="config.disk" />
             <NotifySetting v-else-if="activeKey === 'notify'" v-model:config="config.notify" />
             <AuthSetting v-else-if="activeKey === 'auth'" v-model:config="config.auth" />
           </div>

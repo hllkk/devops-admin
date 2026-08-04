@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 
 	"github.com/hllkk/devops-admin/server/global"
-	diskService "github.com/hllkk/devops-admin/server/service/disk"
 	mediaService "github.com/hllkk/devops-admin/server/service/media"
 	"github.com/hllkk/devops-admin/server/service/system"
 	"github.com/hllkk/devops-admin/server/task"
@@ -28,9 +27,5 @@ func Timer() {
 	task.Register("CleanStaleUploads", "清理过期大文件上传会话", func(ctx context.Context, _ json.RawMessage) error {
 		svc := mediaService.MediaUploadService{}
 		return svc.CleanupStale(ctx, global.OPS_CONFIG.Media.SessionTTL)
-	})
-	task.Register("CleanStaleDiskChunks", "清理过期网盘上传分片(上传会话卡在 uploading/merging 超过 TTL)", func(ctx context.Context, _ json.RawMessage) error {
-		svc := diskService.DiskUploadService{}
-		return svc.CleanupStaleChunks(ctx, global.OPS_CONFIG.Media.SessionTTL)
 	})
 }

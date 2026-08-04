@@ -166,8 +166,8 @@ const localIconOptions = localIcons.map<SelectOption>(item => ({
 function handleInitModel() {
   queryList.value = [];
   iconType.value = '1';
-  // 新建时 disk 模块默认网盘布局(仅默认值,用户可在抽屉内改);编辑态由下方回显覆盖
-  layoutType.value = props.operateType === 'add' && props.defaultModule === 'disk' ? '2' : '0';
+  // 新建时默认无布局;编辑态由下方回显覆盖
+  layoutType.value = '0';
   model.value = createDefaultModel();
 
   if (props.operateType === 'edit' && props.rowData) {

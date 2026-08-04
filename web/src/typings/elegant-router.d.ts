@@ -9,7 +9,7 @@ declare module "@elegant-router/types" {
   /**
    * route layout
    */
-  export type RouteLayout = "base" | "blank" | "disk" | "auto";
+  export type RouteLayout = "base" | "blank" | "auto";
 
   /**
    * route map
@@ -21,7 +21,6 @@ declare module "@elegant-router/types" {
     "404": "/404";
     "500": "/500";
     "admin": "/admin";
-    "disk": "/disk";
     "gateway": "/gateway";
     "home": "/home";
     "iframe-page": "/iframe-page/:url";
@@ -79,7 +78,6 @@ declare module "@elegant-router/types" {
     | "404"
     | "500"
     | "admin"
-    | "disk"
     | "gateway"
     | "home"
     | "iframe-page"
