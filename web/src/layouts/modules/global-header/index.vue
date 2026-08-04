@@ -21,7 +21,7 @@ interface Props {
   showMenuToggler?: App.Global.HeaderProps['showMenuToggler'];
   /** Whether to show the menu */
   showMenu?: App.Global.HeaderProps['showMenu'];
-  /** 主题设置按钮(齿轮)显隐;明暗切换(ThemeSchemaSwitch)始终保留,disk 布局只藏齿轮 */
+  /** 主题设置按钮(齿轮)显隐;明暗切换(ThemeSchemaSwitch)始终保留 */
   showThemeControls?: boolean;
 }
 

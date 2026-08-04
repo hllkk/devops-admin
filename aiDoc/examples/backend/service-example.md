@@ -13,23 +13,23 @@ Service 层负责业务逻辑、数据库查询、事务控制和数据拼装，
 ## 推荐写法示例
 
 ```go
-package disk
+package server
 
 import (
 	"github.com/hllkk/devops-admin/server/global"
-	"github.com/hllkk/devops-admin/server/model/disk"
-	diskReq "github.com/hllkk/devops-admin/server/model/disk/request"
+	"github.com/hllkk/devops-admin/server/model/server"
+	serverReq "github.com/hllkk/devops-admin/server/model/server/request"
 )
 
-type FileService struct{}
+type HostService struct{}
 
-func (s *FileService) GetFileList(info diskReq.FileSearch) (list []disk.File, total int64, err error) {
+func (s *HostService) GetHostList(info serverReq.HostSearch) (list []server.Host, total int64, err error) {
 	limit := info.PageSize
 	offset := info.PageSize * (info.Page - 1)
 
-	db := global.GVA_DB.Model(&disk.File{})
-	if info.Name != "" {
-		db = db.Where("name LIKE ?", "%"+info.Name+"%")
+	db := global.GVA_DB.Model(&server.Host{})
+	if info.HostName != "" {
+		db = db.Where("host_name LIKE ?", "%"+info.HostName+"%")
 	}
 	if info.Status != nil {
 		db = db.Where("status = ?", *info.Status)
@@ -60,4 +60,4 @@ func (s *FileService) GetFileList(info diskReq.FileSearch) (list []disk.File, to
 
 ## 真实参考文件
 
-> devops-admin 尚无业务代码；待网盘模块落地后在此补充。可对照 gin-vue-admin 的 `server/service/system/sys_user.go` 学习写法。
+> devops-admin 尚无业务代码；待服务器模块落地后在此补充。可对照 gin-vue-admin 的 `server/service/system/sys_user.go` 学习写法。

@@ -98,7 +98,7 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
 
   /**
    * Last visited module — sticky, so global pages (user-center / notice-user) follow the source module.
-   * 持久化到 localStorage:刷新全局页时不丢失来源模块(否则 admin 下刷新个人中心会闪回 disk)。
+   * 持久化到 localStorage:刷新全局页时不丢失来源模块(否则 admin 下刷新个人中心会闪回 server)。
    */
   const lastModule = ref<RouteModule>(normalizeModule(localStg.get('lastModule')));
 

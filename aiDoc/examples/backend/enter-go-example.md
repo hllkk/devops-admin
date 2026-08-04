@@ -18,7 +18,7 @@
 package service
 
 import (
-	"github.com/hllkk/devops-admin/server/service/disk"
+	"github.com/hllkk/devops-admin/server/service/server"
 	"github.com/hllkk/devops-admin/server/service/system"
 )
 
@@ -26,28 +26,28 @@ var ServiceGroupApp = new(ServiceGroup)
 
 type ServiceGroup struct {
 	SystemServiceGroup system.ServiceGroup
-	DiskServiceGroup   disk.ServiceGroup
+	ServerServiceGroup server.ServiceGroup
 }
 ```
 
-### 模块级聚合（如 `server/router/disk/enter.go`）
+### 模块级聚合（如 `server/router/server/enter.go`）
 
 ```go
-package disk
+package server
 
 import api "github.com/hllkk/devops-admin/server/api/v1"
 
 type RouterGroup struct {
-	FileRouter
+	HostRouter
 }
 
 var (
-	fileApi = api.ApiGroupApp.DiskApiGroup.FileApi
+	hostApi = api.ApiGroupApp.ServerApiGroup.HostApi
 )
 ```
 
-> API 层引用 Service 的别名（如 `fileService`）同理声明在 `server/api/v1/disk/enter.go`：
-> `var fileService = service.ServiceGroupApp.DiskServiceGroup.FileService`
+> API 层引用 Service 的别名（如 `hostService`）同理声明在 `server/api/v1/server/enter.go`：
+> `var hostService = service.ServiceGroupApp.ServerServiceGroup.HostService`
 
 ## 为什么这样写
 
@@ -63,4 +63,4 @@ var (
 
 ## 真实参考文件
 
-> devops-admin 尚无业务代码；待网盘模块落地后在此补充。可对照 gin-vue-admin 的 `server/api/v1/enter.go`、`server/service/enter.go`、`server/router/system/enter.go` 学习写法。
+> devops-admin 尚无业务代码；待服务器模块落地后在此补充。可对照 gin-vue-admin 的 `server/api/v1/enter.go`、`server/service/enter.go`、`server/router/system/enter.go` 学习写法。

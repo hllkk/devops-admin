@@ -41,7 +41,7 @@ const props = withDefaults(defineProps<Props>(), {
   hideFooter: false
 });
 
-/** 实际菜单模式:disk 模块定死 vertical-mix(themeStore.effectiveLayoutMode),其余用用户设置 */
+/** 实际菜单模式(themeStore.effectiveLayoutMode) */
 const effectiveMode = computed(() => themeStore.effectiveLayoutMode);
 
 const GlobalMenu = defineAsyncComponent(() => import('../modules/global-menu/index.vue'));

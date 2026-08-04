@@ -5,7 +5,7 @@
 ## 现状核对
 
 - `PUT /system/user/profile/updatePwd`(`ChangeMyPassword`,密码过期强制改密入口)早已落地,不动
-- 头像/网盘共用 `utils/upload` 的 OSS 抽象(`NewOss` 按 `System.OssType` 选 provider);RustFS 是 S3 兼容,后续切存储只需改 `config.yaml` 的 `oss-type` + `aws-s3`/`minio` endpoint,代码零改动——`config/oss_aws.go` 已有 `Endpoint`+`S3ForcePathStyle`+`DisableSSL` 三件套接自建 S3
+- 头像上传走 `utils/upload` 的 OSS 抽象(`NewOss` 按 `System.OssType` 选 provider);RustFS 是 S3 兼容,后续切存储只需改 `config.yaml` 的 `oss-type` + `aws-s3`/`minio` endpoint,代码零改动——`config/oss_aws.go` 已有 `Endpoint`+`S3ForcePathStyle`+`DisableSSL` 三件套接自建 S3
 - 全后端无人对 local url 补前缀(`GetUserInfo` 直接透传 `SysUser.Avatar`),avatar 存 `UploadFile` 返回的 url 与 media 一致
 
 ## 后端改动(4 文件)
@@ -32,4 +32,4 @@ local `UploadFile` 返回相对 url `uploads/file/xxx`(无前导 `/`),上传瞬�
 ## 关联
 
 - 用户管理基座见 [[user-management]](其「profile/updatePwd/avatar 待续」由本文件承接 profile/avatar;updatePwd 已于彼处落地)
-- 存储抽象见 `utils/upload/`(OSS 接口 + `NewOss` 工厂);网盘规划见 `aiDoc/modules/business-modules.md`(未启动,RustFS)
+- 存储抽象见 `utils/upload/`(OSS 接口 + `NewOss` 工厂)

@@ -14,7 +14,7 @@ import (
 // 雪花算法(yitter IdGenerator)全局配置常量。
 //
 //	WorkerIdBitLength=6 -> 单进程可分配 workerID 范围 [0,63];
-//	SeqBitLength=6      -> 单毫秒单节点序列号 64 个,足够后台/网盘/AI网关等业务写入。
+//	SeqBitLength=6      -> 单毫秒单节点序列号 64 个,足够后台/AI网关等业务写入。
 //
 // 多副本部署时各实例的 workerID 必须互异,否则会产生重复 ID(见 config.System.WorkerID)。
 const (

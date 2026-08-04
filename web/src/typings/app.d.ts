@@ -854,7 +854,6 @@ declare namespace App {
             tabLdapConnection: string;
             tabLdapAttrMap: string;
             tabLdapUserPolicy: string;
-            // 网盘配置
             // 通知配置
             notifyEmailEnabled: string;
             notifyEmailHost: string;

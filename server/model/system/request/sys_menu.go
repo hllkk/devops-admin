@@ -33,5 +33,5 @@ type MenuOperateParams struct {
 	Perms      string             `json:"perms"`            // 权限标识
 	Icon       string             `json:"icon"`             // 菜单图标
 	Remark     string             `json:"remark"`           // 备注
-	Module     string             `json:"module,omitempty"` // 业务模块归属 admin/disk/server/gateway(空=未归属,当全局路由;前端模块隔离来源)
+	Module     string             `json:"module,omitempty"` // 业务模块归属 admin/server/gateway(空=未归属,当全局路由;前端模块隔离来源)
 }

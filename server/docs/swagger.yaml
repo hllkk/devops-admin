@@ -188,7 +188,7 @@ definitions:
         description: 菜单类型 M目录C菜单F按钮
         type: string
       module:
-        description: 业务模块归属 admin/disk/server/gateway(空=未归属,当全局路由;前端模块隔离来源)
+        description: 业务模块归属 admin/server/gateway(空=未归属,当全局路由;前端模块隔离来源)
         type: string
       orderNum:
         description: 显示顺序
@@ -721,7 +721,7 @@ definitions:
         description: 本地 svg 图标名(如 menu-log);来自 SysMenu.Icon 的 local-icon- 前缀
         type: string
       module:
-        description: 业务模块归属(admin/disk/server/gateway);取 SysMenu.Module,前端 meta.module
+        description: 业务模块归属(admin/server/gateway);取 SysMenu.Module,前端 meta.module
           驱动模块隔离
         type: string
       order:
@@ -752,7 +752,7 @@ definitions:
         description: 菜单类型 M目录C菜单F按钮(前端渲染区分)
         type: string
       module:
-        description: 业务模块归属(admin/disk/server/gateway;角色授权树前端按模块分组用)
+        description: 业务模块归属(admin/server/gateway;角色授权树前端按模块分组用)
         type: string
       path:
         description: 路由地址(C 菜单默认路由小房子推导 routeKey 用)
@@ -4153,7 +4153,7 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: 系统设置(general/security/ldap/disk/notify/auth 任一可选)
+      - description: 系统设置(general/security/ldap/notify/auth 任一可选)
         in: body
         name: data
         required: true

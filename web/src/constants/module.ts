@@ -31,10 +31,10 @@ export const MODULE_CONFIG: Record<RouteModule, ModuleConfig> = {
 };
 
 /**
- * 走 auto 布局(跟随 currentModule)的全局公共页路由名。
+ * 走 auto 布局(经 AutoLayout 统一用 BaseLayout 承载)的全局公共页路由名。
  *
  * 这些是「登录后才访问、无 meta.module」的公共功能页(个人中心 / 未来的消息中心),
- * 外壳不写死 base,而是由 AutoLayout 按 currentModule 在 base/disk 间切换。
+ * 外壳统一用 BaseLayout(经 AutoLayout 承载),公共页需 header/sider 故不退化到 blank。
  *
  * elegant-router 0.3.8 只有全局 defaultLayout、无 per-route layout 钩子,故 layout.auto 由
  * router/routes/index.ts 的 rewriteAutoLayout 在后处理层把 component 从 layout.base 改写而来。

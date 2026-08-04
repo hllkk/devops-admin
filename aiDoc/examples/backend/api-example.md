@@ -35,31 +35,31 @@ API 层负责接收 HTTP 请求、从合适的位置提取参数、调用 Servic
 下面这个示例演示的是 `POST + JSON body` 场景，所以这里使用 `ShouldBindJSON`。
 
 ```go
-package disk
+package server
 
 import (
 	"github.com/hllkk/devops-admin/server/model/common/response"
-	diskReq "github.com/hllkk/devops-admin/server/model/disk/request"
+	serverReq "github.com/hllkk/devops-admin/server/model/server/request"
 	"github.com/gin-gonic/gin"
 )
 
-// GetFileList
-// @Tags      File
-// @Summary   分页获取文件列表
+// GetHostList
+// @Tags      Host
+// @Summary   分页获取主机列表
 // @Security  ApiKeyAuth
 // @accept    application/json
 // @Produce   application/json
-// @Param     data  body      diskReq.FileSearch                                      true  "分页和筛选参数"
+// @Param     data  body      serverReq.HostSearch                                     true  "分页和筛选参数"
 // @Success   200   {object}  response.Response{data=response.PageResult,msg=string}  "返回列表、总数、分页信息"
-// @Router    /file/getFileList [post]
-func (f *FileApi) GetFileList(c *gin.Context) {
-	var pageInfo diskReq.FileSearch
+// @Router    /host/getHostList [post]
+func (h *HostApi) GetHostList(c *gin.Context) {
+	var pageInfo serverReq.HostSearch
 	if err := c.ShouldBindJSON(&pageInfo); err != nil {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
 
-	list, total, err := fileService.GetFileList(pageInfo)
+	list, total, err := hostService.GetHostList(pageInfo)
 	if err != nil {
 		response.FailWithMessage("获取失败", c)
 		return
@@ -81,7 +81,7 @@ func (f *FileApi) GetFileList(c *gin.Context) {
 - 例如：
   - 登录、创建、更新这类通常来自 JSON body
   - 列表筛选、分页、导出条件常来自 Query
-  - 上传文件通常来自 `multipart/form-data`（网盘模块分片上传尤其注意）
+  - 上传文件通常来自 `multipart/form-data`（分片上传场景尤其注意）
   - 鉴权 token、特殊网关头、追踪信息常来自 Header 或 Cookie
 - 成功 / 失败统一使用 `response` 包
 - Swagger 注释让接口契约对前端和文档生成都可见
@@ -96,4 +96,4 @@ func (f *FileApi) GetFileList(c *gin.Context) {
 
 ## 真实参考文件
 
-> devops-admin 尚无业务代码；待网盘模块落地后在此补充。可对照 gin-vue-admin 的 `server/api/v1/system/sys_user.go`、`server/api/v1/example/exa_file_upload_download.go` 学习写法。
+> devops-admin 尚无业务代码；待服务器模块落地后在此补充。可对照 gin-vue-admin 的 `server/api/v1/system/sys_user.go`、`server/api/v1/example/exa_file_upload_download.go` 学习写法。

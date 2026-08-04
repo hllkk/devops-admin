@@ -269,7 +269,7 @@ export function getNaiveTheme(
 /**
  * Structural theme keys — overridable per module.
  *
- * Split rationale: structure (layout shell) differs by module (admin = tabbed console, disk = workbench),
+ * Split rationale: structure (layout shell) differs by module (admin = tabbed console, server/gateway = workbench),
  * while appearance (color / radius / watermark / tokens) stays global for brand consistency.
  */
 export const STRUCTURAL_KEYS = ['layout', 'page', 'header', 'tab', 'fixedHeaderAndTab', 'sider', 'footer'] as const;

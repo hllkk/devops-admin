@@ -12,7 +12,7 @@ import (
 
 // initSetting 系统设置聚合初始化器: 在 /initdb 流程中建并填充 6 张单行配置表。
 //
-// 背景: 此前 general/security/ldap/disk/notify/auth 这 6 张配置表既不在任何 initializer 的
+// 背景: 此前 general/security/ldap/notify/auth 这 5 张配置表既不在任何 initializer 的
 // MigrateTable 里, 也不在 extraTables 中, 导致走 /init 向导初始化后这些表不会被创建,
 // 系统设置页 GET /system/setting 报 "relation \"xxx\" does not exist"。建表此前只存在于重启路径
 // initialize.RegisterTables, 形成"初始化后必须重启一次"的缺陷。本初始化器把建表与 id=1 默认数据

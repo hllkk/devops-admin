@@ -9,7 +9,7 @@ import (
 
 type SettingService struct{}
 
-// Get 聚合读取 {general, security, ldap, disk, notify}:分别从各单行配置表读取,拼装为前端 Api.System.Setting
+// Get 聚合读取 {general, security, ldap, notify, auth}:分别从各单行配置表读取,拼装为前端 Api.System.Setting
 func (s *SettingService) Get(ctx context.Context) (systemReq.SettingConfig, error) {
 	general, err := (&GeneralConfigService{}).Get(ctx)
 	if err != nil {

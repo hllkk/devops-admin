@@ -65,7 +65,7 @@ func (userService *UserService) GetUserInfo(ctx context.Context, userId int64) (
 }
 
 // validAppModules 业务模块标识固定顺序(与前端 ALL_MODULES 对齐);新增模块在此追加一行。
-var validAppModules = []string{"admin", "disk", "server", "gateway"}
+var validAppModules = []string{"admin", "server", "gateway"}
 
 // filterAppModules 仅保留合法模块并按固定顺序输出(剔除历史脏值/非法 module)。
 func filterAppModules(modules []string) []string {

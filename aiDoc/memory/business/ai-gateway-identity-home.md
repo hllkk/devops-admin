@@ -5,7 +5,7 @@
 ## 现状核对
 
 - AIHelms 参照路径 `/home/remote/AIHelms/ui/packages/web/src/views/MyIdentityView.vue`（FastAPI+Vue3 蓝本，devops-admin 后端 Go 只能参照设计）
-- devops-admin 的 AI 网关（`views/_gateway` / `service/api/gateway`）当前为占位页，后端 `/gateway/*` 接口完全不存在 → 前端走 mock（参照 disk `service/api/disk/file.ts` 的 `USE_MOCK` 硬编码模式）
+- devops-admin 的 AI 网关（`views/_gateway` / `service/api/gateway`）当前为占位页，后端 `/gateway/*` 接口完全不存在 → 前端走 mock（service api 内联 `USE_MOCK` 硬编码开关，待后端就绪后翻 false 切真实接口）
 - 复用项确认：echarts 6 + `useEcharts` hook（`hooks/common/echarts.ts`，`line-chart.vue` 样例）→ 不装 vue-echarts；图标走 Iconify `lucide:*` 经 `SvgIcon` → 不引 lucide-vue-next；复制用 `@vueuse/core` `useClipboard`
 - 用户信息字段：`useAuthStore().userInfo.user`（`Api.System.User`：nickName / email / deptName / avatar）
 
@@ -43,5 +43,5 @@
 ## 关联
 
 - 参照蓝本：`/home/remote/AIHelms/ui/packages/web/src/views/MyIdentityView.vue`
-- mock 模式参照：disk `service/api/disk/file.ts` 的 `USE_MOCK`
+- mock 模式：service api 内联 `USE_MOCK` 硬编码开关
 - 个人中心（用户资料/头像后端）：[[user-center-profile]]

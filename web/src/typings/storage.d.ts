@@ -55,7 +55,7 @@ declare namespace StorageType {
     /**
      * Per-module structural theme overrides.
      *
-     * Key format: `themeSettings__<module>` (e.g. `themeSettings__disk`).
+     * Key format: `themeSettings__<module>` (e.g. `themeSettings__server`).
      * Stores only structural fields (layout / tab / sider / footer / header / page / fixedHeaderAndTab);
      * appearance stays global under `themeSettings`.
      */

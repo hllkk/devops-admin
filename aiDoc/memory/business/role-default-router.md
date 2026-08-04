@@ -29,7 +29,7 @@
 - i18n `setDefaultRouter` zh/en/app.d.ts 三处同步
 
 ## 关键约束
-- **DefaultRouter 值 = routeKey**（路由名，如 `admin`/`disk`/`system_user`），非 path、非模块名；前端 `routerPushByKey` 跳转，后端 `resolveHome` 匹配 `MenuRoute.Name`
+- **DefaultRouter 值 = routeKey**（路由名，如 `admin`/`server`/`system_user`），非 path、非模块名；前端 `routerPushByKey` 跳转，后端 `resolveHome` 匹配 `MenuRoute.Name`
 - **多角色取主角色**（`user.RoleId`）的 DefaultRouter
 - **老库 `sys_roles.default_router` 空**（现有角色）→ getUserInfo 返回空 → resolveHome 兜底 admin（行为同改动前）；配默认模块需在角色管理编辑、菜单授权树点小房子
 - **home tab = 当前模块首页**(currentModule):跟随 URL 所在模块,登录/切换/刷新一致。DefaultRouter 只管登录跳转入口,不绑定 home tab

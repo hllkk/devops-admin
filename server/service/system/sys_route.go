@@ -115,7 +115,7 @@ func (s *RouteService) menusToRoutes(menus []system.SysMenu) []system.MenuRoute 
 				r.Meta.Href = routePath(n.Path)
 			}
 			// component 由层级 + 是否有子节点决定(对齐 transform.ts 的 layout./view. 解析);
-			// 布局外壳读 SysMenu.Component(resolveLayout 提取 blank/disk/base),view 段读 routeKey(Path)。
+			// 布局外壳读 SysMenu.Component(resolveLayout 提取 blank/base),view 段读 routeKey(Path)。
 			layout := resolveLayout(n.Component)
 			kids := build(n.MenuId)
 			switch {

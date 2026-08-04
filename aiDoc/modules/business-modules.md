@@ -33,5 +33,5 @@
 
 ### 系统设置（待重建）
 
-重构前的全局配置中心 `sys_setting`（`name`=分类 + `value`=JSON，六类 `general`/`security`/`authentication`/`ldap`/`notify`/`disk`）**在重构后未保留**。当前安全相关配置由 `SysSecurityConfig` 承载，其余分类（通用/认证/LDAP/通知/网盘）的落地方式待重新设计，历史设计要点见 `demand-index.md`。
+重构前的全局配置中心 `sys_setting`（`name`=分类 + `value`=JSON，五类 `general`/`security`/`authentication`/`ldap`/`notify`）**在重构后未保留**。当前安全相关配置由 `SysSecurityConfig` 承载，其余分类（通用/认证/LDAP/通知）的落地方式待重新设计，历史设计要点见 `demand-index.md`。
 

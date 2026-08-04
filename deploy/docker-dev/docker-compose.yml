@@ -64,7 +64,7 @@ services:
   # - user: root 运行，免去 bind mount 目录的属主修正（无需 chown 10001 sidecar）
   # - rustfs 与 MinIO 一样不在启动时自动建 bucket，本项目也无建桶逻辑，
   #   由 rustfs_init 用 mc 建桶，匿名下载收敛到 uploads/ 前缀（头像/媒体公开），
-  #   网盘 file/ 等私有前缀走后端代理下载鉴权
+  #   其余私有前缀走后端代理下载鉴权
   # - rustfs 仍处于快速迭代期（官方明确:勿用于生产），本配置面向 dev 环境
   # ============================================================================
 
@@ -109,7 +109,7 @@ services:
       - |
         mc alias set local http://rustfs:9000 "$${RUSTFS_ROOT_USER}" "$${RUSTFS_ROOT_PASSWORD}"
         mc mb --ignore-existing "local/$${RUSTFS_BUCKET}"
-        # 收敛匿名下载：撤整桶匿名，仅对 uploads/ 前缀放开（头像/媒体公开；网盘 file/ 等私有）
+        # 收敛匿名下载：撤整桶匿名，仅对 uploads/ 前缀放开（头像/媒体公开；其余前缀保持私有）
         mc anonymous set none "local/$${RUSTFS_BUCKET}" || true
         mc anonymous set download "local/$${RUSTFS_BUCKET}/uploads" || true
         echo "rustfs bucket $${RUSTFS_BUCKET} 就绪（匿名下载仅限 uploads/ 前缀）"

@@ -79,7 +79,6 @@ func TestMenusToRoutes(t *testing.T) {
 		{MenuId: 4, ParentId: 0, MenuType: "M", MenuName: "route.timer", Path: "timer", Icon: "fluent:clock-24-regular", Visible: "0", IsCache: "1", IsFrame: "1", OrderNum: 3, Module: "admin"},
 		{MenuId: 5, ParentId: 0, MenuType: "M", MenuName: "route.log", Path: "log", Icon: "local-icon-log", Visible: "0", IsCache: "1", IsFrame: "1", OrderNum: 4, Module: "admin"},
 		{MenuId: 6, ParentId: 3, MenuType: "F", MenuName: "用户查询", Perms: "system:user:query", Icon: "#"}, // F 按钮应被过滤
-		{MenuId: 7, ParentId: 0, MenuType: "C", MenuName: "route.disk", Path: "disk", Icon: "mdi:harddisk", Visible: "0", IsCache: "1", IsFrame: "1", OrderNum: 5, Module: "disk"},
 		{MenuId: 8, ParentId: 0, MenuType: "C", MenuName: "route.server", Path: "server", Icon: "mdi:server-network", Visible: "0", IsCache: "1", IsFrame: "1", OrderNum: 6, Module: "server"},
 		{MenuId: 9, ParentId: 0, MenuType: "C", MenuName: "route.gateway", Path: "gateway", Icon: "mdi:robot-outline", Visible: "0", IsCache: "1", IsFrame: "1", OrderNum: 7, Module: "gateway"},
 		// home:顶层单级·blank 布局·隐藏菜单·跨模块全局页(AI 个人中心首页),无 module(global route)。
@@ -90,13 +89,13 @@ func TestMenusToRoutes(t *testing.T) {
 	s := RouteService{}
 	routes := s.menusToRoutes(menus)
 
-	// 顶层 8 个(home/admin/system/timer/log/disk/server/gateway),F 按钮不进路由
-	if want := 8; len(routes) != want {
+	// 顶层 7 个(home/admin/system/timer/log/server/gateway),F 按钮不进路由
+	if want := 7; len(routes) != want {
 		t.Fatalf("顶层路由数 = %d, want %d (F 按钮应被过滤)", len(routes), want)
 	}
 
-	// disk/server/gateway:顶层单级 -> layout.base$view.<key>(对齐前端 imports.ts 的 views key)
-	for _, name := range []string{"disk", "server", "gateway"} {
+	// server/gateway:顶层单级 -> layout.base$view.<key>(对齐前端 imports.ts 的 views key)
+	for _, name := range []string{"server", "gateway"} {
 		r := findRoute(routes, name)
 		if r == nil {
 			t.Fatalf("缺少 %s 路由", name)
@@ -106,14 +105,14 @@ func TestMenusToRoutes(t *testing.T) {
 		}
 	}
 
-	// module 归属:SysMenu.Module -> meta.module(admin 模块菜单=admin;disk/server/gateway 各自)
+	// module 归属:SysMenu.Module -> meta.module(admin 模块菜单=admin;server/gateway 各自)
 	if m := findRoute(routes, "admin"); m.Meta.Module != "admin" {
 		t.Errorf("admin.Module = %q, want admin", m.Meta.Module)
 	}
 	if m := findRoute(routes, "system_user"); m.Meta.Module != "admin" {
 		t.Errorf("system_user.Module = %q, want admin", m.Meta.Module)
 	}
-	for _, c := range []struct{ name, mod string }{{"disk", "disk"}, {"server", "server"}, {"gateway", "gateway"}} {
+	for _, c := range []struct{ name, mod string }{{"server", "server"}, {"gateway", "gateway"}} {
 		r := findRoute(routes, c.name)
 		if r == nil {
 			continue
@@ -242,8 +241,8 @@ func TestResolveHome(t *testing.T) {
 		t.Errorf("resolveHome(含 home,无 defaultRouter) = %q, want home", h)
 	}
 	// defaultRouter 不在路由里 + 含 home -> 兜底 home
-	if h := s.resolveHome([]system.MenuRoute{{Name: "home"}, {Name: "admin"}}, "disk"); h != "home" {
-		t.Errorf("resolveHome(defaultRouter=disk 无权) = %q, want home", h)
+	if h := s.resolveHome([]system.MenuRoute{{Name: "home"}, {Name: "admin"}}, "server"); h != "home" {
+		t.Errorf("resolveHome(defaultRouter=server 无权) = %q, want home", h)
 	}
 	// 不含 home,无 defaultRouter -> 取第一个顶层路由
 	if h := s.resolveHome([]system.MenuRoute{{Name: "system"}, {Name: "log"}}, ""); h != "system" {
@@ -274,8 +273,6 @@ func TestResolveLayout(t *testing.T) {
 		want string
 	}{
 		{"layout.blank$view._admin_system_user", "blank"},
-		{"layout.disk$view._admin_disk", "disk"},
-		{"layout.disk", "disk"},
 		{"layout.base$view.admin", "base"},
 		{"Layout", "base"},                   // RuoYi 目录占位
 		{"_admin/system/user/index", "base"}, // RuoYi 普通菜单路径
@@ -289,44 +286,19 @@ func TestResolveLayout(t *testing.T) {
 	}
 }
 
-// TestMenusToRoutesLayout 断言 SysMenu.Component 里编码的布局意图(blank/disk)被 menusToRoutes 提取,
+// TestMenusToRoutesLayout 断言 SysMenu.Component 里编码的布局意图(blank)被 menusToRoutes 提取,
 // 且 component 里脏的 view 段(录入的 views 目录路径下划线化)被 routeKey(Path)规范化覆盖:
 //   - 顶层单级 -> layout.<layout>$view.<key>
-//   - 多级目录根 -> layout.<layout>
-//   - 子级叶子 -> view.<key>(无外壳,布局不生效)
 func TestMenusToRoutesLayout(t *testing.T) {
 	menus := []system.SysMenu{
-		// 顶层单级·网盘布局:component 的 view 段 _admin_disk 是脏的,应被 routeKey(disk) 覆盖
-		{MenuId: 1, ParentId: 0, MenuType: "C", MenuName: "route.disk", Path: "disk", Component: "layout.disk$view._admin_disk", OrderNum: 1, Module: "disk"},
 		// 顶层单级·空白布局:脏 view 段 print_page 应被 routeKey(print) 覆盖
 		{MenuId: 2, ParentId: 0, MenuType: "C", MenuName: "route.print", Path: "print", Component: "layout.blank$view.print_page", OrderNum: 2, Module: "admin"},
-		// 顶层多级目录·网盘布局(有子)
-		{MenuId: 3, ParentId: 0, MenuType: "M", MenuName: "route.storage", Path: "storage", Component: "layout.disk", OrderNum: 3, Module: "disk"},
-		{MenuId: 4, ParentId: 3, MenuType: "C", MenuName: "route.storage_file", Path: "storage/file", Component: "_disk/storage/file/index", OrderNum: 1, Module: "disk"},
 	}
 	routes := (&RouteService{}).menusToRoutes(menus)
-
-	if r := findRoute(routes, "disk"); r == nil {
-		t.Fatal("缺少 disk 路由")
-	} else if r.Component != "layout.disk$view.disk" {
-		t.Errorf("disk(网盘布局)Component = %q, want layout.disk$view.disk", r.Component)
-	}
 
 	if r := findRoute(routes, "print"); r == nil {
 		t.Fatal("缺少 print 路由")
 	} else if r.Component != "layout.blank$view.print" {
 		t.Errorf("print(空白布局)Component = %q, want layout.blank$view.print", r.Component)
-	}
-
-	if r := findRoute(routes, "storage"); r == nil {
-		t.Fatal("缺少 storage 路由")
-	} else if r.Component != "layout.disk" {
-		t.Errorf("storage(网盘目录)Component = %q, want layout.disk", r.Component)
-	}
-
-	if r := findRoute(routes, "storage_file"); r == nil {
-		t.Fatal("缺少 storage_file 路由")
-	} else if r.Component != "view.storage_file" {
-		t.Errorf("storage_file(子级叶子)Component = %q, want view.storage_file(布局不生效,view 由 routeKey 覆盖)", r.Component)
 	}
 }

@@ -25,7 +25,7 @@
 - `relations/system-map.md`：系统结构关系图、前后端流向、插件对称关系
 - `relations/development-workflow.md`：开发流程、分支与提交规范
 - `modules/backend-layer-rules.md`：后端分层、`enter.go`、统一响应、Swagger 约束
-- `modules/business-modules.md`：业务模块（网盘模块：文件/分享/配额/版本/回收站/OnlyOffice/企微）
+- `modules/business-modules.md`：业务模块（服务器管理、AI 网关）
 - `modules/plugin-development.md`：前后端插件结构与开发流程
 - `frontend-backend/boundary.md`：前后端契约与字段类型约束
 - `frontend-backend/frontend-rules.md`：Soybean 前端代码、状态、路由、样式规范

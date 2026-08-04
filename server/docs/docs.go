@@ -3917,7 +3917,7 @@ const docTemplate = `{
                 "summary": "更新系统设置(管理员)",
                 "parameters": [
                     {
-                        "description": "系统设置(general/security/ldap/disk/notify/auth 任一可选)",
+                        "description": "系统设置(general/security/ldap/notify/auth 任一可选)",
                         "name": "data",
                         "in": "body",
                         "required": true,
@@ -5609,7 +5609,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "module": {
-                    "description": "业务模块归属 admin/disk/server/gateway(空=未归属,当全局路由;前端模块隔离来源)",
+                    "description": "业务模块归属 admin/server/gateway(空=未归属,当全局路由;前端模块隔离来源)",
                     "type": "string"
                 },
                 "orderNum": {
@@ -6361,7 +6361,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "module": {
-                    "description": "业务模块归属(admin/disk/server/gateway);取 SysMenu.Module,前端 meta.module 驱动模块隔离",
+                    "description": "业务模块归属(admin/server/gateway);取 SysMenu.Module,前端 meta.module 驱动模块隔离",
                     "type": "string"
                 },
                 "order": {
@@ -6402,7 +6402,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "module": {
-                    "description": "业务模块归属(admin/disk/server/gateway;角色授权树前端按模块分组用)",
+                    "description": "业务模块归属(admin/server/gateway;角色授权树前端按模块分组用)",
                     "type": "string"
                 },
                 "path": {

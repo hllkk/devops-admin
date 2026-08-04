@@ -83,11 +83,11 @@
 |---|---|
 | `Path`（`system/user`） | `name`=`routeKey(Path)`（去首尾斜杠、`/`→`_` → `system_user`）；`path`=`"/"+Path`（`/system/user`） |
 | `MenuName`（`route.system_user`） | `meta.i18nKey`（显示走 i18n）；`meta.title`=`routeKey`（兜底） |
-| **`Component`** | **布局外壳**：`resolveLayout` 提取——含 `layout.blank`→`blank`、含 `layout.disk`→`disk`、其余（`Layout`/`xxx/index`/`FrameView`/空）→`base`。菜单管理"布局"单选（默认/空白/网盘）把布局编码进 component |
+| **`Component`** | **布局外壳**：`resolveLayout` 提取——含 `layout.blank`→`blank`、其余（`Layout`/`xxx/index`/`FrameView`/空）→`base`。菜单管理“布局”单选（默认/空白）把布局编码进 component |
 | `MenuType=M` 有子 / `MenuType=M` 顶层无子 | 多级目录 `component=layout.<layout>` / 顶层无子按**单级** `layout.<layout>$view.<key>`（按 children 有无判定，不盲信 menuType） |
 | `MenuType=C` 顶层无子 / 子级 | 单级 `layout.<layout>$view.<key>` / 子级 `view.<key>`（子级无外壳，布局不生效，布局跟随父目录） |
 
-> **布局与 module 解耦**：`Component` 决定布局外壳（base/blank/disk），`module` 仅做菜单隔离与角色授权树分组，不再触发布局。component 里的 view 路径段（录入的 views 目录下划线化）**被丢弃**，view 段始终由 `routeKey(Path)` 规范化——避免与构建期 RouteKey 不一致致 transform 静默丢路由。前端 `router/routes` 的 `tagLayoutMeta` 给 `layout.disk` 路由打 `meta.useDiskLayout`，`themeStore.effectiveLayoutMode` 据此定死 vertical-mix（vue-router 合并 matched meta，子路由继承）。
+> **布局与 module 解耦**：`Component` 决定布局外壳（base/blank），`module` 仅做菜单隔离与角色授权树分组，不再触发布局。component 里的 view 路径段（录入的 views 目录下划线化）**被丢弃**，view 段始终由 `routeKey(Path)` 规范化——避免与构建期 RouteKey 不一致致 transform 静默丢路由。
 | `Icon`=`mdi:xxx` 等 | `meta.icon` |
 | `Icon`=`local-icon-<n>` | `meta.localIcon`=`menu-<n>` |
 | `OrderNum` | `meta.order` |

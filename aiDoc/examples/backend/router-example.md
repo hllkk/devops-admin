@@ -13,27 +13,27 @@ Router 层负责路由分组、中间件挂载和处理函数绑定，不承载�
 ## 推荐写法示例
 
 ```go
-package disk
+package server
 
 import (
 	"github.com/hllkk/devops-admin/server/middleware"
 	"github.com/gin-gonic/gin"
 )
 
-type FileRouter struct{}
+type HostRouter struct{}
 
-func (r *FileRouter) InitFileRouter(Router *gin.RouterGroup) {
-	fileRouter := Router.Group("file").Use(middleware.OperationRecord())
-	fileRouterWithoutRecord := Router.Group("file")
+func (r *HostRouter) InitHostRouter(Router *gin.RouterGroup) {
+	hostRouter := Router.Group("host").Use(middleware.OperationRecord())
+	hostRouterWithoutRecord := Router.Group("host")
 
 	{
-		fileRouter.POST("createFile", fileApi.CreateFile)
-		fileRouter.PUT("updateFile", fileApi.UpdateFile)
-		fileRouter.DELETE("deleteFile", fileApi.DeleteFile)
+		hostRouter.POST("createHost", hostApi.CreateHost)
+		hostRouter.PUT("updateHost", hostApi.UpdateHost)
+		hostRouter.DELETE("deleteHost", hostApi.DeleteHost)
 	}
 	{
-		fileRouterWithoutRecord.POST("getFileList", fileApi.GetFileList)
-		fileRouterWithoutRecord.GET("findFile", fileApi.FindFile)
+		hostRouterWithoutRecord.POST("getHostList", hostApi.GetHostList)
+		hostRouterWithoutRecord.GET("findHost", hostApi.FindHost)
 	}
 }
 ```
@@ -52,4 +52,4 @@ func (r *FileRouter) InitFileRouter(Router *gin.RouterGroup) {
 
 ## 真实参考文件
 
-> devops-admin 尚无业务代码；待网盘模块落地后在此补充。可对照 gin-vue-admin 的 `server/router/system/sys_user.go` 学习写法。
+> devops-admin 尚无业务代码；待服务器模块落地后在此补充。可对照 gin-vue-admin 的 `server/router/system/sys_user.go` 学习写法。

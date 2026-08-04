@@ -33,7 +33,7 @@ export function createStaticRoutes() {
 
 /**
  * 把名单内全局页(AUTO_LAYOUT_ROUTES,见 constants/module)的 layout 从 base 改写成 auto
- * (运行期由 AutoLayout 按 currentModule 选 base/disk)。
+ * (运行期由 AutoLayout 统一用 base 承载)。
  * 改写点在三条初始化路径的公共出口 getAuthVueRoutes,一次覆盖 static/dynamic/constant,不碰生成产物。
  */
 function rewriteAutoLayout(routes: ElegantConstRoute[]): ElegantConstRoute[] {

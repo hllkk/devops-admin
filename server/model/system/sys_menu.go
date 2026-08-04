@@ -14,25 +14,25 @@ import (
 //   - Children 树形子节点内存组装,不建列; ParentName 内存组装
 type SysMenu struct {
 	global.OPS_AUDIT_MODEL
-	MenuId     int64     `json:"menuId,string" gorm:"primarykey;comment:菜单ID"`             // 菜单ID
-	ParentId   int64     `json:"parentId,string" gorm:"default:0;comment:父菜单ID"`           // 父菜单ID(0为顶级)
-	MenuType   string    `json:"menuType" gorm:"default:C;size:1;comment:菜单类型 M目录C菜单F按钮"`  // 菜单类型
-	MenuName   string    `json:"menuName" gorm:"index;comment:菜单名称"`                       // 菜单名称
-	OrderNum   int       `json:"orderNum" gorm:"default:0;comment:显示顺序"`                   // 显示顺序
-	Path       string    `json:"path" gorm:"comment:路由地址"`                                 // 路由地址
-	Component  string    `json:"component" gorm:"comment:组件路径"`                            // 组件路径
-	Module     string    `json:"module,omitempty" gorm:"column:module;comment:业务模块归属(admin/disk/server/gateway)"` // 业务模块归属(dynamic 路由 meta.module 来源;空=老库未回填)
-	QueryParam string    `json:"queryParam" gorm:"comment:路由参数"`                           // 路由参数
-	IsFrame    string    `json:"isFrame" gorm:"default:1;size:1;comment:是否外链 0是1否2iframe"` // 是否外链
-	IsCache    string    `json:"isCache" gorm:"default:0;size:1;comment:是否缓存 0缓存1不缓存"`     // 是否缓存
-	Visible    string    `json:"visible" gorm:"default:0;size:1;comment:显示状态 0显示1隐藏"`      // 显示状态
-	Status     string    `json:"status" gorm:"default:0;size:1;comment:菜单状态 0正常1停用"`       // 菜单状态(对齐前端 '0'/'1')
-	Perms      string    `json:"perms" gorm:"comment:权限标识"`                                // 权限标识
+	MenuId     int64     `json:"menuId,string" gorm:"primarykey;comment:菜单ID"`                                                                   // 菜单ID
+	ParentId   int64     `json:"parentId,string" gorm:"default:0;comment:父菜单ID"`                                                                 // 父菜单ID(0为顶级)
+	MenuType   string    `json:"menuType" gorm:"default:C;size:1;comment:菜单类型 M目录C菜单F按钮"`                                                        // 菜单类型
+	MenuName   string    `json:"menuName" gorm:"index;comment:菜单名称"`                                                                             // 菜单名称
+	OrderNum   int       `json:"orderNum" gorm:"default:0;comment:显示顺序"`                                                                         // 显示顺序
+	Path       string    `json:"path" gorm:"comment:路由地址"`                                                                                       // 路由地址
+	Component  string    `json:"component" gorm:"comment:组件路径"`                                                                                  // 组件路径
+	Module     string    `json:"module,omitempty" gorm:"column:module;comment:业务模块归属(admin/server/gateway)"`                                     // 业务模块归属(dynamic 路由 meta.module 来源;空=老库未回填)
+	QueryParam string    `json:"queryParam" gorm:"comment:路由参数"`                                                                                 // 路由参数
+	IsFrame    string    `json:"isFrame" gorm:"default:1;size:1;comment:是否外链 0是1否2iframe"`                                                       // 是否外链
+	IsCache    string    `json:"isCache" gorm:"default:0;size:1;comment:是否缓存 0缓存1不缓存"`                                                           // 是否缓存
+	Visible    string    `json:"visible" gorm:"default:0;size:1;comment:显示状态 0显示1隐藏"`                                                            // 显示状态
+	Status     string    `json:"status" gorm:"default:0;size:1;comment:菜单状态 0正常1停用"`                                                             // 菜单状态(对齐前端 '0'/'1')
+	Perms      string    `json:"perms" gorm:"comment:权限标识"`                                                                                      // 权限标识
 	ApiPrefix  string    `json:"apiPrefix,omitempty" gorm:"column:api_prefix;comment:接口路径模式(casbin策略obj,逗号分隔多个,如 /system/user, /system/user/*)"` // 接口路径模式(菜单授权时推导为该角色casbin策略)
-	Icon       string    `json:"icon" gorm:"comment:菜单图标"`                                 // 菜单图标
-	Remark     string    `json:"remark" gorm:"comment:备注"`                                 // 备注
-	ParentName string    `json:"parentName" gorm:"-"`                                      // 父菜单名称(内存组装,不建列)
-	Children   []SysMenu `json:"children" gorm:"-"`                                        // 子菜单(内存组装,不建列)
+	Icon       string    `json:"icon" gorm:"comment:菜单图标"`                                                                                       // 菜单图标
+	Remark     string    `json:"remark" gorm:"comment:备注"`                                                                                       // 备注
+	ParentName string    `json:"parentName" gorm:"-"`                                                                                            // 父菜单名称(内存组装,不建列)
+	Children   []SysMenu `json:"children" gorm:"-"`                                                                                              // 子菜单(内存组装,不建列)
 }
 
 func (SysMenu) TableName() string {
@@ -43,14 +43,14 @@ func (SysMenu) TableName() string {
 // 仅含树选择渲染所需字段,精简于 SysMenu(去 component/path/queryParam/isFrame/isCache/perms/remark/orderNum 等冗余);
 // 已按 parent_id 组装 children 树,前端 NTree 直接消费。
 type MenuTreeSelectNode struct {
-	Id       int64                `json:"id,string"`  // 菜单ID(对齐前端 IdType)
-	Label    string               `json:"label"`      // 菜单名称(NTree label-field;可能为 i18n key 如 route.xxx)
-	MenuType string               `json:"menuType"`       // 菜单类型 M目录C菜单F按钮(前端渲染区分)
-	Path     string               `json:"path,omitempty"` // 路由地址(C 菜单默认路由小房子推导 routeKey 用)
-	Module   string               `json:"module,omitempty"` // 业务模块归属(admin/disk/server/gateway;角色授权树前端按模块分组用)
-	Icon     string               `json:"icon"`           // 菜单图标
-	Visible  string               `json:"visible"`    // 显示状态 0显示1隐藏(前端隐藏标灰)
-	Status   string               `json:"status"`     // 菜单状态 0正常1停用(前端禁用标红)
+	Id       int64                `json:"id,string"`          // 菜单ID(对齐前端 IdType)
+	Label    string               `json:"label"`              // 菜单名称(NTree label-field;可能为 i18n key 如 route.xxx)
+	MenuType string               `json:"menuType"`           // 菜单类型 M目录C菜单F按钮(前端渲染区分)
+	Path     string               `json:"path,omitempty"`     // 路由地址(C 菜单默认路由小房子推导 routeKey 用)
+	Module   string               `json:"module,omitempty"`   // 业务模块归属(admin/server/gateway;角色授权树前端按模块分组用)
+	Icon     string               `json:"icon"`               // 菜单图标
+	Visible  string               `json:"visible"`            // 显示状态 0显示1隐藏(前端隐藏标灰)
+	Status   string               `json:"status"`             // 菜单状态 0正常1停用(前端禁用标红)
 	Children []MenuTreeSelectNode `json:"children,omitempty"` // 子节点(内存组装;叶子节点省略)
 }
 

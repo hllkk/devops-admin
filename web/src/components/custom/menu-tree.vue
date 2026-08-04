@@ -29,10 +29,10 @@ const props = withDefaults(defineProps<Props>(), {
 const { bool: expandAll } = useBoolean();
 const { bool: checkAll } = useBoolean();
 // 公共页面分组节点 id(module 缺失的跨模块全局页如 home 归此);负值不与真实菜单雪花 id 冲突,
-// 后端 saveRoleMenus 过滤 mid<=0 不入库。admin=-1/disk=-2/server=-3/gateway=-4/公共页面=-5。
+// 后端 saveRoleMenus 过滤 mid<=0 不入库。模块组 id=-(idx+1) 按 ALL_MODULES 顺序;公共组=-(length+1)。
 const COMMON_GROUP_ID = -(ALL_MODULES.length + 1);
-// 初始展开到分组层(根 0 + 四模块组 -1..-4 + 公共组),进来即可见各模块菜单
-const DEFAULT_EXPANDED_KEYS: CommonType.IdType[] = [0, -1, -2, -3, -4, COMMON_GROUP_ID];
+// 初始展开到分组层(根 0 + 各模块组 + 公共组),进来即可见各模块菜单
+const DEFAULT_EXPANDED_KEYS: CommonType.IdType[] = [0, ...ALL_MODULES.map((_, i) => -(i + 1)), COMMON_GROUP_ID];
 const expandedKeys = ref<CommonType.IdType[]>([...DEFAULT_EXPANDED_KEYS]);
 
 const menuTreeRef = ref<TreeSelectInst | null>(null);
@@ -42,7 +42,7 @@ const cascade = defineModel<boolean>('cascade', { required: false, default: true
 const loading = defineModel<boolean>('loading', { required: false, default: false });
 const defaultRouter = defineModel<string>('defaultRouter', { required: false, default: '' });
 
-// 按业务模块把菜单归类为四个虚拟分组节点(角色授权树视觉分组用)。
+// 按业务模块把菜单归类为各虚拟分组节点(角色授权树视觉分组用)。
 // 分组节点用负 id(与真实菜单雪花 id 不冲突);后端 saveRoleMenus 已过滤 mid<=0,不会写入 sys_role_menu。
 // 分组节点 menuType='M',不渲染默认路由小房子(renderHouse 仅认 C 菜单)。
 function buildGroupedOptions(menus: Api.System.MenuList): Api.System.MenuList {

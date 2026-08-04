@@ -70,7 +70,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 		// home 不进侧边栏,经头像下拉/URL 进入,故授权后全员可访问(见 sys_role_menu.go user 授权)。
 		// Module 留空:home 是跨模块全局页(同 user-center),对齐前端 routes.ts 无 meta.module。
 		// resolveModuleFromRoute 返回 null → global route(所有模块可见),且不更新 currentModule,
-		// 避免从 disk/server/gateway 模块进 home 时 currentModule 跳到 admin 导致 tearing。
+		// 避免从 server/gateway 模块进 home 时 currentModule 跳到 admin 导致 tearing。
 		{
 			ParentId:  0,
 			MenuName:  "route.home",

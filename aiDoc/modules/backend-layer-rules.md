@@ -120,7 +120,7 @@ JSON body / Query string / Path params / `multipart/form-data` / Header / Cookie
 - 绑定方式要与真实参数来源一致
 - 不要为了套模板，把 Header / Cookie / Query / form-data 中的数据强行改成 body
 - 认证、追踪、网关透传等信息，很多时候本来就应该从 Header 或 Cookie 获取
-- 上传文件时，应按上传协议从 `multipart/form-data` 中取文件和附带字段（网盘模块分片上传尤其注意）
+- 上传文件时，应按上传协议从 `multipart/form-data` 中取文件和附带字段（分片上传场景尤其注意）
 - 必须通过 `service.ServiceGroupApp` 访问服务层
 - 必须使用项目统一的 `response` 包输出结果
 - 每个对外 API 都必须写完整且准确的 Swagger 注释

@@ -45,8 +45,8 @@ func (i *initRole) InitializeData(ctx context.Context) (context.Context, error) 
 	}
 
 	// DefaultRouter 统一为 home:登录后所有角色落地 AI 个人中心首页。route.ts redirectFromLogin
-	// 用 userInfo.defaultRouter 跳转,sys_route.go routeHomeDefault 亦对齐 home。user 原为 disk,但 disk
-	// 未纳入 user 默认授权,统一 home 后与全员授权的 home 菜单一致,落地不再 404。
+	// 用 userInfo.defaultRouter 跳转,sys_route.go routeHomeDefault 亦对齐 home。统一 home 与全员授权的
+	// home 菜单一致,落地不再 404。
 	entities := []sysModel.SysRole{
 		{RoleName: "超级管理员", RoleKey: "super", RoleSort: 1, SuperAdmin: true, DataScope: 1, DefaultRouter: "home", Remark: "系统最高权限,可操作所有功能"},
 		{RoleName: "系统管理员", RoleKey: "admin", RoleSort: 2, SuperAdmin: false, DataScope: 1, DefaultRouter: "home", Remark: "系统普通管理员,可操作大部分功能"},

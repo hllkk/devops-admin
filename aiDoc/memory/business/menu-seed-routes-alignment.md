@@ -14,7 +14,7 @@
 
 ## 决策（已与用户确认）
 
-- **范围：标准补全**。新增：`admin` 仪表盘顶级；`system` 下 `dict`、`notice`；`log` 日志顶级 + `loginlog` + `operlog`。**不加** `disk`/`gateway`/`server`（前端 routes.ts 中无 order、无 icon 的占位路由）。
+- **范围：标准补全**。新增：`admin` 仪表盘顶级；`system` 下 `dict`、`notice`；`log` 日志顶级 + `loginlog` + `operlog`。**不加** `gateway`/`server`（前端 routes.ts 中无 order、无 icon 的占位路由）。
 - **apis 策略：按规范预填**。`loginlog` 后端 API 已实现 → 填真实路径；`dict`/`notice`/`operlog` 后端 API 尚未实现 → 按 RuoYi 规范路径预填（接口落地后 casbin 自动生效，无需再改菜单）。
 - **对齐前端**：`system` 顶级 `icon`→`carbon:cloud-service-management`、`order`→2；`setting` 子菜单 `order`→8。子菜单 order 全部对齐前端 routes.ts 的 `meta.order`。
 

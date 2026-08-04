@@ -37,7 +37,7 @@
   const { SvgIconVNode } = useSvgIcon();
   // 之后在 options 里：
   icon: SvgIconVNode({ icon: 'ph:user-circle', fontSize: 18 })        // Iconify 名
-  icon: SvgIconVNode({ localIcon: 'disk-file-image', fontSize: 24 })  // 本地 svg 名（不含 icon-local- 前缀）
+  icon: SvgIconVNode({ localIcon: 'avatar', fontSize: 24 })  // 本地 svg 名（不含 icon-local- 前缀）
   ```
   `SvgIconVNode({ icon?, localIcon?, fontSize? })` 内部已绑定 `@/components/custom/svg-icon.vue`，是项目里产图标 VNode 的标准方式（参照 `user-avatar.vue` / `global-tab/context-menu.vue` / `store/modules/route/shared.ts`）。尺寸用 `fontSize`，不要靠 `h()` 传 `class` 控大小。
 - **函数里渲染组件一律不用 `h()`**：图标之外，任何「需要在函数/回调里返回组件」的场景也不要手写 `h(Component, props, children)`；把当前 SFC 的 `<script setup lang="ts">` 改成 `<script setup lang="tsx">`，用 TSX 书写（如表格列 `render`，见 §11）。规则：模板能写就写模板，要在函数里写 JSX 就切 `tsx`，`h()` 只读不用。
@@ -128,11 +128,11 @@ src/typings/api/system.api.d.ts        # Api.System.<Entity> + <Entity>SearchPar
 - `setting` 是标签页式配置页，不走列表/抽屉三件套：`index.vue` 承载 `n-tabs`，每个 tab 对应 `modules/<area>-setting.vue`（`general-setting` 通用配置、`security-setting` 安全配置、`setting-menu` 菜单设置）。
 - 新增「系统设置」分区时，沿用「加一个 `<area>-setting.vue` tab + 对应接口封装」的模式，不要套用 §9.1 的列表三件套。
 
-### 9.10 业务模块四层同域落位（`disk` / `server` / `gateway`）
+### 9.10 业务模块四层同域落位（`server` / `gateway`）
 
-顶层业务模块由 `src/constants/module.ts` 的 `RouteModule`（`admin | disk | server | gateway`）定义，是平台级业务子系统划分的**唯一维度**。`admin` 之外的独立子系统（网盘 / 服务器管理 / AI 网关）**不套用 §9.1 的 system 三件套**（那是 `admin/system` 的约定），而是按下面的「四层同域」落位——确保改一个模块只动该模块的目录，模块边界与顶层 `RouteModule` 严格对齐。
+顶层业务模块由 `src/constants/module.ts` 的 `RouteModule`（`admin | server | gateway`）定义，是平台级业务子系统划分的**唯一维度**。`admin` 之外的独立子系统（服务器管理 / AI 网关）**不套用 §9.1 的 system 三件套**（那是 `admin/system` 的约定），而是按下面的「四层同域」落位——确保改一个模块只动该模块的目录，模块边界与顶层 `RouteModule` 严格对齐。
 
-| 层 | `admin`（现状） | 新业务模块 `M`（如 `disk`） |
+| 层 | `admin`（现状） | 新业务模块 `M`（如 `server`） |
 |---|---|---|
 | views | `views/_admin/<area>/...` | `views/_<m>/<page>/...` |
 | service/api | `service/api/{system,monitor,log}/`（admin 内部按 RuoYi 域细分） | `service/api/<m>/*.ts` |
@@ -142,11 +142,11 @@ src/typings/api/system.api.d.ts        # Api.System.<Entity> + <Entity>SearchPar
 
 强约束：
 
-- **域同名**：`service/api` 的一级目录名必须与 `RouteModule` 一致（`disk` / `server` / `gateway`）。网盘 API 进 `service/api/disk/`，**严禁塞进 `service/api/system/`**——`system` 是 admin 的子域，不是杂物间。
+- **域同名**：`service/api` 的一级目录名必须与 `RouteModule` 一致（`server` / `gateway`）。新模块 API 进 `service/api/<m>/`，**严禁塞进 `service/api/system/`**——`system` 是 admin 的子域，不是杂物间。
 - **不跨模块**：模块间不得直接 import 对方的 `views` / `service` / `store` 内部；跨模块复用走 `src/components/custom`（业务通用件）或 `@sa/*`。`views/_*` 现各业务域零横向 import，新模块沿用此隔离。
 - **store 按需**：模块确有全局状态才建 `store/modules/<m>/index.ts`，并在 `src/enum/index.ts` 的 `SetupStoreId` 加一项 `<M> = '<m>-store'`；纯页面局部状态用组件内 `ref`，不强建 store。
 - **新增模块步骤**：先在 `constants/module.ts` 的 `RouteModule` / `ALL_MODULES` / `MODULE_CONFIG` 各加一项，再按上表建四层目录，最后 `pnpm gen-route` 重新生成路由。
-- 参照：`disk` / `server` / `gateway` 当前为占位页（仅验证模块隔离），真实业务开发时按本节落位。
+- 参照：`server` / `gateway` 当前为占位页（仅验证模块隔离），真实业务开发时按本节落位。
 
 ## 10. 工具复用
 - 先查 `@sa/*` workspace 包、`src/service/`、`src/utils/`、`src/hooks/`，**禁止重复造轮子**

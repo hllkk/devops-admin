@@ -283,8 +283,8 @@ declare namespace Api {
       icon: string;
       /** 备注 */
       remark?: string;
-      /** 业务模块归属(admin/disk/server/gateway;空=未归属,当全局路由) */
-      module?: 'admin' | 'disk' | 'server' | 'gateway';
+      /** 业务模块归属(admin/server/gateway;空=未归属,当全局路由) */
+      module?: 'admin' | 'server' | 'gateway';
       /** 父菜单名称 */
       parentName: string;
       /** 子菜单 */

@@ -9,7 +9,7 @@ type MenuRouteMeta struct {
 	Icon       string `json:"icon,omitempty"`       // Iconify 图标名(如 mdi:xxx);来自 SysMenu.Icon
 	LocalIcon  string `json:"localIcon,omitempty"`  // 本地 svg 图标名(如 menu-log);来自 SysMenu.Icon 的 local-icon- 前缀
 	Order      int    `json:"order,omitempty"`      // 排序;取 SysMenu.OrderNum
-	Module     string `json:"module,omitempty"`     // 业务模块归属(admin/disk/server/gateway);取 SysMenu.Module,前端 meta.module 驱动模块隔离
+	Module     string `json:"module,omitempty"`     // 业务模块归属(admin/server/gateway);取 SysMenu.Module,前端 meta.module 驱动模块隔离
 	HideInMenu bool   `json:"hideInMenu,omitempty"` // 菜单隐藏;SysMenu.Visible=="1"
 	KeepAlive  bool   `json:"keepAlive,omitempty"`  // 页面缓存;SysMenu.IsCache=="0"
 	Href       string `json:"href,omitempty"`       // 外链地址;SysMenu.IsFrame=="0" 时取规范化 Path
