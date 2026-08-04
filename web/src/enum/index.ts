@@ -6,6 +6,5 @@ export enum SetupStoreId {
   Tab = 'tab-store',
   Notice = 'notice-store',
   Dict = 'dict-store',
-  System = 'system-store',
-  Disk = 'disk-store'
+  System = 'system-store'
 }
