@@ -90,6 +90,15 @@ jwt:
     expires-time: 7d
     buffer-time: 1d
     issuer: devops-admin
+litellm:
+    # LiteLLM 代理底座：转发由 litellm 容器承担；prod server 容器经 prod-net 走服务名
+    base-url: http://litellm:4000
+    # 客户端转发接入点：由 env LITELLM_PUBLIC_URL 覆盖（按部署域名，经 nginx /llm/ 反代或直暴露 4000）
+    public-url: ""
+    # 管理面鉴权密钥：由 env LITELLM_MASTER_KEY 覆盖，config 内留空
+    master-key: ""
+    timeout: 10
+    sync-enabled: true
 local:
     path: /app/uploads/file
     store-path: /app/uploads/file

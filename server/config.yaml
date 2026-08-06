@@ -79,6 +79,13 @@ jwt:
     expires-time: 7d
     buffer-time: 1d
     issuer: devops-admin
+litellm:
+    # LiteLLM 代理底座：转发由 litellm 容器承担，dev 直连宿主机 4000；管理面 Go 调管理 API
+    base-url: http://127.0.0.1:4000
+    public-url: http://127.0.0.1:4000
+    master-key: sk-devops-litellm-master
+    timeout: 10
+    sync-enabled: true
 local:
     path: uploads/file
     store-path: uploads/file

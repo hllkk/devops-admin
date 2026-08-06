@@ -1,11 +1,13 @@
 package v1
 
 import (
+	"github.com/hllkk/devops-admin/server/api/v1/gateway"
 	"github.com/hllkk/devops-admin/server/api/v1/system"
 )
 
 var ApiGroupApp = new(ApiGroup)
 
 type ApiGroup struct {
-	SystemApiGroup system.ApiGroup
+	SystemApiGroup  system.ApiGroup
+	GatewayApiGroup gateway.ApiGroup
 }

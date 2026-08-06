@@ -28,6 +28,7 @@ type Server struct {
 	MCP          MCP             `mapstructure:"mcp" json:"mcp" yaml:"mcp"`
 	App          App             `mapstructure:"app" json:"app" yaml:"app"`
 	Ai           Ai              `mapstructure:"ai" json:"ai" yaml:"ai"`
+	Litellm      Litellm         `mapstructure:"litellm" json:"litellm" yaml:"litellm"`
 	Social       Social          `mapstructure:"social" json:"social" yaml:"social"`
 	// Email        Email           `mapstructure:"email" json:"email" yaml:"email"`
 	// Excel        Excel           `mapstructure:"excel" json:"excel" yaml:"excel"`

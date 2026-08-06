@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/hllkk/devops-admin/server/global"
+	"github.com/hllkk/devops-admin/server/model/gateway"
 	"github.com/hllkk/devops-admin/server/model/media"
 	"github.com/hllkk/devops-admin/server/model/system"
 	"github.com/hllkk/devops-admin/server/utils/logger"
@@ -70,6 +71,8 @@ func RegisterTables() {
 		media.MediaUploadChunk{},
 		media.FileUploadAndDownload{},
 		media.AttachmentCategory{},
+
+		gateway.Provider{},
 	)
 
 	if err != nil {

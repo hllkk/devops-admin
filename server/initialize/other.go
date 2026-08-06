@@ -95,6 +95,15 @@ func applyEnvOverrides() {
 		global.OPS_CONFIG.System.TrustedProxies = tp
 		log.Println("[INFO] 配置项从环境变量加载: TRUSTED_PROXIES")
 	}
+	// AI 网关 LiteLLM 底座：master-key 敏感，生产由 .env 注入；public-url 按部署域名（经 nginx /llm/ 反代或直暴露 4000）
+	if v := os.Getenv("LITELLM_MASTER_KEY"); v != "" {
+		global.OPS_CONFIG.Litellm.MasterKey = v
+		log.Println("[INFO] 配置项从环境变量加载: LITELLM_MASTER_KEY")
+	}
+	if v := os.Getenv("LITELLM_PUBLIC_URL"); v != "" {
+		global.OPS_CONFIG.Litellm.PublicURL = v
+		log.Println("[INFO] 配置项从环境变量加载: LITELLM_PUBLIC_URL")
+	}
 }
 
 // validateProductionSecurity 生产环境（GIN_MODE=release）强制安全配置：

@@ -1,0 +1,15 @@
+# LiteLLM 代理底座配置（dev）
+# 模型/凭证/密钥由 devops-admin 管理面经管理 API 同步进来，落库后持久化（store_model_in_db）。
+# 用量日志带 prompt（store_prompts_in_spend_logs），供管理面定时增量拉取做成本换算。
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  database_url: os.environ/DATABASE_URL
+  store_model_in_db: true
+  store_prompts_in_spend_logs: true
+
+litellm_settings:
+  drop_params: true
+  set_verbose: false
+
+# 模型配置由管理面经 /model/new 同步，此处留空
+model_list: []

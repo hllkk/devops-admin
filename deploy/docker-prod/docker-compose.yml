@@ -67,6 +67,9 @@ services:
       INIT_ADMIN_PASSWORD: ${INIT_ADMIN_PASSWORD:?必须设置 INIT_ADMIN_PASSWORD}
       # 可信反代（多层反代下正确解析真实 ClientIP）
       TRUSTED_PROXIES: ${TRUSTED_PROXIES:-172.16.0.0/12,127.0.0.1/32,::1/128}
+      # AI 网关 LiteLLM 底座：master-key 敏感走 env 覆盖 config；public-url 按部署域名（经 nginx /llm/ 反代，留空则不下发）
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:?必须设置 LITELLM_MASTER_KEY}
+      LITELLM_PUBLIC_URL: ${LITELLM_PUBLIC_URL:-}
     volumes:
       # 静态配置（入库，只读挂载；DOCKER_ENV 下向导不回写，敏感项由 env 覆盖）
       - ./config/config.yaml:/app/config/config.yaml:ro
@@ -84,6 +87,8 @@ services:
       redis:
         condition: service_healthy
       rustfs:
+        condition: service_started
+      litellm:
         condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8888/health >/dev/null 2>&1 || exit 1"]
@@ -196,6 +201,34 @@ services:
         mc anonymous set download "local/$${RUSTFS_BUCKET}/uploads" || true
         echo "rustfs bucket $${RUSTFS_BUCKET} 就绪（匿名下载仅限 uploads/ 前缀）"
     restart: "no"
+    networks:
+      - prod-net
+
+  # ----------------------------------------------------------------------------
+  # LiteLLM：AI 网关模型代理底座（转发面）
+  #
+  # - 转发面：客户端经 nginx /llm/ 反代（或直暴露 4000）接入，LiteLLM 鉴权虚拟 Key + 路由部署 + 记 spend
+  # - 管理面：devops-admin server 容器经 prod-net 走 http://litellm:4000 管理 API（master-key）
+  # - 共用现有 PostgreSQL：与业务库同库（devops_admin，pgsql 镜像经 POSTGRES_DB 预建），
+  #   LiteLLM 表前缀 LiteLLM_* 不与业务表冲突，对齐 AIHelms 共享 app 库的做法
+  # - 端口默认不对宿主暴露，仅经 nginx /llm/ 反代对外（见 nginx.conf）
+  # ----------------------------------------------------------------------------
+  litellm:
+    image: ghcr.io/berriai/litellm:1.95.0
+    container_name: devops-litellm
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-devops}:${POSTGRES_PASSWORD:?必须设置 POSTGRES_PASSWORD}@pgsql:5432/${POSTGRES_DB:-devops_admin}?schema=public
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:?必须设置 LITELLM_MASTER_KEY}
+      LITELLM_SALT_KEY: ${LITELLM_SALT_KEY:?必须设置 LITELLM_SALT_KEY}
+      STORE_MODEL_IN_DB: "True"
+      TZ: ${TZ:-Asia/Shanghai}
+    volumes:
+      - ./config/litellm.yaml:/app/config.yaml:ro
+    command: ["--config", "/app/config.yaml"]
+    depends_on:
+      pgsql:
+        condition: service_healthy
     networks:
       - prod-net
 

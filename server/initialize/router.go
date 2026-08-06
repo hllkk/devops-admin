@@ -65,6 +65,7 @@ func Routers() *gin.Engine {
 	}
 
 	systemRouter := router.RouterGroupApp.System
+	gatewayRouter := router.RouterGroupApp.Gateway
 	// mediaRouter := router.RouterGroupApp.Media
 	// 如果想要不使用nginx代理前端网页，可以修改 web/.env.production 下的
 	// VUE_APP_BASE_API = /
@@ -127,6 +128,7 @@ func Routers() *gin.Engine {
 		systemRouter.InitWecomRouter(PublicGroup)                  // 企业微信扫码登录(/auth/wecomLogin|/auth/qrCodeStatus|/wecomCallback|/auth/wecomWebviewLogin 全公开)
 		systemRouter.InitTimedTaskRouter(PrivateGroup)             // 定时任务(/timedTask/*)
 		systemRouter.InitOnlineRouter(PrivateGroup)                // 在线设备(/monitor/online,个人中心视角:仅当前用户自己)
+		gatewayRouter.InitProviderRouter(PrivateGroup)            // AI 网关·供应商管理(/gateway/provider/*)
 	}
 
 

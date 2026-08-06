@@ -117,6 +117,56 @@ services:
     networks:
       - dev-net
 
+  # ============================================================================
+  # LiteLLM：AI 网关模型代理底座（转发面）
+  #
+  # - 转发面：客户端直连 http://127.0.0.1:4000，LiteLLM 鉴权虚拟 Key + 路由部署 + 记录 spend
+  # - 管理面：devops-admin Go 后端（跑宿主机）调 http://127.0.0.1:4000 管理 API（master-key）
+  # - 共用 dev pgsql：独立 litellm 库（由 litellm_db_init 建），表前缀 LiteLLM_* 不与业务表冲突
+  # - 模型/凭证/密钥由管理面同步进来，本配置只留底座开关（store_model_in_db 等）
+  # ============================================================================
+  litellm:
+    image: ghcr.io/berriai/litellm:1.95.0
+    container_name: devops-litellm-dev
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      DATABASE_URL: postgresql://postgres:Tricolor_123@pgsql:5432/litellm?schema=public
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:-sk-devops-litellm-master}
+      LITELLM_SALT_KEY: ${LITELLM_SALT_KEY:-sk-devops-litellm-salt}
+      STORE_MODEL_IN_DB: "True"
+      TZ: Asia/Shanghai
+    volumes:
+      - ./config/litellm.yaml:/app/config.yaml:ro
+    command: ["--config", "/app/config.yaml"]
+    depends_on:
+      litellm_db_init:
+        condition: service_completed_successfully
+    networks:
+      - dev-net
+
+  # 一次性：dev pgsql 不预建业务库，litellm 需独立的 litellm 库，由本 sidecar 创建
+  litellm_db_init:
+    image: postgres:18-alpine
+    container_name: devops-litellm-db-init-dev
+    environment:
+      PGPASSWORD: Tricolor_123
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        until pg_isready -h pgsql -U postgres; do echo "等待 pgsql 就绪..."; sleep 1; done
+        psql -h pgsql -U postgres -tc "SELECT 1 FROM pg_database WHERE datname='litellm'" | grep -q 1 \
+          || psql -h pgsql -U postgres -c "CREATE DATABASE litellm"
+        echo "litellm database ready"
+    restart: "no"
+    depends_on:
+      pgsql:
+        condition: service_healthy
+    networks:
+      - dev-net
+
 # 显式 dev 网络：依赖服务同处一网，服务间可用服务名互访（如 rustfs_init → rustfs:9000）。
 # server 当前跑宿主机、走端口映射 127.0.0.1 直连；未来 server 容器化时，让其 join dev-net
 # 即可改用 pgsql/redis/rustfs 服务名访问。
