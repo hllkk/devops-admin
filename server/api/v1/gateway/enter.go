@@ -6,9 +6,13 @@ import "github.com/hllkk/devops-admin/server/service"
 type ApiGroup struct {
 	ProviderApi
 	CredentialApi
+	ModelApi
+	DeploymentApi
 }
 
 var (
 	providerService    = service.ServiceGroupApp.GatewayServiceGroup.ProviderService
 	credentialService  = service.ServiceGroupApp.GatewayServiceGroup.CredentialService
+	modelService       = service.ServiceGroupApp.GatewayServiceGroup.ModelService
+	deploymentService  = service.ServiceGroupApp.GatewayServiceGroup.DeploymentService
 )

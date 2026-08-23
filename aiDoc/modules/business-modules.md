@@ -140,6 +140,7 @@ Go HTTP 客户端封装（用 `LITELLM_MASTER_KEY` 鉴权）调 LiteLLM 管理 A
 - 待办：后端按四层模型落地 P1 + LiteLLM 容器接入 + home mock 切真实接口 + 建管理页 `views/_gateway/`
 - 进展：slice1 已落地——`config/litellm.go` + `utils/litellm/client.go` + Provider 四层（router/api/service/model，2026-08-22 核对）
 - 进展：slice2 已落地（2026-08-22）——Credential 四层 + `credential_payload.go` 纯函数层（投影/掩码/合并，7 单测）+ `gateway_provider_prefix` 表 42 行种子（`source/gateway` 包，/initdb 与重启双路幂等）+ `litellm.credential-key` 配置（credential_values AES-256-GCM 密文落库、出网仅敏感 key 掩码）+ resync 兜底端点 + `GetProviderFields` 动态表单透传 + Provider 删除保护回补。已规避 AIHelms 两坑（明文落库/明文回显）。全链路 dev 验证通过（同步/懒同步/删除顺序/resync/单机模式）
+- 进展：slice3 已落地（2026-08-23）——`gateway_model`/`gateway_model_deployment`/`gateway_model_visibility` 三表 + `deployment_payload.go` 纯函数层（三态路由名/凭证引用/前缀化/v1/双轨定价换算/镜像/掩码还原/脱敏，8 单测）+ DeploymentService（CRUD+连通测试+共享同步管线 buildDeploymentParams/pushDeployment）+ ModelService（CRUD/发布/软删三连/改名改类级联）+ 凭证级联回补（启停/换绑→部署路由 `__disabled__` 摘池，删除被引用拒删）+ `usd-to-cny-rate` 配置。LiteLLM 1.98 实测注意：PATCH 后转发路由即时生效，但 `GET /model/info` 管理接口有显示缓存（重启才刷新），验证时勿被管理接口读数误导
 
 ### 实现参照·AIHelms（2026-08-22 深度分析补，实现 P1 前必读）
 

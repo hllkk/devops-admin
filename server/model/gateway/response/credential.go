@@ -18,3 +18,11 @@ type ResyncResult struct {
 	Skipped int      `json:"skipped"` // 投影一致跳过数
 	Failed  []string `json:"failed"`  // 失败凭证名列表(解密/推送失败，不中断整体)
 }
+
+// CredentialUpdateResult 凭证更新结果：出网视图 + 部署路由级联同步计数
+// (投影/启停/换绑供应商触发的关联部署重建，单个失败上报不中断)。
+type CredentialUpdateResult struct {
+	CredentialView
+	DeploymentsSynced int      `json:"deploymentsSynced"` // 级联同步成功的部署数
+	DeploymentErrors  []string `json:"deploymentErrors"`  // 级联失败的部署明细(空=全部成功)
+}

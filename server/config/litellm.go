@@ -10,5 +10,6 @@ type Litellm struct {
 	MasterKey   string `mapstructure:"master-key" json:"master-key" yaml:"master-key"`     // LiteLLM 管理面鉴权密钥（LITELLM_MASTER_KEY，生产由 env 覆盖）
 	CredentialKey string `mapstructure:"credential-key" json:"credential-key" yaml:"credential-key"` // 凭证值加密密钥（AES-256-GCM，64 字符 hex=LITELLM_CREDENTIAL_KEY，生产由 env 覆盖；轮换会使历史密文不可解）
 	Timeout     int    `mapstructure:"timeout" json:"timeout" yaml:"timeout"`               // HTTP 调用超时（秒）
+	UsdToCnyRate float64 `mapstructure:"usd-to-cny-rate" json:"usd-to-cny-rate" yaml:"usd-to-cny-rate"` // 美元兑人民币汇率（部署定价 ¥/百万token → LiteLLM USD/token 换算；0/负值运行时按 7.0 兜底）
 	SyncEnabled bool   `mapstructure:"sync-enabled" json:"sync-enabled" yaml:"sync-enabled"` // 是否启用与 LiteLLM 的双向同步（关闭则管理面单机运行，不写 LiteLLM 侧）
 }

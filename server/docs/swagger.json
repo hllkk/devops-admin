@@ -650,6 +650,683 @@
                 }
             }
         },
+        "/gateway/model": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayModel"
+                ],
+                "summary": "修改模型(允许改路由名/类别，触发关联部署路由级联重建)",
+                "parameters": [
+                    {
+                        "description": "模型信息(含 modelId)",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.ModelOperateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.ModelView"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayModel"
+                ],
+                "summary": "新增模型",
+                "parameters": [
+                    {
+                        "description": "模型信息",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.ModelOperateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.ModelView"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/model/active": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayModel"
+                ],
+                "summary": "获取对外激活模型列表(active+published，含 anthropic 变体路由名)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/response.ActiveModelView"
+                                            }
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/model/deployment": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayModelDeployment"
+                ],
+                "summary": "修改部署(敏感参数掩码回传还原；重建投影并推送，改名+active 双写)",
+                "parameters": [
+                    {
+                        "description": "部署信息(含 deploymentId)",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.DeploymentOperateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.DeploymentView"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayModelDeployment"
+                ],
+                "summary": "新增部署(事务内同步 LiteLLM，推送失败整体回滚；前缀化路由+凭证引用)",
+                "parameters": [
+                    {
+                        "description": "部署信息",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.DeploymentOperateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.DeploymentView"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/model/deployment/list": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayModelDeployment"
+                ],
+                "summary": "分页获取部署列表(带路由名/凭证上下文)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "关联模型ID(0=不限)",
+                        "name": "modelId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "关联凭证ID(0=不限)",
+                        "name": "credentialId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "部署名(模糊)",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否启用(精确)",
+                        "name": "isActive",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "pageNum",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页大小",
+                        "name": "pageSize",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.PageResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "rows": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/response.DeploymentView"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/model/deployment/test": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayModelDeployment"
+                ],
+                "summary": "部署连通性测试(管理员视角，经 LiteLLM 数据面按类别分流，错误脱敏)",
+                "parameters": [
+                    {
+                        "description": "部署ID",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.DeploymentTestParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.DeploymentTestResult"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/model/deployment/{ids}": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayModelDeployment"
+                ],
+                "summary": "批量删除部署(先在 LiteLLM 侧禁用留痕，失败则本地不动)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "部署ID列表(逗号分隔)",
+                        "name": "ids",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/model/list": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayModel"
+                ],
+                "summary": "分页获取模型列表(含部署计数)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "展示名(模糊)",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "路由名(模糊)",
+                        "name": "modelKey",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "类别(精确)",
+                        "name": "category",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否启用(精确)",
+                        "name": "isActive",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否发布(精确)",
+                        "name": "isPublished",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "pageNum",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页大小",
+                        "name": "pageSize",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.PageResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "rows": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/response.ModelView"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/model/publish": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayModel"
+                ],
+                "summary": "更新模型发布设置(可见范围/审批；selected 模式重建部门可见行)",
+                "parameters": [
+                    {
+                        "description": "发布设置",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.ModelPublishParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/model/publish/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayModel"
+                ],
+                "summary": "获取模型发布设置(含指定可见部门)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "模型ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.ModelPublishView"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/model/{ids}": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayModel"
+                ],
+                "summary": "批量删除模型(软删三连：部署先禁用→部署停用→模型软删+清可见性)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "模型ID列表(逗号分隔)",
+                        "name": "ids",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/model/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayModel"
+                ],
+                "summary": "获取模型详情(含部署列表)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "模型ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.ModelDetailView"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/gateway/provider": {
             "put": {
                 "consumes": [
@@ -6084,6 +6761,66 @@
                 }
             }
         },
+        "request.DeploymentOperateParams": {
+            "type": "object",
+            "properties": {
+                "billingType": {
+                    "description": "计费类型(空=token)",
+                    "type": "string"
+                },
+                "costPerCall": {
+                    "description": "单次成本",
+                    "type": "number"
+                },
+                "credentialId": {
+                    "description": "关联凭证(0=内联参数)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "deployName": {
+                    "description": "部署名",
+                    "type": "string"
+                },
+                "deploymentId": {
+                    "description": "部署ID(新增为空)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "isActive": {
+                    "description": "是否启用",
+                    "type": "boolean"
+                },
+                "litellmParams": {
+                    "description": "路由参数(明文或掩码回传)",
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "modelId": {
+                    "description": "关联模型",
+                    "type": "string",
+                    "example": "0"
+                },
+                "modelInfo": {
+                    "description": "元数据(可选,定价镜像自动重算)",
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "monthlyCallQuota": {
+                    "description": "月配额",
+                    "type": "integer"
+                }
+            }
+        },
+        "request.DeploymentTestParams": {
+            "type": "object",
+            "properties": {
+                "deploymentId": {
+                    "description": "部署ID",
+                    "type": "string",
+                    "example": "0"
+                }
+            }
+        },
         "request.DeptOperateParams": {
             "type": "object",
             "properties": {
@@ -6333,6 +7070,72 @@
                 },
                 "visible": {
                     "description": "显示状态 0显示1隐藏",
+                    "type": "string"
+                }
+            }
+        },
+        "request.ModelOperateParams": {
+            "type": "object",
+            "properties": {
+                "capabilities": {
+                    "description": "能力标签",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "category": {
+                    "description": "类别(空=默认 chat)",
+                    "type": "string"
+                },
+                "description": {
+                    "description": "描述",
+                    "type": "string"
+                },
+                "logoProviderType": {
+                    "description": "LOGO供应商类型",
+                    "type": "string"
+                },
+                "modelId": {
+                    "description": "模型ID(新增为空)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "modelKey": {
+                    "description": "路由名(全局唯一,可改,改名级联)",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "展示名",
+                    "type": "string"
+                }
+            }
+        },
+        "request.ModelPublishParams": {
+            "type": "object",
+            "properties": {
+                "departmentIds": {
+                    "description": "可见部门(selected 模式)",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "isPublished": {
+                    "description": "是否发布",
+                    "type": "boolean"
+                },
+                "modelId": {
+                    "description": "模型ID",
+                    "type": "string",
+                    "example": "0"
+                },
+                "requiresApproval": {
+                    "description": "订阅需审批",
+                    "type": "boolean"
+                },
+                "visibilityType": {
+                    "description": "可见范围(all/selected)",
                     "type": "string"
                 }
             }
@@ -6827,6 +7630,55 @@
                 }
             }
         },
+        "response.ActiveModelView": {
+            "type": "object",
+            "properties": {
+                "capabilities": {
+                    "description": "能力标签",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "category": {
+                    "description": "类别",
+                    "type": "string"
+                },
+                "description": {
+                    "description": "描述",
+                    "type": "string"
+                },
+                "hasAnthropicDeployment": {
+                    "description": "是否存在 anthropic 格式活跃部署",
+                    "type": "boolean"
+                },
+                "logoProviderType": {
+                    "description": "LOGO供应商类型",
+                    "type": "string"
+                },
+                "modelId": {
+                    "description": "模型ID",
+                    "type": "string",
+                    "example": "0"
+                },
+                "modelKey": {
+                    "description": "路由名(openai 格式组)",
+                    "type": "string"
+                },
+                "modelKeyAnthropic": {
+                    "description": "anthropic 变体路由名(无 anthropic 部署为空)",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "展示名",
+                    "type": "string"
+                },
+                "requiresApproval": {
+                    "description": "订阅需审批",
+                    "type": "boolean"
+                }
+            }
+        },
         "response.CredentialView": {
             "type": "object",
             "properties": {
@@ -6882,6 +7734,123 @@
                 }
             }
         },
+        "response.DeploymentTestResult": {
+            "type": "object",
+            "properties": {
+                "errorCategory": {
+                    "description": "错误类别(auth_error/model_not_found/rate_limited/bad_request/provider_error/network_error/unknown)",
+                    "type": "string"
+                },
+                "latencyMs": {
+                    "description": "耗时(毫秒)",
+                    "type": "integer"
+                },
+                "message": {
+                    "description": "用户可读错误信息",
+                    "type": "string"
+                },
+                "success": {
+                    "description": "是否连通",
+                    "type": "boolean"
+                },
+                "technicalDetail": {
+                    "description": "技术详情(已脱敏+截断)",
+                    "type": "string"
+                }
+            }
+        },
+        "response.DeploymentView": {
+            "type": "object",
+            "properties": {
+                "billingType": {
+                    "description": "计费类型",
+                    "type": "string"
+                },
+                "costPerCall": {
+                    "description": "按次成本",
+                    "type": "number"
+                },
+                "createBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "createTime": {
+                    "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
+                    "type": "string"
+                },
+                "credentialId": {
+                    "description": "关联凭证(0=内联)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "credentialName": {
+                    "description": "关联凭证名(无关联为空)",
+                    "type": "string"
+                },
+                "deployName": {
+                    "description": "部署别名",
+                    "type": "string"
+                },
+                "deploymentId": {
+                    "description": "部署ID(雪花)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "format": {
+                    "description": "凭证协议格式(openai/anthropic)",
+                    "type": "string"
+                },
+                "isActive": {
+                    "description": "是否启用",
+                    "type": "boolean"
+                },
+                "litellmModelId": {
+                    "description": "LiteLLM 部署 UUID",
+                    "type": "string"
+                },
+                "litellmParams": {
+                    "description": "路由参数(敏感值已掩码)",
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "modelId": {
+                    "description": "关联模型",
+                    "type": "string",
+                    "example": "0"
+                },
+                "modelInfo": {
+                    "description": "元数据(定价镜像等)",
+                    "type": "object"
+                },
+                "modelKey": {
+                    "description": "关联模型路由名",
+                    "type": "string"
+                },
+                "monthlyCallQuota": {
+                    "description": "月配额",
+                    "type": "integer"
+                },
+                "monthlyCallUsed": {
+                    "description": "月已用",
+                    "type": "integer"
+                },
+                "providerType": {
+                    "description": "关联供应商类型",
+                    "type": "string"
+                },
+                "routeName": {
+                    "description": "当前路由名(三态命名,routable 版)",
+                    "type": "string"
+                },
+                "updateBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "updateTime": {
+                    "type": "string"
+                }
+            }
+        },
         "response.LoginResponse": {
             "type": "object",
             "properties": {
@@ -6892,6 +7861,194 @@
                 "needChangePassword": {
                     "description": "密码过期需强制修改",
                     "type": "boolean"
+                }
+            }
+        },
+        "response.ModelDetailView": {
+            "type": "object",
+            "properties": {
+                "activeDeploymentCount": {
+                    "description": "活跃部署数(is_active=true)",
+                    "type": "integer"
+                },
+                "capabilities": {
+                    "description": "能力标签(展开)",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "category": {
+                    "description": "类别(决定路由前缀/测试端点)",
+                    "type": "string"
+                },
+                "createBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "createTime": {
+                    "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
+                    "type": "string"
+                },
+                "deploymentCount": {
+                    "description": "部署总数(未删)",
+                    "type": "integer"
+                },
+                "deployments": {
+                    "description": "部署列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.DeploymentView"
+                    }
+                },
+                "description": {
+                    "description": "描述",
+                    "type": "string"
+                },
+                "isActive": {
+                    "description": "是否启用(软删联动)",
+                    "type": "boolean"
+                },
+                "isPublished": {
+                    "description": "是否发布",
+                    "type": "boolean"
+                },
+                "logoProviderType": {
+                    "description": "前端图标归属供应商类型",
+                    "type": "string"
+                },
+                "modelId": {
+                    "description": "模型ID(雪花)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "modelKey": {
+                    "description": "平台模型ID(用户请求名/路由组名)",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "展示名",
+                    "type": "string"
+                },
+                "requiresApproval": {
+                    "description": "订阅需审批",
+                    "type": "boolean"
+                },
+                "updateBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "visibilityType": {
+                    "description": "可见范围",
+                    "type": "string"
+                }
+            }
+        },
+        "response.ModelPublishView": {
+            "type": "object",
+            "properties": {
+                "departmentIds": {
+                    "description": "可见部门(selected 模式)",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "isPublished": {
+                    "description": "是否发布",
+                    "type": "boolean"
+                },
+                "modelId": {
+                    "description": "模型ID",
+                    "type": "string",
+                    "example": "0"
+                },
+                "requiresApproval": {
+                    "description": "订阅需审批",
+                    "type": "boolean"
+                },
+                "visibilityType": {
+                    "description": "可见范围",
+                    "type": "string"
+                }
+            }
+        },
+        "response.ModelView": {
+            "type": "object",
+            "properties": {
+                "activeDeploymentCount": {
+                    "description": "活跃部署数(is_active=true)",
+                    "type": "integer"
+                },
+                "capabilities": {
+                    "description": "能力标签(展开)",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "category": {
+                    "description": "类别(决定路由前缀/测试端点)",
+                    "type": "string"
+                },
+                "createBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "createTime": {
+                    "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
+                    "type": "string"
+                },
+                "deploymentCount": {
+                    "description": "部署总数(未删)",
+                    "type": "integer"
+                },
+                "description": {
+                    "description": "描述",
+                    "type": "string"
+                },
+                "isActive": {
+                    "description": "是否启用(软删联动)",
+                    "type": "boolean"
+                },
+                "isPublished": {
+                    "description": "是否发布",
+                    "type": "boolean"
+                },
+                "logoProviderType": {
+                    "description": "前端图标归属供应商类型",
+                    "type": "string"
+                },
+                "modelId": {
+                    "description": "模型ID(雪花)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "modelKey": {
+                    "description": "平台模型ID(用户请求名/路由组名)",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "展示名",
+                    "type": "string"
+                },
+                "requiresApproval": {
+                    "description": "订阅需审批",
+                    "type": "boolean"
+                },
+                "updateBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "visibilityType": {
+                    "description": "可见范围",
+                    "type": "string"
                 }
             }
         },

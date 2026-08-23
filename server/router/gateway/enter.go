@@ -6,9 +6,13 @@ import v1 "github.com/hllkk/devops-admin/server/api/v1"
 type RouterGroup struct {
 	ProviderRouter
 	CredentialRouter
+	ModelRouter
+	DeploymentRouter
 }
 
 var (
 	providerApi    = v1.ApiGroupApp.GatewayApiGroup.ProviderApi
 	credentialApi  = v1.ApiGroupApp.GatewayApiGroup.CredentialApi
+	modelApi       = v1.ApiGroupApp.GatewayApiGroup.ModelApi
+	deploymentApi  = v1.ApiGroupApp.GatewayApiGroup.DeploymentApi
 )

@@ -95,7 +95,7 @@ func (s *CredentialService) CreateCredential(ctx context.Context, req gatewayReq
 	if err != nil {
 		return gatewayResp.CredentialView{}, err
 	}
-	enc, err := s.encryptValues(req.CredentialValues)
+	enc, err := encryptCredentialValues(req.CredentialValues)
 	if err != nil {
 		return gatewayResp.CredentialView{}, err
 	}
@@ -136,32 +136,33 @@ func (s *CredentialService) CreateCredential(ctx context.Context, req gatewayReq
 // UpdateCredential 修改凭证；credentialId 必填。credential_name 是 LiteLLM 侧键，
 // 改名=删旧建新会瞬时摘除全部引用部署，故不允许修改。
 // credential_values 合并语义：敏感 key 掩码回传=未修改保留旧明文，新值覆盖，可新增；
-// 仅投影变化才重推 LiteLLM(懒同步)，启停/描述变化不推(摘路由级联由 deployment slice 落地)。
-// TODO(P1-deployment): 部署落地后，启停需级联同步关联部署路由(__disabled__ 后缀摘出 LB 组)。
-func (s *CredentialService) UpdateCredential(ctx context.Context, req gatewayReq.CredentialOperateParams, updateBy int64) (gatewayResp.CredentialView, error) {
+// 仅投影变化才重推 LiteLLM(懒同步)；启停不推凭证本身(凭证无 active 概念，可用性由部署路由控制)。
+// 级联(强一致，事务内收口)：投影/启停/换绑供应商任一变化 → 同步关联部署路由
+// (__disabled__ 后缀摘出/回 LB 组 + params 重建，如 api_base/前缀变化)。
+func (s *CredentialService) UpdateCredential(ctx context.Context, req gatewayReq.CredentialOperateParams, updateBy int64) (gatewayResp.CredentialUpdateResult, error) {
 	if req.CredentialId == 0 {
-		return gatewayResp.CredentialView{}, errors.New("凭证ID不能为空")
+		return gatewayResp.CredentialUpdateResult{}, errors.New("凭证ID不能为空")
 	}
 	if req.CredentialName != "" {
 		var old gateway.Credential
 		if err := global.OPS_DB.WithContext(ctx).Where("credential_id = ?", req.CredentialId).First(&old).Error; err != nil {
-			return gatewayResp.CredentialView{}, err
+			return gatewayResp.CredentialUpdateResult{}, err
 		}
 		if req.CredentialName != old.CredentialName {
-			return gatewayResp.CredentialView{}, errors.New("凭证名称不可修改(LiteLLM 凭证键，改名需删旧建新)")
+			return gatewayResp.CredentialUpdateResult{}, errors.New("凭证名称不可修改(LiteLLM 凭证键，改名需删旧建新)")
 		}
 	}
 	if err := s.ensureProviderExists(ctx, req.ProviderId); err != nil {
-		return gatewayResp.CredentialView{}, err
+		return gatewayResp.CredentialUpdateResult{}, err
 	}
 
 	var c gateway.Credential
 	if err := global.OPS_DB.WithContext(ctx).Where("credential_id = ?", req.CredentialId).First(&c).Error; err != nil {
-		return gatewayResp.CredentialView{}, err
+		return gatewayResp.CredentialUpdateResult{}, err
 	}
-	oldValues, err := s.decryptValues(c.CredentialValues)
+	oldValues, err := decryptCredentialValues(c.CredentialValues)
 	if err != nil {
-		return gatewayResp.CredentialView{}, fmt.Errorf("凭证旧值解密失败: %w", err)
+		return gatewayResp.CredentialUpdateResult{}, fmt.Errorf("凭证旧值解密失败: %w", err)
 	}
 	oldInfo := credentialInfoToMap(c.CredentialInfo)
 	newValues := MergeCredentialValues(oldValues, req.CredentialValues)
@@ -169,13 +170,13 @@ func (s *CredentialService) UpdateCredential(ctx context.Context, req gatewayReq
 	if req.CredentialInfo != nil {
 		newInfo = normalizeCredentialInfo(req.CredentialInfo)
 	}
-	enc, err := s.encryptValues(newValues)
+	enc, err := encryptCredentialValues(newValues)
 	if err != nil {
-		return gatewayResp.CredentialView{}, err
+		return gatewayResp.CredentialUpdateResult{}, err
 	}
 	newInfoJSON, err := json.Marshal(newInfo)
 	if err != nil {
-		return gatewayResp.CredentialView{}, err
+		return gatewayResp.CredentialUpdateResult{}, err
 	}
 
 	// 懒同步判定：新旧投影不一致才推送(派生值只存在于投影，比对在投影侧)
@@ -186,6 +187,9 @@ func (s *CredentialService) UpdateCredential(ctx context.Context, req gatewayReq
 		BuildLitellmCredentialValues(newValues, newInfo, newProviderType),
 		BuildLitellmCredentialValues(oldValues, oldInfo, oldProviderType),
 	)
+	// 级联触发：投影/启停/换绑供应商(前缀解析随 provider_type 变)任一变化
+	activeChanged := req.IsActive != nil && *req.IsActive != c.IsActive
+	providerChanged := req.ProviderId != c.ProviderId
 
 	updates := map[string]any{
 		"provider_id":       req.ProviderId,
@@ -197,38 +201,101 @@ func (s *CredentialService) UpdateCredential(ctx context.Context, req gatewayReq
 	if req.IsActive != nil {
 		updates["is_active"] = *req.IsActive
 	}
+	result := gatewayResp.CredentialUpdateResult{DeploymentErrors: []string{}}
 	err = global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Model(&gateway.Credential{}).Where("credential_id = ?", req.CredentialId).Updates(updates).Error; err != nil {
 			return err
 		}
-		if !payloadChanged || cli == nil {
-			return nil
+		if payloadChanged && cli != nil {
+			payload := BuildLitellmCredentialValues(newValues, newInfo, newProviderType)
+			if err := pushCredential(ctx, cli, c.CredentialName, payload, newInfo); err != nil {
+				return err
+			}
+			if err := tx.Model(&gateway.Credential{}).Where("credential_id = ?", req.CredentialId).
+				Update("litellm_synced", true).Error; err != nil {
+				return err
+			}
 		}
-		payload := BuildLitellmCredentialValues(newValues, newInfo, newProviderType)
-		if err := pushCredential(ctx, cli, c.CredentialName, payload, newInfo); err != nil {
-			return err
+		// 部署路由级联(强一致，事务内收口)：单个失败计 errs 上报，不中断整体
+		if cli != nil && (payloadChanged || activeChanged || providerChanged) {
+			cascCred := c // 更新后状态快照(routable 判定与解密新值用)
+			cascCred.ProviderId = req.ProviderId
+			cascCred.CredentialValues = enc
+			if req.IsActive != nil {
+				cascCred.IsActive = *req.IsActive
+			}
+			result.DeploymentsSynced, result.DeploymentErrors = syncCredentialRouting(ctx, tx, cli, &cascCred)
 		}
-		return tx.Model(&gateway.Credential{}).Where("credential_id = ?", req.CredentialId).
-			Update("litellm_synced", true).Error
+		return nil
 	})
 	if err != nil {
-		return gatewayResp.CredentialView{}, err
+		return gatewayResp.CredentialUpdateResult{}, err
 	}
 	// 回读最新行返回视图(含 is_active/审计字段更新)
 	var fresh gateway.Credential
 	if err := global.OPS_DB.WithContext(ctx).Where("credential_id = ?", req.CredentialId).First(&fresh).Error; err != nil {
-		return gatewayResp.CredentialView{}, err
+		return gatewayResp.CredentialUpdateResult{}, err
 	}
-	return s.toView(ctx, fresh), nil
+	result.CredentialView = s.toView(ctx, fresh)
+	return result, nil
+}
+
+// syncCredentialRouting 凭证变化后的部署路由级联(强一致，事务内收口不独立 commit)：
+// 遍历绑定该凭证且已同步的部署 → 重建投影(params 含凭证新 api_base/前缀) → 推送
+// (路由名三态：不可路由加 __disabled__ 摘出 LB 组 + model_info.active 双写，litellm_model_id 不变)。
+// 单个失败计数上报不中断(个别部署可能漂移，由响应 errs 暴露给管理员)。
+func syncCredentialRouting(ctx context.Context, tx *gorm.DB, cli *litellm.Client, cred *gateway.Credential) (int, []string) {
+	var deps []gateway.ModelDeployment
+	if err := tx.Where("credential_id = ? AND litellm_model_id <> ''", cred.CredentialId).
+		Find(&deps).Error; err != nil {
+		return 0, []string{err.Error()}
+	}
+	format := formatOf(cred)
+	if format == "" {
+		format = "openai"
+	}
+	synced, errs := 0, []string{}
+	for i := range deps {
+		dep := &deps[i]
+		var model gateway.Model
+		if err := tx.Where("model_id = ?", dep.ModelId).First(&model).Error; err != nil {
+			errs = append(errs, fmt.Sprintf("部署 %q: 关联模型缺失: %v", dep.DeployName, err))
+			continue
+		}
+		params, modelInfo := buildDeploymentParams(tx, dep, &model, cred)
+		if err := pushDeployment(ctx, cli, dep, model.ModelKey, format, routableOf(dep.IsActive, cred), params, modelInfo); err != nil {
+			errs = append(errs, fmt.Sprintf("部署 %q: %v", dep.DeployName, err))
+			continue
+		}
+		if err := tx.Model(&gateway.ModelDeployment{}).Where("deployment_id = ?", dep.DeploymentId).
+			Updates(map[string]any{
+				"litellm_params":   marshalJSON(params),
+				"model_info":       marshalJSON(modelInfo),
+				"litellm_model_id": dep.LitellmModelId,
+			}).Error; err != nil {
+			errs = append(errs, fmt.Sprintf("部署 %q: 投影写回失败: %v", dep.DeployName, err))
+			continue
+		}
+		synced++
+	}
+	return synced, errs
 }
 
 // DeleteCredential 批量删除凭证(软删除，业务实体一致)。
+// 删除前校验部署引用(纯逻辑关联不建外键，service 层保证)：被部署引用即拒绝；
 // 删除顺序：先删 LiteLLM 投影(失败则本地不动)，全部成功后再软删本地行；
 // synced=false 的行(单机模式建的)跳过 LiteLLM 直接删本地。
-// TODO(P1-deployment): 部署落地后，删除前补"有关联部署引用→拒绝删除"校验。
 func (s *CredentialService) DeleteCredential(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return errors.New("未选择删除项")
+	}
+	var depCnt int64
+	if err := global.OPS_DB.WithContext(ctx).Model(&gateway.ModelDeployment{}).
+		Where("credential_id IN ?", ids).Count(&depCnt).Error; err != nil {
+		return err
+	}
+	if depCnt > 0 {
+		return fmt.Errorf("凭证被 %d 个部署引用，请先删除或解除部署关联", depCnt)
 	}
 	var rows []gateway.Credential
 	if err := global.OPS_DB.WithContext(ctx).Where("credential_id IN ?", ids).Find(&rows).Error; err != nil {
@@ -279,7 +346,7 @@ func (s *CredentialService) ResyncCredentials(ctx context.Context) (gatewayResp.
 	result.Total = len(rows)
 	for i := range rows {
 		row := rows[i]
-		values, err := s.decryptValues(row.CredentialValues)
+		values, err := decryptCredentialValues(row.CredentialValues)
 		if err != nil {
 			logger.WithCtx(ctx).Mod("gateway").Err(err).Field("credentialId", row.CredentialId).Error("resync: 凭证值解密失败")
 			result.Failed = append(result.Failed, row.CredentialName)
@@ -327,7 +394,7 @@ func pushCredential(ctx context.Context, cli *litellm.Client, name string, paylo
 // 解密失败(如密钥轮换后历史密文)记日志置空 values，不阻断列表/详情。
 func (s *CredentialService) toView(ctx context.Context, c gateway.Credential) gatewayResp.CredentialView {
 	view := gatewayResp.CredentialView{Credential: c}
-	values, err := s.decryptValues(c.CredentialValues)
+	values, err := decryptCredentialValues(c.CredentialValues)
 	if err != nil {
 		logger.WithCtx(ctx).Mod("gateway").Err(err).Field("credentialId", c.CredentialId).Error("凭证值解密失败")
 		view.CredentialValues = map[string]any{}
@@ -338,7 +405,7 @@ func (s *CredentialService) toView(ctx context.Context, c gateway.Credential) ga
 }
 
 // encryptValues 凭证键值序列化后 AES-256-GCM 加密；密钥未配置则拒绝写入(对齐 sys_social 先例)。
-func (s *CredentialService) encryptValues(values map[string]any) (string, error) {
+func encryptCredentialValues(values map[string]any) (string, error) {
 	key := global.OPS_CONFIG.Litellm.CredentialKey
 	if key == "" {
 		return "", errors.New("凭证加密密钥未配置(litellm.credential-key)，拒绝写入")
@@ -351,7 +418,7 @@ func (s *CredentialService) encryptValues(values map[string]any) (string, error)
 }
 
 // decryptValues 解密凭证键值；空串返回空 map(允许无键值的历史行)。
-func (s *CredentialService) decryptValues(enc string) (map[string]any, error) {
+func decryptCredentialValues(enc string) (map[string]any, error) {
 	if enc == "" {
 		return map[string]any{}, nil
 	}

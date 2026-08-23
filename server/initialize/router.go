@@ -130,6 +130,8 @@ func Routers() *gin.Engine {
 		systemRouter.InitOnlineRouter(PrivateGroup)                // 在线设备(/monitor/online,个人中心视角:仅当前用户自己)
 		gatewayRouter.InitProviderRouter(PrivateGroup)            // AI 网关·供应商管理(/gateway/provider/*)
 		gatewayRouter.InitCredentialRouter(PrivateGroup)          // AI 网关·凭证管理(/gateway/credential/*)
+		gatewayRouter.InitModelRouter(PrivateGroup)               // AI 网关·模型管理(/gateway/model/*)
+		gatewayRouter.InitDeploymentRouter(PrivateGroup)          // AI 网关·模型部署(/gateway/model/deployment/*)
 	}
 
 

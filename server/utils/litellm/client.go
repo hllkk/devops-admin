@@ -123,6 +123,34 @@ func (c *Client) Ping(ctx context.Context) error {
 	return c.do(ctx, http.MethodGet, "/health/readiness", nil, nil)
 }
 
+// RawPost 数据面原始 POST：Bearer master-key、JSON 收发，**>=400 不转 error**
+// （返回 status+respBody 供调用方自行分类脱敏，如部署连通性测试）。
+// 仅传输层错误（连接失败/超时）返回 err。注意：本客户端 DeleteModel 在网关管理面
+// 明确不使用（删除=禁用留痕，见 model_service 设计），仅保留方法完整性。
+func (c *Client) RawPost(ctx context.Context, path string, body any) (status int, respBody []byte, err error) {
+	if c == nil {
+		return 0, nil, ErrNotConfigured
+	}
+	raw, err := json.Marshal(body)
+	if err != nil {
+		return 0, nil, fmt.Errorf("litellm: 序列化请求体失败: %w", err)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+path, bytes.NewReader(raw))
+	if err != nil {
+		return 0, nil, fmt.Errorf("litellm: 构造请求失败: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+c.masterKey)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		logger.WithCtx(ctx).Mod("gateway").Err(err).Error(fmt.Sprintf("litellm POST %s 调用失败", path))
+		return 0, nil, fmt.Errorf("litellm: POST %s 调用失败: %w", path, err)
+	}
+	defer resp.Body.Close()
+	respBody, _ = io.ReadAll(resp.Body)
+	return resp.StatusCode, respBody, nil
+}
+
 // ----------------------------------------------------------------------------
 // 凭证管理（/credentials）—— Credential 同步用
 // ----------------------------------------------------------------------------

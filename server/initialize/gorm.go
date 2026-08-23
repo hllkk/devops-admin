@@ -76,6 +76,9 @@ func RegisterTables() {
 		gateway.Provider{},
 		gateway.Credential{},
 		gateway.ProviderPrefix{},
+		gateway.Model{},
+		gateway.ModelDeployment{},
+		gateway.ModelVisibility{},
 	)
 
 	if err != nil {
