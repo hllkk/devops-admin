@@ -98,10 +98,18 @@ func (s *ProviderService) UpdateProvider(ctx context.Context, req gatewayReq.Pro
 }
 
 // DeleteProvider 批量删除供应商(软删除，业务实体一致)。
-// TODO(P1 后续): Credential 切片落地后，删除前补"是否有关联凭证"引用校验。
+// 删除前校验关联凭证：provider_id 是纯逻辑关联(不建外键)，此处阻止删除仍有凭证挂靠的供应商。
 func (s *ProviderService) DeleteProvider(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return errors.New("未选择删除项")
+	}
+	var cnt int64
+	if err := global.OPS_DB.WithContext(ctx).Model(&gateway.Credential{}).
+		Where("provider_id IN ?", ids).Count(&cnt).Error; err != nil {
+		return err
+	}
+	if cnt > 0 {
+		return errors.New("供应商下存在关联凭证，请先删除或迁移凭证")
 	}
 	return global.OPS_DB.WithContext(ctx).Where("provider_id IN ?", ids).Delete(&gateway.Provider{}).Error
 }

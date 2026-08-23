@@ -8,6 +8,7 @@ type Litellm struct {
 	BaseURL     string `mapstructure:"base-url" json:"base-url" yaml:"base-url"`           // LiteLLM 管理 API 地址（prod 容器间走服务名 http://litellm:4000）
 	PublicURL   string `mapstructure:"public-url" json:"public-url" yaml:"public-url"`     // 客户端转发接入点（下发前端/客户端；prod 经 nginx /llm/ 反代或直暴露 4000）
 	MasterKey   string `mapstructure:"master-key" json:"master-key" yaml:"master-key"`     // LiteLLM 管理面鉴权密钥（LITELLM_MASTER_KEY，生产由 env 覆盖）
+	CredentialKey string `mapstructure:"credential-key" json:"credential-key" yaml:"credential-key"` // 凭证值加密密钥（AES-256-GCM，64 字符 hex=LITELLM_CREDENTIAL_KEY，生产由 env 覆盖；轮换会使历史密文不可解）
 	Timeout     int    `mapstructure:"timeout" json:"timeout" yaml:"timeout"`               // HTTP 调用超时（秒）
 	SyncEnabled bool   `mapstructure:"sync-enabled" json:"sync-enabled" yaml:"sync-enabled"` // 是否启用与 LiteLLM 的双向同步（关闭则管理面单机运行，不写 LiteLLM 侧）
 }

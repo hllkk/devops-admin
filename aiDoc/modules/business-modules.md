@@ -139,6 +139,7 @@ Go HTTP 客户端封装（用 `LITELLM_MASTER_KEY` 鉴权）调 LiteLLM 管理 A
 - 后端：`/gateway/*` 全缺；`config/ai.go` + `service/system/sys_ai.go` + `auto_code_llm.go` 是错误日志 AI 分析（非网关）
 - 待办：后端按四层模型落地 P1 + LiteLLM 容器接入 + home mock 切真实接口 + 建管理页 `views/_gateway/`
 - 进展：slice1 已落地——`config/litellm.go` + `utils/litellm/client.go` + Provider 四层（router/api/service/model，2026-08-22 核对）
+- 进展：slice2 已落地（2026-08-22）——Credential 四层 + `credential_payload.go` 纯函数层（投影/掩码/合并，7 单测）+ `gateway_provider_prefix` 表 42 行种子（`source/gateway` 包，/initdb 与重启双路幂等）+ `litellm.credential-key` 配置（credential_values AES-256-GCM 密文落库、出网仅敏感 key 掩码）+ resync 兜底端点 + `GetProviderFields` 动态表单透传 + Provider 删除保护回补。已规避 AIHelms 两坑（明文落库/明文回显）。全链路 dev 验证通过（同步/懒同步/删除顺序/resync/单机模式）
 
 ### 实现参照·AIHelms（2026-08-22 深度分析补，实现 P1 前必读）
 

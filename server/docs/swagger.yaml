@@ -1,4 +1,46 @@
 definitions:
+  gateway.Provider:
+    properties:
+      billingType:
+        description: 计费类型
+        type: string
+      createBy:
+        example: "0"
+        type: string
+      createTime:
+        description: |-
+          字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);
+          column 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;
+          json 仍叫 createTime/updateTime 对齐前端 CommonRecord。
+        type: string
+      description:
+        description: 描述
+        type: string
+      isActive:
+        description: 是否启用
+        type: boolean
+      monthlyBudget:
+        description: 月预算(USD,nil=不限)
+        type: number
+      monthlyUsed:
+        description: 月已用(USD,用量统计定时回填)
+        type: number
+      name:
+        description: 供应商名称(如 OpenAI/Anthropic)
+        type: string
+      providerId:
+        description: 供应商ID(雪花)
+        example: "0"
+        type: string
+      providerType:
+        description: 供应商类型(对应 LiteLLM custom_llm_provider)
+        type: string
+      updateBy:
+        example: "0"
+        type: string
+      updateTime:
+        type: string
+    type: object
   request.ChangeMyPasswordParams:
     properties:
       newPassword:
@@ -10,6 +52,34 @@ definitions:
     required:
     - newPassword
     - oldPassword
+    type: object
+  request.CredentialOperateParams:
+    properties:
+      credentialId:
+        description: 凭证ID(新增为空)
+        example: "0"
+        type: string
+      credentialInfo:
+        additionalProperties: {}
+        description: 凭证元数据(format等)
+        type: object
+      credentialName:
+        description: 凭证名称(全局唯一,创建后不可改)
+        type: string
+      credentialValues:
+        additionalProperties: {}
+        description: 凭证键值(api_key/api_base等,明文或掩码回传)
+        type: object
+      description:
+        description: 描述
+        type: string
+      isActive:
+        description: 是否启用
+        type: boolean
+      providerId:
+        description: 关联供应商ID(0=未关联)
+        example: "0"
+        type: string
     type: object
   request.DBConnTest:
     properties:
@@ -293,6 +363,31 @@ definitions:
         description: 岗位状态('0'正常/'1'停用)
         type: string
     type: object
+  request.ProviderOperateParams:
+    properties:
+      billingType:
+        description: 计费类型(空=默认 token)
+        type: string
+      description:
+        description: 描述
+        type: string
+      isActive:
+        description: 是否启用
+        type: boolean
+      monthlyBudget:
+        description: 月预算(USD)
+        type: number
+      name:
+        description: 供应商名称
+        type: string
+      providerId:
+        description: 供应商ID(新增为空)
+        example: "0"
+        type: string
+      providerType:
+        description: 供应商类型
+        type: string
+    type: object
   request.PublicSetting:
     properties:
       captchaEnabled:
@@ -536,6 +631,50 @@ definitions:
         description: 用户名(create 必填,唯一)
         type: string
     type: object
+  response.CredentialView:
+    properties:
+      createBy:
+        example: "0"
+        type: string
+      createTime:
+        description: |-
+          字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);
+          column 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;
+          json 仍叫 createTime/updateTime 对齐前端 CommonRecord。
+        type: string
+      credentialId:
+        description: 凭证ID(雪花)
+        example: "0"
+        type: string
+      credentialInfo:
+        description: 凭证元数据(format:openai/anthropic等)
+        type: object
+      credentialName:
+        description: 凭证名称(全局唯一,对应 LiteLLM credential_name)
+        type: string
+      credentialValues:
+        additionalProperties: {}
+        description: 凭证键值(敏感值已掩码,如 sk-ab****cdef)
+        type: object
+      description:
+        description: 描述
+        type: string
+      isActive:
+        description: 是否启用
+        type: boolean
+      litellmSynced:
+        description: LiteLLM投影同步状态位
+        type: boolean
+      providerId:
+        description: 关联供应商ID(雪花,纯逻辑关联)
+        example: "0"
+        type: string
+      updateBy:
+        example: "0"
+        type: string
+      updateTime:
+        type: string
+    type: object
   response.LoginResponse:
     properties:
       expiresAt:
@@ -562,6 +701,23 @@ definitions:
       data: {}
       msg:
         type: string
+    type: object
+  response.ResyncResult:
+    properties:
+      failed:
+        description: 失败凭证名列表(解密/推送失败，不中断整体)
+        items:
+          type: string
+        type: array
+      pushed:
+        description: 实际推送(新建或更新)数
+        type: integer
+      skipped:
+        description: 投影一致跳过数
+        type: integer
+      total:
+        description: 参与比对的凭证总数
+        type: integer
     type: object
   response.SysTimedTaskRow:
     properties:
@@ -2056,6 +2212,362 @@ paths:
       summary: 用户登录
       tags:
       - Base
+  /gateway/credential:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 凭证信息
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.CredentialOperateParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CredentialView'
+                msg:
+                  type: string
+              type: object
+      summary: 新增凭证(事务内同步 LiteLLM，推送失败整体回滚)
+      tags:
+      - GatewayCredential
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: 凭证信息(含 credentialId)
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.CredentialOperateParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CredentialView'
+                msg:
+                  type: string
+              type: object
+      summary: 修改凭证(不允许改凭证名；键值合并语义：敏感值掩码回传=未修改；仅投影变化才重推 LiteLLM)
+      tags:
+      - GatewayCredential
+  /gateway/credential/{id}:
+    get:
+      parameters:
+      - description: 凭证ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CredentialView'
+                msg:
+                  type: string
+              type: object
+      summary: 获取凭证详情
+      tags:
+      - GatewayCredential
+  /gateway/credential/{ids}:
+    delete:
+      parameters:
+      - description: 凭证ID列表(逗号分隔)
+        in: path
+        name: ids
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  type: boolean
+                msg:
+                  type: string
+              type: object
+      summary: 批量删除凭证(先删 LiteLLM 投影，失败则本地不动)
+      tags:
+      - GatewayCredential
+  /gateway/credential/list:
+    get:
+      parameters:
+      - description: 凭证名称(模糊)
+        in: query
+        name: credentialName
+        type: string
+      - description: 关联供应商ID(0=不限)
+        in: query
+        name: providerId
+        type: integer
+      - description: 是否启用(精确)
+        in: query
+        name: isActive
+        type: boolean
+      - description: 是否已同步LiteLLM(精确)
+        in: query
+        name: litellmSynced
+        type: boolean
+      - description: 页码
+        in: query
+        name: pageNum
+        required: true
+        type: integer
+      - description: 每页大小
+        in: query
+        name: pageSize
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.PageResult'
+                  - properties:
+                      rows:
+                        items:
+                          $ref: '#/definitions/response.CredentialView'
+                        type: array
+                    type: object
+                msg:
+                  type: string
+              type: object
+      summary: 分页获取凭证列表
+      tags:
+      - GatewayCredential
+  /gateway/credential/provider-fields:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    type: object
+                  type: array
+                msg:
+                  type: string
+              type: object
+      summary: 获取各供应商凭证表单字段定义(透传 LiteLLM /public/providers/fields，供前端动态渲染)
+      tags:
+      - GatewayCredential
+  /gateway/credential/resync:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.ResyncResult'
+                msg:
+                  type: string
+              type: object
+      summary: 手动重同步全部凭证到 LiteLLM(投影比对，漂移兜底)
+      tags:
+      - GatewayCredential
+  /gateway/provider:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 供应商信息
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.ProviderOperateParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/gateway.Provider'
+                msg:
+                  type: string
+              type: object
+      summary: 新增供应商
+      tags:
+      - GatewayProvider
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: 供应商信息(含 providerId)
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.ProviderOperateParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  type: boolean
+                msg:
+                  type: string
+              type: object
+      summary: 修改供应商
+      tags:
+      - GatewayProvider
+  /gateway/provider/{id}:
+    get:
+      parameters:
+      - description: 供应商ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/gateway.Provider'
+                msg:
+                  type: string
+              type: object
+      summary: 获取供应商详情
+      tags:
+      - GatewayProvider
+  /gateway/provider/{ids}:
+    delete:
+      parameters:
+      - description: 供应商ID列表(逗号分隔)
+        in: path
+        name: ids
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  type: boolean
+                msg:
+                  type: string
+              type: object
+      summary: 批量删除供应商
+      tags:
+      - GatewayProvider
+  /gateway/provider/list:
+    get:
+      parameters:
+      - description: 供应商名称(模糊)
+        in: query
+        name: name
+        type: string
+      - description: 供应商类型(精确)
+        in: query
+        name: providerType
+        type: string
+      - description: 计费类型(精确)
+        in: query
+        name: billingType
+        type: string
+      - description: 是否启用(精确)
+        in: query
+        name: isActive
+        type: boolean
+      - description: 页码
+        in: query
+        name: pageNum
+        required: true
+        type: integer
+      - description: 每页大小
+        in: query
+        name: pageSize
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.PageResult'
+                  - properties:
+                      rows:
+                        items:
+                          $ref: '#/definitions/gateway.Provider'
+                        type: array
+                    type: object
+                msg:
+                  type: string
+              type: object
+      summary: 分页获取供应商列表
+      tags:
+      - GatewayProvider
   /init/autoInitDB:
     post:
       produces:

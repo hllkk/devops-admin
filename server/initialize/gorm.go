@@ -7,6 +7,7 @@ import (
 	"github.com/hllkk/devops-admin/server/model/gateway"
 	"github.com/hllkk/devops-admin/server/model/media"
 	"github.com/hllkk/devops-admin/server/model/system"
+	sourceGateway "github.com/hllkk/devops-admin/server/source/gateway"
 	"github.com/hllkk/devops-admin/server/utils/logger"
 
 	"gorm.io/gorm"
@@ -73,6 +74,8 @@ func RegisterTables() {
 		media.AttachmentCategory{},
 
 		gateway.Provider{},
+		gateway.Credential{},
+		gateway.ProviderPrefix{},
 	)
 
 	if err != nil {
@@ -85,6 +88,12 @@ func RegisterTables() {
 	if err != nil {
 		logger.Bg().Mod("system").Err(err).Error("register biz_table failed")
 		os.Exit(1)
+	}
+
+	// 供应商前缀差异表种子兜底（功能依赖数据，幂等 OnConflict DoNothing，已有环境重启自愈；
+	// /initdb 路径由 source/gateway 初始化器链覆盖）。失败仅记日志不阻断启动。
+	if err := sourceGateway.SeedProviderPrefix(db); err != nil {
+		logger.Bg().Mod("gateway").Err(err).Error("seed gateway_provider_prefix failed")
 	}
 	logger.Bg().Mod("system").Info("register table success")
 }

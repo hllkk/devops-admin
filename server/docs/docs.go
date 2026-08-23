@@ -318,6 +318,615 @@ const docTemplate = `{
                 }
             }
         },
+        "/gateway/credential": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayCredential"
+                ],
+                "summary": "修改凭证(不允许改凭证名；键值合并语义：敏感值掩码回传=未修改；仅投影变化才重推 LiteLLM)",
+                "parameters": [
+                    {
+                        "description": "凭证信息(含 credentialId)",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CredentialOperateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.CredentialView"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayCredential"
+                ],
+                "summary": "新增凭证(事务内同步 LiteLLM，推送失败整体回滚)",
+                "parameters": [
+                    {
+                        "description": "凭证信息",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CredentialOperateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.CredentialView"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/credential/list": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayCredential"
+                ],
+                "summary": "分页获取凭证列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "凭证名称(模糊)",
+                        "name": "credentialName",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "关联供应商ID(0=不限)",
+                        "name": "providerId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否启用(精确)",
+                        "name": "isActive",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否已同步LiteLLM(精确)",
+                        "name": "litellmSynced",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "pageNum",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页大小",
+                        "name": "pageSize",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.PageResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "rows": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/response.CredentialView"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/credential/provider-fields": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayCredential"
+                ],
+                "summary": "获取各供应商凭证表单字段定义(透传 LiteLLM /public/providers/fields，供前端动态渲染)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/credential/resync": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayCredential"
+                ],
+                "summary": "手动重同步全部凭证到 LiteLLM(投影比对，漂移兜底)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.ResyncResult"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/credential/{ids}": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayCredential"
+                ],
+                "summary": "批量删除凭证(先删 LiteLLM 投影，失败则本地不动)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "凭证ID列表(逗号分隔)",
+                        "name": "ids",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/credential/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayCredential"
+                ],
+                "summary": "获取凭证详情",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "凭证ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.CredentialView"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/provider": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayProvider"
+                ],
+                "summary": "修改供应商",
+                "parameters": [
+                    {
+                        "description": "供应商信息(含 providerId)",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.ProviderOperateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayProvider"
+                ],
+                "summary": "新增供应商",
+                "parameters": [
+                    {
+                        "description": "供应商信息",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.ProviderOperateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/gateway.Provider"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/provider/list": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayProvider"
+                ],
+                "summary": "分页获取供应商列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "供应商名称(模糊)",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "供应商类型(精确)",
+                        "name": "providerType",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "计费类型(精确)",
+                        "name": "billingType",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否启用(精确)",
+                        "name": "isActive",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "pageNum",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页大小",
+                        "name": "pageSize",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.PageResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "rows": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/gateway.Provider"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/provider/{ids}": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayProvider"
+                ],
+                "summary": "批量删除供应商",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "供应商ID列表(逗号分隔)",
+                        "name": "ids",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/provider/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayProvider"
+                ],
+                "summary": "获取供应商详情",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "供应商ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/gateway.Provider"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/init/autoInitDB": {
             "post": {
                 "produces": [
@@ -5347,6 +5956,59 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "gateway.Provider": {
+            "type": "object",
+            "properties": {
+                "billingType": {
+                    "description": "计费类型",
+                    "type": "string"
+                },
+                "createBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "createTime": {
+                    "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
+                    "type": "string"
+                },
+                "description": {
+                    "description": "描述",
+                    "type": "string"
+                },
+                "isActive": {
+                    "description": "是否启用",
+                    "type": "boolean"
+                },
+                "monthlyBudget": {
+                    "description": "月预算(USD,nil=不限)",
+                    "type": "number"
+                },
+                "monthlyUsed": {
+                    "description": "月已用(USD,用量统计定时回填)",
+                    "type": "number"
+                },
+                "name": {
+                    "description": "供应商名称(如 OpenAI/Anthropic)",
+                    "type": "string"
+                },
+                "providerId": {
+                    "description": "供应商ID(雪花)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "providerType": {
+                    "description": "供应商类型(对应 LiteLLM custom_llm_provider)",
+                    "type": "string"
+                },
+                "updateBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "updateTime": {
+                    "type": "string"
+                }
+            }
+        },
         "request.ChangeMyPasswordParams": {
             "type": "object",
             "required": [
@@ -5361,6 +6023,43 @@ const docTemplate = `{
                 "oldPassword": {
                     "description": "旧密码(明文,二次校验)",
                     "type": "string"
+                }
+            }
+        },
+        "request.CredentialOperateParams": {
+            "type": "object",
+            "properties": {
+                "credentialId": {
+                    "description": "凭证ID(新增为空)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "credentialInfo": {
+                    "description": "凭证元数据(format等)",
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "credentialName": {
+                    "description": "凭证名称(全局唯一,创建后不可改)",
+                    "type": "string"
+                },
+                "credentialValues": {
+                    "description": "凭证键值(api_key/api_base等,明文或掩码回传)",
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "description": {
+                    "description": "描述",
+                    "type": "string"
+                },
+                "isActive": {
+                    "description": "是否启用",
+                    "type": "boolean"
+                },
+                "providerId": {
+                    "description": "关联供应商ID(0=未关联)",
+                    "type": "string",
+                    "example": "0"
                 }
             }
         },
@@ -5755,6 +6454,40 @@ const docTemplate = `{
                 }
             }
         },
+        "request.ProviderOperateParams": {
+            "type": "object",
+            "properties": {
+                "billingType": {
+                    "description": "计费类型(空=默认 token)",
+                    "type": "string"
+                },
+                "description": {
+                    "description": "描述",
+                    "type": "string"
+                },
+                "isActive": {
+                    "description": "是否启用",
+                    "type": "boolean"
+                },
+                "monthlyBudget": {
+                    "description": "月预算(USD)",
+                    "type": "number"
+                },
+                "name": {
+                    "description": "供应商名称",
+                    "type": "string"
+                },
+                "providerId": {
+                    "description": "供应商ID(新增为空)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "providerType": {
+                    "description": "供应商类型",
+                    "type": "string"
+                }
+            }
+        },
         "request.PublicSetting": {
             "type": "object",
             "properties": {
@@ -6102,6 +6835,61 @@ const docTemplate = `{
                 }
             }
         },
+        "response.CredentialView": {
+            "type": "object",
+            "properties": {
+                "createBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "createTime": {
+                    "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
+                    "type": "string"
+                },
+                "credentialId": {
+                    "description": "凭证ID(雪花)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "credentialInfo": {
+                    "description": "凭证元数据(format:openai/anthropic等)",
+                    "type": "object"
+                },
+                "credentialName": {
+                    "description": "凭证名称(全局唯一,对应 LiteLLM credential_name)",
+                    "type": "string"
+                },
+                "credentialValues": {
+                    "description": "凭证键值(敏感值已掩码,如 sk-ab****cdef)",
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "description": {
+                    "description": "描述",
+                    "type": "string"
+                },
+                "isActive": {
+                    "description": "是否启用",
+                    "type": "boolean"
+                },
+                "litellmSynced": {
+                    "description": "LiteLLM投影同步状态位",
+                    "type": "boolean"
+                },
+                "providerId": {
+                    "description": "关联供应商ID(雪花,纯逻辑关联)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "updateBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "updateTime": {
+                    "type": "string"
+                }
+            }
+        },
         "response.LoginResponse": {
             "type": "object",
             "properties": {
@@ -6139,6 +6927,30 @@ const docTemplate = `{
                 "data": {},
                 "msg": {
                     "type": "string"
+                }
+            }
+        },
+        "response.ResyncResult": {
+            "type": "object",
+            "properties": {
+                "failed": {
+                    "description": "失败凭证名列表(解密/推送失败，不中断整体)",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "pushed": {
+                    "description": "实际推送(新建或更新)数",
+                    "type": "integer"
+                },
+                "skipped": {
+                    "description": "投影一致跳过数",
+                    "type": "integer"
+                },
+                "total": {
+                    "description": "参与比对的凭证总数",
+                    "type": "integer"
                 }
             }
         },
