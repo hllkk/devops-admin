@@ -126,7 +126,7 @@ services:
   # - 模型/凭证/密钥由管理面同步进来，本配置只留底座开关（store_model_in_db 等）
   # ============================================================================
   litellm:
-    image: ghcr.io/berriai/litellm:1.95.0
+    image: ghcr.io/berriai/litellm:1.98.0
     container_name: devops-litellm-dev
     restart: unless-stopped
     ports:

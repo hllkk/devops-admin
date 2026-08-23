@@ -138,4 +138,48 @@ Go HTTP 客户端封装（用 `LITELLM_MASTER_KEY` 鉴权）调 LiteLLM 管理 A
 - 前端：`views/home/index.vue` AI 身份首页 mock 已落地（参照 AIHelms `MyIdentityView`，见 `memory/business/ai-gateway-identity-home.md`）；`views/_gateway/gateway` 占位页；路由 `/gateway`+`/home` 预留；`service/api` 下无 gateway 目录、无业务契约 typings
 - 后端：`/gateway/*` 全缺；`config/ai.go` + `service/system/sys_ai.go` + `auto_code_llm.go` 是错误日志 AI 分析（非网关）
 - 待办：后端按四层模型落地 P1 + LiteLLM 容器接入 + home mock 切真实接口 + 建管理页 `views/_gateway/`
+- 进展：slice1 已落地——`config/litellm.go` + `utils/litellm/client.go` + Provider 四层（router/api/service/model，2026-08-22 核对）
+
+### 实现参照·AIHelms（2026-08-22 深度分析补，实现 P1 前必读）
+
+> 来源：对 `/home/remote/AIHelms`（apps/，FastAPI）五路并行深度分析。总原则：**平台 DB 是唯一事实源，LiteLLM 是投影**——配置单向推送、日志单向回流，无双向协商。以下 6 条是设计正文未细化、但实现时必须照做的机制。
+
+1. **LiteLLM 投影三原则**（参照 `apps/services/litellm_client.py`、`credential_service.py`）
+   - 单向推送：每次 CRUD 同一事务边界内联同步 LiteLLM，不做定时全量对账；提供手动 resync 端点兜底
+   - `litellm_key_id`/`litellm_model_id`/`litellm_synced` 是投影指针+状态位，不是第二份真相
+   - 删除顺序：**先在 LiteLLM 侧禁用成功，再动本地行**（禁用失败→报冲突阻止删除）；凭证懒同步（`litellm_synced=False` 或投影≠DB 值才推）天然幂等
+   - ⚠️ AIHelms 的坑：同步失败有的阻断回滚、有的静默记日志继续→网关漂移无补偿。Go 版统一走 `litellm_synced` 脏标记 + 重试补偿，不留静默路径
+
+2. **路由池后缀约定**（参照 `model_service.py` `_get_litellm_model_name`/`sync_credential_routing`）
+   - 部署不可路由（部署或凭证停用）→ `model_name` 加 `__disabled__` 后缀摘出 LB 组，**不删除重建**（`litellm_model_id` 稳定，历史成本/日志可回溯）
+   - anthropic 格式部署进 `{model_id}(Anthropic)` 独立 model group（协议隔离，不同协议不能混组 LB）
+   - **Key 授权与按模型限流都要做 Anthropic 变体扩展**：模型有 anthropic 格式活跃部署时，向 Key 下发 `models` 与 `model_tpm/rpm_limit` 时额外追加 `"{model_id}(Anthropic)"` 变体（防换协议绕开授权/限流）
+   - 同一 Model 多 Deployment 注册相同 `model_name`（= `model_id`）即同一 LB 组；LB 选择完全委托 LiteLLM Router
+
+3. **供应商差异表驱动**（参照 `provider_prefix_map` 表 + `litellm_credential_payload.py`）
+   - `(provider_type, format, category) → prefix + needs_v1` 做成数据表（AIHelms 种子在 `docker/db/init.sql`，新增供应商走 SQL migration），不在代码里 switch
+   - 凭证表单字段运行时从 LiteLLM `GET /public/providers/fields` 动态拉取渲染
+   - 派生值边界收敛：¥/百万token → USD/token 换算、vLLM+anthropic 的 `extra_headers.authorization` 派生，只存在于发往 LiteLLM 前的纯函数（`BuildPayload()`），**绝不回写平台 DB**；平台内部永远人民币口径
+   - 绑定平台凭证的部署强制剔除 inline `api_key`、写 `litellm_credential_name` 引用——改一次凭证全部部署生效
+
+4. **用量回流幂等三件套**（参照 `apps/tasks/llm_log_tasks.py`，P1 用量 slice 直接照抄）
+   - 游标锚定 `COALESCE(endTime, startTime)`：长 Agent 调用 endTime 远晚于 startTime，按 startTime 推进游标会永久跳过晚落盘行
+   - 复合游标 `(time, request_id)` 行值比较 keyset 分页（批 1000、单次最多 50 批，游标不前进告警中止），游标存 KV 表（AIHelms `sync_state`）
+   - 定时对账兜底：每小时 `NOT EXISTS(request_id)` 回灌近 30 天漏单
+   - 落库 `request_id` 唯一约束 + `ON CONFLICT DO NOTHING`；归因链：`metadata.user_api_key_alias`→AiKey、`metadata.user_api_key_user_id`→User、`model_id`→Deployment（**入库时就解析归因**，别依赖查询侧按模型名兜底匹配——AIHelms 查询侧要试 6 种形态，是脆弱点）
+   - master key / default_user_id 的行跳过，归因失败置 NULL 不强行归属
+
+5. **成本口径**（参照 `llm_log_tasks.py` `_calc_internal/external_cost`、`model_service.py` 定价部分）
+   - **本地重算，不信任 LiteLLM 的 spend 列**：内外成本都从自家价格表（deployment 级 `model_info` JSONB）计算；价格调整提供 `recalc` 全量回放
+   - `billable_input = prompt_tokens − cache_read − cache_creation`（下限 0）；OpenAI/Anthropic 两种缓存字段格式都要解析
+   - 金额一律高精度：AIHelms 用 PG `Numeric(12,6)` + Decimal；**Go 用 shopspring/decimal 或 int64 微元，禁 float64 累加**
+   - ⚠️ 时区坑：AIHelms 按 UTC `date_trunc` 切日桶与业务日（上海 0 点）错位 8 小时。Go 版：存储统一 UTC，日桶显式按业务时区切（`time.LoadLocation` 后 truncate）
+
+6. **聚合与预算都是派生缓存**（参照 `apps/tasks/efficiency_tasks.py`）
+   - 日汇总表（AIHelms `cost_summary_daily`）滚动窗口 DELETE+INSERT 重建（近 60 天，每 5 分钟）而非增量 upsert：自愈（漏聚合/口径变更/补数据可修复）；聚合表不带独立状态机，游标只存在原始同步层
+   - 部门/项目维度**不写进聚合表**，查询时 EXISTS/递归 CTE 读时归因——人员调岗不污染历史成本
+   - `budget_used` 由定时任务按滚动窗口（1d/7d/30d）从原始日志 SUM **重算覆盖**（幂等可回放，无调用记录的 Key 归零），不做事件驱动累加
+   - 硬停用借 LiteLLM `max_budget=0`（平时不设，避免两套记账口径）；⚠️ AIHelms 没做"超限自动停用"闭环，Go 版必须补：聚合任务发现超限 → 调停用流水线 → 通知
+
+**AIHelms 关键文件索引**（相对 `/home/remote/AIHelms/apps/`）：LiteLLM 客户端 `services/litellm_client.py`｜凭证 payload `services/litellm_credential_payload.py`｜部署同步 `services/model_service.py`（`_build_litellm_params_for_sync`/`_get_litellm_model_name`）｜Key 服务 `services/ai_key_service.py`（`_expand_models_with_anthropic`/`sync_public_resource_to_all_keys`）｜日志回流 `tasks/llm_log_tasks.py`｜聚合预算 `tasks/efficiency_tasks.py`｜连通性测试 `services/access_test_{precheck,error_mapper,service}.py`｜表结构 `models/db.py`（935 行约 50 表）
 

@@ -20,7 +20,7 @@ const historyCreatorMap: Record<Env.RouterHistoryMode, (base?: string) => Router
 
 /**
  * 自定义 query 序列化:用 encodeURIComponent 编码键值(RFC3986 语义),
- * 使地址栏 query 统一为 %2F/%20 风格(对齐 jmal 等主流文件服务),
+ * 使地址栏 query 统一为 %2F/%20 风格,
  * 而非 vue-router 默认把空格编成 `+`、不编码 `/` 的表单风格。
  * parseQuery 沿用 vue-router 默认实现,已能正确还原 %2F→/、%20→空格、+→空格。
  */
