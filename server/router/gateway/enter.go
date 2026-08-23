@@ -8,6 +8,7 @@ type RouterGroup struct {
 	CredentialRouter
 	ModelRouter
 	DeploymentRouter
+	AiKeyRouter
 }
 
 var (
@@ -15,4 +16,5 @@ var (
 	credentialApi  = v1.ApiGroupApp.GatewayApiGroup.CredentialApi
 	modelApi       = v1.ApiGroupApp.GatewayApiGroup.ModelApi
 	deploymentApi  = v1.ApiGroupApp.GatewayApiGroup.DeploymentApi
+	aiKeyApi       = v1.ApiGroupApp.GatewayApiGroup.AiKeyApi
 )

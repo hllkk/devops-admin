@@ -1,0 +1,41 @@
+package response
+
+import (
+	"github.com/hllkk/devops-admin/server/model/gateway"
+)
+
+// AiKeyView 密钥出网视图(管理员视角)：不返回 KeyValue 明文，只回 KeyPrefix。
+type AiKeyView struct {
+	gateway.AiKey
+	Models      []string       `json:"models"`      // 授权模型(展开)
+	ModelBudgets map[string]any `json:"modelBudgets"` // 按模型预算(展开)
+	ModelLimits  map[string]any `json:"modelLimits"`  // per-model限流(展开)
+}
+
+// MyIdentityView 我的 AI 身份(home 切真实接口的契约，对齐前端 home mock 的 IdentityKey)：
+// 主 Key 明文(仅 owner 本人可查) + 我的场景 Key 列表 + 可用模型列表。
+type MyIdentityView struct {
+	KeyValue         string             `json:"keyValue"`         // 主Key明文(仅identity/my返回)
+	IsActive         bool               `json:"isActive"`         // 主Key是否启用
+	BudgetLimit      *float64           `json:"budgetLimit"`      // 预算上限
+	BudgetHardLimit  bool               `json:"budgetHardLimit"`  // 硬限
+	BudgetDuration   string             `json:"budgetDuration"`   // 预算周期
+	Models           []string           `json:"models"`           // 已授权模型
+	ModelBudgets     map[string]any      `json:"modelBudgets"`     // 按模型预算
+	RateLimitMode    string             `json:"rateLimitMode"`    // 限流模式
+	TpmLimit         *int               `json:"tpmLimit"`         // 全局TPM
+	RpmLimit         *int               `json:"rpmLimit"`         // 全局RPM
+	SceneKeys        []AiKeyView        `json:"sceneKeys"`        // 我的场景Key列表
+	AvailableModels  []AvailableModelView `json:"availableModels"` // 可用模型(供申请新Key选)
+}
+
+// AvailableModelView 可授权模型(精简版，供 Key 授权选择)。
+type AvailableModelView struct {
+	ModelId               int64    `json:"modelId,string"`        // 模型ID
+	ModelKey              string   `json:"modelKey"`              // 路由名(openai组)
+	ModelKeyAnthropic     string   `json:"modelKeyAnthropic"`     // anthropic变体路由名(无则空)
+	Name                  string   `json:"name"`                  // 展示名
+	Category              string   `json:"category"`              // 类别
+	RequiresApproval      bool     `json:"requiresApproval"`      // 订阅需审批
+	HasAnthropicDeployment bool    `json:"hasAnthropicDeployment"` // 有anthropic活跃部署
+}

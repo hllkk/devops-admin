@@ -79,6 +79,7 @@ func RegisterTables() {
 		gateway.Model{},
 		gateway.ModelDeployment{},
 		gateway.ModelVisibility{},
+		gateway.AiKey{},
 	)
 
 	if err != nil {

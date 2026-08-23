@@ -363,7 +363,13 @@ func (s *ModelService) PublishModel(ctx context.Context, req gatewayReq.ModelPub
 			for _, deptId := range req.DepartmentIds {
 				rows = append(rows, gateway.ModelVisibility{ModelId: req.ModelId, DepartmentId: deptId})
 			}
-			return tx.Create(&rows).Error
+			if err := tx.Create(&rows).Error; err != nil {
+				return err
+			}
+		}
+		// 发布公开模型(发布+免审批+有路由名)→自动授权到所有 active 主 Key(回补 slice3 TODO)
+		if req.IsPublished && !req.RequiresApproval && m.ModelKey != "" {
+			syncPublicModelToMainKeys(ctx, tx, m.ModelKey) // 单个失败 warning 不中断
 		}
 		return nil
 	})

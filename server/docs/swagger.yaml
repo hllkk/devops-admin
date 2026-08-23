@@ -41,6 +41,63 @@ definitions:
       updateTime:
         type: string
     type: object
+  request.AiKeyOperateParams:
+    properties:
+      aiKeyId:
+        description: 密钥ID(新增为空)
+        example: "0"
+        type: string
+      budgetDuration:
+        description: 预算周期
+        type: string
+      budgetHardLimit:
+        description: 硬限
+        type: boolean
+      budgetLimit:
+        description: 预算上限
+        type: number
+      description:
+        description: 描述
+        type: string
+      isActive:
+        description: 是否启用
+        type: boolean
+      keyType:
+        description: 密钥类型(创建必填)
+        type: string
+      modelBudgets:
+        additionalProperties: {}
+        description: 按模型预算
+        type: object
+      modelLimits:
+        additionalProperties: {}
+        description: per-model限流
+        type: object
+      models:
+        description: 授权模型(modelKey列表)
+        items:
+          type: string
+        type: array
+      name:
+        description: 名称
+        type: string
+      ownerId:
+        description: 归属ID(创建必填)
+        example: "0"
+        type: string
+      ownerType:
+        description: 归属类型(创建必填)
+        type: string
+      rateLimitMode:
+        description: 限流模式
+        type: string
+      rpmLimit:
+        description: 全局RPM
+        type: integer
+      tpmLimit:
+        description: 全局TPM
+        type: integer
+    type: object
   request.ChangeMyPasswordParams:
     properties:
       newPassword:
@@ -760,6 +817,120 @@ definitions:
         description: 订阅需审批
         type: boolean
     type: object
+  response.AiKeyView:
+    properties:
+      aiKeyId:
+        description: 密钥ID(雪花)
+        example: "0"
+        type: string
+      budgetDuration:
+        description: 预算周期
+        type: string
+      budgetHardLimit:
+        description: 硬限
+        type: boolean
+      budgetLimit:
+        description: 预算上限
+        type: number
+      budgetUsed:
+        description: 已用(slice5聚合回填)
+        type: number
+      createBy:
+        example: "0"
+        type: string
+      createTime:
+        description: |-
+          字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);
+          column 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;
+          json 仍叫 createTime/updateTime 对齐前端 CommonRecord。
+        type: string
+      description:
+        description: 描述
+        type: string
+      isActive:
+        description: 是否启用(停用=max_budget=0)
+        type: boolean
+      keyPrefix:
+        description: Key前缀(明文前8位+****)
+        type: string
+      keyType:
+        description: 密钥类型
+        type: string
+      litellmKeyAlias:
+        description: LiteLLM key_alias({ownerType}:{ownerId}/{name})
+        type: string
+      litellmKeyId:
+        description: LiteLLM key_id
+        type: string
+      mcps:
+        description: 授权MCP(P2)
+        type: object
+      modelBudgets:
+        additionalProperties: {}
+        description: 按模型预算(展开)
+        type: object
+      modelLimits:
+        additionalProperties: {}
+        description: per-model限流(展开)
+        type: object
+      models:
+        description: 授权模型(展开)
+        items:
+          type: string
+        type: array
+      name:
+        description: 密钥名称(主Key固定"主Key")
+        type: string
+      ownerId:
+        description: 归属ID(纯逻辑关联)
+        example: "0"
+        type: string
+      ownerType:
+        description: 归属类型
+        type: string
+      rateLimitMode:
+        description: 限流模式
+        type: string
+      rpmLimit:
+        description: 全局RPM
+        type: integer
+      skills:
+        description: 授权Skill(P2)
+        type: object
+      tpmLimit:
+        description: 全局TPM
+        type: integer
+      updateBy:
+        example: "0"
+        type: string
+      updateTime:
+        type: string
+    type: object
+  response.AvailableModelView:
+    properties:
+      category:
+        description: 类别
+        type: string
+      hasAnthropicDeployment:
+        description: 有anthropic活跃部署
+        type: boolean
+      modelId:
+        description: 模型ID
+        example: "0"
+        type: string
+      modelKey:
+        description: 路由名(openai组)
+        type: string
+      modelKeyAnthropic:
+        description: anthropic变体路由名(无则空)
+        type: string
+      name:
+        description: 展示名
+        type: string
+      requiresApproval:
+        description: 订阅需审批
+        type: boolean
+    type: object
   response.CredentialView:
     properties:
       createBy:
@@ -1046,6 +1217,52 @@ definitions:
       visibilityType:
         description: 可见范围
         type: string
+    type: object
+  response.MyIdentityView:
+    properties:
+      availableModels:
+        description: 可用模型(供申请新Key选)
+        items:
+          $ref: '#/definitions/response.AvailableModelView'
+        type: array
+      budgetDuration:
+        description: 预算周期
+        type: string
+      budgetHardLimit:
+        description: 硬限
+        type: boolean
+      budgetLimit:
+        description: 预算上限
+        type: number
+      isActive:
+        description: 主Key是否启用
+        type: boolean
+      keyValue:
+        description: 主Key明文(仅identity/my返回)
+        type: string
+      modelBudgets:
+        additionalProperties: {}
+        description: 按模型预算
+        type: object
+      models:
+        description: 已授权模型
+        items:
+          type: string
+        type: array
+      rateLimitMode:
+        description: 限流模式
+        type: string
+      rpmLimit:
+        description: 全局RPM
+        type: integer
+      sceneKeys:
+        description: 我的场景Key列表
+        items:
+          $ref: '#/definitions/response.AiKeyView'
+        type: array
+      tpmLimit:
+        description: 全局TPM
+        type: integer
     type: object
   response.PageResult:
     properties:
@@ -2575,6 +2792,208 @@ paths:
       summary: 用户登录
       tags:
       - Base
+  /gateway/ai-key:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 密钥信息
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.AiKeyOperateParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.AiKeyView'
+                msg:
+                  type: string
+              type: object
+      summary: 创建密钥(场景 Key 或管理员手动建部门主 Key)
+      tags:
+      - GatewayAiKey
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: 密钥信息(含 aiKeyId)
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.AiKeyOperateParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.AiKeyView'
+                msg:
+                  type: string
+              type: object
+      summary: 修改密钥(授权/预算/限流/启停；类型不可改)
+      tags:
+      - GatewayAiKey
+  /gateway/ai-key/{id}:
+    get:
+      parameters:
+      - description: 密钥ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.AiKeyView'
+                msg:
+                  type: string
+              type: object
+      summary: 获取密钥详情(管理员视角，不返回 KeyValue)
+      tags:
+      - GatewayAiKey
+  /gateway/ai-key/{ids}:
+    delete:
+      parameters:
+      - description: 密钥ID列表(逗号分隔)
+        in: path
+        name: ids
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  type: boolean
+                msg:
+                  type: string
+              type: object
+      summary: 批量删除密钥(先删 LiteLLM，失败则本地不动)
+      tags:
+      - GatewayAiKey
+  /gateway/ai-key/identity/available-models:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/response.AvailableModelView'
+                  type: array
+                msg:
+                  type: string
+              type: object
+      summary: 获取可授权模型列表(发布+激活，含 anthropic 变体标注)
+      tags:
+      - GatewayAiKey
+  /gateway/ai-key/identity/my:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.MyIdentityView'
+                msg:
+                  type: string
+              type: object
+      summary: 获取我的 AI 身份(惰性建主 Key + 主 Key 明文 + 场景 Key 列表 + 可用模型)
+      tags:
+      - GatewayAiKey
+  /gateway/ai-key/list:
+    get:
+      parameters:
+      - description: 密钥类型(精确)
+        in: query
+        name: keyType
+        type: string
+      - description: 归属类型(精确)
+        in: query
+        name: ownerType
+        type: string
+      - description: 归属ID(0=不限)
+        in: query
+        name: ownerId
+        type: integer
+      - description: 名称(模糊)
+        in: query
+        name: name
+        type: string
+      - description: 是否启用(精确)
+        in: query
+        name: isActive
+        type: boolean
+      - description: 页码
+        in: query
+        name: pageNum
+        required: true
+        type: integer
+      - description: 每页大小
+        in: query
+        name: pageSize
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.PageResult'
+                  - properties:
+                      rows:
+                        items:
+                          $ref: '#/definitions/response.AiKeyView'
+                        type: array
+                    type: object
+                msg:
+                  type: string
+              type: object
+      summary: 分页获取密钥列表(管理员视角，不返回 KeyValue)
+      tags:
+      - GatewayAiKey
   /gateway/credential:
     post:
       consumes:

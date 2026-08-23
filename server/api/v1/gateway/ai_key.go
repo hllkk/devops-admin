@@ -1,0 +1,170 @@
+package gateway
+
+import (
+	"strconv"
+	"strings"
+
+	"github.com/gin-gonic/gin"
+	"github.com/hllkk/devops-admin/server/model/common/response"
+	gatewayReq "github.com/hllkk/devops-admin/server/model/gateway/request"
+	"github.com/hllkk/devops-admin/server/utils"
+	"github.com/hllkk/devops-admin/server/utils/logger"
+)
+
+// AiKeyApi AI 密钥管理(对齐前端 /gateway/ai-key/* 与 identity/* 资源)
+type AiKeyApi struct{}
+
+// GetMyIdentity
+// @Tags      GatewayAiKey
+// @Summary   获取我的 AI 身份(惰性建主 Key + 主 Key 明文 + 场景 Key 列表 + 可用模型)
+// @Produce   application/json
+// @Success   200  {object}  response.Response{data=response.MyIdentityView,msg=string}
+// @Router    /gateway/ai-key/identity/my [get]
+func (a *AiKeyApi) GetMyIdentity(c *gin.Context) {
+	view, err := aiKeyService.GetMyIdentity(c.Request.Context(), utils.GetUserID(c))
+	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取 AI 身份失败")
+		response.FailWithMessage("获取失败", c)
+		return
+	}
+	response.OkWithDetailed(view, "获取成功", c)
+}
+
+// GetAvailableModels
+// @Tags      GatewayAiKey
+// @Summary   获取可授权模型列表(发布+激活，含 anthropic 变体标注)
+// @Produce   application/json
+// @Success   200  {object}  response.Response{data=[]response.AvailableModelView,msg=string}
+// @Router    /gateway/ai-key/identity/available-models [get]
+func (a *AiKeyApi) GetAvailableModels(c *gin.Context) {
+	list, err := aiKeyService.GetAvailableModels(c.Request.Context())
+	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取可用模型失败")
+		response.FailWithMessage("获取失败", c)
+		return
+	}
+	response.OkWithDetailed(list, "获取成功", c)
+}
+
+// GetAiKeyList
+// @Tags      GatewayAiKey
+// @Summary   分页获取密钥列表(管理员视角，不返回 KeyValue)
+// @Produce   application/json
+// @Param     keyType    query  string  false  "密钥类型(精确)"
+// @Param     ownerType  query  string  false  "归属类型(精确)"
+// @Param     ownerId   query  int     false  "归属ID(0=不限)"
+// @Param     name      query  string  false  "名称(模糊)"
+// @Param     isActive  query  bool    false  "是否启用(精确)"
+// @Param     pageNum   query  int     true   "页码"
+// @Param     pageSize  query  int     true   "每页大小"
+// @Success   200  {object}  response.Response{data=response.PageResult{rows=[]response.AiKeyView},msg=string}
+// @Router    /gateway/ai-key/list [get]
+func (a *AiKeyApi) GetAiKeyList(c *gin.Context) {
+	var q gatewayReq.AiKeySearch
+	if err := c.ShouldBindQuery(&q); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	list, total, err := aiKeyService.GetAiKeyList(c.Request.Context(), q)
+	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取密钥列表失败")
+		response.FailWithMessage("获取失败", c)
+		return
+	}
+	response.OkWithDetailed(response.PageResult{
+		Rows: list, Total: total, PageNum: q.PageNum, PageSize: q.PageSize,
+	}, "获取成功", c)
+}
+
+// GetAiKey
+// @Tags      GatewayAiKey
+// @Summary   获取密钥详情(管理员视角，不返回 KeyValue)
+// @Produce   application/json
+// @Param     id  path  int  true  "密钥ID"
+// @Success   200  {object}  response.Response{data=response.AiKeyView,msg=string}
+// @Router    /gateway/ai-key/{id} [get]
+func (a *AiKeyApi) GetAiKey(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.FailWithMessage("无效的密钥ID", c)
+		return
+	}
+	view, err := aiKeyService.GetAiKey(c.Request.Context(), id)
+	if err != nil {
+		response.FailWithMessage("获取失败", c)
+		return
+	}
+	response.OkWithDetailed(view, "获取成功", c)
+}
+
+// CreateSceneKey
+// @Tags      GatewayAiKey
+// @Summary   创建密钥(场景 Key 或管理员手动建部门主 Key)
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  body  gatewayReq.AiKeyOperateParams  true  "密钥信息"
+// @Success   200   {object}  response.Response{data=response.AiKeyView,msg=string}
+// @Router    /gateway/ai-key [post]
+func (a *AiKeyApi) CreateSceneKey(c *gin.Context) {
+	var req gatewayReq.AiKeyOperateParams
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	view, err := aiKeyService.CreateSceneKey(c.Request.Context(), req, utils.GetUserID(c))
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	response.OkWithDetailed(view, "新增成功", c)
+}
+
+// UpdateAiKey
+// @Tags      GatewayAiKey
+// @Summary   修改密钥(授权/预算/限流/启停；类型不可改)
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  body  gatewayReq.AiKeyOperateParams  true  "密钥信息(含 aiKeyId)"
+// @Success   200   {object}  response.Response{data=response.AiKeyView,msg=string}
+// @Router    /gateway/ai-key [put]
+func (a *AiKeyApi) UpdateAiKey(c *gin.Context) {
+	var req gatewayReq.AiKeyOperateParams
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	view, err := aiKeyService.UpdateAiKey(c.Request.Context(), req, utils.GetUserID(c))
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	response.OkWithDetailed(view, "修改成功", c)
+}
+
+// BatchDeleteAiKeys
+// @Tags      GatewayAiKey
+// @Summary   批量删除密钥(先删 LiteLLM，失败则本地不动)
+// @Produce   application/json
+// @Param     ids  path  string  true  "密钥ID列表(逗号分隔)"
+// @Success   200  {object}  response.Response{data=bool,msg=string}
+// @Router    /gateway/ai-key/{ids} [delete]
+func (a *AiKeyApi) BatchDeleteAiKeys(c *gin.Context) {
+	ids := make([]int64, 0, 4)
+	for s := range strings.SplitSeq(c.Param("ids"), ",") {
+		s = strings.TrimSpace(s)
+		if s == "" {
+			continue
+		}
+		id, err := strconv.ParseInt(s, 10, 64)
+		if err != nil {
+			response.FailWithMessage("无效的密钥ID: "+s, c)
+			return
+		}
+		ids = append(ids, id)
+	}
+	if err := aiKeyService.DeleteAiKey(c.Request.Context(), ids); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	response.OkWithDetailed(true, "删除成功", c)
+}

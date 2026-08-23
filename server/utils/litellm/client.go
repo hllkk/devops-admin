@@ -308,9 +308,12 @@ type KeyCreateReq struct {
 }
 
 // KeyCreateResp /key/generate 响应。Key 仅在创建时返回一次，须即时落库。
+// LiteLLM 1.98 用 token_id 作内部密钥标识(后续 /key/update、/key/delete、/key/info 均用它)，
+// 早期版本用 key_id——CreateKey 兼容两者，优先 token_id。
 type KeyCreateResp struct {
 	Key      string `json:"key"`
 	KeyID    string `json:"key_id"`
+	TokenID  string `json:"token_id"`
 	KeyAlias string `json:"key_alias"`
 }
 
@@ -319,6 +322,9 @@ func (c *Client) CreateKey(ctx context.Context, req KeyCreateReq) (KeyCreateResp
 	var resp KeyCreateResp
 	if err := c.do(ctx, http.MethodPost, "/key/generate", req, &resp); err != nil {
 		return resp, err
+	}
+	if resp.KeyID == "" && resp.TokenID != "" {
+		resp.KeyID = resp.TokenID // 1.98 兼容
 	}
 	return resp, nil
 }
@@ -329,7 +335,8 @@ func (c *Client) DeleteKey(ctx context.Context, keyID string) error {
 	return c.do(ctx, http.MethodPost, "/key/delete", body, nil)
 }
 
-// KeyUpdateReq /key/update 请求。SyncRateLimits=true 时强制刷限流字段（即便为零值）。
+// KeyUpdateReq /key/update 请求。SyncRateLimits=true 强制刷限流字段(即便为零值)；
+// SyncBudget=true 强制刷 max_budget(含 nil→null 清空，用于停用→启用无硬限恢复)。
 type KeyUpdateReq struct {
 	Models            []string `json:"models,omitempty"`
 	MaxBudget         *float64 `json:"max_budget,omitempty"`
@@ -339,6 +346,7 @@ type KeyUpdateReq struct {
 	RPMLimit          *int     `json:"rpm_limit,omitempty"`
 	MaxParallelReqs   *int     `json:"max_parallel_requests,omitempty"`
 	SyncRateLimits    bool     `json:"-"`
+	SyncBudget        bool     `json:"-"`
 }
 
 // UpdateKey 更新 LiteLLM 虚拟 Key（POST /key/update {key:id, ...}）。
@@ -347,8 +355,8 @@ func (c *Client) UpdateKey(ctx context.Context, keyID string, req KeyUpdateReq) 
 	if len(req.Models) > 0 {
 		body["models"] = req.Models
 	}
-	if req.MaxBudget != nil {
-		body["max_budget"] = *req.MaxBudget
+	if req.MaxBudget != nil || req.SyncBudget {
+		body["max_budget"] = req.MaxBudget // nil + SyncBudget → JSON null 清空
 	}
 	if len(req.Metadata) > 0 {
 		body["metadata"] = req.Metadata

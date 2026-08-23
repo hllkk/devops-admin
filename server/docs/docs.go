@@ -318,6 +318,352 @@ const docTemplate = `{
                 }
             }
         },
+        "/gateway/ai-key": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayAiKey"
+                ],
+                "summary": "修改密钥(授权/预算/限流/启停；类型不可改)",
+                "parameters": [
+                    {
+                        "description": "密钥信息(含 aiKeyId)",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.AiKeyOperateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.AiKeyView"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayAiKey"
+                ],
+                "summary": "创建密钥(场景 Key 或管理员手动建部门主 Key)",
+                "parameters": [
+                    {
+                        "description": "密钥信息",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.AiKeyOperateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.AiKeyView"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/ai-key/identity/available-models": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayAiKey"
+                ],
+                "summary": "获取可授权模型列表(发布+激活，含 anthropic 变体标注)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/response.AvailableModelView"
+                                            }
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/ai-key/identity/my": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayAiKey"
+                ],
+                "summary": "获取我的 AI 身份(惰性建主 Key + 主 Key 明文 + 场景 Key 列表 + 可用模型)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.MyIdentityView"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/ai-key/list": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayAiKey"
+                ],
+                "summary": "分页获取密钥列表(管理员视角，不返回 KeyValue)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "密钥类型(精确)",
+                        "name": "keyType",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "归属类型(精确)",
+                        "name": "ownerType",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "归属ID(0=不限)",
+                        "name": "ownerId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "名称(模糊)",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否启用(精确)",
+                        "name": "isActive",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "pageNum",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页大小",
+                        "name": "pageSize",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.PageResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "rows": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/response.AiKeyView"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/ai-key/{ids}": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayAiKey"
+                ],
+                "summary": "批量删除密钥(先删 LiteLLM，失败则本地不动)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "密钥ID列表(逗号分隔)",
+                        "name": "ids",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/ai-key/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayAiKey"
+                ],
+                "summary": "获取密钥详情(管理员视角，不返回 KeyValue)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "密钥ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.AiKeyView"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/gateway/credential": {
             "put": {
                 "consumes": [
@@ -6686,6 +7032,82 @@ const docTemplate = `{
                 }
             }
         },
+        "request.AiKeyOperateParams": {
+            "type": "object",
+            "properties": {
+                "aiKeyId": {
+                    "description": "密钥ID(新增为空)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "budgetDuration": {
+                    "description": "预算周期",
+                    "type": "string"
+                },
+                "budgetHardLimit": {
+                    "description": "硬限",
+                    "type": "boolean"
+                },
+                "budgetLimit": {
+                    "description": "预算上限",
+                    "type": "number"
+                },
+                "description": {
+                    "description": "描述",
+                    "type": "string"
+                },
+                "isActive": {
+                    "description": "是否启用",
+                    "type": "boolean"
+                },
+                "keyType": {
+                    "description": "密钥类型(创建必填)",
+                    "type": "string"
+                },
+                "modelBudgets": {
+                    "description": "按模型预算",
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "modelLimits": {
+                    "description": "per-model限流",
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "models": {
+                    "description": "授权模型(modelKey列表)",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string"
+                },
+                "ownerId": {
+                    "description": "归属ID(创建必填)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "ownerType": {
+                    "description": "归属类型(创建必填)",
+                    "type": "string"
+                },
+                "rateLimitMode": {
+                    "description": "限流模式",
+                    "type": "string"
+                },
+                "rpmLimit": {
+                    "description": "全局RPM",
+                    "type": "integer"
+                },
+                "tpmLimit": {
+                    "description": "全局TPM",
+                    "type": "integer"
+                }
+            }
+        },
         "request.ChangeMyPasswordParams": {
             "type": "object",
             "required": [
@@ -7687,6 +8109,155 @@ const docTemplate = `{
                 }
             }
         },
+        "response.AiKeyView": {
+            "type": "object",
+            "properties": {
+                "aiKeyId": {
+                    "description": "密钥ID(雪花)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "budgetDuration": {
+                    "description": "预算周期",
+                    "type": "string"
+                },
+                "budgetHardLimit": {
+                    "description": "硬限",
+                    "type": "boolean"
+                },
+                "budgetLimit": {
+                    "description": "预算上限",
+                    "type": "number"
+                },
+                "budgetUsed": {
+                    "description": "已用(slice5聚合回填)",
+                    "type": "number"
+                },
+                "createBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "createTime": {
+                    "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
+                    "type": "string"
+                },
+                "description": {
+                    "description": "描述",
+                    "type": "string"
+                },
+                "isActive": {
+                    "description": "是否启用(停用=max_budget=0)",
+                    "type": "boolean"
+                },
+                "keyPrefix": {
+                    "description": "Key前缀(明文前8位+****)",
+                    "type": "string"
+                },
+                "keyType": {
+                    "description": "密钥类型",
+                    "type": "string"
+                },
+                "litellmKeyAlias": {
+                    "description": "LiteLLM key_alias({ownerType}:{ownerId}/{name})",
+                    "type": "string"
+                },
+                "litellmKeyId": {
+                    "description": "LiteLLM key_id",
+                    "type": "string"
+                },
+                "mcps": {
+                    "description": "授权MCP(P2)",
+                    "type": "object"
+                },
+                "modelBudgets": {
+                    "description": "按模型预算(展开)",
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "modelLimits": {
+                    "description": "per-model限流(展开)",
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "models": {
+                    "description": "授权模型(展开)",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "description": "密钥名称(主Key固定\"主Key\")",
+                    "type": "string"
+                },
+                "ownerId": {
+                    "description": "归属ID(纯逻辑关联)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "ownerType": {
+                    "description": "归属类型",
+                    "type": "string"
+                },
+                "rateLimitMode": {
+                    "description": "限流模式",
+                    "type": "string"
+                },
+                "rpmLimit": {
+                    "description": "全局RPM",
+                    "type": "integer"
+                },
+                "skills": {
+                    "description": "授权Skill(P2)",
+                    "type": "object"
+                },
+                "tpmLimit": {
+                    "description": "全局TPM",
+                    "type": "integer"
+                },
+                "updateBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "updateTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.AvailableModelView": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "description": "类别",
+                    "type": "string"
+                },
+                "hasAnthropicDeployment": {
+                    "description": "有anthropic活跃部署",
+                    "type": "boolean"
+                },
+                "modelId": {
+                    "description": "模型ID",
+                    "type": "string",
+                    "example": "0"
+                },
+                "modelKey": {
+                    "description": "路由名(openai组)",
+                    "type": "string"
+                },
+                "modelKeyAnthropic": {
+                    "description": "anthropic变体路由名(无则空)",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "展示名",
+                    "type": "string"
+                },
+                "requiresApproval": {
+                    "description": "订阅需审批",
+                    "type": "boolean"
+                }
+            }
+        },
         "response.CredentialView": {
             "type": "object",
             "properties": {
@@ -8057,6 +8628,69 @@ const docTemplate = `{
                 "visibilityType": {
                     "description": "可见范围",
                     "type": "string"
+                }
+            }
+        },
+        "response.MyIdentityView": {
+            "type": "object",
+            "properties": {
+                "availableModels": {
+                    "description": "可用模型(供申请新Key选)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.AvailableModelView"
+                    }
+                },
+                "budgetDuration": {
+                    "description": "预算周期",
+                    "type": "string"
+                },
+                "budgetHardLimit": {
+                    "description": "硬限",
+                    "type": "boolean"
+                },
+                "budgetLimit": {
+                    "description": "预算上限",
+                    "type": "number"
+                },
+                "isActive": {
+                    "description": "主Key是否启用",
+                    "type": "boolean"
+                },
+                "keyValue": {
+                    "description": "主Key明文(仅identity/my返回)",
+                    "type": "string"
+                },
+                "modelBudgets": {
+                    "description": "按模型预算",
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "models": {
+                    "description": "已授权模型",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "rateLimitMode": {
+                    "description": "限流模式",
+                    "type": "string"
+                },
+                "rpmLimit": {
+                    "description": "全局RPM",
+                    "type": "integer"
+                },
+                "sceneKeys": {
+                    "description": "我的场景Key列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.AiKeyView"
+                    }
+                },
+                "tpmLimit": {
+                    "description": "全局TPM",
+                    "type": "integer"
                 }
             }
         },
