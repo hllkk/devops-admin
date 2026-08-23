@@ -11,6 +11,7 @@ import { useSvgIcon } from '@/hooks/common/icon';
 import { getRgb } from '@sa/color';
 import { ALL_MODULES, MODULE_CONFIG, type RouteModule } from '@/constants/module';
 import { $t } from '@/locales';
+import { fetchGetMyIdentity, fetchGetDashboardOverview, fetchGetDashboardTrend } from '@/service/api/gateway';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import SystemLogo from '@/components/common/system-logo.vue';
 import defaultAvatar from '@/assets/imgs/soybean.jpg';
@@ -73,80 +74,12 @@ function handleUserMenu(key: string) {
   }
 }
 
-// ============ MOCK 数据：AI 网关后端就绪后替换为真实接口 ============
-// 当前 devops-admin 的 AI 网关后端尚未实现，个人中心的 AI 身份 / 用量 / 申请
-// 数据用前端假数据跑通展示；后端 /gateway/identity/* 就绪后改为真实请求。
-interface IdentityKey {
-  /** API Key 明文（仅前端脱敏展示，真实场景由后端按需下发） */
-  keyValue: string;
-  /** 是否激活 */
-  isActive: boolean;
-  /** 预算口径 */
-  budgetScope: 'unified' | 'per_type' | 'per_resource';
-  /** 统一预算上限（null 表示不限） */
-  budgetLimit: number | null;
-  /** 分类型预算：模型总额 */
-  budgetModelsTotal: number | null;
-  /** 分类型预算：MCP 总额 */
-  budgetMcpsTotal: number | null;
-  /** 已授权模型 */
-  models: string[];
-  /** 已授权 MCP（ID 列表） */
-  mcps: number[];
-  /** 已授权 Skill（ID 列表） */
-  skills: number[];
-}
-interface UsageKpi {
-  totalCost: number;
-  totalRequests: number;
-}
-interface TrendItem {
-  period: string;
-  cost: number;
-}
-interface ResourceApplication {
-  id: number;
-  resourceType: 'model' | 'mcp' | 'skill' | 'agent';
-  resourceId: number;
-  resourceName: string;
-  status: 'pending' | 'approved' | 'rejected';
-}
-
-const mainKey = ref<IdentityKey | null>(null);
-const kpi = ref<UsageKpi | null>(null);
-const trend = ref<TrendItem[]>([]);
-const applications = ref<ResourceApplication[]>([]);
-const mcpNames = ref<Record<number, string>>({});
-const skillNames = ref<Record<number, string>>({});
-
-const MOCK_KEY: IdentityKey = {
-  keyValue: 'sk-devops-9f3c2a1b7e8d4c5f0a6b3c2d1e8f',
-  isActive: true,
-  budgetScope: 'unified',
-  budgetLimit: 500,
-  budgetModelsTotal: null,
-  budgetMcpsTotal: null,
-  models: ['gpt-4o', 'claude-3.5-sonnet', 'deepseek-chat', 'qwen-max'],
-  mcps: [101, 102],
-  skills: [201, 202, 203]
-};
-const MOCK_KPI: UsageKpi = { totalCost: 326.84, totalRequests: 18420 };
-const MOCK_TREND: TrendItem[] = [
-  { period: '07-23', cost: 28.5 },
-  { period: '07-24', cost: 42.1 },
-  { period: '07-25', cost: 35.7 },
-  { period: '07-26', cost: 51.3 },
-  { period: '07-27', cost: 18.9 },
-  { period: '07-28', cost: 62.4 },
-  { period: '07-29', cost: 87.94 }
-];
-const MOCK_APPLICATIONS: ResourceApplication[] = [
-  { id: 1, resourceType: 'model', resourceId: 0, resourceName: 'gpt-4o', status: 'approved' },
-  { id: 2, resourceType: 'mcp', resourceId: 103, resourceName: 'MCP-103', status: 'pending' },
-  { id: 3, resourceType: 'skill', resourceId: 204, resourceName: 'Skill-204', status: 'rejected' }
-];
-const MOCK_MCP_NAMES: Record<number, string> = { 101: '文件检索', 102: '代码执行', 103: '数据库查询' };
-const MOCK_SKILL_NAMES: Record<number, string> = { 201: 'SQL 生成', 202: '文档摘要', 203: '代码评审', 204: '数据分析' };
+// ============ AI 身份/用量：真实接口（P1 后端已就绪） ============
+// identity/my 惰性建主 Key + 主 Key 明文 + 场景 Key 列表 + 可用模型；
+// 用量 KPI/趋势调 dashboard scope=self；mcps/skills/申请列表为 P2 资源申请能力，P1 占位。
+const mainKey = ref<Api.Gateway.MyIdentity | null>(null);
+const kpi = ref<Api.Gateway.DashboardOverview | null>(null);
+const trend = ref<Api.Gateway.TrendItem[]>([]);
 
 const fullKey = computed(() => mainKey.value?.keyValue ?? '');
 const maskedKey = computed(() => {
@@ -158,30 +91,12 @@ const displayKey = computed(() => (showFullKey.value ? fullKey.value : maskedKey
 
 const budgetDisplay = computed(() => {
   const key = mainKey.value;
-  if (!key) return $t('page.home.identity.budgetUnlimited');
-  if (key.budgetScope === 'unified') {
-    return key.budgetLimit ? `¥${key.budgetLimit}` : $t('page.home.identity.budgetUnlimited');
-  }
-  if (key.budgetScope === 'per_type') {
-    const parts: string[] = [];
-    if (key.budgetModelsTotal) parts.push($t('page.home.identity.budgetModels', { amount: key.budgetModelsTotal }));
-    if (key.budgetMcpsTotal) parts.push($t('page.home.identity.budgetMcps', { amount: key.budgetMcpsTotal }));
-    return parts.length ? parts.join(' / ') : $t('page.home.identity.budgetUnlimited');
-  }
-  return $t('page.home.identity.budgetPerResource');
+  // P1 统一预算口径(budgetLimit)；多维预算(budgetScope per_type/per_resource)留 P3 成本效能
+  if (!key || key.budgetLimit === null) return $t('page.home.identity.budgetUnlimited');
+  return `¥${key.budgetLimit}`;
 });
 
-const totalBudget = computed(() => {
-  const key = mainKey.value;
-  if (!key) return null;
-  if (key.budgetScope === 'unified') return key.budgetLimit ?? null;
-  if (key.budgetScope === 'per_type') {
-    const models = key.budgetModelsTotal ?? 0;
-    const mcps = key.budgetMcpsTotal ?? 0;
-    return models + mcps > 0 ? models + mcps : null;
-  }
-  return null;
-});
+const totalBudget = computed(() => mainKey.value?.budgetLimit ?? null);
 
 const budgetUsedPercent = computed(() => {
   const budget = totalBudget.value;
@@ -263,55 +178,36 @@ watch(chartColorRgb, () => {
   if (trend.value.length) applyChartColor();
 });
 
-function getTypeLabel(type: ResourceApplication['resourceType']): string {
-  const map: Record<ResourceApplication['resourceType'], string> = {
-    model: $t('page.home.identity.typeModel'),
-    mcp: $t('page.home.identity.typeMcp'),
-    skill: $t('page.home.identity.typeSkill'),
-    agent: $t('page.home.identity.typeAgent')
-  };
-  return map[type];
-}
-
-function getStatusLabel(status: ResourceApplication['status']): string {
-  if (status === 'pending') return $t('page.home.identity.statusPending');
-  if (status === 'approved') return $t('page.home.identity.statusApproved');
-  return $t('page.home.identity.statusRejected');
-}
-
-function getStatusTagType(status: ResourceApplication['status']): 'warning' | 'success' | 'error' {
-  if (status === 'approved') return 'success';
-  if (status === 'rejected') return 'error';
-  return 'warning';
-}
-
-function getStatusIcon(status: ResourceApplication['status']): string {
-  if (status === 'pending') return 'lucide:clock';
-  if (status === 'approved') return 'lucide:circle-check';
-  return 'lucide:circle-x';
-}
+// P2 资源申请审批落地后补 getTypeLabel/getStatusLabel 等辅助函数与"我的申请"区
 
 function handleCopy() {
   if (!fullKey.value) return;
   copyText(fullKey.value);
 }
 
+async function loadIdentity() {
+  // identity/my 惰性建主 Key（首次访问 home 较慢，事务内调 LiteLLM CreateKey）
+  const { data, error } = await fetchGetMyIdentity();
+  if (!error && data) mainKey.value = data;
+}
+
+async function loadUsage() {
+  const [overview, trendRes] = await Promise.all([
+    fetchGetDashboardOverview({ scope: 'self' }),
+    fetchGetDashboardTrend({ scope: 'self' })
+  ]);
+  if (!overview.error && overview.data) kpi.value = overview.data;
+  if (!trendRes.error && trendRes.data) trend.value = trendRes.data;
+}
+
 onMounted(async () => {
-  // MOCK：模拟异步加载；后端就绪后替换为 Promise.all([...真实接口])
-  await new Promise(resolve => {
-    setTimeout(resolve, 300);
-  });
-  mainKey.value = MOCK_KEY;
-  kpi.value = MOCK_KPI;
-  trend.value = MOCK_TREND;
-  applications.value = MOCK_APPLICATIONS;
-  mcpNames.value = MOCK_MCP_NAMES;
-  skillNames.value = MOCK_SKILL_NAMES;
+  // 真实接口：身份 + 用量(KPI/趋势) 并行加载；申请列表 P2 资源申请能力，P1 占位
+  await Promise.all([loadIdentity(), loadUsage()]);
   isLoading.value = false;
 
   if (trend.value.length) {
     updateTrendChart(opts => {
-      opts.xAxis.data = trend.value.map(item => item.period);
+      opts.xAxis.data = trend.value.map(item => item.date);
       opts.series[0].data = trend.value.map(item => item.cost);
       return opts;
     });
@@ -521,18 +417,6 @@ onMounted(async () => {
                         {{ mainKey.models.length }}
                       </div>
                     </div>
-                    <div>
-                      <div class="text-10px tracking-1px text-slate-400">{{ $t('page.home.identity.mcpLabel') }}</div>
-                      <div class="mt-2px text-12px font-bold text-slate-900 dark:text-slate-100">
-                        {{ mainKey.mcps.length }}
-                      </div>
-                    </div>
-                    <div>
-                      <div class="text-10px tracking-1px text-slate-400">{{ $t('page.home.identity.skillLabel') }}</div>
-                      <div class="mt-2px text-12px font-bold text-slate-900 dark:text-slate-100">
-                        {{ mainKey.skills.length }}
-                      </div>
-                    </div>
                   </div>
                 </div>
                 <div v-else class="mt-20px text-center text-14px text-slate-400">
@@ -564,32 +448,16 @@ onMounted(async () => {
               <div class="mb-12px flex items-center gap-8px">
                 <SvgIcon icon="lucide:server" class="text-16px text-emerald-600" />
                 <span class="text-14px font-medium">{{ $t('page.home.identity.resMcp') }}</span>
-                <span class="ml-auto text-12px text-slate-400">
-                  {{ $t('page.home.identity.resCount', { count: mainKey.mcps.length }) }}
-                </span>
               </div>
-              <div v-if="mainKey.mcps.length" class="flex flex-wrap gap-8px">
-                <NTag v-for="id in mainKey.mcps" :key="id" type="success" size="small" round :bordered="false">
-                  {{ mcpNames[id] || `#${id}` }}
-                </NTag>
-              </div>
-              <p v-else class="text-12px text-slate-400">{{ $t('page.home.identity.resEmptyMarket') }}</p>
+              <p class="text-12px text-slate-400">{{ $t('page.gateway.comingSoon') }}</p>
             </NCard>
 
             <NCard :bordered="false" size="small" class="card-wrapper shadow-md">
               <div class="mb-12px flex items-center gap-8px">
                 <SvgIcon icon="lucide:sparkles" class="text-16px text-amber-500" />
                 <span class="text-14px font-medium">{{ $t('page.home.identity.resSkill') }}</span>
-                <span class="ml-auto text-12px text-slate-400">
-                  {{ $t('page.home.identity.resCount', { count: mainKey.skills.length }) }}
-                </span>
               </div>
-              <div v-if="mainKey.skills.length" class="flex flex-wrap gap-8px">
-                <NTag v-for="id in mainKey.skills" :key="id" type="warning" size="small" round :bordered="false">
-                  {{ skillNames[id] || `#${id}` }}
-                </NTag>
-              </div>
-              <p v-else class="text-12px text-slate-400">{{ $t('page.home.identity.resEmptyMarket') }}</p>
+              <p class="text-12px text-slate-400">{{ $t('page.gateway.comingSoon') }}</p>
             </NCard>
           </section>
 
@@ -653,39 +521,17 @@ onMounted(async () => {
             </div>
           </NCard>
 
-          <!-- 我的申请 -->
+          <!-- 我的申请（P2 资源申请审批能力，P1 占位） -->
           <NCard
-            v-if="applications.length"
             v-show="activeTab === 'identity'"
             :bordered="false"
             size="small"
             class="card-wrapper shadow-md"
             :title="$t('page.home.identity.appsTitle')"
           >
-            <div class="flex flex-col gap-8px">
-              <div
-                v-for="app in applications"
-                :key="app.id"
-                class="flex items-center gap-12px rounded-8px bg-slate-50 px-16px py-10px dark:bg-slate-700/40"
-              >
-                <SvgIcon
-                  :icon="getStatusIcon(app.status)"
-                  class="shrink-0 text-16px"
-                  :class="
-                    app.status === 'pending'
-                      ? 'text-amber-500'
-                      : app.status === 'approved'
-                        ? 'text-green-500'
-                        : 'text-red-400'
-                  "
-                />
-                <NTag size="small" :bordered="false">{{ getTypeLabel(app.resourceType) }}</NTag>
-                <span class="min-w-0 flex-1 truncate text-14px">{{ app.resourceName || `#${app.resourceId}` }}</span>
-                <NTag size="small" round :bordered="false" :type="getStatusTagType(app.status)">
-                  {{ getStatusLabel(app.status) }}
-                </NTag>
-              </div>
-            </div>
+            <p class="px-16px py-24px text-center text-14px text-slate-400">
+              {{ $t('page.gateway.comingSoon') }}
+            </p>
           </NCard>
         </template>
       </div>

@@ -30,8 +30,10 @@ const loading = ref(false);
 async function fetchProviders() {
   loading.value = true;
   try {
-    const res = await fetchGetProviderList({ pageNum: 1, pageSize: 100 });
-    providers.value = res.rows;
+    const { data, error } = await fetchGetProviderList({ pageNum: 1, pageSize: 100 });
+    if (!error && data) {
+      providers.value = data.rows;
+    }
   } finally {
     loading.value = false;
   }
