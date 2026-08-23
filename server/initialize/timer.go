@@ -37,4 +37,8 @@ func Timer() {
 		_, err := (&gatewayService.UsageSyncService{}).ReconcileLLMLogs(ctx)
 		return err
 	})
+	task.Register("AggregateUsage", "聚合用量到日桶+重算预算+超限停用闭环", func(ctx context.Context, _ json.RawMessage) error {
+		_, err := (&gatewayService.UsageAggregateService{}).AggregateUsage(ctx)
+		return err
+	})
 }

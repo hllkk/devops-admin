@@ -82,6 +82,7 @@ func RegisterTables() {
 		gateway.AiKey{},
 		gateway.LlmLog{},
 		gateway.SyncState{},
+		gateway.CostSummaryDaily{},
 	)
 
 	if err != nil {

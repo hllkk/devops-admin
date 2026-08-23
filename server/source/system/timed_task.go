@@ -50,6 +50,7 @@ func (i *initTimedTask) InitializeData(ctx context.Context) (context.Context, er
 		{Name: "CleanStaleUploads", Description: "定时清理过期大文件上传会话", Spec: "@hourly", ExecutorType: sysModel.TimedTaskExecutorMethod, MethodName: "CleanStaleUploads", Enabled: true},
 		{Name: "SyncLLMLogs", Description: "同步LiteLLM用量日志(归因+成本重算,复合游标增量)", Spec: "*/5 * * * *", ExecutorType: sysModel.TimedTaskExecutorMethod, MethodName: "SyncLLMLogs", Enabled: true},
 		{Name: "ReconcileLLMLogs", Description: "对账回灌LiteLLM用量漏单(近30天NOT EXISTS兜底)", Spec: "0 * * * *", ExecutorType: sysModel.TimedTaskExecutorMethod, MethodName: "ReconcileLLMLogs", Enabled: true},
+		{Name: "AggregateUsage", Description: "聚合用量到日桶+重算预算+超限停用闭环", Spec: "*/5 * * * *", ExecutorType: sysModel.TimedTaskExecutorMethod, MethodName: "AggregateUsage", Enabled: true},
 	}
 	if err := db.Create(&entities).Error; err != nil {
 		return ctx, errors.Wrap(err, sysModel.SysTimedTask{}.TableName()+"表数据初始化失败!")

@@ -996,6 +996,259 @@
                 }
             }
         },
+        "/gateway/dashboard/aggregate": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayDashboard"
+                ],
+                "summary": "手动触发用量聚合(滚动重建+budget重算+超限停用闭环)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/dashboard/budget": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayDashboard"
+                ],
+                "summary": "预算执行率(按Key)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "范围(all/self)",
+                        "name": "scope",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/response.BudgetItem"
+                                            }
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/dashboard/overview": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayDashboard"
+                ],
+                "summary": "看板总览(总成本/请求数/token/预算汇总)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "开始日期(YYYY-MM-DD,默认近30天)",
+                        "name": "startDate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束日期",
+                        "name": "endDate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "范围(all/self,非超管强制self)",
+                        "name": "scope",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.DashboardOverview"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/dashboard/top": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayDashboard"
+                ],
+                "summary": "成本Top10(按维度 user/model/aiKey)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "维度(user/model/aiKey,默认user)",
+                        "name": "dimension",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "开始日期",
+                        "name": "startDate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束日期",
+                        "name": "endDate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "范围(all/self)",
+                        "name": "scope",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/response.TopItem"
+                                            }
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/dashboard/trend": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayDashboard"
+                ],
+                "summary": "成本趋势(按日)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "开始日期",
+                        "name": "startDate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束日期",
+                        "name": "endDate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "范围(all/self)",
+                        "name": "scope",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/response.TrendItem"
+                                            }
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/gateway/model": {
             "put": {
                 "consumes": [
@@ -8525,6 +8778,44 @@
                 }
             }
         },
+        "response.BudgetItem": {
+            "type": "object",
+            "properties": {
+                "aiKeyId": {
+                    "description": "密钥ID",
+                    "type": "string",
+                    "example": "0"
+                },
+                "budgetLimit": {
+                    "description": "预算限额(¥,0=不限)",
+                    "type": "number"
+                },
+                "budgetUsed": {
+                    "description": "已用(¥)",
+                    "type": "number"
+                },
+                "hardLimit": {
+                    "description": "硬限",
+                    "type": "boolean"
+                },
+                "isActive": {
+                    "description": "是否启用",
+                    "type": "boolean"
+                },
+                "name": {
+                    "description": "密钥名称",
+                    "type": "string"
+                },
+                "ownerName": {
+                    "description": "归属(用户名/部门名)",
+                    "type": "string"
+                },
+                "usageRate": {
+                    "description": "执行率(%)",
+                    "type": "number"
+                }
+            }
+        },
         "response.CredentialView": {
             "type": "object",
             "properties": {
@@ -8577,6 +8868,47 @@
                 },
                 "updateTime": {
                     "type": "string"
+                }
+            }
+        },
+        "response.DashboardOverview": {
+            "type": "object",
+            "properties": {
+                "budgetLimitTotal": {
+                    "description": "预算限额总额(有预算的Key)",
+                    "type": "number"
+                },
+                "budgetUsedTotal": {
+                    "description": "预算已用总额",
+                    "type": "number"
+                },
+                "cacheReadTokens": {
+                    "description": "缓存读token",
+                    "type": "integer"
+                },
+                "inputTokens": {
+                    "description": "输入token",
+                    "type": "integer"
+                },
+                "internalCost": {
+                    "description": "内部成本(¥,P1同external)",
+                    "type": "number"
+                },
+                "outputTokens": {
+                    "description": "输出token",
+                    "type": "integer"
+                },
+                "totalCost": {
+                    "description": "总成本(¥,external)",
+                    "type": "number"
+                },
+                "totalRequests": {
+                    "description": "总请求数",
+                    "type": "integer"
+                },
+                "totalTokens": {
+                    "description": "总token",
+                    "type": "integer"
                 }
             }
         },
@@ -9077,6 +9409,40 @@
             "properties": {
                 "user": {
                     "$ref": "#/definitions/system.SysUser"
+                }
+            }
+        },
+        "response.TopItem": {
+            "type": "object",
+            "properties": {
+                "cost": {
+                    "description": "成本(¥)",
+                    "type": "number"
+                },
+                "name": {
+                    "description": "维度值(用户名/模型名/Key名)",
+                    "type": "string"
+                },
+                "requests": {
+                    "description": "请求数",
+                    "type": "integer"
+                }
+            }
+        },
+        "response.TrendItem": {
+            "type": "object",
+            "properties": {
+                "cost": {
+                    "description": "当日成本(¥)",
+                    "type": "number"
+                },
+                "date": {
+                    "description": "业务日(YYYY-MM-DD)",
+                    "type": "string"
+                },
+                "requests": {
+                    "description": "当日请求数",
+                    "type": "integer"
                 }
             }
         },

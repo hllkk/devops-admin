@@ -10,6 +10,7 @@ type RouterGroup struct {
 	DeploymentRouter
 	AiKeyRouter
 	UsageRouter
+	DashboardRouter
 }
 
 var (
@@ -19,4 +20,5 @@ var (
 	deploymentApi  = v1.ApiGroupApp.GatewayApiGroup.DeploymentApi
 	aiKeyApi       = v1.ApiGroupApp.GatewayApiGroup.AiKeyApi
 	usageApi        = v1.ApiGroupApp.GatewayApiGroup.UsageApi
+	dashboardApi   = v1.ApiGroupApp.GatewayApiGroup.DashboardApi
 )

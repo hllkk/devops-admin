@@ -10,13 +10,16 @@ type ApiGroup struct {
 	DeploymentApi
 	AiKeyApi
 	UsageApi
+	DashboardApi
 }
 
 var (
-	providerService    = service.ServiceGroupApp.GatewayServiceGroup.ProviderService
-	credentialService  = service.ServiceGroupApp.GatewayServiceGroup.CredentialService
-	modelService       = service.ServiceGroupApp.GatewayServiceGroup.ModelService
-	deploymentService  = service.ServiceGroupApp.GatewayServiceGroup.DeploymentService
-	aiKeyService       = service.ServiceGroupApp.GatewayServiceGroup.AiKeyService
-	usageService       = service.ServiceGroupApp.GatewayServiceGroup.UsageSyncService
+	providerService        = service.ServiceGroupApp.GatewayServiceGroup.ProviderService
+	credentialService      = service.ServiceGroupApp.GatewayServiceGroup.CredentialService
+	modelService           = service.ServiceGroupApp.GatewayServiceGroup.ModelService
+	deploymentService      = service.ServiceGroupApp.GatewayServiceGroup.DeploymentService
+	aiKeyService           = service.ServiceGroupApp.GatewayServiceGroup.AiKeyService
+	usageService           = service.ServiceGroupApp.GatewayServiceGroup.UsageSyncService
+	usageAggregateService  = service.ServiceGroupApp.GatewayServiceGroup.UsageAggregateService
+	dashboardService       = service.ServiceGroupApp.GatewayServiceGroup.DashboardService
 )

@@ -1009,6 +1009,34 @@ definitions:
         description: 订阅需审批
         type: boolean
     type: object
+  response.BudgetItem:
+    properties:
+      aiKeyId:
+        description: 密钥ID
+        example: "0"
+        type: string
+      budgetLimit:
+        description: 预算限额(¥,0=不限)
+        type: number
+      budgetUsed:
+        description: 已用(¥)
+        type: number
+      hardLimit:
+        description: 硬限
+        type: boolean
+      isActive:
+        description: 是否启用
+        type: boolean
+      name:
+        description: 密钥名称
+        type: string
+      ownerName:
+        description: 归属(用户名/部门名)
+        type: string
+      usageRate:
+        description: 执行率(%)
+        type: number
+    type: object
   response.CredentialView:
     properties:
       createBy:
@@ -1052,6 +1080,36 @@ definitions:
         type: string
       updateTime:
         type: string
+    type: object
+  response.DashboardOverview:
+    properties:
+      budgetLimitTotal:
+        description: 预算限额总额(有预算的Key)
+        type: number
+      budgetUsedTotal:
+        description: 预算已用总额
+        type: number
+      cacheReadTokens:
+        description: 缓存读token
+        type: integer
+      inputTokens:
+        description: 输入token
+        type: integer
+      internalCost:
+        description: 内部成本(¥,P1同external)
+        type: number
+      outputTokens:
+        description: 输出token
+        type: integer
+      totalCost:
+        description: 总成本(¥,external)
+        type: number
+      totalRequests:
+        description: 总请求数
+        type: integer
+      totalTokens:
+        description: 总token
+        type: integer
     type: object
   response.DeploymentTestResult:
     properties:
@@ -1425,6 +1483,30 @@ definitions:
     properties:
       user:
         $ref: '#/definitions/system.SysUser'
+    type: object
+  response.TopItem:
+    properties:
+      cost:
+        description: 成本(¥)
+        type: number
+      name:
+        description: 维度值(用户名/模型名/Key名)
+        type: string
+      requests:
+        description: 请求数
+        type: integer
+    type: object
+  response.TrendItem:
+    properties:
+      cost:
+        description: 当日成本(¥)
+        type: number
+      date:
+        description: 业务日(YYYY-MM-DD)
+        type: string
+      requests:
+        description: 当日请求数
+        type: integer
     type: object
   system.CaptchaResult:
     properties:
@@ -3270,6 +3352,155 @@ paths:
       summary: 手动重同步全部凭证到 LiteLLM(投影比对，漂移兜底)
       tags:
       - GatewayCredential
+  /gateway/dashboard/aggregate:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  type: object
+                msg:
+                  type: string
+              type: object
+      summary: 手动触发用量聚合(滚动重建+budget重算+超限停用闭环)
+      tags:
+      - GatewayDashboard
+  /gateway/dashboard/budget:
+    get:
+      parameters:
+      - description: 范围(all/self)
+        in: query
+        name: scope
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/response.BudgetItem'
+                  type: array
+                msg:
+                  type: string
+              type: object
+      summary: 预算执行率(按Key)
+      tags:
+      - GatewayDashboard
+  /gateway/dashboard/overview:
+    get:
+      parameters:
+      - description: 开始日期(YYYY-MM-DD,默认近30天)
+        in: query
+        name: startDate
+        type: string
+      - description: 结束日期
+        in: query
+        name: endDate
+        type: string
+      - description: 范围(all/self,非超管强制self)
+        in: query
+        name: scope
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.DashboardOverview'
+                msg:
+                  type: string
+              type: object
+      summary: 看板总览(总成本/请求数/token/预算汇总)
+      tags:
+      - GatewayDashboard
+  /gateway/dashboard/top:
+    get:
+      parameters:
+      - description: 维度(user/model/aiKey,默认user)
+        in: query
+        name: dimension
+        type: string
+      - description: 开始日期
+        in: query
+        name: startDate
+        type: string
+      - description: 结束日期
+        in: query
+        name: endDate
+        type: string
+      - description: 范围(all/self)
+        in: query
+        name: scope
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/response.TopItem'
+                  type: array
+                msg:
+                  type: string
+              type: object
+      summary: 成本Top10(按维度 user/model/aiKey)
+      tags:
+      - GatewayDashboard
+  /gateway/dashboard/trend:
+    get:
+      parameters:
+      - description: 开始日期
+        in: query
+        name: startDate
+        type: string
+      - description: 结束日期
+        in: query
+        name: endDate
+        type: string
+      - description: 范围(all/self)
+        in: query
+        name: scope
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/response.TrendItem'
+                  type: array
+                msg:
+                  type: string
+              type: object
+      summary: 成本趋势(按日)
+      tags:
+      - GatewayDashboard
   /gateway/model:
     post:
       consumes:
