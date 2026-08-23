@@ -710,6 +710,23 @@ declare namespace App {
             empty: string;
           };
         };
+        gateway: {
+          title: string;
+          comingSoon: string;
+          tab: {
+            provider: string;
+            model: string;
+            aiKey: string;
+            usage: string;
+          };
+          provider: {
+            title: string;
+            searchPlaceholder: string;
+            empty: string;
+            selectPrompt: string;
+            credPlaceholder: string;
+          };
+        };
         system: {
           user: {
             title: string;

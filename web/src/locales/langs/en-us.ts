@@ -525,6 +525,23 @@ const local: App.I18n.Schema = {
         empty: 'No apps available'
       }
     },
+    gateway: {
+      title: 'AI Gateway',
+      comingSoon: 'Coming soon',
+      tab: {
+        provider: 'Providers',
+        model: 'Models',
+        aiKey: 'AI Keys',
+        usage: 'Usage'
+      },
+      provider: {
+        title: 'Providers',
+        searchPlaceholder: 'Search provider name',
+        empty: 'No providers',
+        selectPrompt: 'Select a provider on the left',
+        credPlaceholder: 'Select a provider to manage its credentials (available after the credential backend lands)'
+      }
+    },
     system: {
       user: {
         title: 'User Management',

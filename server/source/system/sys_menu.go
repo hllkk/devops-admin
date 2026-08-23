@@ -144,6 +144,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			MenuName:  "route.gateway",
 			MenuType:  "C",
 			Path:      "gateway",
+			ApiPrefix: "/gateway, /gateway/*",
 			Component: "_gateway/gateway/index",
 			Icon:      "mdi:robot-outline",
 			Visible:   "0",

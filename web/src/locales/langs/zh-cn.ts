@@ -521,6 +521,23 @@ const local: App.I18n.Schema = {
         empty: '暂无可用的应用'
       }
     },
+    gateway: {
+      title: 'AI 网关管理',
+      comingSoon: '敬请期待',
+      tab: {
+        provider: '供应商',
+        model: '模型',
+        aiKey: 'AI 密钥',
+        usage: '用量'
+      },
+      provider: {
+        title: '供应商',
+        searchPlaceholder: '搜索供应商名称',
+        empty: '暂无供应商',
+        selectPrompt: '请选择左侧供应商',
+        credPlaceholder: '选中供应商后展示凭证管理（凭证后端落地后补全）'
+      }
+    },
     system: {
       user: {
         title: '用户管理',
