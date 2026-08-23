@@ -80,6 +80,8 @@ func RegisterTables() {
 		gateway.ModelDeployment{},
 		gateway.ModelVisibility{},
 		gateway.AiKey{},
+		gateway.LlmLog{},
+		gateway.SyncState{},
 	)
 
 	if err != nil {

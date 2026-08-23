@@ -1950,6 +1950,181 @@ const docTemplate = `{
                 }
             }
         },
+        "/gateway/usage/list": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayUsage"
+                ],
+                "summary": "分页获取用量日志(管理员视角，按用户/密钥/部署/模型/时间过滤)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "归因用户(0=不限)",
+                        "name": "userId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "归因密钥(0=不限)",
+                        "name": "aiKeyId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "归因部署(0=不限)",
+                        "name": "deploymentId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "模型名(模糊)",
+                        "name": "model",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "供应商(精确)",
+                        "name": "provider",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "开始时间起(ISO8601)",
+                        "name": "startTime",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束时间止(ISO8601)",
+                        "name": "endTime",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "pageNum",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页大小",
+                        "name": "pageSize",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.PageResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "rows": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/gateway.LlmLog"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/usage/reconcile": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayUsage"
+                ],
+                "summary": "手动触发对账回灌 LiteLLM 漏单(近30天 NOT EXISTS 兜底)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/usage/sync": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayUsage"
+                ],
+                "summary": "手动触发 LiteLLM 用量回流(归因+成本重算，复合游标增量幂等)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/init/autoInitDB": {
             "post": {
                 "produces": [
@@ -6979,6 +7154,106 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "gateway.LlmLog": {
+            "type": "object",
+            "properties": {
+                "aiKeyId": {
+                    "description": "归因AiKey",
+                    "type": "string",
+                    "example": "0"
+                },
+                "cacheCreationTokens": {
+                    "description": "cache_creation",
+                    "type": "integer"
+                },
+                "cacheReadTokens": {
+                    "description": "cache_read",
+                    "type": "integer"
+                },
+                "callType": {
+                    "description": "call_type",
+                    "type": "string"
+                },
+                "completionTokens": {
+                    "description": "completion_tokens",
+                    "type": "integer"
+                },
+                "createTime": {
+                    "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
+                    "type": "string"
+                },
+                "deploymentId": {
+                    "description": "归因ModelDeployment",
+                    "type": "string",
+                    "example": "0"
+                },
+                "durationMs": {
+                    "description": "duration_ms",
+                    "type": "integer"
+                },
+                "endedAt": {
+                    "description": "ended_at(UTC)",
+                    "type": "string"
+                },
+                "externalCost": {
+                    "description": "external_cost",
+                    "type": "number"
+                },
+                "internalCost": {
+                    "description": "internal_cost",
+                    "type": "number"
+                },
+                "logId": {
+                    "description": "日志ID(雪花)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "metadata": {
+                    "description": "metadata",
+                    "type": "object"
+                },
+                "model": {
+                    "description": "请求时 model_name(含前缀/变体)",
+                    "type": "string"
+                },
+                "promptTokens": {
+                    "description": "prompt_tokens",
+                    "type": "integer"
+                },
+                "provider": {
+                    "description": "custom_llm_provider",
+                    "type": "string"
+                },
+                "requestId": {
+                    "description": "LiteLLM request_id",
+                    "type": "string"
+                },
+                "sessionId": {
+                    "description": "session_id",
+                    "type": "string"
+                },
+                "startedAt": {
+                    "description": "started_at(UTC)",
+                    "type": "string"
+                },
+                "syncedAt": {
+                    "description": "synced_at",
+                    "type": "string"
+                },
+                "totalTokens": {
+                    "description": "total_tokens",
+                    "type": "integer"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "userId": {
+                    "description": "归因用户(纯逻辑关联 sys_users)",
+                    "type": "string",
+                    "example": "0"
+                }
+            }
+        },
         "gateway.Provider": {
             "type": "object",
             "properties": {

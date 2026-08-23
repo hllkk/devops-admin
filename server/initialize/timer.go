@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/hllkk/devops-admin/server/global"
+	gatewayService "github.com/hllkk/devops-admin/server/service/gateway"
 	mediaService "github.com/hllkk/devops-admin/server/service/media"
 	"github.com/hllkk/devops-admin/server/service/system"
 	"github.com/hllkk/devops-admin/server/task"
@@ -27,5 +28,13 @@ func Timer() {
 	task.Register("CleanStaleUploads", "清理过期大文件上传会话", func(ctx context.Context, _ json.RawMessage) error {
 		svc := mediaService.MediaUploadService{}
 		return svc.CleanupStale(ctx, global.OPS_CONFIG.Media.SessionTTL)
+	})
+	task.Register("SyncLLMLogs", "同步LiteLLM用量日志(归因+成本重算)", func(ctx context.Context, _ json.RawMessage) error {
+		_, err := (&gatewayService.UsageSyncService{}).SyncLLMLogs(ctx)
+		return err
+	})
+	task.Register("ReconcileLLMLogs", "对账回灌LiteLLM用量漏单", func(ctx context.Context, _ json.RawMessage) error {
+		_, err := (&gatewayService.UsageSyncService{}).ReconcileLLMLogs(ctx)
+		return err
 	})
 }

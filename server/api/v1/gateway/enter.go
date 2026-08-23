@@ -9,6 +9,7 @@ type ApiGroup struct {
 	ModelApi
 	DeploymentApi
 	AiKeyApi
+	UsageApi
 }
 
 var (
@@ -17,4 +18,5 @@ var (
 	modelService       = service.ServiceGroupApp.GatewayServiceGroup.ModelService
 	deploymentService  = service.ServiceGroupApp.GatewayServiceGroup.DeploymentService
 	aiKeyService       = service.ServiceGroupApp.GatewayServiceGroup.AiKeyService
+	usageService       = service.ServiceGroupApp.GatewayServiceGroup.UsageSyncService
 )

@@ -9,6 +9,7 @@ type RouterGroup struct {
 	ModelRouter
 	DeploymentRouter
 	AiKeyRouter
+	UsageRouter
 }
 
 var (
@@ -17,4 +18,5 @@ var (
 	modelApi       = v1.ApiGroupApp.GatewayApiGroup.ModelApi
 	deploymentApi  = v1.ApiGroupApp.GatewayApiGroup.DeploymentApi
 	aiKeyApi       = v1.ApiGroupApp.GatewayApiGroup.AiKeyApi
+	usageApi        = v1.ApiGroupApp.GatewayApiGroup.UsageApi
 )

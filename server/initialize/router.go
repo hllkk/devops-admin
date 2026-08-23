@@ -133,6 +133,7 @@ func Routers() *gin.Engine {
 		gatewayRouter.InitModelRouter(PrivateGroup)               // AI 网关·模型管理(/gateway/model/*)
 		gatewayRouter.InitDeploymentRouter(PrivateGroup)          // AI 网关·模型部署(/gateway/model/deployment/*)
 		gatewayRouter.InitAiKeyRouter(PrivateGroup)               // AI 网关·AI 密钥(/gateway/ai-key/*)
+		gatewayRouter.InitUsageRouter(PrivateGroup)               // AI 网关·用量统计(/gateway/usage/*)
 	}
 
 

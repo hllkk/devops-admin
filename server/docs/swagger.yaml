@@ -1,4 +1,82 @@
 definitions:
+  gateway.LlmLog:
+    properties:
+      aiKeyId:
+        description: 归因AiKey
+        example: "0"
+        type: string
+      cacheCreationTokens:
+        description: cache_creation
+        type: integer
+      cacheReadTokens:
+        description: cache_read
+        type: integer
+      callType:
+        description: call_type
+        type: string
+      completionTokens:
+        description: completion_tokens
+        type: integer
+      createTime:
+        description: |-
+          字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);
+          column 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;
+          json 仍叫 createTime/updateTime 对齐前端 CommonRecord。
+        type: string
+      deploymentId:
+        description: 归因ModelDeployment
+        example: "0"
+        type: string
+      durationMs:
+        description: duration_ms
+        type: integer
+      endedAt:
+        description: ended_at(UTC)
+        type: string
+      externalCost:
+        description: external_cost
+        type: number
+      internalCost:
+        description: internal_cost
+        type: number
+      logId:
+        description: 日志ID(雪花)
+        example: "0"
+        type: string
+      metadata:
+        description: metadata
+        type: object
+      model:
+        description: 请求时 model_name(含前缀/变体)
+        type: string
+      promptTokens:
+        description: prompt_tokens
+        type: integer
+      provider:
+        description: custom_llm_provider
+        type: string
+      requestId:
+        description: LiteLLM request_id
+        type: string
+      sessionId:
+        description: session_id
+        type: string
+      startedAt:
+        description: started_at(UTC)
+        type: string
+      syncedAt:
+        description: synced_at
+        type: string
+      totalTokens:
+        description: total_tokens
+        type: integer
+      updateTime:
+        type: string
+      userId:
+        description: 归因用户(纯逻辑关联 sys_users)
+        example: "0"
+        type: string
+    type: object
   gateway.Provider:
     properties:
       billingType:
@@ -3747,6 +3825,109 @@ paths:
       summary: 分页获取供应商列表
       tags:
       - GatewayProvider
+  /gateway/usage/list:
+    get:
+      parameters:
+      - description: 归因用户(0=不限)
+        in: query
+        name: userId
+        type: integer
+      - description: 归因密钥(0=不限)
+        in: query
+        name: aiKeyId
+        type: integer
+      - description: 归因部署(0=不限)
+        in: query
+        name: deploymentId
+        type: integer
+      - description: 模型名(模糊)
+        in: query
+        name: model
+        type: string
+      - description: 供应商(精确)
+        in: query
+        name: provider
+        type: string
+      - description: 开始时间起(ISO8601)
+        in: query
+        name: startTime
+        type: string
+      - description: 结束时间止(ISO8601)
+        in: query
+        name: endTime
+        type: string
+      - description: 页码
+        in: query
+        name: pageNum
+        required: true
+        type: integer
+      - description: 每页大小
+        in: query
+        name: pageSize
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.PageResult'
+                  - properties:
+                      rows:
+                        items:
+                          $ref: '#/definitions/gateway.LlmLog'
+                        type: array
+                    type: object
+                msg:
+                  type: string
+              type: object
+      summary: 分页获取用量日志(管理员视角，按用户/密钥/部署/模型/时间过滤)
+      tags:
+      - GatewayUsage
+  /gateway/usage/reconcile:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  type: object
+                msg:
+                  type: string
+              type: object
+      summary: 手动触发对账回灌 LiteLLM 漏单(近30天 NOT EXISTS 兜底)
+      tags:
+      - GatewayUsage
+  /gateway/usage/sync:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  type: object
+                msg:
+                  type: string
+              type: object
+      summary: 手动触发 LiteLLM 用量回流(归因+成本重算，复合游标增量幂等)
+      tags:
+      - GatewayUsage
   /init/autoInitDB:
     post:
       produces:

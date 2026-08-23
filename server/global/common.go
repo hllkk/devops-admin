@@ -20,6 +20,7 @@ import (
 
 var (
 	OPS_DB                  *gorm.DB
+	OPS_SPEND_DB            *gorm.DB // LiteLLM spend logs 只读连接(litellm.spend-dsn 留空复用 OPS_DB)
 	OPS_DBList              map[string]*gorm.DB
 	OPS_REDIS               redis.UniversalClient
 	OPS_REDISList           map[string]redis.UniversalClient

@@ -11,5 +11,9 @@ type Litellm struct {
 	CredentialKey string `mapstructure:"credential-key" json:"credential-key" yaml:"credential-key"` // 凭证值加密密钥（AES-256-GCM，64 字符 hex=LITELLM_CREDENTIAL_KEY，生产由 env 覆盖；轮换会使历史密文不可解）
 	Timeout     int    `mapstructure:"timeout" json:"timeout" yaml:"timeout"`               // HTTP 调用超时（秒）
 	UsdToCnyRate float64 `mapstructure:"usd-to-cny-rate" json:"usd-to-cny-rate" yaml:"usd-to-cny-rate"` // 美元兑人民币汇率（部署定价 ¥/百万token → LiteLLM USD/token 换算；0/负值运行时按 7.0 兜底）
+	SpendDSN    string `mapstructure:"spend-dsn" json:"spend-dsn" yaml:"spend-dsn"` // LiteLLM spend logs 库连接（留空复用主库；dev litellm 独立库需配，prod 共享库留空）
+	LogSyncInterval int `mapstructure:"log-sync-interval" json:"log-sync-interval" yaml:"log-sync-interval"` // 用量回流间隔（分钟，默认5，种子调度用）
+	LogSyncBatch int    `mapstructure:"log-sync-batch" json:"log-sync-batch" yaml:"log-sync-batch"` // 用量回流批大小（默认1000）
+	LogReconcileWindow int `mapstructure:"log-reconcile-window" json:"log-reconcile-window" yaml:"log-reconcile-window"` // 对账回灌窗口（天，默认30）
 	SyncEnabled bool   `mapstructure:"sync-enabled" json:"sync-enabled" yaml:"sync-enabled"` // 是否启用与 LiteLLM 的双向同步（关闭则管理面单机运行，不写 LiteLLM 侧）
 }
