@@ -146,5 +146,162 @@ declare namespace Api {
       hardLimit: boolean;
       isActive: boolean;
     };
+
+    // ───────────────── 凭证 Credential ─────────────────
+
+    /** 凭证协议格式(credential_info.format 取值) */
+    type CredentialFormat = 'openai' | 'anthropic';
+
+    /** 凭证(管理面出网视图：credentialValues 为解密后掩码值，api_base 等非敏感值明文) */
+    type Credential = Common.CommonRecord<{
+      credentialId: CommonType.IdType;
+      credentialName: string;
+      providerId: CommonType.IdType;
+      /** 凭证键值(敏感值已掩码,如 sk-ab****cdef;提交时掩码回传=不改,新值=覆盖) */
+      credentialValues: Record<string, string>;
+      /** 凭证元数据(format 等非敏感信息) */
+      credentialInfo: Record<string, any>;
+      litellmSynced: boolean;
+      isActive: boolean;
+      description: string;
+    }>;
+
+    /** 凭证搜索参数(credentialName 模糊;providerId/isActive/litellmSynced 精确) */
+    type CredentialSearchParams = CommonType.RecordNullable<
+      Pick<Credential, 'credentialName' | 'providerId' | 'isActive' | 'litellmSynced'> & Api.Common.CommonSearchParams
+    >;
+
+    /** 凭证新增/修改参数(credentialName 创建后不可改;credentialValues 明文或掩码回传) */
+    type CredentialOperateParams = CommonType.RecordNullable<
+      Pick<
+        Credential,
+        'credentialId' | 'credentialName' | 'providerId' | 'credentialValues' | 'credentialInfo' | 'isActive' | 'description'
+      >
+    >;
+
+    type CredentialList = Api.Common.PaginatingQueryRecord<Credential>;
+
+    /** 供应商凭证表单字段定义(透传 LiteLLM /public/providers/fields，结构宽松,动态表单按实返回渲染) */
+    type ProviderField = Record<string, any>;
+
+    /** 凭证重同步 LiteLLM 结果汇总 */
+    type ResyncResult = {
+      total: number;
+      pushed: number;
+      skipped: number;
+      failed: string[];
+    };
+
+    // ───────────────── 模型 Model ─────────────────
+
+    /** 模型类别 */
+    type ModelCategory = 'chat' | 'embedding' | 'rerank';
+
+    /** 模型(列表行：能力标签展开 + 部署计数) */
+    type Model = Common.CommonRecord<{
+      modelId: CommonType.IdType;
+      modelKey: string;
+      name: string;
+      category: string;
+      capabilities: string[];
+      description: string;
+      logoProviderType: string;
+      isActive: boolean;
+      isPublished: boolean;
+      visibilityType: 'all' | 'selected';
+      requiresApproval: boolean;
+      deploymentCount: number;
+      activeDeploymentCount: number;
+    }>;
+
+    /** 模型搜索参数(name/modelKey 模糊;category/isActive/isPublished 精确) */
+    type ModelSearchParams = CommonType.RecordNullable<
+      Pick<Model, 'name' | 'modelKey' | 'category' | 'isActive' | 'isPublished'> & Api.Common.CommonSearchParams
+    >;
+
+    /** 模型新增/修改参数(update 允许改 modelKey,触发关联部署路由名级联重建) */
+    type ModelOperateParams = CommonType.RecordNullable<
+      Pick<Model, 'modelId' | 'modelKey' | 'name' | 'category' | 'logoProviderType' | 'description' | 'capabilities'>
+    >;
+
+    type ModelList = Api.Common.PaginatingQueryRecord<Model>;
+
+    // ───────────────── 部署 Deployment ─────────────────
+
+    /** 部署(出网视图：含关联上下文 + 掩码后的路由参数) */
+    type Deployment = Common.CommonRecord<{
+      deploymentId: CommonType.IdType;
+      modelId: CommonType.IdType;
+      credentialId: CommonType.IdType;
+      litellmModelId: string;
+      litellmParams: Record<string, any>;
+      modelInfo: Record<string, any>;
+      deployName: string;
+      billingType: BillingType;
+      costPerCall: number | null;
+      monthlyCallQuota: number | null;
+      monthlyCallUsed: number;
+      isActive: boolean;
+      /** 关联模型路由名 */
+      modelKey: string;
+      /** 关联凭证名(无关联为空) */
+      credentialName: string;
+      /** 凭证协议格式(openai/anthropic) */
+      format: string;
+      /** 关联供应商类型 */
+      providerType: string;
+      /** 当前路由名(三态命名,routable 版) */
+      routeName: string;
+    }>;
+
+    /** 部署搜索参数(modelId/credentialId 精确;keyword 模糊) */
+    type DeploymentSearchParams = CommonType.RecordNullable<
+      {
+        modelId: CommonType.IdType;
+        credentialId: CommonType.IdType;
+        keyword: string;
+        isActive: boolean;
+      } & Api.Common.CommonSearchParams
+    >;
+
+    /** 部署新增/修改参数(litellmParams 必含 model 键;credentialId 非 0 绑定平台凭证) */
+    type DeploymentOperateParams = CommonType.RecordNullable<
+      Pick<
+        Deployment,
+        'deploymentId' | 'modelId' | 'credentialId' | 'deployName' | 'litellmParams' | 'modelInfo' | 'billingType' | 'costPerCall' | 'monthlyCallQuota' | 'isActive'
+      >
+    >;
+
+    type DeploymentList = Api.Common.PaginatingQueryRecord<Deployment>;
+
+    // ───────────────── AI 密钥 AiKey(搜索/操作参数) ─────────────────
+
+    /** AI 密钥搜索参数(keyType/ownerType/ownerId/isActive 精确;name 模糊) */
+    type AiKeySearchParams = CommonType.RecordNullable<
+      Pick<AiKey, 'keyType' | 'ownerType' | 'ownerId' | 'name' | 'isActive'> & Api.Common.CommonSearchParams
+    >;
+
+    /** AI 密钥新增/修改参数(keyType/ownerType/ownerId 创建必填且不可改) */
+    type AiKeyOperateParams = CommonType.RecordNullable<
+      Pick<
+        AiKey,
+        | 'aiKeyId'
+        | 'keyType'
+        | 'ownerType'
+        | 'ownerId'
+        | 'name'
+        | 'description'
+        | 'models'
+        | 'modelBudgets'
+        | 'budgetLimit'
+        | 'budgetHardLimit'
+        | 'budgetDuration'
+        | 'rateLimitMode'
+        | 'tpmLimit'
+        | 'rpmLimit'
+        | 'modelLimits'
+        | 'isActive'
+      >
+    >;
   }
 }

@@ -378,6 +378,8 @@ declare namespace App {
         copyNotSupported: string;
         login: string;
         noChange: string;
+        placeholderInput: string;
+        placeholderSelect: string;
         yesOrNo: {
           yes: string;
           no: string;
@@ -713,18 +715,193 @@ declare namespace App {
         gateway: {
           title: string;
           comingSoon: string;
-          tab: {
-            provider: string;
-            model: string;
-            aiKey: string;
-            usage: string;
+          common: {
+            unlimited: string;
+            active: string;
+            inactive: string;
+            synced: string;
+            unsynced: string;
+            published: string;
+            unpublished: string;
+            createTime: string;
+            billingTypeToken: string;
+            billingTypePerCall: string;
+            billingTypeMonthlyQuota: string;
+            formatOpenai: string;
+            formatAnthropic: string;
+            categoryChat: string;
+            categoryEmbedding: string;
+            categoryRerank: string;
+            keyPersonalMain: string;
+            keyPersonalScene: string;
+            keyDeptMain: string;
+            keyDeptScene: string;
+            ownerUser: string;
+            ownerDept: string;
+            rateLimitNone: string;
+            rateLimitTotal: string;
+            rateLimitPerModel: string;
+            duration1d: string;
+            duration7d: string;
+            duration30d: string;
+            dimUser: string;
+            dimModel: string;
+            dimAiKey: string;
+            rangeToday: string;
+            range7d: string;
+            rangeThisMonth: string;
+            range30d: string;
+            rangeLastMonth: string;
+            hardLimitOn: string;
+            hardLimitOff: string;
           };
           provider: {
             title: string;
-            searchPlaceholder: string;
-            empty: string;
-            selectPrompt: string;
-            credPlaceholder: string;
+            add: string;
+            edit: string;
+            col: {
+              name: string;
+              providerType: string;
+              billingType: string;
+              monthlyBudget: string;
+              monthlyUsed: string;
+              isActive: string;
+              description: string;
+            };
+            form: {
+              name: { required: string };
+              providerType: { required: string };
+              billingType: { required: string };
+            };
+          };
+          credential: {
+            title: string;
+            add: string;
+            edit: string;
+            resync: string;
+            resyncSuccess: string;
+            addKey: string;
+            col: {
+              credentialName: string;
+              provider: string;
+              format: string;
+              litellmSynced: string;
+              isActive: string;
+              description: string;
+              credentialValues: string;
+            };
+            form: {
+              credentialName: { required: string };
+              provider: { required: string };
+              keyPlaceholder: string;
+              valuePlaceholder: string;
+              valuesTip: string;
+            };
+          };
+          model: {
+            title: string;
+            add: string;
+            edit: string;
+            col: {
+              name: string;
+              modelKey: string;
+              category: string;
+              capabilities: string;
+              deploymentCount: string;
+              isPublished: string;
+              isActive: string;
+              description: string;
+              logoProviderType: string;
+            };
+            form: {
+              modelKey: { required: string };
+              name: { required: string };
+              category: { required: string };
+              capabilitiesPlaceholder: string;
+              renameTip: string;
+            };
+          };
+          deployment: {
+            manageTitle: string;
+            add: string;
+            edit: string;
+            inlineParams: string;
+            col: {
+              deployName: string;
+              credential: string;
+              billingType: string;
+              costPerCall: string;
+              monthlyCallQuota: string;
+              isActive: string;
+              vendorModel: string;
+            };
+            form: {
+              deployName: { required: string };
+              vendorModel: { required: string };
+              credentialPlaceholder: string;
+            };
+          };
+          aiKey: {
+            title: string;
+            add: string;
+            edit: string;
+            budgetSection: string;
+            rateLimitSection: string;
+            col: {
+              name: string;
+              keyType: string;
+              ownerType: string;
+              ownerId: string;
+              owner: string;
+              keyPrefix: string;
+              models: string;
+              budget: string;
+              budgetLimit: string;
+              budgetHardLimit: string;
+              budgetDuration: string;
+              rateLimitMode: string;
+              tpmLimit: string;
+              rpmLimit: string;
+              isActive: string;
+              description: string;
+            };
+            form: {
+              keyType: { required: string };
+              ownerType: { required: string };
+              ownerId: { required: string };
+              namePlaceholder: string;
+              modelsPlaceholder: string;
+            };
+          };
+          dashboard: {
+            aggregate: string;
+            aggregateSuccess: string;
+            customRange: string;
+            scopeAll: string;
+            scopeSelf: string;
+            totalRequests: string;
+            totalCost: string;
+            internalCost: string;
+            totalTokens: string;
+            input: string;
+            output: string;
+            cacheRead: string;
+            budgetTotal: string;
+            trendTitle: string;
+            metricCost: string;
+            metricRequests: string;
+            topTitle: string;
+            topName: string;
+            topCost: string;
+            topRequests: string;
+            budgetTitle: string;
+            budgetName: string;
+            budgetOwner: string;
+            budgetLimit: string;
+            budgetUsed: string;
+            usageRate: string;
+            hardLimit: string;
+            isActive: string;
           };
         };
         system: {

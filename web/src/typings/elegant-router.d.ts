@@ -22,6 +22,11 @@ declare module "@elegant-router/types" {
     "500": "/500";
     "admin": "/admin";
     "gateway": "/gateway";
+    "gateway_ai-key": "/gateway/ai-key";
+    "gateway_credential": "/gateway/credential";
+    "gateway_dashboard": "/gateway/dashboard";
+    "gateway_model": "/gateway/model";
+    "gateway_provider": "/gateway/provider";
     "home": "/home";
     "iframe-page": "/iframe-page/:url";
     "init": "/init";
@@ -126,7 +131,11 @@ declare module "@elegant-router/types" {
     | "login"
     | "social-callback"
     | "user-center"
-    | "gateway"
+    | "gateway_ai-key"
+    | "gateway_credential"
+    | "gateway_dashboard"
+    | "gateway_model"
+    | "gateway_provider"
     | "server"
     | "home"
   >;

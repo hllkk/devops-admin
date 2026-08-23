@@ -34,6 +34,8 @@ const local: App.I18n.Schema = {
     modify: 'Modify',
     modifySuccess: 'Modify Success',
     noChange: 'No changes',
+    placeholderInput: 'Please enter',
+    placeholderSelect: 'Please select',
     noData: 'No Data',
     operate: 'Operate',
     pleaseCheckValue: 'Please check whether the value is valid',
@@ -269,6 +271,11 @@ const local: App.I18n.Schema = {
     log_errorlog: 'Error Log',
     server: 'Server',
     gateway: 'AI Gateway',
+    gateway_provider: 'Providers',
+    gateway_credential: 'Credentials',
+    gateway_model: 'Models',
+    'gateway_ai-key': 'AI Keys',
+    gateway_dashboard: 'Dashboard',
     init: 'System Init',
     home: 'Profile'
   },
@@ -528,18 +535,193 @@ const local: App.I18n.Schema = {
     gateway: {
       title: 'AI Gateway',
       comingSoon: 'Coming soon',
-      tab: {
-        provider: 'Providers',
-        model: 'Models',
-        aiKey: 'AI Keys',
-        usage: 'Usage'
+      common: {
+        unlimited: 'Unlimited',
+        active: 'Active',
+        inactive: 'Inactive',
+        synced: 'Synced',
+        unsynced: 'Unsynced',
+        published: 'Published',
+        unpublished: 'Unpublished',
+        createTime: 'Create Time',
+        billingTypeToken: 'Per Token',
+        billingTypePerCall: 'Per Call',
+        billingTypeMonthlyQuota: 'Monthly Quota',
+        formatOpenai: 'OpenAI Format',
+        formatAnthropic: 'Anthropic Format',
+        categoryChat: 'Chat',
+        categoryEmbedding: 'Embedding',
+        categoryRerank: 'Rerank',
+        keyPersonalMain: 'Personal Main',
+        keyPersonalScene: 'Personal Scene',
+        keyDeptMain: 'Dept Main',
+        keyDeptScene: 'Dept Scene',
+        ownerUser: 'User',
+        ownerDept: 'Dept',
+        rateLimitNone: 'No Limit',
+        rateLimitTotal: 'Total Limit',
+        rateLimitPerModel: 'Per-Model Limit',
+        duration1d: 'Daily',
+        duration7d: 'Weekly',
+        duration30d: 'Monthly',
+        dimUser: 'By User',
+        dimModel: 'By Model',
+        dimAiKey: 'By Key',
+        rangeToday: 'Today',
+        range7d: 'Last 7d',
+        rangeThisMonth: 'This Month',
+        range30d: 'Last 30d',
+        rangeLastMonth: 'Last Month',
+        hardLimitOn: 'Hard',
+        hardLimitOff: 'Soft'
       },
       provider: {
         title: 'Providers',
-        searchPlaceholder: 'Search provider name',
-        empty: 'No providers',
-        selectPrompt: 'Select a provider on the left',
-        credPlaceholder: 'Select a provider to manage its credentials (available after the credential backend lands)'
+        add: 'New Provider',
+        edit: 'Edit Provider',
+        col: {
+          name: 'Name',
+          providerType: 'Provider Type',
+          billingType: 'Billing Type',
+          monthlyBudget: 'Monthly Budget',
+          monthlyUsed: 'Monthly Used',
+          isActive: 'Status',
+          description: 'Description'
+        },
+        form: {
+          name: { required: 'Please enter provider name' },
+          providerType: { required: 'Please select provider type' },
+          billingType: { required: 'Please select billing type' }
+        }
+      },
+      credential: {
+        title: 'Credentials',
+        add: 'New Credential',
+        edit: 'Edit Credential',
+        resync: 'Resync LiteLLM',
+        resyncSuccess: 'Resync done: pushed {pushed}/{total}',
+        addKey: '+ Add Field',
+        col: {
+          credentialName: 'Credential Name',
+          provider: 'Provider',
+          format: 'Format',
+          litellmSynced: 'Sync Status',
+          isActive: 'Status',
+          description: 'Description',
+          credentialValues: 'Credential Values'
+        },
+        form: {
+          credentialName: { required: 'Please enter credential name' },
+          provider: { required: 'Please select provider' },
+          keyPlaceholder: 'key (api_key/api_base)',
+          valuePlaceholder: 'value',
+          valuesTip: 'Masked value reposted keeps old plain, new value overwrites'
+        }
+      },
+      model: {
+        title: 'Models',
+        add: 'New Model',
+        edit: 'Edit Model',
+        col: {
+          name: 'Name',
+          modelKey: 'Model Key',
+          category: 'Category',
+          capabilities: 'Capabilities',
+          deploymentCount: 'Deployments',
+          isPublished: 'Published',
+          isActive: 'Status',
+          description: 'Description',
+          logoProviderType: 'Logo Provider'
+        },
+        form: {
+          modelKey: { required: 'Please enter model key' },
+          name: { required: 'Please enter model name' },
+          category: { required: 'Please select category' },
+          capabilitiesPlaceholder: 'Type capability and press enter',
+          renameTip: 'Renaming model key will cascade rebuild deployment routes, proceed with caution'
+        }
+      },
+      deployment: {
+        manageTitle: 'Deployment',
+        add: 'New Deployment',
+        edit: 'Edit Deployment',
+        inlineParams: 'Inline Params',
+        col: {
+          deployName: 'Deploy Name',
+          credential: 'Credential',
+          billingType: 'Billing Type',
+          costPerCall: 'Cost/Call',
+          monthlyCallQuota: 'Monthly Quota',
+          isActive: 'Status',
+          vendorModel: 'Vendor Model'
+        },
+        form: {
+          deployName: { required: 'Please enter deploy name' },
+          vendorModel: { required: 'Please enter vendor model name' },
+          credentialPlaceholder: 'Leave empty to use inline params'
+        }
+      },
+      aiKey: {
+        title: 'AI Keys',
+        add: 'New Key',
+        edit: 'Edit Key',
+        budgetSection: 'Budget',
+        rateLimitSection: 'Rate Limit',
+        col: {
+          name: 'Name',
+          keyType: 'Key Type',
+          ownerType: 'Owner Type',
+          ownerId: 'Owner ID',
+          owner: 'Owner',
+          keyPrefix: 'Key Prefix',
+          models: 'Models',
+          budget: 'Budget',
+          budgetLimit: 'Budget Limit',
+          budgetHardLimit: 'Hard Limit',
+          budgetDuration: 'Duration',
+          rateLimitMode: 'Rate Limit Mode',
+          tpmLimit: 'TPM Limit',
+          rpmLimit: 'RPM Limit',
+          isActive: 'Status',
+          description: 'Description'
+        },
+        form: {
+          keyType: { required: 'Please select key type' },
+          ownerType: { required: 'Please select owner type' },
+          ownerId: { required: 'Please enter owner ID' },
+          namePlaceholder: 'Main key name is fixed, scene key customizable',
+          modelsPlaceholder: 'Select authorized models'
+        }
+      },
+      dashboard: {
+        aggregate: 'Aggregate',
+        aggregateSuccess: 'Aggregated: rebuilt {rebuilt}, disabled {disabled} over-limit keys',
+        customRange: 'Custom',
+        scopeAll: 'All',
+        scopeSelf: 'Mine',
+        totalRequests: 'Total Requests',
+        totalCost: 'Platform Cost (External)',
+        internalCost: 'Internal Cost',
+        totalTokens: 'Total Tokens',
+        input: 'Input',
+        output: 'Output',
+        cacheRead: 'Cache Read',
+        budgetTotal: 'Budget',
+        trendTitle: 'Cost Trend',
+        metricCost: 'Cost',
+        metricRequests: 'Requests',
+        topTitle: 'Cost Top 10',
+        topName: 'Name',
+        topCost: 'Cost',
+        topRequests: 'Requests',
+        budgetTitle: 'Budget Detail',
+        budgetName: 'Key Name',
+        budgetOwner: 'Owner',
+        budgetLimit: 'Budget Limit',
+        budgetUsed: 'Used',
+        usageRate: 'Usage Rate',
+        hardLimit: 'Hard Limit',
+        isActive: 'Status'
       }
     },
     system: {
