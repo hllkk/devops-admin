@@ -9,6 +9,7 @@ import (
 	gatewayReq "github.com/hllkk/devops-admin/server/model/gateway/request"
 	"github.com/hllkk/devops-admin/server/utils"
 	"github.com/hllkk/devops-admin/server/utils/logger"
+	"github.com/hllkk/devops-admin/server/utils/request"
 )
 
 // AiKeyApi AI 密钥管理(对齐前端 /gateway/ai-key/* 与 identity/* 资源)
@@ -65,6 +66,7 @@ func (a *AiKeyApi) GetAiKeyList(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
+	request.NormalizeEmptyBoolQuery(c, &q)
 	list, total, err := aiKeyService.GetAiKeyList(c.Request.Context(), q)
 	if err != nil {
 		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取密钥列表失败")

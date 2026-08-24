@@ -9,6 +9,7 @@ import (
 	gatewayReq "github.com/hllkk/devops-admin/server/model/gateway/request"
 	"github.com/hllkk/devops-admin/server/utils"
 	"github.com/hllkk/devops-admin/server/utils/logger"
+	"github.com/hllkk/devops-admin/server/utils/request"
 )
 
 // CredentialApi 凭证管理(对齐前端 /gateway/credential/* 资源)
@@ -32,6 +33,7 @@ func (a *CredentialApi) GetCredentialList(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
+	request.NormalizeEmptyBoolQuery(c, &q)
 	list, total, err := credentialService.GetCredentialList(c.Request.Context(), q)
 	if err != nil {
 		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取凭证列表失败")

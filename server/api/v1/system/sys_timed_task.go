@@ -7,6 +7,7 @@ import (
 	systemReq "github.com/hllkk/devops-admin/server/model/system/request"
 	"github.com/hllkk/devops-admin/server/utils"
 	"github.com/hllkk/devops-admin/server/utils/logger"
+	"github.com/hllkk/devops-admin/server/utils/request"
 	"github.com/hllkk/devops-admin/server/utils/sse"
 )
 
@@ -146,6 +147,7 @@ func (a *TimedTaskApi) GetTimedTaskList(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
+	request.NormalizeEmptyBoolQuery(c, &pageInfo)
 	list, total, err := timedTaskService.GetTimedTaskList(c.Request.Context(), pageInfo)
 	if err != nil {
 		logger.WithCtx(c.Request.Context()).Mod("timedTask").Err(err).Error("获取失败!")
