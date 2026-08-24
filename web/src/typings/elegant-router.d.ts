@@ -22,11 +22,12 @@ declare module "@elegant-router/types" {
     "500": "/500";
     "admin": "/admin";
     "gateway": "/gateway";
-    "gateway_ai-key": "/gateway/ai-key";
-    "gateway_credential": "/gateway/credential";
-    "gateway_dashboard": "/gateway/dashboard";
-    "gateway_model": "/gateway/model";
-    "gateway_provider": "/gateway/provider";
+    "gateway_identity": "/gateway/identity";
+    "gateway_identity_ai-key": "/gateway/identity/ai-key";
+    "gateway_identity_credential": "/gateway/identity/credential";
+    "gateway_models": "/gateway/models";
+    "gateway_models_model": "/gateway/models/model";
+    "gateway_models_provider": "/gateway/models/provider";
     "home": "/home";
     "iframe-page": "/iframe-page/:url";
     "init": "/init";
@@ -131,11 +132,11 @@ declare module "@elegant-router/types" {
     | "login"
     | "social-callback"
     | "user-center"
-    | "gateway_ai-key"
-    | "gateway_credential"
-    | "gateway_dashboard"
-    | "gateway_model"
-    | "gateway_provider"
+    | "gateway_identity_ai-key"
+    | "gateway_identity_credential"
+    | "gateway"
+    | "gateway_models_model"
+    | "gateway_models_provider"
     | "server"
     | "home"
   >;
