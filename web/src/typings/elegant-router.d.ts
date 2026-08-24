@@ -22,13 +22,10 @@ declare module "@elegant-router/types" {
     "500": "/500";
     "admin": "/admin";
     "gateway": "/gateway";
-    "gateway_identity": "/gateway/identity";
-    "gateway_identity_ai-key": "/gateway/identity/ai-key";
-    "gateway_identity_credential": "/gateway/identity/credential";
-    "gateway_models": "/gateway/models";
-    "gateway_models_model": "/gateway/models/model";
-    "gateway_models_provider": "/gateway/models/provider";
     "home": "/home";
+    "identity": "/identity";
+    "identity_ai-key": "/identity/ai-key";
+    "identity_credential": "/identity/credential";
     "iframe-page": "/iframe-page/:url";
     "init": "/init";
     "log": "/log";
@@ -36,6 +33,9 @@ declare module "@elegant-router/types" {
     "log_loginlog": "/log/loginlog";
     "log_operlog": "/log/operlog";
     "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat)?";
+    "models": "/models";
+    "models_model": "/models/model";
+    "models_provider": "/models/provider";
     "server": "/server";
     "social-callback": "/social-callback";
     "system": "/system";
@@ -86,10 +86,12 @@ declare module "@elegant-router/types" {
     | "admin"
     | "gateway"
     | "home"
+    | "identity"
     | "iframe-page"
     | "init"
     | "log"
     | "login"
+    | "models"
     | "server"
     | "social-callback"
     | "system"
@@ -132,11 +134,11 @@ declare module "@elegant-router/types" {
     | "login"
     | "social-callback"
     | "user-center"
-    | "gateway_identity_ai-key"
-    | "gateway_identity_credential"
     | "gateway"
-    | "gateway_models_model"
-    | "gateway_models_provider"
+    | "identity_ai-key"
+    | "identity_credential"
+    | "models_model"
+    | "models_provider"
     | "server"
     | "home"
   >;

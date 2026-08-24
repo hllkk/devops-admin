@@ -26,7 +26,11 @@ func (i *initProviderPrefix) MigrateTable(ctx context.Context) (context.Context,
 	if !ok {
 		return ctx, system.ErrMissingDBContext
 	}
-	return ctx, db.AutoMigrate(&gatewayModel.ProviderPrefix{})
+	return ctx, db.AutoMigrate(
+		&gatewayModel.ProviderPrefix{},
+		&gatewayModel.AiKey{},
+		&gatewayModel.CostSummaryDaily{},
+	)
 }
 
 func (i *initProviderPrefix) TableCreated(ctx context.Context) bool {

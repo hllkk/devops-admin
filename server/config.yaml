@@ -75,7 +75,7 @@ hua-wei-obs:
     access-key: you-access-key
     secret-key: you-secret-key
 jwt:
-    signing-key: 7cffb2b9-a7ac-402a-9480-7709640b00cc
+    signing-key: 477e485e-b16a-4765-9991-f377009a8941
     expires-time: 7d
     buffer-time: 1d
     issuer: devops-admin
@@ -85,7 +85,7 @@ litellm:
     master-key: sk-devops-litellm-master
     credential-key: 8a38e1e8c1a1b3d3ab852b94672a2ff2b5023082f5e2c0600e4b5a5cd6989577
     timeout: 10
-    usd-to-cny-rate: 7.0
+    usd-to-cny-rate: 7
     spend-dsn: postgresql://postgres:Tricolor_123@127.0.0.1:15432/litellm
     log-sync-interval: 5
     log-sync-batch: 1000

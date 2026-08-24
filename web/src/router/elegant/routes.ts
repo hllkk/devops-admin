@@ -54,72 +54,14 @@ export const generatedRoutes: GeneratedRoute[] = [
   {
     name: 'gateway',
     path: '/gateway',
-    component: 'layout.base',
+    component: 'layout.base$view.gateway',
     meta: {
       title: 'gateway',
       i18nKey: 'route.gateway',
       icon: 'mdi:view-dashboard-outline',
       order: 7,
       module: 'gateway'
-    },
-    children: [
-      {
-        name: 'gateway_identity',
-        path: '/gateway/identity',
-        meta: {
-          title: 'gateway_identity',
-          i18nKey: 'route.gateway_identity'
-        },
-        children: [
-          {
-            name: 'gateway_identity_ai-key',
-            path: '/gateway/identity/ai-key',
-            component: 'view.gateway_identity_ai-key',
-            meta: {
-              title: 'gateway_identity_ai-key',
-              i18nKey: 'route.gateway_identity_ai-key'
-            }
-          },
-          {
-            name: 'gateway_identity_credential',
-            path: '/gateway/identity/credential',
-            component: 'view.gateway_identity_credential',
-            meta: {
-              title: 'gateway_identity_credential',
-              i18nKey: 'route.gateway_identity_credential'
-            }
-          }
-        ]
-      },
-      {
-        name: 'gateway_models',
-        path: '/gateway/models',
-        meta: {
-          title: 'gateway_models',
-          i18nKey: 'route.gateway_models'
-        },
-        children: [
-          {
-            name: 'gateway_models_model',
-            path: '/gateway/models/model',
-            component: 'view.gateway_models_model',
-            meta: {
-              title: 'gateway_models_model',
-              i18nKey: 'route.gateway_models_model'
-            }
-          },
-          {
-            name: 'gateway_models_provider',
-            path: '/gateway/models/provider',
-            component: 'view.gateway_models_provider',
-            meta: {
-              title: 'gateway_models_provider',
-              i18nKey: 'route.gateway_models_provider'
-            }
-          }
-        ]
-      }
-    ]
+    }
   },
   {
     name: 'home',
@@ -130,6 +72,38 @@ export const generatedRoutes: GeneratedRoute[] = [
       i18nKey: 'route.home',
       hideInMenu: true
     }
+  },
+  {
+    name: 'identity',
+    path: '/identity',
+    component: 'layout.base',
+    meta: {
+      title: 'identity',
+      i18nKey: 'route.identity',
+      icon: 'mdi:account-key-outline',
+      order: 8,
+      module: 'gateway'
+    },
+    children: [
+      {
+        name: 'identity_ai-key',
+        path: '/identity/ai-key',
+        component: 'view.identity_ai-key',
+        meta: {
+          title: 'identity_ai-key',
+          i18nKey: 'route.identity_ai-key'
+        }
+      },
+      {
+        name: 'identity_credential',
+        path: '/identity/credential',
+        component: 'view.identity_credential',
+        meta: {
+          title: 'identity_credential',
+          i18nKey: 'route.identity_credential'
+        }
+      }
+    ]
   },
   {
     name: 'iframe-page',
@@ -213,6 +187,38 @@ export const generatedRoutes: GeneratedRoute[] = [
       constant: true,
       hideInMenu: true
     }
+  },
+  {
+    name: 'models',
+    path: '/models',
+    component: 'layout.base',
+    meta: {
+      title: 'models',
+      i18nKey: 'route.models',
+      icon: 'mdi:brain',
+      order: 9,
+      module: 'gateway'
+    },
+    children: [
+      {
+        name: 'models_model',
+        path: '/models/model',
+        component: 'view.models_model',
+        meta: {
+          title: 'models_model',
+          i18nKey: 'route.models_model'
+        }
+      },
+      {
+        name: 'models_provider',
+        path: '/models/provider',
+        component: 'view.models_provider',
+        meta: {
+          title: 'models_provider',
+          i18nKey: 'route.models_provider'
+        }
+      }
+    ]
   },
   {
     name: 'server',
