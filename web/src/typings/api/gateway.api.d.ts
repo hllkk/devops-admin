@@ -92,8 +92,9 @@ declare namespace Api {
       hasAnthropicDeployment: boolean;
     };
 
-    /** 我的 AI 身份(home 契约：主 Key 明文 + 场景 Key 列表 + 可用模型) */
+    /** 我的 AI 身份(home 契约：主 Key 明文 + 场景 Key 列表 + 可用模型；管理员创建制，未开通 opened=false) */
     type MyIdentity = {
+      opened: boolean;
       keyValue: string;
       isActive: boolean;
       budgetLimit: number | null;

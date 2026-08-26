@@ -17,7 +17,7 @@ type AiKeyApi struct{}
 
 // GetMyIdentity
 // @Tags      GatewayAiKey
-// @Summary   获取我的 AI 身份(惰性建主 Key + 主 Key 明文 + 场景 Key 列表 + 可用模型)
+// @Summary   获取我的 AI 身份(管理员创建制,未开通 opened=false + 主 Key 明文 + 场景 Key 列表 + 可用模型)
 // @Produce   application/json
 // @Success   200  {object}  response.Response{data=response.MyIdentityView,msg=string}
 // @Router    /gateway/ai-key/identity/my [get]

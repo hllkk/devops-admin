@@ -493,7 +493,7 @@ const local: App.I18n.Schema = {
         cardTitle: 'AI Identity',
         active: 'Active',
         inactive: 'Inactive',
-        noIdentity: 'No AI identity yet',
+        noIdentity: 'No AI identity yet. Contact an admin to get one',
         apiKeyLabel: 'API KEY',
         budgetLabel: 'Budget',
         modelsLabel: 'Models',

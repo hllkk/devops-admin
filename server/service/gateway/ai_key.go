@@ -28,26 +28,35 @@ type AiKeyService struct{}
 // 身份与对外接口（home 切真实接口的契约）
 // ----------------------------------------------------------------------------
 
-// GetMyIdentity 我的 AI 身份：惰性建主 Key(无则建，含公开模型+anthropic 扩展) →
+// GetMyIdentity 我的 AI 身份：查主 Key(管理员创建制，无则返回未开通态 opened=false) →
 // 解密主 Key 明文 + 我的场景 Key 列表 + 可用模型。仅 owner 本人可调(userId 从 JWT 取)。
 func (s *AiKeyService) GetMyIdentity(ctx context.Context, userId int64) (gatewayResp.MyIdentityView, error) {
-	mainKey, err := ensureMainKeyExists(ctx, userId)
+	mainKey, err := loadMainKey(ctx, userId)
 	if err != nil {
 		return gatewayResp.MyIdentityView{}, err
 	}
 
 	view := gatewayResp.MyIdentityView{
-		IsActive:        mainKey.IsActive,
-		BudgetLimit:     mainKey.BudgetLimit,
-		BudgetHardLimit: mainKey.BudgetHardLimit,
-		BudgetDuration:  mainKey.BudgetDuration,
-		Models:          jsonToSlice(mainKey.Models),
-		ModelBudgets:    jsonToMap(mainKey.ModelBudgets),
-		RateLimitMode:   mainKey.RateLimitMode,
-		TpmLimit:        mainKey.TpmLimit,
-		RpmLimit:        mainKey.RpmLimit,
-		SceneKeys:       []gatewayResp.AiKeyView{},
+		SceneKeys:      []gatewayResp.AiKeyView{},
+		Models:         []string{},
+		ModelBudgets:   jsonToMap(datatypes.JSON(nil)),
+		RateLimitMode:  gateway.RateLimitModeNone,
+		BudgetDuration: gateway.BudgetDuration30d,
 	}
+	view.AvailableModels, _ = s.GetAvailableModels(ctx)
+	if mainKey == nil {
+		return view, nil // 未开通：等管理员在后台创建主 Key
+	}
+	view.Opened = true
+	view.IsActive = mainKey.IsActive
+	view.BudgetLimit = mainKey.BudgetLimit
+	view.BudgetHardLimit = mainKey.BudgetHardLimit
+	view.BudgetDuration = mainKey.BudgetDuration
+	view.Models = jsonToSlice(mainKey.Models)
+	view.ModelBudgets = jsonToMap(mainKey.ModelBudgets)
+	view.RateLimitMode = mainKey.RateLimitMode
+	view.TpmLimit = mainKey.TpmLimit
+	view.RpmLimit = mainKey.RpmLimit
 	// 主 Key 明文(仅此接口解密返回)；单机模式(litellm_key_id 空)无可用 Key 返回空
 	if mainKey.LitellmKeyId != "" {
 		if plain, err := decryptCredentialValues(mainKey.KeyValue); err == nil {
@@ -67,8 +76,6 @@ func (s *AiKeyService) GetMyIdentity(ctx context.Context, userId int64) (gateway
 	for i := range sceneRows {
 		view.SceneKeys = append(view.SceneKeys, toAiKeyView(sceneRows[i]))
 	}
-
-	view.AvailableModels, _ = s.GetAvailableModels(ctx)
 	return view, nil
 }
 
@@ -210,6 +217,10 @@ func (s *AiKeyService) CreateSceneKey(ctx context.Context, req gatewayReq.AiKeyO
 	if models == nil {
 		models = []string{}
 	}
+	// 主 Key 未显式指定授权模型时默认含全部公开模型(管理员创建制下对齐主 Key 原默认语义)
+	if gateway.MainKeyType(req.KeyType) && len(models) == 0 {
+		models = publicModelKeys(global.OPS_DB.WithContext(ctx))
+	}
 
 	k := gateway.AiKey{
 		Name:            req.Name,
@@ -345,87 +356,51 @@ func (s *AiKeyService) DeleteAiKey(ctx context.Context, ids []int64) error {
 }
 
 // ----------------------------------------------------------------------------
-// 包级共享：同步管线与惰性建主 Key
+// 包级共享：同步管线与主 Key 自愈
 // ----------------------------------------------------------------------------
 
-// ensureMainKeyExists 惰性建/补全个人主 Key：无则建(含所有公开模型+anthropic 扩展)，
+// loadMainKey 取个人主 Key(管理员创建制，此处不创建)：无则返回 nil；
 // 有则补缺失的公开模型(幂等，发布配置变化后下次访问 home 自愈)。
-func ensureMainKeyExists(ctx context.Context, userId int64) (*gateway.AiKey, error) {
+func loadMainKey(ctx context.Context, userId int64) (*gateway.AiKey, error) {
 	var k gateway.AiKey
 	err := global.OPS_DB.WithContext(ctx).
 		Where("key_type = ? AND owner_type = ? AND owner_id = ?", gateway.KeyTypePersonalMain, gateway.OwnerTypeUser, userId).
 		First(&k).Error
-
-	if err == nil {
-		// 已有主 Key：补缺失公开模型(幂等自愈)
-		publicKeys := publicModelKeys(global.OPS_DB.WithContext(ctx))
-		current := jsonToSlice(k.Models)
-		missing := []string{}
-		seen := map[string]bool{}
-		for _, m := range current {
-			seen[m] = true
-		}
-		for _, pk := range publicKeys {
-			if !seen[pk] {
-				missing = append(missing, pk)
-				current = append(current, pk)
-				seen[pk] = true
-			}
-		}
-		if len(missing) > 0 {
-			cli := litellm.Default()
-			_ = global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-				if err := tx.Model(&gateway.AiKey{}).Where("ai_key_id = ?", k.AiKeyId).
-					Update("models", marshalJSONStringSlice(current)).Error; err != nil {
-					return err
-				}
-				k.Models = marshalJSONStringSlice(current)
-				if cli != nil && k.LitellmKeyId != "" {
-					_ = syncKeyToLitellm(ctx, cli, tx, &k, false)
-				}
-				return nil
-			})
-		}
-		return &k, nil
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
 	}
-
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
-	}
-
-	// 建主 Key：含所有公开模型
-	publicKeys := publicModelKeys(global.OPS_DB.WithContext(ctx))
-	k = gateway.AiKey{
-		Name:            "主 Key",
-		Description:     "个人主 Key",
-		KeyType:         gateway.KeyTypePersonalMain,
-		OwnerType:       gateway.OwnerTypeUser,
-		OwnerId:         userId,
-		LitellmKeyAlias: buildKeyAlias(gateway.KeyTypePersonalMain, gateway.OwnerTypeUser, userId, "main"),
-		Models:          marshalJSONStringSlice(publicKeys),
-		ModelBudgets:    datatypes.JSON([]byte("{}")),
-		Mcps:            datatypes.JSON([]byte("[]")),
-		Skills:          datatypes.JSON([]byte("[]")),
-		BudgetDuration:  gateway.BudgetDuration30d,
-		RateLimitMode:   gateway.RateLimitModeNone,
-		ModelLimits:     datatypes.JSON([]byte("{}")),
-		IsActive:        true,
-	}
-	k.CreateBy = userId
-	k.UpdateBy = userId
-
-	cli := litellm.Default()
-	err = global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Create(&k).Error; err != nil {
-			return err
-		}
-		if cli == nil {
-			return nil
-		}
-		return syncKeyToLitellm(ctx, cli, tx, &k, true)
-	})
 	if err != nil {
 		return nil, err
+	}
+
+	// 已有主 Key：补缺失公开模型(幂等自愈)
+	publicKeys := publicModelKeys(global.OPS_DB.WithContext(ctx))
+	current := jsonToSlice(k.Models)
+	missing := []string{}
+	seen := map[string]bool{}
+	for _, m := range current {
+		seen[m] = true
+	}
+	for _, pk := range publicKeys {
+		if !seen[pk] {
+			missing = append(missing, pk)
+			current = append(current, pk)
+			seen[pk] = true
+		}
+	}
+	if len(missing) > 0 {
+		cli := litellm.Default()
+		_ = global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+			if err := tx.Model(&gateway.AiKey{}).Where("ai_key_id = ?", k.AiKeyId).
+				Update("models", marshalJSONStringSlice(current)).Error; err != nil {
+				return err
+			}
+			k.Models = marshalJSONStringSlice(current)
+			if cli != nil && k.LitellmKeyId != "" {
+				_ = syncKeyToLitellm(ctx, cli, tx, &k, false)
+			}
+			return nil
+		})
 	}
 	return &k, nil
 }

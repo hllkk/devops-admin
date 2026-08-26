@@ -1,6 +1,6 @@
 import { request } from '@/service/request';
 
-/** 获取我的 AI 身份(惰性建主 Key + 主 Key 明文 + 场景 Key 列表 + 可用模型) */
+/** 获取我的 AI 身份(管理员创建制：未开通 opened=false；已开通返回主 Key 明文 + 场景 Key 列表 + 可用模型) */
 export function fetchGetMyIdentity() {
   return request<Api.Gateway.MyIdentity>({
     url: '/gateway/ai-key/identity/my',

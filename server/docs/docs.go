@@ -457,7 +457,7 @@ const docTemplate = `{
                 "tags": [
                     "GatewayAiKey"
                 ],
-                "summary": "获取我的 AI 身份(惰性建主 Key + 主 Key 明文 + 场景 Key 列表 + 可用模型)",
+                "summary": "获取我的 AI 身份(管理员创建制,未开通 opened=false + 主 Key 明文 + 场景 Key 列表 + 可用模型)",
                 "responses": {
                     "200": {
                         "description": "OK",

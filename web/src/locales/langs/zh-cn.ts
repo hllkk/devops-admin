@@ -489,7 +489,7 @@ const local: App.I18n.Schema = {
         cardTitle: 'AI 身份证',
         active: '已激活',
         inactive: '未激活',
-        noIdentity: '暂无 AI 身份',
+        noIdentity: '暂无 AI 身份，请联系管理员开通',
         apiKeyLabel: 'API KEY',
         budgetLabel: '预算',
         modelsLabel: '模型',

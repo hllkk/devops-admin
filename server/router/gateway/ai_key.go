@@ -10,7 +10,7 @@ type AiKeyRouter struct{}
 func (r *AiKeyRouter) InitAiKeyRouter(Router *gin.RouterGroup) {
 	g := Router.Group("gateway/ai-key")
 	{
-		g.GET("identity/my", aiKeyApi.GetMyIdentity)               // 我的 AI 身份(惰性建主Key+明文)
+		g.GET("identity/my", aiKeyApi.GetMyIdentity)               // 我的 AI 身份(管理员创建制,未开通 opened=false)
 		g.GET("identity/available-models", aiKeyApi.GetAvailableModels) // 可授权模型列表
 		g.GET("list", aiKeyApi.GetAiKeyList)                       // 密钥分页列表(管理员)
 		g.GET(":id", aiKeyApi.GetAiKey)                           // 密钥详情

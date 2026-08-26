@@ -39,7 +39,7 @@ type AiKey struct {
 
 // 密钥类型
 const (
-	KeyTypePersonalMain  = "personal_main"  // 个人主Key(惰性建,含公开模型)
+	KeyTypePersonalMain  = "personal_main"  // 个人主Key(管理员创建,默认含公开模型)
 	KeyTypePersonalScene = "personal_scene" // 个人场景Key(手动申请)
 	KeyTypeDeptMain      = "dept_main"      // 部门主Key
 	KeyTypeDeptScene     = "dept_scene"     // 部门场景Key

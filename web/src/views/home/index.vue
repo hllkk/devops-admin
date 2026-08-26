@@ -75,7 +75,8 @@ function handleUserMenu(key: string) {
 }
 
 // ============ AI 身份/用量：真实接口（P1 后端已就绪） ============
-// identity/my 惰性建主 Key + 主 Key 明文 + 场景 Key 列表 + 可用模型；
+// identity/my 管理员创建制：主 Key 由管理员后台创建，未开通 opened=false(身份卡显示空态)；
+// 已开通返回主 Key 明文 + 场景 Key 列表 + 可用模型；
 // 用量 KPI/趋势调 dashboard scope=self；mcps/skills/申请列表为 P2 资源申请能力，P1 占位。
 const mainKey = ref<Api.Gateway.MyIdentity | null>(null);
 const kpi = ref<Api.Gateway.DashboardOverview | null>(null);
@@ -186,9 +187,9 @@ function handleCopy() {
 }
 
 async function loadIdentity() {
-  // identity/my 惰性建主 Key（首次访问 home 较慢，事务内调 LiteLLM CreateKey）
+  // identity/my 管理员创建制：未开通(opened=false)保持 null，身份卡走"暂无 AI 身份"空态
   const { data, error } = await fetchGetMyIdentity();
-  if (!error && data) mainKey.value = data;
+  if (!error && data && data.opened) mainKey.value = data;
 }
 
 async function loadUsage() {
