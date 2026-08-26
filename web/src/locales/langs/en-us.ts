@@ -742,34 +742,64 @@ const local: App.I18n.Schema = {
       },
       aiKey: {
         title: 'AI Keys',
+        tabKeys: 'Keys',
+        tabScenario: 'Scenarios',
         add: 'New Key',
         edit: 'Edit Key',
+        baseSection: 'Basic',
+        authSection: 'Authorization',
         budgetSection: 'Budget',
         rateLimitSection: 'Rate Limit',
         col: {
           name: 'Name',
           keyType: 'Key Type',
+          scenario: 'Scenario',
           ownerType: 'Owner Type',
-          ownerId: 'Owner ID',
+          ownerId: 'Owner',
           owner: 'Owner',
           keyPrefix: 'Key Prefix',
           models: 'Models',
           budget: 'Budget',
           budgetLimit: 'Budget Limit',
-          budgetHardLimit: 'Hard Limit',
+          budgetHardLimit: 'Auto-Stop',
           budgetDuration: 'Duration',
           rateLimitMode: 'Rate Limit Mode',
-          tpmLimit: 'TPM Limit',
-          rpmLimit: 'RPM Limit',
+          tpmLimit: 'TPM (Tokens/min)',
+          rpmLimit: 'RPM (Req/min)',
           isActive: 'Status',
           description: 'Description'
         },
         form: {
           keyType: { required: 'Please select key type' },
           ownerType: { required: 'Please select owner type' },
-          ownerId: { required: 'Please enter owner ID' },
-          namePlaceholder: 'Main key name is fixed, scene key customizable',
-          modelsPlaceholder: 'Select authorized models'
+          ownerId: { required: 'Please select owner' },
+          scenarioPlaceholder: 'Select a scenario (manage in "Scenarios" tab)',
+          scenarioRequired: 'A scenario key requires a use scenario',
+          namePlaceholder: 'Custom name for scene key',
+          mainKeyNameFixed: 'Main key name is fixed to "main"',
+          modelsPlaceholder: 'Select authorized models',
+          budgetHardLimitDesc:
+            'When on, the key is auto-disabled once budget is exhausted (enforced by LiteLLM); when off, usage is only displayed.',
+          ownerUserPlaceholder: 'Select user',
+          ownerDeptPlaceholder: 'Select department',
+          keyTypeDescPersonalMain: "User's default AI identity, includes all public models",
+          keyTypeDescPersonalScene: 'Key for a specific use case; can narrow model authorization and budget',
+          keyTypeDescDeptMain: "Department's default AI identity, includes all public models",
+          keyTypeDescDeptScene: 'Department key for a specific use case; can narrow authorization and budget'
+        }
+      },
+      keyScenario: {
+        title: 'Use Scenarios',
+        add: 'New Scenario',
+        edit: 'Edit Scenario',
+        col: {
+          name: 'Scenario Name',
+          description: 'Description'
+        },
+        form: {
+          namePlaceholder: 'e.g. Coding Assistant, Document Translation',
+          nameRequired: 'Please enter scenario name',
+          descPlaceholder: 'Optional; describe the typical use case'
         }
       },
       dashboard: {

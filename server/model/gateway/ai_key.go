@@ -22,6 +22,7 @@ type AiKey struct {
 	KeyPrefix       string         `json:"keyPrefix" gorm:"size:20;comment:Key前缀(列表展示用)"`        // Key前缀(明文前8位+****)
 	LitellmKeyId    string         `json:"litellmKeyId" gorm:"size:100;index;comment:LiteLLM密钥ID"`    // LiteLLM key_id
 	LitellmKeyAlias string         `json:"litellmKeyAlias" gorm:"size:200;comment:LiteLLM密钥别名"`      // LiteLLM key_alias({ownerType}:{ownerId}/{name})
+	ScenarioId      int64          `json:"scenarioId,string" gorm:"index;comment:场景ID(逻辑关联gateway_key_scenario,0=无;仅场景Key有值)"` // 场景ID(逻辑关联)
 	Models          datatypes.JSON `json:"models" gorm:"type:jsonb;comment:授权模型列表(modelKey,含anthropic变体)" swaggertype:"object"` // 授权模型(modelKey 列表)
 	ModelBudgets   datatypes.JSON `json:"modelBudgets" gorm:"type:jsonb;comment:按模型预算({modelKey:金额})" swaggertype:"object"` // 按模型预算
 	Mcps            datatypes.JSON `json:"mcps" gorm:"type:jsonb;comment:授权MCP(P2预留)" swaggertype:"object"` // 授权MCP(P2)

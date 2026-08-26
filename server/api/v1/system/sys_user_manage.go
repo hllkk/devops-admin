@@ -146,6 +146,21 @@ func (a *UserApi) GetDeptUserList(c *gin.Context) {
 	response.OkWithDetailed(list, "获取成功", c)
 }
 
+// GetUserOption
+// @Tags      SysUser
+// @Summary   获取用户选择框列表(不分页,精简字段)
+// @Produce   application/json
+// @Success   200  {object}  response.Response{data=[]system.SysUser,msg=string}
+// @Router    /system/user/optionselect [get]
+func (a *UserApi) GetUserOption(c *gin.Context) {
+	list, err := userService.GetUserOptionList(c.Request.Context())
+	if err != nil {
+		response.FailWithMessage("获取失败", c)
+		return
+	}
+	response.OkWithDetailed(list, "获取成功", c)
+}
+
 // GetUserDetail
 // @Tags      SysUser
 // @Summary   获取用户详情(postIds/roleIds/roles)

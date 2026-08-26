@@ -9,6 +9,7 @@ type ApiGroup struct {
 	ModelApi
 	DeploymentApi
 	AiKeyApi
+	KeyScenarioApi
 	UsageApi
 	DashboardApi
 	RouterSettingsApi
@@ -20,6 +21,7 @@ var (
 	modelService           = service.ServiceGroupApp.GatewayServiceGroup.ModelService
 	deploymentService      = service.ServiceGroupApp.GatewayServiceGroup.DeploymentService
 	aiKeyService           = service.ServiceGroupApp.GatewayServiceGroup.AiKeyService
+	keyScenarioService     = service.ServiceGroupApp.GatewayServiceGroup.KeyScenarioService
 	usageService           = service.ServiceGroupApp.GatewayServiceGroup.UsageSyncService
 	usageAggregateService  = service.ServiceGroupApp.GatewayServiceGroup.UsageAggregateService
 	dashboardService       = service.ServiceGroupApp.GatewayServiceGroup.DashboardService

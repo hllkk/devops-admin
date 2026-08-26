@@ -73,6 +73,13 @@ func (s *UserService) GetDeptUserList(ctx context.Context, deptId int64) (list [
 	return
 }
 
+// GetUserOptionList 用户选择框列表(对齐前端 GET /system/user/optionselect,不分页,精简字段,
+// 仅供下拉选择,避免泄露手机/邮箱等敏感字段)。
+func (s *UserService) GetUserOptionList(ctx context.Context) (list []system.SysUser, err error) {
+	err = global.OPS_DB.WithContext(ctx).Select("id, user_name, nick_name").Where("status = ?", "0").Order(userOrder).Find(&list).Error
+	return
+}
+
 // Create 新增用户(事务:用户名唯一校验 → 建用户[bcrypt 密码 + UUID + PasswordUpdatedAt] → 保存 sys_user_role/sys_user_post)。
 func (s *UserService) Create(ctx context.Context, req systemReq.UserOperateParams, createBy int64) error {
 	if req.UserName == "" {

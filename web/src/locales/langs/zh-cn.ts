@@ -738,34 +738,63 @@ const local: App.I18n.Schema = {
       },
       aiKey: {
         title: 'AI密钥管理',
+        tabKeys: '密钥列表',
+        tabScenario: '场景管理',
         add: '新增密钥',
         edit: '编辑密钥',
+        baseSection: '基础信息',
+        authSection: '授权',
         budgetSection: '预算',
         rateLimitSection: '限流',
         col: {
           name: '密钥名称',
           keyType: '密钥类型',
+          scenario: '场景',
           ownerType: '归属类型',
-          ownerId: '归属ID',
+          ownerId: '归属对象',
           owner: '归属',
           keyPrefix: 'Key前缀',
           models: '授权模型',
           budget: '预算执行',
           budgetLimit: '预算上限',
-          budgetHardLimit: '硬限',
+          budgetHardLimit: '超支停用',
           budgetDuration: '预算周期',
           rateLimitMode: '限流模式',
-          tpmLimit: 'TPM限流',
-          rpmLimit: 'RPM限流',
+          tpmLimit: 'TPM（Tokens/分钟）',
+          rpmLimit: 'RPM（请求/分钟）',
           isActive: '状态',
           description: '描述'
         },
         form: {
           keyType: { required: '请选择密钥类型' },
           ownerType: { required: '请选择归属类型' },
-          ownerId: { required: '请输入归属ID' },
-          namePlaceholder: '主Key固定名称，场景Key可自定义',
-          modelsPlaceholder: '选择授权模型'
+          ownerId: { required: '请选择归属对象' },
+          scenarioPlaceholder: '请选择场景（可在"场景管理"页签维护）',
+          scenarioRequired: '场景 Key 需选择使用场景',
+          namePlaceholder: '场景 Key 可自定义名称',
+          mainKeyNameFixed: '主 Key 名称固定为 main，无需填写',
+          modelsPlaceholder: '选择授权模型',
+          budgetHardLimitDesc: '开启后，预算用尽自动停用该 Key（LiteLLM 拦截）；不开启仅展示用量，不拦截',
+          ownerUserPlaceholder: '请选择用户',
+          ownerDeptPlaceholder: '请选择部门',
+          keyTypeDescPersonalMain: '该用户的默认 AI 身份，默认可用全部公开模型',
+          keyTypeDescPersonalScene: '面向特定用途的 Key，可收窄模型授权与预算',
+          keyTypeDescDeptMain: '该部门的默认 AI 身份，默认可用全部公开模型',
+          keyTypeDescDeptScene: '部门专项用途的 Key，可收窄模型授权与预算'
+        }
+      },
+      keyScenario: {
+        title: '使用场景',
+        add: '新增场景',
+        edit: '编辑场景',
+        col: {
+          name: '场景名称',
+          description: '描述'
+        },
+        form: {
+          namePlaceholder: '如：代码助手、文档翻译',
+          nameRequired: '请输入场景名称',
+          descPlaceholder: '选填，说明该场景的典型用途'
         }
       },
       dashboard: {

@@ -30,6 +30,7 @@ func (i *initProviderPrefix) MigrateTable(ctx context.Context) (context.Context,
 		&gatewayModel.ProviderPrefix{},
 		&gatewayModel.Model{},
 		&gatewayModel.AiKey{},
+		&gatewayModel.KeyScenario{},
 		&gatewayModel.CostSummaryDaily{},
 	)
 }
@@ -52,6 +53,12 @@ func (i *initProviderPrefix) InitializeData(ctx context.Context) (context.Contex
 		return ctx, system.ErrMissingDBContext
 	}
 	if err := SeedProviderPrefix(db); err != nil {
+		return ctx, err
+	}
+	if err := EnsureAiKeyUniqueIndex(db); err != nil {
+		return ctx, err
+	}
+	if err := EnsureKeyScenarioUniqueIndex(db); err != nil {
 		return ctx, err
 	}
 	return ctx, nil
@@ -132,4 +139,22 @@ func SeedProviderPrefix(db *gorm.DB) error {
 		return errors.Wrap(err, gatewayModel.ProviderPrefix{}.TableName()+"供应商前缀种子初始化失败!")
 	}
 	return nil
+}
+
+// EnsureAiKeyUniqueIndex 创建 AiKey 同类归属下名称唯一的部分唯一索引
+// (owner_type, owner_id, key_type, name) WHERE deleted_at IS NULL。
+// 防同 owner 同 key_type 下 name 重复导致 LiteLLM key_alias 撞车(alias={ownerType}:{ownerId}/{name})；
+// 软删记录不占约束(删后可重建同名)。gorm tag 建不出部分索引(含 deleted_at 的普通唯一索引在
+// Postgres 下 NULL 不参与唯一比较、防不住未删重复)，用手写 SQL。
+// 导出供两路调用：/initdb 初始化器链(InitializeData)与重启路径 RegisterTables 末尾兜底(同 SeedProviderPrefix 模式)。
+func EnsureAiKeyUniqueIndex(db *gorm.DB) error {
+	return db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_aikey_owner_name ON gateway_ai_key (owner_type, owner_id, key_type, name) WHERE deleted_at IS NULL`).Error
+}
+
+// EnsureKeyScenarioUniqueIndex 创建 KeyScenario 名称唯一的部分唯一索引(name) WHERE deleted_at IS NULL。
+// 停用行占名(is_active=false 仍在列表可见，防同名二义)，软删行不占名(删后可重建同名)。
+// 规避 AIHelms 的坑：其 key_scenarios 的 DB unique 与"删除=置 is_active=false"并存，软删后同名永远建不回。
+// 导出供两路调用：/initdb 初始化器链(InitializeData)与重启路径 RegisterTables 末尾兜底(同上模式)。
+func EnsureKeyScenarioUniqueIndex(db *gorm.DB) error {
+	return db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_keyscenario_name ON gateway_key_scenario (name) WHERE deleted_at IS NULL`).Error
 }

@@ -920,13 +920,18 @@ declare namespace App {
           };
           aiKey: {
             title: string;
+            tabKeys: string;
+            tabScenario: string;
             add: string;
             edit: string;
+            baseSection: string;
+            authSection: string;
             budgetSection: string;
             rateLimitSection: string;
             col: {
               name: string;
               keyType: string;
+              scenario: string;
               ownerType: string;
               ownerId: string;
               owner: string;
@@ -946,8 +951,32 @@ declare namespace App {
               keyType: { required: string };
               ownerType: { required: string };
               ownerId: { required: string };
+              scenarioPlaceholder: string;
+              scenarioRequired: string;
               namePlaceholder: string;
+              mainKeyNameFixed: string;
               modelsPlaceholder: string;
+              budgetHardLimitDesc: string;
+              ownerUserPlaceholder: string;
+              ownerDeptPlaceholder: string;
+              keyTypeDescPersonalMain: string;
+              keyTypeDescPersonalScene: string;
+              keyTypeDescDeptMain: string;
+              keyTypeDescDeptScene: string;
+            };
+          };
+          keyScenario: {
+            title: string;
+            add: string;
+            edit: string;
+            col: {
+              name: string;
+              description: string;
+            };
+            form: {
+              namePlaceholder: string;
+              nameRequired: string;
+              descPlaceholder: string;
             };
           };
           dashboard: {

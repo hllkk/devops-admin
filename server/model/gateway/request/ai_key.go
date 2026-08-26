@@ -11,6 +11,7 @@ type AiKeySearch struct {
 	OwnerType string `json:"ownerType" form:"ownerType"` // 归属类型(精确)
 	OwnerId   int64  `json:"ownerId,string" form:"ownerId"` // 归属ID(0=不限)
 	Name      string `json:"name" form:"name"`           // 名称(模糊)
+	ScenarioId int64 `json:"scenarioId,string" form:"scenarioId"` // 场景ID(0=不限)
 	IsActive  *bool  `json:"isActive" form:"isActive"`   // 是否启用(精确,nil=不限)
 }
 
@@ -25,6 +26,7 @@ type AiKeyOperateParams struct {
 	OwnerId          int64           `json:"ownerId,string" form:"ownerId"`   // 归属ID(创建必填)
 	Name             string          `json:"name" form:"name"`                // 名称
 	Description      string          `json:"description" form:"description"`  // 描述
+	ScenarioId       *int64          `json:"scenarioId,string" form:"scenarioId"` // 场景ID(场景Key可填;nil=清空/主Key恒0;须为未软删且启用的场景)
 	Models           []string        `json:"models" form:"models"`           // 授权模型(modelKey列表)
 	ModelBudgets     map[string]any   `json:"modelBudgets" form:"modelBudgets"` // 按模型预算
 	BudgetLimit      *float64        `json:"budgetLimit" form:"budgetLimit"`  // 预算上限

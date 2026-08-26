@@ -76,6 +76,7 @@ func (s *AiKeyService) GetMyIdentity(ctx context.Context, userId int64) (gateway
 	for i := range sceneRows {
 		view.SceneKeys = append(view.SceneKeys, toAiKeyView(sceneRows[i]))
 	}
+	fillScenarioNames(ctx, view.SceneKeys)
 	return view, nil
 }
 
@@ -154,6 +155,9 @@ func (s *AiKeyService) GetAiKeyList(ctx context.Context, q gatewayReq.AiKeySearc
 	if q.Name != "" {
 		db = db.Where("name LIKE ?", "%"+q.Name+"%")
 	}
+	if q.ScenarioId != 0 {
+		db = db.Where("scenario_id = ?", q.ScenarioId)
+	}
 	if q.IsActive != nil {
 		db = db.Where("is_active = ?", *q.IsActive)
 	}
@@ -171,6 +175,8 @@ func (s *AiKeyService) GetAiKeyList(ctx context.Context, q gatewayReq.AiKeySearc
 	for i := range rows {
 		list = append(list, toAiKeyView(rows[i]))
 	}
+	fillOwnerNames(ctx, list)
+	fillScenarioNames(ctx, list)
 	return list, total, nil
 }
 
@@ -180,7 +186,93 @@ func (s *AiKeyService) GetAiKey(ctx context.Context, id int64) (gatewayResp.AiKe
 	if err := global.OPS_DB.WithContext(ctx).Where("ai_key_id = ?", id).First(&k).Error; err != nil {
 		return gatewayResp.AiKeyView{}, err
 	}
-	return toAiKeyView(k), nil
+	v := toAiKeyView(k)
+	fillOwnerNames(ctx, []gatewayResp.AiKeyView{v})
+	fillScenarioNames(ctx, []gatewayResp.AiKeyView{v})
+	return v, nil
+}
+
+// fillOwnerNames 批量填充 view.OwnerName(user→SysUser.NickName; dept→SysDepartment.DeptName)，
+// 按 ownerType 分组一次性 IN 查询，避免逐行 N+1；查不到留空(不影响主流程)。
+func fillOwnerNames(ctx context.Context, list []gatewayResp.AiKeyView) {
+	if len(list) == 0 {
+		return
+	}
+	userIDs := make(map[int64]struct{})
+	deptIDs := make(map[int64]struct{})
+	for i := range list {
+		switch list[i].OwnerType {
+		case gateway.OwnerTypeUser:
+			userIDs[list[i].OwnerId] = struct{}{}
+		case gateway.OwnerTypeDept:
+			deptIDs[list[i].OwnerId] = struct{}{}
+		}
+	}
+	userMap := make(map[int64]string, len(userIDs))
+	deptMap := make(map[int64]string, len(deptIDs))
+	if len(userIDs) > 0 {
+		ids := make([]int64, 0, len(userIDs))
+		for id := range userIDs {
+			ids = append(ids, id)
+		}
+		var us []system.SysUser
+		if err := global.OPS_DB.WithContext(ctx).Select("id, nick_name").Where("id IN ?", ids).Find(&us).Error; err == nil {
+			for _, u := range us {
+				userMap[u.UserId] = u.NickName
+			}
+		}
+	}
+	if len(deptIDs) > 0 {
+		ids := make([]int64, 0, len(deptIDs))
+		for id := range deptIDs {
+			ids = append(ids, id)
+		}
+		var ds []system.SysDepartment
+		if err := global.OPS_DB.WithContext(ctx).Select("dept_id, dept_name").Where("dept_id IN ?", ids).Find(&ds).Error; err == nil {
+			for _, d := range ds {
+				deptMap[d.DeptId] = d.DeptName
+			}
+		}
+	}
+	for i := range list {
+		switch list[i].OwnerType {
+		case gateway.OwnerTypeUser:
+			list[i].OwnerName = userMap[list[i].OwnerId]
+		case gateway.OwnerTypeDept:
+			list[i].OwnerName = deptMap[list[i].OwnerId]
+		}
+	}
+}
+
+// fillScenarioNames 批量填充 view.ScenarioName(逻辑关联 gateway_key_scenario，一次 IN 查询；
+// 场景查不到留空，不影响主流程)。
+func fillScenarioNames(ctx context.Context, list []gatewayResp.AiKeyView) {
+	ids := make(map[int64]struct{})
+	for i := range list {
+		if list[i].ScenarioId != 0 {
+			ids[list[i].ScenarioId] = struct{}{}
+		}
+	}
+	if len(ids) == 0 {
+		return
+	}
+	slice := make([]int64, 0, len(ids))
+	for id := range ids {
+		slice = append(slice, id)
+	}
+	names := map[int64]string{}
+	var rows []gateway.KeyScenario
+	if err := global.OPS_DB.WithContext(ctx).Select("scenario_id, name").
+		Where("scenario_id IN ?", slice).Find(&rows).Error; err == nil {
+		for _, r := range rows {
+			names[r.ScenarioId] = r.Name
+		}
+	}
+	for i := range list {
+		if list[i].ScenarioId != 0 {
+			list[i].ScenarioName = names[list[i].ScenarioId]
+		}
+	}
 }
 
 // CreateSceneKey 创建密钥(场景 Key 或管理员手动建部门主 Key)。
@@ -212,6 +304,18 @@ func (s *AiKeyService) CreateSceneKey(ctx context.Context, req gatewayReq.AiKeyO
 		}
 	}
 
+	// 名称同类归属下唯一(防 LiteLLM key_alias 撞车:alias={ownerType}:{ownerId}/{name})；
+	// 软删记录由 gorm 自动过滤(deleted_at IS NULL)，删后可重建同名。
+	var nameCnt int64
+	if err := global.OPS_DB.WithContext(ctx).Model(&gateway.AiKey{}).
+		Where("key_type = ? AND owner_type = ? AND owner_id = ? AND name = ?", req.KeyType, req.OwnerType, req.OwnerId, req.Name).
+		Count(&nameCnt).Error; err != nil {
+		return gatewayResp.AiKeyView{}, err
+	}
+	if nameCnt > 0 {
+		return gatewayResp.AiKeyView{}, errors.New("该归属下已存在同名密钥")
+	}
+
 	alias := buildKeyAlias(req.KeyType, req.OwnerType, req.OwnerId, req.Name)
 	models := req.Models
 	if models == nil {
@@ -222,6 +326,18 @@ func (s *AiKeyService) CreateSceneKey(ctx context.Context, req gatewayReq.AiKeyO
 		models = publicModelKeys(global.OPS_DB.WithContext(ctx))
 	}
 
+	// 场景归属(仅场景 Key；主 Key 恒无场景)
+	scenarioId := int64(0)
+	if req.ScenarioId != nil && *req.ScenarioId != 0 {
+		if gateway.MainKeyType(req.KeyType) {
+			return gatewayResp.AiKeyView{}, errors.New("主 Key 不能关联场景")
+		}
+		if err := ensureScenarioUsable(ctx, global.OPS_DB, *req.ScenarioId); err != nil {
+			return gatewayResp.AiKeyView{}, err
+		}
+		scenarioId = *req.ScenarioId
+	}
+
 	k := gateway.AiKey{
 		Name:            req.Name,
 		Description:     req.Description,
@@ -229,6 +345,7 @@ func (s *AiKeyService) CreateSceneKey(ctx context.Context, req gatewayReq.AiKeyO
 		OwnerType:       req.OwnerType,
 		OwnerId:         req.OwnerId,
 		LitellmKeyAlias: alias,
+		ScenarioId:      scenarioId,
 		Models:          marshalJSONStringSlice(models),
 		ModelBudgets:   marshalJSONMap(req.ModelBudgets),
 		Mcps:            datatypes.JSON([]byte("[]")),
@@ -275,13 +392,43 @@ func (s *AiKeyService) UpdateAiKey(ctx context.Context, req gatewayReq.AiKeyOper
 		return gatewayResp.AiKeyView{}, errors.New("密钥类型不可修改(需删旧建新)")
 	}
 
+	// 名称变更时查重(防 LiteLLM key_alias 撞车)，排除自身；软删由 gorm 自动过滤。
+	if req.Name != "" && req.Name != k.Name {
+		var nameCnt int64
+		if err := global.OPS_DB.WithContext(ctx).Model(&gateway.AiKey{}).
+			Where("key_type = ? AND owner_type = ? AND owner_id = ? AND name = ? AND ai_key_id <> ?",
+				k.KeyType, k.OwnerType, k.OwnerId, req.Name, req.AiKeyId).
+			Count(&nameCnt).Error; err != nil {
+			return gatewayResp.AiKeyView{}, err
+		}
+		if nameCnt > 0 {
+			return gatewayResp.AiKeyView{}, errors.New("该归属下已存在同名密钥")
+		}
+	}
+
 	models := req.Models
 	if models == nil {
 		models = jsonToSlice(k.Models)
 	}
+
+	// 场景归属(nil=清空为无场景；非空须为启用场景；主 Key 恒清空)
+	if req.ScenarioId != nil && *req.ScenarioId != 0 {
+		if gateway.MainKeyType(k.KeyType) {
+			return gatewayResp.AiKeyView{}, errors.New("主 Key 不能关联场景")
+		}
+		if err := ensureScenarioUsable(ctx, global.OPS_DB, *req.ScenarioId); err != nil {
+			return gatewayResp.AiKeyView{}, err
+		}
+	}
+	scenarioId := int64(0)
+	if req.ScenarioId != nil {
+		scenarioId = *req.ScenarioId
+	}
+
 	updates := map[string]any{
 		"name":              req.Name,
 		"description":       req.Description,
+		"scenario_id":       scenarioId,
 		"models":            marshalJSONStringSlice(models),
 		"model_budgets":    marshalJSONMap(req.ModelBudgets),
 		"budget_duration":   normalizeBudgetDuration(req.BudgetDuration),

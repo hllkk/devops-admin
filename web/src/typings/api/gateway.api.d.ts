@@ -61,6 +61,9 @@ declare namespace Api {
       keyType: KeyType;
       ownerType: OwnerType;
       ownerId: CommonType.IdType;
+      ownerName: string;
+      scenarioId: CommonType.IdType;
+      scenarioName: string;
       keyPrefix: string;
       litellmKeyId: string;
       litellmKeyAlias: string;
@@ -339,12 +342,12 @@ declare namespace Api {
 
     // ───────────────── AI 密钥 AiKey(搜索/操作参数) ─────────────────
 
-    /** AI 密钥搜索参数(keyType/ownerType/ownerId/isActive 精确;name 模糊) */
+    /** AI 密钥搜索参数(keyType/ownerType/ownerId/scenarioId/isActive 精确;name 模糊) */
     type AiKeySearchParams = CommonType.RecordNullable<
-      Pick<AiKey, 'keyType' | 'ownerType' | 'ownerId' | 'name' | 'isActive'> & Api.Common.CommonSearchParams
+      Pick<AiKey, 'keyType' | 'ownerType' | 'ownerId' | 'scenarioId' | 'name' | 'isActive'> & Api.Common.CommonSearchParams
     >;
 
-    /** AI 密钥新增/修改参数(keyType/ownerType/ownerId 创建必填且不可改) */
+    /** AI 密钥新增/修改参数(keyType/ownerType/ownerId 创建必填且不可改；scenarioId 仅场景 Key，null=清空) */
     type AiKeyOperateParams = CommonType.RecordNullable<
       Pick<
         AiKey,
@@ -354,6 +357,7 @@ declare namespace Api {
         | 'ownerId'
         | 'name'
         | 'description'
+        | 'scenarioId'
         | 'models'
         | 'modelBudgets'
         | 'budgetLimit'
@@ -365,6 +369,26 @@ declare namespace Api {
         | 'modelLimits'
         | 'isActive'
       >
+    >;
+
+    // ───────────────── 使用场景 KeyScenario(场景 Key 的分类字典) ─────────────────
+
+    /** 使用场景(极简字典：名称+描述+启停；建场景 Key 时下拉选择) */
+    type KeyScenario = Common.CommonRecord<{
+      scenarioId: CommonType.IdType;
+      name: string;
+      description: string;
+      isActive: boolean;
+    }>;
+
+    /** 使用场景搜索参数(isActive 精确;name 模糊) */
+    type KeyScenarioSearchParams = CommonType.RecordNullable<
+      Pick<KeyScenario, 'name' | 'isActive'> & Api.Common.CommonSearchParams
+    >;
+
+    /** 使用场景新增/修改参数(name 未软删行内唯一) */
+    type KeyScenarioOperateParams = CommonType.RecordNullable<
+      Pick<KeyScenario, 'scenarioId' | 'name' | 'description' | 'isActive'>
     >;
   }
 }

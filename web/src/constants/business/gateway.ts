@@ -119,6 +119,26 @@ export const KEY_TYPE_OPTIONS = [
   { label: 'page.gateway.common.keyDeptScene', value: 'dept_scene' }
 ] as const;
 
+/** 判定密钥类型是否主 Key(personal_main/dept_main)，与后端 gateway.MainKeyType 对齐 */
+export function isMainKeyType(kt?: string | null): boolean {
+  return !!kt && kt.endsWith('_main');
+}
+
+/** 密钥类型 → 用途说明 i18n key(供表单选中类型后展示说明) */
+const KEY_TYPE_DESC_KEY = {
+  personal_main: 'page.gateway.aiKey.form.keyTypeDescPersonalMain',
+  personal_scene: 'page.gateway.aiKey.form.keyTypeDescPersonalScene',
+  dept_main: 'page.gateway.aiKey.form.keyTypeDescDeptMain',
+  dept_scene: 'page.gateway.aiKey.form.keyTypeDescDeptScene'
+} as const;
+
+type KeyTypeDescKey = (typeof KEY_TYPE_DESC_KEY)[keyof typeof KEY_TYPE_DESC_KEY];
+
+/** 取密钥类型对应的用途说明 i18n key(返回字面量联合，可直接喂 $t)，未匹配返回 undefined */
+export function getKeyTypeDescKey(kt?: string | null): KeyTypeDescKey | undefined {
+  return kt ? KEY_TYPE_DESC_KEY[kt as keyof typeof KEY_TYPE_DESC_KEY] : undefined;
+}
+
 /** 归属类型选项 */
 export const OWNER_TYPE_OPTIONS = [
   { label: 'page.gateway.common.ownerUser', value: 'user' },

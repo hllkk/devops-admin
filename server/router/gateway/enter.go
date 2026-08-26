@@ -20,6 +20,7 @@ var (
 	modelApi          = v1.ApiGroupApp.GatewayApiGroup.ModelApi
 	deploymentApi     = v1.ApiGroupApp.GatewayApiGroup.DeploymentApi
 	aiKeyApi          = v1.ApiGroupApp.GatewayApiGroup.AiKeyApi
+	keyScenarioApi    = v1.ApiGroupApp.GatewayApiGroup.KeyScenarioApi
 	usageApi          = v1.ApiGroupApp.GatewayApiGroup.UsageApi
 	dashboardApi      = v1.ApiGroupApp.GatewayApiGroup.DashboardApi
 	routerSettingsApi = v1.ApiGroupApp.GatewayApiGroup.RouterSettingsApi

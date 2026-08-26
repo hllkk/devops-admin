@@ -8,6 +8,7 @@ type ServiceGroup struct {
 	ModelService
 	DeploymentService
 	AiKeyService
+	KeyScenarioService
 	UsageSyncService
 	UsageAggregateService
 	DashboardService

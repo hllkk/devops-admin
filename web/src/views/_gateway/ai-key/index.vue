@@ -7,15 +7,19 @@ import { defaultTransform, useNaivePaginatedTable, useTableOperate } from '@/hoo
 import { $t } from '@/locales';
 import { handleCopy } from '@/utils/copy';
 import ButtonIcon from '@/components/custom/button-icon.vue';
-import { KEY_TYPE_OPTIONS, OWNER_TYPE_OPTIONS } from '@/constants/business/gateway';
+import { KEY_TYPE_OPTIONS, OWNER_TYPE_OPTIONS, isMainKeyType } from '@/constants/business/gateway';
 import AiKeySearch from './modules/ai-key-search.vue';
 import AiKeyOperateDrawer from './modules/ai-key-operate-drawer.vue';
+import KeyScenarioPanel from './modules/key-scenario-panel.vue';
 
 defineOptions({
   name: 'AiKeyList'
 });
 
 const appStore = useAppStore();
+
+// 页面双 Tab：密钥列表 / 场景管理(场景是场景 Key 的分类字典，与密钥同域维护)
+const activeTab = ref<'keys' | 'scenario'>('keys');
 
 const searchParams = ref<Api.Gateway.AiKeySearchParams>({
   pageNum: 1,
@@ -56,7 +60,10 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       title: $t('page.gateway.aiKey.col.name'),
       align: 'center',
       minWidth: 120,
-      ellipsis: { tooltip: true }
+      ellipsis: { tooltip: true },
+      // 对齐 AIHelms 展示编排：主 Key 名称恒为 main(无信息量)，改显归属对象名；
+      // 场景 Key 显 name。归属名兜底 ownerType:ownerId。
+      render: row => (isMainKeyType(row.keyType) ? row.ownerName || `${row.ownerType}:${row.ownerId}` : row.name)
     },
     {
       key: 'keyType',
@@ -66,11 +73,22 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       render: row => <NTag type={row.keyType.endsWith('_main') ? 'success' : 'info'}>{$t(keyTypeLabelKey(row.keyType))}</NTag>
     },
     {
+      key: 'scenario',
+      title: $t('page.gateway.aiKey.col.scenario'),
+      align: 'center',
+      minWidth: 110,
+      render: row =>
+        isMainKeyType(row.keyType) ? <span class="text-slate-400">-</span> : row.scenarioName || <span class="text-slate-400">-</span>
+    },
+    {
       key: 'owner',
       title: $t('page.gateway.aiKey.col.owner'),
       align: 'center',
       minWidth: 120,
-      render: row => `${$t(ownerTypeLabelKey(row.ownerType))}:${row.ownerId}`
+      render: row => {
+        const typeLabel = $t(ownerTypeLabelKey(row.ownerType));
+        return row.ownerName ? `${row.ownerName}（${typeLabel}）` : `${typeLabel}:${row.ownerId}`;
+      }
     },
     {
       key: 'keyPrefix',
@@ -103,7 +121,12 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
         return (
           <div class="flex flex-col items-center gap-2px">
             <NProgress type="line" percentage={rate} status={rate >= 85 ? 'error' : rate >= 60 ? 'warning' : 'success'} />
-            <span class="text-12px text-slate-400">{row.budgetUsed}/{row.budgetLimit}</span>
+            <div class="flex items-center gap-4px">
+              <span class="text-12px text-slate-400">{row.budgetUsed}/{row.budgetLimit}</span>
+              <NTag size="small" bordered={false} type={row.budgetHardLimit ? 'error' : 'default'}>
+                {$t(row.budgetHardLimit ? 'page.gateway.common.hardLimitOn' : 'page.gateway.common.hardLimitOff')}
+              </NTag>
+            </div>
           </div>
         );
       }
@@ -182,33 +205,44 @@ async function handleDelete(aiKeyId: CommonType.IdType) {
 
 <template>
   <div class="min-h-500px flex-col-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
-    <AiKeySearch v-model:model="searchParams" @reset="getDataByPage" @search="getDataByPage" />
-    <NCard :title="$t('page.gateway.aiKey.title')" :bordered="false" size="small" class="card-wrapper sm:flex-1-hidden">
-      <template #header-extra>
-        <TableHeaderOperation
-          v-model:columns="columnChecks"
-          :disabled-delete="checkedRowKeys.length === 0"
-          :loading="loading"
-          :show-add="true"
-          :show-delete="true"
-          @add="handleAdd"
-          @delete="handleBatchDelete"
-          @refresh="getData"
-        />
-      </template>
-      <NDataTable
-        v-model:checked-row-keys="checkedRowKeys"
-        :columns="columns"
-        :data="data"
-        size="small"
-        :flex-height="!appStore.isMobile"
-        :scroll-x="scrollX"
-        :loading="loading"
-        remote
-        :row-key="row => row.aiKeyId"
-        :pagination="mobilePagination"
-        class="sm:h-full"
-      />
+    <NCard :title="$t('page.gateway.aiKey.title')" :bordered="false" size="small" class="card-wrapper">
+      <NTabs v-model:value="activeTab" type="line">
+        <NTabPane name="keys" :tab="$t('page.gateway.aiKey.tabKeys')" display-directive="show">
+          <div class="flex-col-stretch gap-16px">
+            <AiKeySearch v-model:model="searchParams" @reset="getDataByPage" @search="getDataByPage" />
+            <NCard :bordered="false" size="small" class="card-wrapper">
+              <template #header-extra>
+                <TableHeaderOperation
+                  v-model:columns="columnChecks"
+                  :disabled-delete="checkedRowKeys.length === 0"
+                  :loading="loading"
+                  :show-add="true"
+                  :show-delete="true"
+                  @add="handleAdd"
+                  @delete="handleBatchDelete"
+                  @refresh="getData"
+                />
+              </template>
+              <NDataTable
+                v-model:checked-row-keys="checkedRowKeys"
+                :columns="columns"
+                :data="data"
+                size="small"
+                :flex-height="!appStore.isMobile"
+                :scroll-x="scrollX"
+                :loading="loading"
+                remote
+                :row-key="row => row.aiKeyId"
+                :pagination="mobilePagination"
+                class="sm:h-full"
+              />
+            </NCard>
+          </div>
+        </NTabPane>
+        <NTabPane name="scenario" :tab="$t('page.gateway.aiKey.tabScenario')" display-directive="show">
+          <KeyScenarioPanel @changed="getData" />
+        </NTabPane>
+      </NTabs>
       <AiKeyOperateDrawer
         v-model:visible="drawerVisible"
         :operate-type="operateType"

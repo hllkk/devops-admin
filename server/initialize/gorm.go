@@ -80,6 +80,7 @@ func RegisterTables() {
 		gateway.ModelDeployment{},
 		gateway.ModelVisibility{},
 		gateway.AiKey{},
+		gateway.KeyScenario{},
 		gateway.LlmLog{},
 		gateway.SyncState{},
 		gateway.CostSummaryDaily{},
@@ -102,6 +103,16 @@ func RegisterTables() {
 	// /initdb 路径由 source/gateway 初始化器链覆盖）。失败仅记日志不阻断启动。
 	if err := sourceGateway.SeedProviderPrefix(db); err != nil {
 		logger.Bg().Mod("gateway").Err(err).Error("seed gateway_provider_prefix failed")
+	}
+	// AiKey 同类归属下名称唯一索引兜底（防 LiteLLM key_alias 撞车；部分索引 WHERE deleted_at IS NULL，
+	// 软删记录不占约束。/initdb 路径由 source/gateway 初始化器链覆盖）。失败仅记日志不阻断启动——
+	// 存量脏数据环境重启不崩，名称查重由 service 层兜底。
+	if err := sourceGateway.EnsureAiKeyUniqueIndex(db); err != nil {
+		logger.Bg().Mod("gateway").Err(err).Error("ensure gateway_ai_key unique index failed")
+	}
+	// KeyScenario 名称唯一索引兜底(同上：软删行不占名，停用行占名防同名二义)。
+	if err := sourceGateway.EnsureKeyScenarioUniqueIndex(db); err != nil {
+		logger.Bg().Mod("gateway").Err(err).Error("ensure gateway_key_scenario unique index failed")
 	}
 	logger.Bg().Mod("system").Info("register table success")
 }

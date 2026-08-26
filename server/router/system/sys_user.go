@@ -37,6 +37,7 @@ func (s *UserRouter) InitUserRouter(Router *gin.RouterGroup) {
 		systemUserRouter.POST("importData", userApi.ImportUser)             // 导入用户(Excel)
 		systemUserRouter.GET("list/dept/:deptId", userApi.GetDeptUserList)  // 部门下用户(负责人选择用)
 		systemUserRouter.GET("deptTree", userApi.GetDeptTree)               // 部门树(复用部门模块)
+		systemUserRouter.GET("optionselect", userApi.GetUserOption)        // 用户选择框(不分页,精简字段)
 		systemUserRouter.GET(":userId", userApi.GetUserDetail)              // 用户详情
 		systemUserRouter.POST("", userApi.CreateUser)                       // 新增用户(含分配角色/岗位)
 		systemUserRouter.PUT("", userApi.UpdateUser)                        // 修改用户(全量替换角色/岗位)

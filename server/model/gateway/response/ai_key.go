@@ -7,7 +7,9 @@ import (
 // AiKeyView 密钥出网视图(管理员视角)：不返回 KeyValue 明文，只回 KeyPrefix。
 type AiKeyView struct {
 	gateway.AiKey
-	Models      []string       `json:"models"`      // 授权模型(展开)
+	OwnerName    string         `json:"ownerName"`    // 归属名(user→昵称/dept→部门名,联表填充)
+	ScenarioName string         `json:"scenarioName"` // 场景名(逻辑关联填充,场景Key才有)
+	Models       []string       `json:"models"`       // 授权模型(展开)
 	ModelBudgets map[string]any `json:"modelBudgets"` // 按模型预算(展开)
 	ModelLimits  map[string]any `json:"modelLimits"`  // per-model限流(展开)
 }

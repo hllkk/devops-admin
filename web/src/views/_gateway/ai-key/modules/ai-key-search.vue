@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { computed, toRaw } from 'vue';
+import { computed, toRaw, watch } from 'vue';
 import { jsonClone } from '@sa/utils';
 import { useNaiveForm } from '@/hooks/common/form';
 import { $t } from '@/locales';
+import UserSelect from '@/components/custom/user-select.vue';
+import DeptTreeSelect from '@/components/custom/dept-tree-select.vue';
 import { ACTIVE_OPTIONS, KEY_TYPE_OPTIONS, OWNER_TYPE_OPTIONS } from '@/constants/business/gateway';
 
 defineOptions({ name: 'AiKeySearch' });
@@ -23,6 +25,14 @@ const defaultModel = jsonClone(toRaw(model.value));
 const keyTypeOptions = computed(() => KEY_TYPE_OPTIONS.map(o => ({ label: $t(o.label), value: o.value })));
 const ownerTypeOptions = computed(() => OWNER_TYPE_OPTIONS.map(o => ({ label: $t(o.label), value: o.value })));
 const activeOptions = computed(() => ACTIVE_OPTIONS.map(o => ({ label: $t(o.label), value: o.value })));
+
+// 切换归属类型时清空已选归属对象(避免 user 的 id 带到 dept)
+watch(
+  () => model.value.ownerType,
+  () => {
+    model.value.ownerId = null;
+  }
+);
 
 const isActiveSearch = computed<number | null>({
   get: () => (model.value.isActive === null ? null : model.value.isActive ? 1 : 0),
@@ -61,6 +71,23 @@ async function search() {
             </NFormItemGi>
             <NFormItemGi span="24 s:12 m:8" :label="$t('page.gateway.aiKey.col.ownerType')" path="ownerType" class="pr-24px">
               <NSelect v-model:value="model.ownerType" clearable :options="ownerTypeOptions" :placeholder="$t('common.placeholderSelect')" />
+            </NFormItemGi>
+            <NFormItemGi span="24 s:12 m:8" :label="$t('page.gateway.aiKey.col.ownerId')" path="ownerId" class="pr-24px">
+              <UserSelect
+                v-if="model.ownerType === 'user'"
+                v-model:value="model.ownerId"
+                clearable
+                :placeholder="$t('page.gateway.aiKey.form.ownerUserPlaceholder')"
+                class="w-full"
+              />
+              <DeptTreeSelect
+                v-else-if="model.ownerType === 'dept'"
+                v-model:value="model.ownerId"
+                clearable
+                :placeholder="$t('page.gateway.aiKey.form.ownerDeptPlaceholder')"
+                class="w-full"
+              />
+              <NSelect v-else disabled :placeholder="$t('page.gateway.aiKey.form.ownerType.required')" />
             </NFormItemGi>
             <NFormItemGi span="24 s:12 m:8" :label="$t('page.gateway.aiKey.col.isActive')" path="isActive" class="pr-24px">
               <NSelect v-model:value="isActiveSearch" clearable :options="activeOptions" :placeholder="$t('common.placeholderSelect')" />

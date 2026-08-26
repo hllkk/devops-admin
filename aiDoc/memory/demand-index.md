@@ -4,6 +4,7 @@
 
 | 日期 | 需求 | 文件 | 状态 |
 |---|---|---|---|
+| 2026-08-26 | AI 网关·使用场景 KeyScenario 落地（场景 Key 分类字典：gateway_key_scenario 表 + AiKey.scenario_id 逻辑关联 + 密钥管理页双 Tab 场景管理 + 建 Key 表单场景下拉必选联动名称带出 + 同名按未软删行唯一/被引用拒删，接口挂 /gateway/ai-key/scenario/* 复用菜单 api_prefix） | business/ai-gateway-key-scenario.md | 已实现 |
 | 2026-07-11 | 借鉴 gin-vue-admin 实现系统初始化流程（checkdb→initdb，路由守卫自动跳转，后端响应码对齐 "0000"） | business/system-init-flow.md | 已实现 |
 | 2026-07-11 | 后端引入雪花算法作为统一主键策略（自实现 + 字符串传输 + GORM Callback 集成） | business/snowflake-id-generator.md | 已实现 |
 | 2026-07-12 | 清理基座多租户残留代码（前端 12 文件：类型/service/store/hook/登录与社交登录页面；后端无多租户代码） | business/remove-multi-tenant.md | 已实现 |
