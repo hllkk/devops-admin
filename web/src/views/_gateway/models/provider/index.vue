@@ -152,7 +152,11 @@ function handleCredentialChanged() {
         @toggle-provider="handleToggleProvider(selectedProvider!)"
         @changed="handleCredentialChanged"
       />
-      <NEmpty v-else :description="$t('page.gateway.provider.selectProviderTip')" class="h-full flex-center" />
+      <NCard v-else :bordered="false" size="small" class="card-wrapper h-full" content-style="height: 100%">
+        <div class="h-full flex-center">
+          <NEmpty :description="$t('page.gateway.provider.selectProviderTip')" />
+        </div>
+      </NCard>
     </div>
     <ProviderOperateDrawer
       v-model:visible="drawerVisible"

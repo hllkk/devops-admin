@@ -1,26 +1,19 @@
-<script setup lang="tsx">
-import { ref } from 'vue';
-import { NTag, NTime } from 'naive-ui';
-import { useBoolean } from '@sa/hooks';
+<script setup lang="ts">
+import { computed, ref } from 'vue';
 import { fetchBatchDeleteModel, fetchGetModelList } from '@/service/api/gateway';
-import { useAppStore } from '@/store/modules/app';
-import { defaultTransform, useNaivePaginatedTable, useTableOperate } from '@/hooks/common/table';
 import { $t } from '@/locales';
+import { MODEL_CATEGORY_OPTIONS, getProviderIcon } from '@/constants/business/gateway';
 import ButtonIcon from '@/components/custom/button-icon.vue';
-import { MODEL_CATEGORY_OPTIONS } from '@/constants/business/gateway';
-import ModelSearch from './modules/model-search.vue';
+import SvgIcon from '@/components/custom/svg-icon.vue';
+import TableSiderLayout from '@/components/advanced/table-sider-layout.vue';
 import ModelOperateDrawer from './modules/model-operate-drawer.vue';
-import DeploymentManageDrawer from './modules/deployment-manage-drawer.vue';
+import ModelDetailPanel from './modules/model-detail-panel.vue';
 
-defineOptions({
-  name: 'ModelList'
-});
-
-const appStore = useAppStore();
+defineOptions({ name: 'ModelList' });
 
 const searchParams = ref<Api.Gateway.ModelSearchParams>({
   pageNum: 1,
-  pageSize: 10,
+  pageSize: 100,
   name: null,
   modelKey: null,
   category: null,
@@ -29,204 +22,186 @@ const searchParams = ref<Api.Gateway.ModelSearchParams>({
   params: {}
 });
 
-/** 部署管理抽屉(行内点「部署」打开) */
-const { bool: deployDrawerVisible, setTrue: openDeployDrawer } = useBoolean();
-const deployModel = ref<{ modelId: CommonType.IdType; modelKey: string } | null>(null);
+const modelList = ref<Api.Gateway.Model[]>([]);
+const modelLoading = ref(false);
+const selectedModel = ref<Api.Gateway.Model | null>(null);
 
-function handleManageDeploy(row: Api.Gateway.Model) {
-  deployModel.value = { modelId: row.modelId!, modelKey: row.modelKey };
-  openDeployDrawer();
+async function getModelData() {
+  modelLoading.value = true;
+  const { data, error } = await fetchGetModelList(searchParams.value);
+  if (!error && data) {
+    modelList.value = data.rows;
+    if (selectedModel.value) {
+      selectedModel.value = modelList.value.find(m => m.modelId === selectedModel.value!.modelId) ?? null;
+    }
+  }
+  modelLoading.value = false;
 }
 
-const categoryLabelKey = (v: string) => MODEL_CATEGORY_OPTIONS.find(o => o.value === v)?.label ?? 'page.gateway.common.categoryChat';
+getModelData();
 
-const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagination, scrollX } = useNaivePaginatedTable({
-  api: () => fetchGetModelList(searchParams.value),
-  transform: response => defaultTransform(response),
-  onPaginationParamsChange: params => {
-    searchParams.value.pageNum = params.page;
-    searchParams.value.pageSize = params.pageSize;
-  },
-  columns: () => [
-    {
-      type: 'selection',
-      align: 'center',
-      width: 48
-    },
-    {
-      key: 'index',
-      title: $t('common.index'),
-      align: 'center',
-      width: 64,
-      render: (_, index) => index + 1
-    },
-    {
-      key: 'name',
-      title: $t('page.gateway.model.col.name'),
-      align: 'center',
-      minWidth: 140,
-      ellipsis: { tooltip: true }
-    },
-    {
-      key: 'modelKey',
-      title: $t('page.gateway.model.col.modelKey'),
-      align: 'center',
-      minWidth: 140,
-      ellipsis: { tooltip: true }
-    },
-    {
-      key: 'category',
-      title: $t('page.gateway.model.col.category'),
-      align: 'center',
-      minWidth: 100,
-      render: row => <NTag type="info">{$t(categoryLabelKey(row.category))}</NTag>
-    },
-    {
-      key: 'capabilities',
-      title: $t('page.gateway.model.col.capabilities'),
-      align: 'center',
-      minWidth: 180,
-      render: row => (row.capabilities ?? []).map((c, i) => <NTag key={i} size="small" class="mr-4px">{c}</NTag>)
-    },
-    {
-      key: 'deploymentCount',
-      title: $t('page.gateway.model.col.deploymentCount'),
-      align: 'center',
-      minWidth: 110,
-      render: row => `${row.activeDeploymentCount ?? 0}/${row.deploymentCount ?? 0}`
-    },
-    {
-      key: 'isPublished',
-      title: $t('page.gateway.model.col.isPublished'),
-      align: 'center',
-      minWidth: 100,
-      render: row => <NTag type={row.isPublished ? 'success' : 'default'}>{$t(row.isPublished ? 'page.gateway.common.published' : 'page.gateway.common.unpublished')}</NTag>
-    },
-    {
-      key: 'isActive',
-      title: $t('page.gateway.model.col.isActive'),
-      align: 'center',
-      minWidth: 100,
-      render: row => <NTag type={row.isActive ? 'success' : 'default'}>{$t(row.isActive ? 'page.gateway.common.active' : 'page.gateway.common.inactive')}</NTag>
-    },
-    {
-      key: 'createTime',
-      title: $t('page.gateway.common.createTime'),
-      align: 'center',
-      minWidth: 170,
-      render: row => <NTime time={Date.parse(row.createTime)} format="yyyy-MM-dd HH:mm:ss" />
-    },
-    {
-      key: 'operate',
-      title: $t('common.operate'),
-      align: 'center',
-      width: 220,
-      render: row => {
-        const editBtn = () => (
-          <ButtonIcon
-            text
-            type="primary"
-            icon="material-symbols:drive-file-rename-outline-outline"
-            tooltipContent={$t('common.edit')}
-            onClick={() => edit(row.modelId!)}
-          />
-        );
-
-        const deployBtn = () => (
-          <ButtonIcon
-            text
-            type="primary"
-            icon="material-symbols:device-hub"
-            tooltipContent={$t('page.gateway.deployment.manageTitle')}
-            onClick={() => handleManageDeploy(row)}
-          />
-        );
-
-        const deleteBtn = () => (
-          <ButtonIcon
-            text
-            type="error"
-            icon="material-symbols:delete-outline"
-            tooltipContent={$t('common.delete')}
-            popconfirmContent={$t('common.confirmDelete')}
-            onPositiveClick={() => handleDelete(row.modelId!)}
-          />
-        );
-
-        return (
-          <div class="flex-center gap-8px">
-            {editBtn()}
-            {deployBtn()}
-            {deleteBtn()}
-          </div>
-        );
-      }
-    }
-  ]
+/** 左侧列表按类别分组：已知类别按选项顺序，未知类别兜底「其他」 */
+const groupedModels = computed(() => {
+  const known = MODEL_CATEGORY_OPTIONS.map(opt => ({
+    label: $t(opt.label),
+    models: modelList.value.filter(m => m.category === opt.value)
+  }));
+  const knownValues = new Set<string>(MODEL_CATEGORY_OPTIONS.map(o => o.value));
+  const others = modelList.value.filter(m => !knownValues.has(m.category));
+  if (others.length) known.push({ label: $t('page.gateway.common.categoryOther'), models: others });
+  return known.filter(g => g.models.length);
 });
 
-const { drawerVisible, operateType, editingData, handleAdd, handleEdit, checkedRowKeys, onBatchDeleted, onDeleted } =
-  useTableOperate(data, 'modelId', getData);
+// 模型增/改/删
+const drawerVisible = ref(false);
+const operateType = ref<NaiveUI.TableOperateType>('add');
+const editingData = ref<Api.Gateway.Model | null>(null);
 
-function edit(modelId: CommonType.IdType) {
-  handleEdit(modelId);
+function handleAdd() {
+  operateType.value = 'add';
+  editingData.value = null;
+  drawerVisible.value = true;
+}
+function handleEdit(row: Api.Gateway.Model) {
+  operateType.value = 'edit';
+  editingData.value = row;
+  drawerVisible.value = true;
+}
+async function handleDelete(row: Api.Gateway.Model) {
+  const { error } = await fetchBatchDeleteModel([row.modelId!]);
+  if (error) return;
+  if (selectedModel.value?.modelId === row.modelId) selectedModel.value = null;
+  getModelData();
+}
+function handleSubmitted() {
+  drawerVisible.value = false;
+  getModelData();
 }
 
-async function handleBatchDelete() {
-  const { error } = await fetchBatchDeleteModel(checkedRowKeys.value);
-  if (error) return;
-  onBatchDeleted();
-}
-
-async function handleDelete(modelId: CommonType.IdType) {
-  const { error } = await fetchBatchDeleteModel([modelId]);
-  if (error) return;
-  onDeleted();
+function handleDeploymentChanged() {
+  getModelData();
 }
 </script>
 
 <template>
-  <div class="min-h-500px flex-col-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
-    <ModelSearch v-model:model="searchParams" @reset="getDataByPage" @search="getDataByPage" />
-    <NCard :title="$t('page.gateway.model.title')" :bordered="false" size="small" class="card-wrapper sm:flex-1-hidden">
-      <template #header-extra>
-        <TableHeaderOperation
-          v-model:columns="columnChecks"
-          :disabled-delete="checkedRowKeys.length === 0"
-          :loading="loading"
-          :show-add="true"
-          :show-delete="true"
-          @add="handleAdd"
-          @delete="handleBatchDelete"
-          @refresh="getData"
-        />
-      </template>
-      <NDataTable
-        v-model:checked-row-keys="checkedRowKeys"
-        :columns="columns"
-        :data="data"
+  <TableSiderLayout :sider-title="$t('page.gateway.model.title')">
+    <template #header-extra>
+      <ButtonIcon
         size="small"
-        :flex-height="!appStore.isMobile"
-        :scroll-x="scrollX"
-        :loading="loading"
-        remote
-        :row-key="row => row.modelId"
-        :pagination="mobilePagination"
-        class="sm:h-full"
+        icon="material-symbols:add-rounded"
+        class="h-28px text-icon color-primary"
+        :tooltip-content="$t('common.add')"
+        @click.stop="handleAdd"
       />
-      <ModelOperateDrawer
-        v-model:visible="drawerVisible"
-        :operate-type="operateType"
-        :row-data="editingData"
-        @submitted="getData"
+      <ButtonIcon
+        size="small"
+        icon="material-symbols:refresh-rounded"
+        class="h-28px text-icon"
+        :tooltip-content="$t('common.refresh')"
+        @click.stop="getModelData"
       />
-      <DeploymentManageDrawer
-        v-model:visible="deployDrawerVisible"
-        :model-id="deployModel?.modelId"
-        :model-key="deployModel?.modelKey"
+    </template>
+    <template #sider>
+      <NInput
+        v-model:value="searchParams.name"
+        clearable
+        :placeholder="$t('common.keywordSearch')"
+        class="mb-8px"
+        @update:value="getModelData"
       />
-    </NCard>
-  </div>
+      <NSpin :show="modelLoading" size="small">
+        <div class="flex flex-col gap-4px overflow-y-auto" style="max-height: calc(100vh - 300px)">
+          <template v-for="group in groupedModels" :key="group.label">
+            <div class="sticky top-0 z-1 bg-white py-4px text-11px font-500 text-slate-400 dark:bg-[#18181c]">
+              {{ group.label }} · {{ group.models.length }}
+            </div>
+            <div
+              v-for="row in group.models"
+              :key="row.modelId"
+              class="model-item"
+              :class="{ 'is-selected': selectedModel?.modelId === row.modelId }"
+              @click="selectedModel = row"
+            >
+              <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
+                <SvgIcon :local-icon="getProviderIcon(row.logoProviderType)" class="h-24px w-24px" />
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-6px">
+                  <span class="truncate text-13px font-500">{{ row.name }}</span>
+                  <span v-if="!row.isActive" class="shrink-0 rounded bg-slate-100 px-4px text-10px text-slate-400 dark:bg-slate-800">
+                    {{ $t('page.gateway.common.inactive') }}
+                  </span>
+                  <span
+                    v-else-if="!row.isPublished"
+                    class="shrink-0 rounded bg-slate-100 px-4px text-10px text-slate-400 dark:bg-slate-800"
+                  >
+                    {{ $t('page.gateway.common.unpublished') }}
+                  </span>
+                </div>
+                <span class="text-11px text-slate-400">{{ row.modelKey }} · {{ row.activeDeploymentCount ?? 0 }}/{{ row.deploymentCount ?? 0 }} {{ $t('page.gateway.deployment.manageTitle') }}</span>
+              </div>
+              <div class="flex-center gap-12px" @click.stop>
+                <ButtonIcon
+                  text
+                  type="primary"
+                  size="small"
+                  icon="material-symbols:drive-file-rename-outline-outline"
+                  :tooltip-content="$t('common.edit')"
+                  @click="handleEdit(row)"
+                />
+                <ButtonIcon
+                  text
+                  type="error"
+                  size="small"
+                  icon="material-symbols:delete-outline"
+                  :tooltip-content="$t('common.delete')"
+                  :popconfirm-content="$t('common.confirmDelete')"
+                  @positive-click="handleDelete(row)"
+                />
+              </div>
+            </div>
+          </template>
+          <NEmpty v-if="!modelLoading && !modelList.length" :description="$t('common.noData')" class="py-24px" />
+        </div>
+      </NSpin>
+    </template>
+    <div class="h-full flex-col-stretch overflow-hidden">
+      <ModelDetailPanel v-if="selectedModel" :model="selectedModel" @changed="handleDeploymentChanged" />
+      <NCard v-else :bordered="false" size="small" class="card-wrapper h-full" content-style="height: 100%">
+        <div class="h-full flex-center">
+          <NEmpty :description="$t('page.gateway.model.selectModelTip')" />
+        </div>
+      </NCard>
+    </div>
+    <ModelOperateDrawer
+      v-model:visible="drawerVisible"
+      :operate-type="operateType"
+      :row-data="editingData"
+      @submitted="handleSubmitted"
+    />
+  </TableSiderLayout>
 </template>
 
-<style scoped></style>
+<style scoped>
+.model-item {
+  display: flex;
+  cursor: pointer;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
+}
+
+.model-item:hover {
+  background-color: rgb(var(--primary-color) / 0.05);
+}
+
+.model-item.is-selected {
+  border-color: rgb(var(--primary-color) / 0.55);
+  background-color: rgb(var(--primary-color) / 0.08);
+}
+</style>

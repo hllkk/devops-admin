@@ -546,9 +546,12 @@ const local: App.I18n.Schema = {
         billingTypeMonthlyQuota: '包月配额',
         formatOpenai: 'OpenAI格式',
         formatAnthropic: 'Anthropic格式',
+        formatLmstudio: 'LM Studio格式',
+        formatOllama: 'Ollama格式',
         categoryChat: '对话',
         categoryEmbedding: '向量',
         categoryRerank: '重排',
+        categoryOther: '其他',
         keyPersonalMain: '个人主Key',
         keyPersonalScene: '个人场景Key',
         keyDeptMain: '部门主Key',
@@ -610,6 +613,8 @@ const local: App.I18n.Schema = {
         form: {
           credentialName: { required: '请输入凭证名称' },
           provider: { required: '请选择供应商' },
+          apiBase: { required: '请输入 API Base' },
+          apiKey: { required: '请输入 API Key' },
           keyPlaceholder: '键名(api_key/api_base)',
           valuePlaceholder: '值',
           valuesTip: '敏感值编辑时掩码回传即保留旧值，填新值则覆盖',
@@ -637,7 +642,8 @@ const local: App.I18n.Schema = {
           category: { required: '请选择类别' },
           capabilitiesPlaceholder: '输入能力标签回车添加',
           renameTip: '修改路由名将级联重建关联部署的路由名，请谨慎操作'
-        }
+        },
+        selectModelTip: '请选择左侧模型查看其部署'
       },
       deployment: {
         manageTitle: '部署管理',

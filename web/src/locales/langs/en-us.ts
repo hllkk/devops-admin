@@ -550,9 +550,12 @@ const local: App.I18n.Schema = {
         billingTypeMonthlyQuota: 'Monthly Quota',
         formatOpenai: 'OpenAI Format',
         formatAnthropic: 'Anthropic Format',
+        formatLmstudio: 'LM Studio Format',
+        formatOllama: 'Ollama Format',
         categoryChat: 'Chat',
         categoryEmbedding: 'Embedding',
         categoryRerank: 'Rerank',
+        categoryOther: 'Other',
         keyPersonalMain: 'Personal Main',
         keyPersonalScene: 'Personal Scene',
         keyDeptMain: 'Dept Main',
@@ -614,6 +617,8 @@ const local: App.I18n.Schema = {
         form: {
           credentialName: { required: 'Please enter credential name' },
           provider: { required: 'Please select provider' },
+          apiBase: { required: 'Please enter API Base' },
+          apiKey: { required: 'Please enter API Key' },
           keyPlaceholder: 'key (api_key/api_base)',
           valuePlaceholder: 'value',
           valuesTip: 'Masked value reposted keeps old plain, new value overwrites',
@@ -641,7 +646,8 @@ const local: App.I18n.Schema = {
           category: { required: 'Please select category' },
           capabilitiesPlaceholder: 'Type capability and press enter',
           renameTip: 'Renaming model key will cascade rebuild deployment routes, proceed with caution'
-        }
+        },
+        selectModelTip: 'Select a model on the left to view its deployments'
       },
       deployment: {
         manageTitle: 'Deployment',

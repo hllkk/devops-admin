@@ -109,6 +109,10 @@ var providerPrefixSeeds = []gatewayModel.ProviderPrefix{
 	{ProviderType: "ollama", Format: "ollama", Category: "chat", Prefix: "ollama"},
 	{ProviderType: "ollama", Format: "ollama", Category: "embedding", Prefix: "ollama"},
 	{ProviderType: "lmstudio", Format: "openai", Category: "chat", Prefix: "openai", NeedsV1: true},
+	// LM Studio 接入格式(OpenAI 兼容,默认端口1234):AIHelms 此格式查表 miss 靠 custom_llm_provider
+	// 兜底且不补 /v1(用户须手填带 /v1 的 base,易 404)；此处直接落表行走统一管线,自动补 /v1
+	{ProviderType: "lmstudio", Format: "lmstudio", Category: "chat", Prefix: "openai", NeedsV1: true},
+	{ProviderType: "lmstudio", Format: "lmstudio", Category: "embedding", Prefix: "openai", NeedsV1: true},
 	// 小米 MiMo / 腾讯混元 / xAI
 	{ProviderType: "xiaomi_mimo", Format: "openai", Category: "chat", Prefix: "xiaomi_mimo"},
 	{ProviderType: "xiaomi_mimo", Format: "anthropic", Category: "chat", Prefix: "anthropic"},

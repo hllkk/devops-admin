@@ -16,7 +16,7 @@ type Provider struct {
 	ProviderType  string   `json:"providerType" gorm:"size:50;comment:供应商类型(openai/anthropic/vllm...)"` // 供应商类型(对应 LiteLLM custom_llm_provider)
 	IsActive      bool     `json:"isActive" gorm:"default:true;comment:是否启用"`               // 是否启用
 	Description   string   `json:"description" gorm:"type:text;comment:描述"`                  // 描述
-	SupportedFormats datatypes.JSON `json:"supportedFormats" gorm:"type:jsonb;comment:支持的接入格式(openai/anthropic)" swaggertype:"object"` // 支持的接入格式(凭证 format 从中选)
+	SupportedFormats datatypes.JSON `json:"supportedFormats" gorm:"type:jsonb;comment:支持的接入格式(openai/anthropic/lmstudio/ollama)" swaggertype:"object"` // 支持的接入格式(凭证 format 从中选)
 	CredentialCount  int64           `json:"credentialCount" gorm:"-"`                                // 凭证数(列表展示,service 层填充,不入库)
 }
 

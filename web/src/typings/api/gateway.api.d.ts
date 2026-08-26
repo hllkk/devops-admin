@@ -149,7 +149,7 @@ declare namespace Api {
     // ───────────────── 凭证 Credential ─────────────────
 
     /** 凭证协议格式(credential_info.format 取值) */
-    type CredentialFormat = 'openai' | 'anthropic';
+    type CredentialFormat = 'openai' | 'anthropic' | 'lmstudio' | 'ollama';
 
     /** 凭证(管理面出网视图：credentialValues 为解密后掩码值，api_base 等非敏感值明文) */
     type Credential = Common.CommonRecord<{

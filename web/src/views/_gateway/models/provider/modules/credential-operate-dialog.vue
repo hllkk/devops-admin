@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue';
 import { fetchCreateCredential, fetchUpdateCredential } from '@/service/api/gateway';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
 import { $t } from '@/locales';
-import { CREDENTIAL_FORMAT_OPTIONS } from '@/constants/business/gateway';
+import { CREDENTIAL_FORMAT_OPTIONS, FORMAT_API_BASE_PLACEHOLDER, FORMAT_NEEDS_NO_KEY } from '@/constants/business/gateway';
 
 defineOptions({ name: 'CredentialOperateDialog' });
 
@@ -33,7 +33,12 @@ const apiKey = ref('');
 const isActive = ref(true);
 const description = ref('');
 
-const formModel = computed(() => ({ credentialName: credentialName.value, format: format.value }));
+const formModel = computed(() => ({
+  credentialName: credentialName.value,
+  format: format.value,
+  apiBase: apiBase.value,
+  apiKey: apiKey.value
+}));
 
 const formatOptions = computed(() => {
   const supported = (props.provider.supportedFormats ?? []) as string[];
@@ -41,9 +46,21 @@ const formatOptions = computed(() => {
   return opts.map(o => ({ label: $t(o.label), value: o.value }));
 });
 
-const rules: Record<'credentialName' | 'format', App.Global.FormRule> = {
+/** Ollama 本地推理无鉴权，该类格式不展示 API Key 输入(对齐 AIHelms needsKey=false) */
+const needsKey = computed(() => !FORMAT_NEEDS_NO_KEY.has(format.value));
+const apiBasePlaceholder = computed(() => FORMAT_API_BASE_PLACEHOLDER[format.value] ?? 'https://api.example.com');
+
+/** apiKey 仅在有鉴权格式下必填;编辑时掩码回显非空即可通过 */
+const validateApiKey = (_rule: App.Global.FormRule, value: string) => {
+  if (needsKey.value && !value) return new Error($t('page.gateway.credential.form.apiKey.required'));
+  return true;
+};
+
+const rules: Record<'credentialName' | 'format' | 'apiBase' | 'apiKey', App.Global.FormRule> = {
   credentialName: createRequiredRule($t('page.gateway.credential.form.credentialName.required')),
-  format: createRequiredRule($t('page.gateway.credential.col.format'))
+  format: createRequiredRule($t('page.gateway.credential.col.format')),
+  apiBase: createRequiredRule($t('page.gateway.credential.form.apiBase.required')),
+  apiKey: { validator: validateApiKey }
 };
 
 function isMasked(v: string) {
@@ -75,10 +92,11 @@ function close() {
 async function handleSubmit() {
   await validate();
 
-  // 组装 credentialValues: apiBase 明文总传; apiKey 掩码未改不传(后端保留旧), 新值才覆盖
+  // 组装 credentialValues: apiBase 明文总传; apiKey 掩码未改不传(后端保留旧), 新值才覆盖;
+  // 无鉴权格式(如 ollama)不传 api_key
   const values: Record<string, string> = {};
   if (apiBase.value) values.api_base = apiBase.value;
-  if (apiKey.value && !isMasked(apiKey.value)) values.api_key = apiKey.value;
+  if (needsKey.value && apiKey.value && !isMasked(apiKey.value)) values.api_key = apiKey.value;
 
   const model: Api.Gateway.CredentialOperateParams = {
     credentialId: props.operateType === 'edit' ? props.rowData!.credentialId : null,
@@ -120,10 +138,10 @@ watch(visible, () => {
       <NFormItem :label="$t('page.gateway.credential.col.format')" path="format">
         <NSelect v-model:value="format" :options="formatOptions" :placeholder="$t('common.placeholderSelect')" />
       </NFormItem>
-      <NFormItem :label="$t('page.gateway.credential.col.apiBase')">
-        <NInput v-model:value="apiBase" placeholder="https://api.example.com/v1" />
+      <NFormItem :label="$t('page.gateway.credential.col.apiBase')" path="apiBase">
+        <NInput v-model:value="apiBase" :placeholder="apiBasePlaceholder" />
       </NFormItem>
-      <NFormItem :label="$t('page.gateway.credential.col.apiKey')">
+      <NFormItem v-if="needsKey" :label="$t('page.gateway.credential.col.apiKey')" path="apiKey">
         <NInput v-model:value="apiKey" type="password" show-password-on="click" :placeholder="$t('page.gateway.credential.form.apiKeyPlaceholder')" />
       </NFormItem>
       <NFormItem :label="$t('page.gateway.credential.col.isActive')">

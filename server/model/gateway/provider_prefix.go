@@ -8,7 +8,7 @@ import "github.com/hllkk/devops-admin/server/global"
 type ProviderPrefix struct {
 	global.OPS_MODEL
 	ProviderType string `json:"providerType" gorm:"size:50;uniqueIndex:idx_gateway_provider_prefix;comment:供应商类型"` // 供应商类型(openai/anthropic/vllm...)
-	Format       string `json:"format" gorm:"size:20;uniqueIndex:idx_gateway_provider_prefix;comment:协议格式"`       // 协议格式(openai/anthropic/ollama)
+	Format       string `json:"format" gorm:"size:20;uniqueIndex:idx_gateway_provider_prefix;comment:协议格式"`       // 协议格式(openai/anthropic/lmstudio/ollama)
 	Category     string `json:"category" gorm:"size:20;uniqueIndex:idx_gateway_provider_prefix;comment:模型类别"`      // 模型类别(chat/embedding/rerank...)
 	Prefix       string `json:"prefix" gorm:"size:100;comment:LiteLLM路由前缀"`                      // LiteLLM 路由前缀(如 hosted_vllm/gemini)
 	NeedsV1      bool   `json:"needsV1" gorm:"comment:api_base是否自动补/v1"`                    // api_base 是否自动补 /v1

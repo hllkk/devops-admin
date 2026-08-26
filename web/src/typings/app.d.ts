@@ -731,9 +731,12 @@ declare namespace App {
             billingTypeMonthlyQuota: string;
             formatOpenai: string;
             formatAnthropic: string;
+            formatLmstudio: string;
+            formatOllama: string;
             categoryChat: string;
             categoryEmbedding: string;
             categoryRerank: string;
+            categoryOther: string;
             keyPersonalMain: string;
             keyPersonalScene: string;
             keyDeptMain: string;
@@ -795,6 +798,8 @@ declare namespace App {
             form: {
               credentialName: { required: string };
               provider: { required: string };
+              apiBase: { required: string };
+              apiKey: { required: string };
               keyPlaceholder: string;
               valuePlaceholder: string;
               valuesTip: string;
@@ -823,6 +828,7 @@ declare namespace App {
               capabilitiesPlaceholder: string;
               renameTip: string;
             };
+            selectModelTip: string;
           };
           deployment: {
             manageTitle: string;

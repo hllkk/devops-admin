@@ -1,6 +1,7 @@
 <script setup lang="tsx">
 import { ref, watch } from 'vue';
-import { NTag } from 'naive-ui';
+import { NTag, NSwitch } from 'naive-ui';
+import type { DataTableColumns } from 'naive-ui';
 import {
   fetchBatchDeleteCredential,
   fetchGetCredentialList,
@@ -45,45 +46,51 @@ watch(() => props.provider.providerId, getCredentialData, { immediate: true });
 
 const formatLabelKey = (f?: string) => CREDENTIAL_FORMAT_OPTIONS.find(o => o.value === f)?.label ?? 'page.gateway.common.formatOpenai';
 
-const columns = [
-  { key: 'credentialName', title: () => $t('page.gateway.credential.col.credentialName'), minWidth: 60, ellipsis: { tooltip: true } },
+/** 当前正在切换启停的凭证 ID(行级 loading) */
+const togglingId = ref<Api.Gateway.Credential['credentialId'] | null>(null);
+
+const columns: DataTableColumns<Api.Gateway.Credential> = [
+  {
+    key: 'credentialName',
+    title: () => $t('page.gateway.credential.col.credentialName'),
+    width: 150,
+    ellipsis: { tooltip: true }
+  },
   {
     key: 'format',
     title: () => $t('page.gateway.credential.col.format'),
-    width: 100,
+    align: 'center',
+    width: 90,
     render: (row: Api.Gateway.Credential) => <NTag size="small">{$t(formatLabelKey(row.credentialInfo?.format))}</NTag>
   },
   {
     key: 'apiBase',
     title: () => $t('page.gateway.credential.col.apiBase'),
-    minWidth: 100,
+    minWidth: 260,
     ellipsis: { tooltip: true },
     render: (row: Api.Gateway.Credential) => <span>{row.credentialValues?.api_base || '-'}</span>
   },
   {
     key: 'isActive',
     title: () => $t('page.gateway.credential.col.isActive'),
-    width: 60,
+    align: 'center',
+    width: 70,
     render: (row: Api.Gateway.Credential) => (
-      <NTag size="small" type={row.isActive ? 'success' : 'default'}>
-        {$t(row.isActive ? 'page.gateway.common.active' : 'page.gateway.common.inactive')}
-      </NTag>
+      <NSwitch
+        size="small"
+        value={row.isActive}
+        loading={togglingId.value === row.credentialId}
+        onUpdateValue={() => handleToggle(row)}
+      />
     )
   },
   {
     key: 'operate',
     title: () => $t('common.operate'),
-    width: 160,
+    align: 'center',
+    width: 110,
     render: (row: Api.Gateway.Credential) => (
       <div class="flex-center gap-4px">
-        <ButtonIcon
-          text
-          type={row.isActive ? 'warning' : 'success'}
-          size="small"
-          icon={row.isActive ? 'material-symbols:pause-circle-outline' : 'material-symbols:play-circle-outline'}
-          tooltip-content={$t(row.isActive ? 'common.disable' : 'common.enable')}
-          onClick={() => handleToggle(row)}
-        />
         <ButtonIcon
           text
           type="primary"
@@ -129,7 +136,9 @@ function handleEdit(row: Api.Gateway.Credential) {
   dialogVisible.value = true;
 }
 async function handleToggle(row: Api.Gateway.Credential) {
+  togglingId.value = row.credentialId;
   const { error } = await fetchUpdateCredential({ ...row, isActive: !row.isActive });
+  togglingId.value = null;
   if (error) return;
   emit('changed');
   getCredentialData();

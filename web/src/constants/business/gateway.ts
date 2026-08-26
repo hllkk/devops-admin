@@ -74,8 +74,19 @@ export const BILLING_TYPE_OPTIONS = [
 /** 凭证协议格式选项 */
 export const CREDENTIAL_FORMAT_OPTIONS = [
   { label: 'page.gateway.common.formatOpenai', value: 'openai' },
-  { label: 'page.gateway.common.formatAnthropic', value: 'anthropic' }
+  { label: 'page.gateway.common.formatAnthropic', value: 'anthropic' },
+  { label: 'page.gateway.common.formatLmstudio', value: 'lmstudio' },
+  { label: 'page.gateway.common.formatOllama', value: 'ollama' }
 ] as const;
+
+/** 各接入格式的默认 API Base 提示(本地推理服务地址，用于表单 placeholder) */
+export const FORMAT_API_BASE_PLACEHOLDER: Record<string, string> = {
+  lmstudio: 'http://127.0.0.1:1234',
+  ollama: 'http://127.0.0.1:11434'
+};
+
+/** Ollama 本地推理无鉴权，这些格式不需要 API Key(前端隐藏输入框) */
+export const FORMAT_NEEDS_NO_KEY = new Set(['ollama']);
 
 /** 模型类别选项(label 为 i18n key) */
 export const MODEL_CATEGORY_OPTIONS = [

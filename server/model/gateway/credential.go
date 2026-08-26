@@ -25,6 +25,8 @@ type Credential struct {
 const (
 	CredentialFormatOpenai    = "openai"    // OpenAI 兼容格式(默认)
 	CredentialFormatAnthropic = "anthropic" // Anthropic 原生格式
+	CredentialFormatLmstudio  = "lmstudio"  // LM Studio 本地推理(OpenAI 兼容,前缀走差异表 openai+补/v1)
+	CredentialFormatOllama    = "ollama"    // Ollama 本地推理(自有 API,前缀 ollama,无需 api_key)
 )
 
 func (Credential) TableName() string {
