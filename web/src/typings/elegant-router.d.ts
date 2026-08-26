@@ -21,11 +21,9 @@ declare module "@elegant-router/types" {
     "404": "/404";
     "500": "/500";
     "admin": "/admin";
+    "ai-key": "/ai-key";
     "gateway": "/gateway";
     "home": "/home";
-    "identity": "/identity";
-    "identity_ai-key": "/identity/ai-key";
-    "identity_credential": "/identity/credential";
     "iframe-page": "/iframe-page/:url";
     "init": "/init";
     "log": "/log";
@@ -34,6 +32,7 @@ declare module "@elegant-router/types" {
     "log_operlog": "/log/operlog";
     "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat)?";
     "models": "/models";
+    "models_credential": "/models/credential";
     "models_model": "/models/model";
     "models_provider": "/models/provider";
     "server": "/server";
@@ -84,9 +83,9 @@ declare module "@elegant-router/types" {
     | "404"
     | "500"
     | "admin"
+    | "ai-key"
     | "gateway"
     | "home"
-    | "identity"
     | "iframe-page"
     | "init"
     | "log"
@@ -134,9 +133,9 @@ declare module "@elegant-router/types" {
     | "login"
     | "social-callback"
     | "user-center"
+    | "ai-key"
     | "gateway"
-    | "identity_ai-key"
-    | "identity_credential"
+    | "models_credential"
     | "models_model"
     | "models_provider"
     | "server"

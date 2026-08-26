@@ -52,6 +52,18 @@ export const generatedRoutes: GeneratedRoute[] = [
     }
   },
   {
+    name: 'ai-key',
+    path: '/ai-key',
+    component: 'layout.base$view.ai-key',
+    meta: {
+      title: 'ai-key',
+      i18nKey: 'route.ai-key',
+      icon: 'mdi:key-variant',
+      order: 8,
+      module: 'gateway'
+    }
+  },
+  {
     name: 'gateway',
     path: '/gateway',
     component: 'layout.base$view.gateway',
@@ -72,38 +84,6 @@ export const generatedRoutes: GeneratedRoute[] = [
       i18nKey: 'route.home',
       hideInMenu: true
     }
-  },
-  {
-    name: 'identity',
-    path: '/identity',
-    component: 'layout.base',
-    meta: {
-      title: 'identity',
-      i18nKey: 'route.identity',
-      icon: 'mdi:account-key-outline',
-      order: 8,
-      module: 'gateway'
-    },
-    children: [
-      {
-        name: 'identity_ai-key',
-        path: '/identity/ai-key',
-        component: 'view.identity_ai-key',
-        meta: {
-          title: 'identity_ai-key',
-          i18nKey: 'route.identity_ai-key'
-        }
-      },
-      {
-        name: 'identity_credential',
-        path: '/identity/credential',
-        component: 'view.identity_credential',
-        meta: {
-          title: 'identity_credential',
-          i18nKey: 'route.identity_credential'
-        }
-      }
-    ]
   },
   {
     name: 'iframe-page',
@@ -200,6 +180,15 @@ export const generatedRoutes: GeneratedRoute[] = [
       module: 'gateway'
     },
     children: [
+      {
+        name: 'models_credential',
+        path: '/models/credential',
+        component: 'view.models_credential',
+        meta: {
+          title: 'models_credential',
+          i18nKey: 'route.models_credential'
+        }
+      },
       {
         name: 'models_model',
         path: '/models/model',

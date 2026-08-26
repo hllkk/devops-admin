@@ -139,7 +139,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			OrderNum:  6,
 			Module:    "server",
 		},
-		// ── AI 网关模块:看板页 + 身份/模型两个顶层目录(一级路由,path 单段以符合 elegant first-level 约束) ──
+		// ── AI 网关模块:看板页 + 模型目录 + 密钥顶层单页(一级路由,path 单段以符合 elegant first-level 约束) ──
 		{
 			ParentId:  0,
 			MenuName:  "route.gateway",
@@ -154,11 +154,12 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 		},
 		{
 			ParentId:  0,
-			MenuName:  "route.identity",
-			MenuType:  "M",
-			Path:      "identity",
-			Component: "Layout",
-			Icon:      "mdi:account-key-outline",
+			MenuName:  "route.ai-key",
+			MenuType:  "C",
+			Path:      "ai-key",
+			ApiPrefix: "/gateway/ai-key, /gateway/ai-key/*",
+			Component: "_gateway/ai-key/index",
+			Icon:      "mdi:key-variant",
 			Visible:   "0",
 			OrderNum:  8,
 			Module:    "gateway",
@@ -323,31 +324,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			OrderNum:  3,
 			Module:    "admin",
 		},
-		// ── AI 网关(身份/模型两个顶层目录下的二级管理页;ApiPrefix 沿用后端接口前缀,与菜单 Path 解耦) ──
-		{
-			ParentId:  menuNameMap["route.identity"],
-			MenuName:  "route.identity_ai-key",
-			MenuType:  "C",
-			Path:      "identity/ai-key",
-			ApiPrefix: "/gateway/ai-key, /gateway/ai-key/*",
-			Component: "_gateway/identity/ai-key/index",
-			Icon:      "mdi:key-variant",
-			Visible:   "0",
-			OrderNum:  1,
-			Module:    "gateway",
-		},
-		{
-			ParentId:  menuNameMap["route.identity"],
-			MenuName:  "route.identity_credential",
-			MenuType:  "C",
-			Path:      "identity/credential",
-			ApiPrefix: "/gateway/credential, /gateway/credential/*",
-			Component: "_gateway/identity/credential/index",
-			Icon:      "mdi:key-chain-variant",
-			Visible:   "0",
-			OrderNum:  2,
-			Module:    "gateway",
-		},
+		// ── AI 网关(密钥升顶层单页;模型目录下供应商/凭证/模型三页按链路排序;ApiPrefix 沿用后端接口前缀,与菜单 Path 解耦) ──
 		{
 			ParentId:  menuNameMap["route.models"],
 			MenuName:  "route.models_provider",
@@ -362,6 +339,18 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 		},
 		{
 			ParentId:  menuNameMap["route.models"],
+			MenuName:  "route.models_credential",
+			MenuType:  "C",
+			Path:      "models/credential",
+			ApiPrefix: "/gateway/credential, /gateway/credential/*",
+			Component: "_gateway/models/credential/index",
+			Icon:      "mdi:key-chain-variant",
+			Visible:   "0",
+			OrderNum:  2,
+			Module:    "gateway",
+		},
+		{
+			ParentId:  menuNameMap["route.models"],
 			MenuName:  "route.models_model",
 			MenuType:  "C",
 			Path:      "models/model",
@@ -369,7 +358,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			Component: "_gateway/models/model/index",
 			Icon:      "mdi:brain",
 			Visible:   "0",
-			OrderNum:  2,
+			OrderNum:  3,
 			Module:    "gateway",
 		},
 	}
