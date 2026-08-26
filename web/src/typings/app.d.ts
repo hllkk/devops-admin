@@ -890,6 +890,34 @@ declare namespace App {
               pricingTip: string;
             };
           };
+          router: {
+            title: string;
+            desc: string;
+            col: {
+              routingStrategy: string;
+              fallbacks: string;
+              allowedFails: string;
+              cooldownTime: string;
+              numRetries: string;
+              timeout: string;
+            };
+            form: {
+              strategyPlaceholder: string;
+              allowedFailsPlaceholder: string;
+              cooldownTimePlaceholder: string;
+              numRetriesPlaceholder: string;
+              timeoutPlaceholder: string;
+              fallbacksTip: string;
+              addFallback: string;
+              modelPlaceholder: string;
+              fallbackModelsPlaceholder: string;
+            };
+            strategySimpleShuffle: string;
+            strategyLatencyBased: string;
+            strategyCostBased: string;
+            strategyLeastBusy: string;
+            strategyUsageBased: string;
+          };
           aiKey: {
             title: string;
             add: string;

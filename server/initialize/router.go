@@ -135,6 +135,7 @@ func Routers() *gin.Engine {
 		gatewayRouter.InitAiKeyRouter(PrivateGroup)               // AI 网关·AI 密钥(/gateway/ai-key/*)
 		gatewayRouter.InitUsageRouter(PrivateGroup)               // AI 网关·用量统计(/gateway/usage/*)
 		gatewayRouter.InitDashboardRouter(PrivateGroup)          // AI 网关·看板(/gateway/dashboard/*)
+		gatewayRouter.InitRouterSettingsRouter(PrivateGroup)    // AI 网关·路由策略(/gateway/router/settings)
 	}
 
 

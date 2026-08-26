@@ -154,3 +154,12 @@ export const DASHBOARD_RANGE_OPTIONS = [
   { label: 'page.gateway.common.range30d', value: '30d' },
   { label: 'page.gateway.common.rangeLastMonth', value: 'lastMonth' }
 ] as const;
+
+/** 路由策略选项(label 为 i18n key;对齐 LiteLLM routing_strategy 取值) */
+export const ROUTING_STRATEGY_OPTIONS = [
+  { label: 'page.gateway.router.strategySimpleShuffle', value: 'simple-shuffle' },
+  { label: 'page.gateway.router.strategyLatencyBased', value: 'latency-based-routing' },
+  { label: 'page.gateway.router.strategyCostBased', value: 'cost-based-routing' },
+  { label: 'page.gateway.router.strategyLeastBusy', value: 'least-busy' },
+  { label: 'page.gateway.router.strategyUsageBased', value: 'usage-based-routing' }
+] as const;

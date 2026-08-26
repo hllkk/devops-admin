@@ -11,14 +11,16 @@ type RouterGroup struct {
 	AiKeyRouter
 	UsageRouter
 	DashboardRouter
+	RouterSettingsRouter
 }
 
 var (
-	providerApi    = v1.ApiGroupApp.GatewayApiGroup.ProviderApi
-	credentialApi  = v1.ApiGroupApp.GatewayApiGroup.CredentialApi
-	modelApi       = v1.ApiGroupApp.GatewayApiGroup.ModelApi
-	deploymentApi  = v1.ApiGroupApp.GatewayApiGroup.DeploymentApi
-	aiKeyApi       = v1.ApiGroupApp.GatewayApiGroup.AiKeyApi
-	usageApi        = v1.ApiGroupApp.GatewayApiGroup.UsageApi
-	dashboardApi   = v1.ApiGroupApp.GatewayApiGroup.DashboardApi
+	providerApi       = v1.ApiGroupApp.GatewayApiGroup.ProviderApi
+	credentialApi     = v1.ApiGroupApp.GatewayApiGroup.CredentialApi
+	modelApi          = v1.ApiGroupApp.GatewayApiGroup.ModelApi
+	deploymentApi     = v1.ApiGroupApp.GatewayApiGroup.DeploymentApi
+	aiKeyApi          = v1.ApiGroupApp.GatewayApiGroup.AiKeyApi
+	usageApi          = v1.ApiGroupApp.GatewayApiGroup.UsageApi
+	dashboardApi      = v1.ApiGroupApp.GatewayApiGroup.DashboardApi
+	routerSettingsApi = v1.ApiGroupApp.GatewayApiGroup.RouterSettingsApi
 )

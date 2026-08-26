@@ -708,6 +708,34 @@ const local: App.I18n.Schema = {
           pricingTip: '按 Token 计费的定价，单位 ¥/百万 token；外部官方定价同步至 LiteLLM（推送时换算为 USD/token），内部结算定价用于平台对内成本统计；缓存与未填项按 0 计'
         }
       },
+      router: {
+        title: '路由策略',
+        desc: '全局路由策略控制负载均衡、故障摘除与降级，同步至 LiteLLM /router/settings 即时生效',
+        col: {
+          routingStrategy: '路由策略',
+          fallbacks: '降级链',
+          allowedFails: '允许失败',
+          cooldownTime: '冷却时间(秒)',
+          numRetries: '重试次数',
+          timeout: '超时(秒)'
+        },
+        form: {
+          strategyPlaceholder: '选择路由策略',
+          allowedFailsPlaceholder: '默认 3',
+          cooldownTimePlaceholder: '默认 60',
+          numRetriesPlaceholder: '默认 2',
+          timeoutPlaceholder: '默认 30',
+          fallbacksTip: '源模型请求失败时降级到指定模型；源模型与降级模型均为模型 ID',
+          addFallback: '添加降级',
+          modelPlaceholder: '源模型',
+          fallbackModelsPlaceholder: '降级到'
+        },
+        strategySimpleShuffle: '轮询',
+        strategyLatencyBased: '最低延迟',
+        strategyCostBased: '最低成本',
+        strategyLeastBusy: '最少使用',
+        strategyUsageBased: '按用量均衡'
+      },
       aiKey: {
         title: 'AI密钥管理',
         add: '新增密钥',

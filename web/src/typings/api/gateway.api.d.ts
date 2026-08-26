@@ -275,6 +275,50 @@ declare namespace Api {
 
     type DeploymentList = Api.Common.PaginatingQueryRecord<Deployment>;
 
+    // ───────────────── 路由策略 RouterSettings ─────────────────
+
+    /**
+     * 路由策略类型(对齐 LiteLLM routing_strategy 取值)
+     * - simple-shuffle 轮询 / latency-based-routing 最低延迟
+     * - cost-based-routing 最低成本 / least-busy 最少使用 / usage-based-routing 按用量均衡
+     */
+    type RoutingStrategy =
+      | 'simple-shuffle'
+      | 'latency-based-routing'
+      | 'cost-based-routing'
+      | 'least-busy'
+      | 'usage-based-routing';
+
+    /** 降级链项(源模型 → 降级到的模型列表) */
+    type FallbackItem = {
+      /** 源模型 ID(model_key) */
+      model: string;
+      /** 降级到的模型 ID 列表 */
+      fallbacks: string[];
+    };
+
+    /** 全局路由策略(单例配置,投影同步至 LiteLLM /router/settings) */
+    type RouterSettings = {
+      routingStrategy: RoutingStrategy;
+      /** 降级链 */
+      fallbacks: FallbackItem[];
+      /** 允许连续失败次数(健康摘除阈值) */
+      allowedFails: number;
+      /** 冷却时间(秒) */
+      cooldownTime: number;
+      /** 全局重试次数 */
+      numRetries: number;
+      /** 全局超时(秒) */
+      timeout: number;
+      /** 扩展配置(预留,前端暂不配置 UI) */
+      config: Record<string, any>;
+    };
+
+    /** 路由策略更新参数(可选字段,null=不改) */
+    type RouterSettingsParams = CommonType.RecordNullable<
+      Pick<RouterSettings, 'routingStrategy' | 'fallbacks' | 'allowedFails' | 'cooldownTime' | 'numRetries' | 'timeout' | 'config'>
+    >;
+
     /** 部署连通性测试参数(管理员视角,经 LiteLLM 数据面) */
     type DeploymentTestParams = {
       deploymentId: CommonType.IdType;

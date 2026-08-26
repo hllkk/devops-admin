@@ -91,3 +91,22 @@ export function fetchTestDeployment(data: Api.Gateway.DeploymentTestParams) {
     timeout: 30000
   });
 }
+
+// ── 路由策略 RouterSettings ──
+
+/** 获取全局路由策略(单例,同步自 LiteLLM /router/settings) */
+export function fetchGetRouterSettings() {
+  return request<Api.Gateway.RouterSettings>({
+    url: '/gateway/router/settings',
+    method: 'get'
+  });
+}
+
+/** 更新全局路由策略(写库 + 同步 LiteLLM /router/settings 热更新) */
+export function fetchUpdateRouterSettings(data: Api.Gateway.RouterSettingsParams) {
+  return request<Api.Gateway.RouterSettings>({
+    url: '/gateway/router/settings',
+    method: 'put',
+    data
+  });
+}

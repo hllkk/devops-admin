@@ -11,6 +11,7 @@ type ApiGroup struct {
 	AiKeyApi
 	UsageApi
 	DashboardApi
+	RouterSettingsApi
 }
 
 var (
@@ -22,4 +23,5 @@ var (
 	usageService           = service.ServiceGroupApp.GatewayServiceGroup.UsageSyncService
 	usageAggregateService  = service.ServiceGroupApp.GatewayServiceGroup.UsageAggregateService
 	dashboardService       = service.ServiceGroupApp.GatewayServiceGroup.DashboardService
+	routerSettingsService  = service.ServiceGroupApp.GatewayServiceGroup.RouterSettingsService
 )

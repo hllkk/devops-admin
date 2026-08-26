@@ -392,3 +392,26 @@ func (c *Client) GetKeyInfo(ctx context.Context, keyID string) (KeyInfo, error) 
 	}
 	return info, nil
 }
+
+// ----------------------------------------------------------------------------
+// 路由策略（/router/settings）—— RouterSettings 同步用
+// ----------------------------------------------------------------------------
+
+// GetRouterSettings 获取 LiteLLM 路由策略（GET /router/settings）。
+// 返回 LiteLLM 当前 router_settings（routing_strategy/allowed_fails/cooldown_time/...）。
+func (c *Client) GetRouterSettings(ctx context.Context) (map[string]any, error) {
+	var resp struct {
+		RouterSettings map[string]any `json:"router_settings"`
+	}
+	if err := c.do(ctx, http.MethodGet, "/router/settings", nil, &resp); err != nil {
+		return nil, err
+	}
+	return resp.RouterSettings, nil
+}
+
+// UpdateRouterSettings 更新 LiteLLM 路由策略（POST /router/settings）。
+// settings 为 LiteLLM 蛇形键 map（routing_strategy/allowed_fails/cooldown_time/
+// num_retries/timeout/fallbacks/config），热更新即时生效。
+func (c *Client) UpdateRouterSettings(ctx context.Context, settings map[string]any) error {
+	return c.do(ctx, http.MethodPost, "/router/settings", settings, nil)
+}

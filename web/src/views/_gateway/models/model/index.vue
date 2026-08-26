@@ -8,6 +8,7 @@ import SvgIcon from '@/components/custom/svg-icon.vue';
 import TableSiderLayout from '@/components/advanced/table-sider-layout.vue';
 import ModelOperateDrawer from './modules/model-operate-drawer.vue';
 import ModelDetailPanel from './modules/model-detail-panel.vue';
+import RouterSettingsDialog from './modules/router-settings-dialog.vue';
 
 defineOptions({ name: 'ModelList' });
 
@@ -92,6 +93,12 @@ async function handleSubmitted(modelId: CommonType.IdType | null) {
 function handleDeploymentChanged() {
   getModelData();
 }
+
+// 路由策略弹窗(全局配置)
+const routerSettingsVisible = ref(false);
+function openRouterSettings() {
+  routerSettingsVisible.value = true;
+}
 </script>
 
 <template>
@@ -110,6 +117,13 @@ function handleDeploymentChanged() {
         class="h-28px text-icon"
         :tooltip-content="$t('common.refresh')"
         @click.stop="getModelData"
+      />
+      <ButtonIcon
+        size="small"
+        icon="material-symbols:alt-route-outline"
+        class="h-28px text-icon"
+        :tooltip-content="$t('page.gateway.router.title')"
+        @click.stop="openRouterSettings"
       />
     </template>
     <template #sider>
@@ -194,6 +208,7 @@ function handleDeploymentChanged() {
       :row-data="editingData"
       @submitted="handleSubmitted"
     />
+    <RouterSettingsDialog v-model:visible="routerSettingsVisible" />
   </TableSiderLayout>
 </template>
 

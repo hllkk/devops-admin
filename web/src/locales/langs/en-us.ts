@@ -712,6 +712,34 @@ const local: App.I18n.Schema = {
           pricingTip: 'Token-based pricing in ¥/M tokens. External official pricing syncs to LiteLLM (converted to USD/token on push); internal settlement pricing is used for platform cost accounting. Cache and empty fields count as 0'
         }
       },
+      router: {
+        title: 'Routing',
+        desc: 'Global routing strategy controls load balancing, failover and fallback; syncs to LiteLLM /router/settings and takes effect immediately',
+        col: {
+          routingStrategy: 'Strategy',
+          fallbacks: 'Fallbacks',
+          allowedFails: 'Allowed Fails',
+          cooldownTime: 'Cooldown (s)',
+          numRetries: 'Retries',
+          timeout: 'Timeout (s)'
+        },
+        form: {
+          strategyPlaceholder: 'Select routing strategy',
+          allowedFailsPlaceholder: 'Default 3',
+          cooldownTimePlaceholder: 'Default 60',
+          numRetriesPlaceholder: 'Default 2',
+          timeoutPlaceholder: 'Default 30',
+          fallbacksTip: 'Fallback to specified models when the source model fails; both source and fallback are model IDs',
+          addFallback: 'Add Fallback',
+          modelPlaceholder: 'Source Model',
+          fallbackModelsPlaceholder: 'Fallback to'
+        },
+        strategySimpleShuffle: 'Round Robin',
+        strategyLatencyBased: 'Lowest Latency',
+        strategyCostBased: 'Lowest Cost',
+        strategyLeastBusy: 'Least Busy',
+        strategyUsageBased: 'Usage Balanced'
+      },
       aiKey: {
         title: 'AI Keys',
         add: 'New Key',
