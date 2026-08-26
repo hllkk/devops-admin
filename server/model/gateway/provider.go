@@ -1,6 +1,9 @@
 package gateway
 
-import "github.com/hllkk/devops-admin/server/global"
+import (
+	"github.com/hllkk/devops-admin/server/global"
+	"gorm.io/datatypes"
+)
 
 // Provider AI 供应商（管理元数据：名称/类型/计费/月预算，不直接同步 LiteLLM）。
 // 其下 Credential 才携带密钥并同步 LiteLLM /credentials；本表只做供应商维度的计费与预算跟踪。
@@ -15,6 +18,8 @@ type Provider struct {
 	MonthlyUsed   float64  `json:"monthlyUsed" gorm:"type:numeric(12,4);default:0;comment:月已用(USD)"` // 月已用(USD,用量统计定时回填)
 	IsActive      bool     `json:"isActive" gorm:"default:true;comment:是否启用"`               // 是否启用
 	Description   string   `json:"description" gorm:"type:text;comment:描述"`                  // 描述
+	SupportedFormats datatypes.JSON `json:"supportedFormats" gorm:"type:jsonb;comment:支持的接入格式(openai/anthropic)" swaggertype:"object"` // 支持的接入格式(凭证 format 从中选)
+	CredentialCount  int64           `json:"credentialCount" gorm:"-"`                                // 凭证数(列表展示,service 层填充,不入库)
 }
 
 // 供应商计费类型

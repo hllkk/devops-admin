@@ -31,6 +31,10 @@ declare namespace Api {
       isActive: boolean;
       /** 描述 */
       description: string;
+      /** 支持的接入格式(凭证 format 从中选一) */
+      supportedFormats: string[] | null;
+      /** 凭证数(列表展示,后端填充) */
+      credentialCount: number;
     }>;
 
     /** 供应商搜索参数(name 模糊;providerType/billingType/isActive 精确) */
@@ -40,7 +44,7 @@ declare namespace Api {
 
     /** 供应商新增/修改参数(create 时 providerId 为空;update 必填。isActive/ monthlyBudget 为 null 表示不改) */
     type ProviderOperateParams = CommonType.RecordNullable<
-      Pick<Api.Gateway.Provider, 'providerId' | 'name' | 'providerType' | 'billingType' | 'monthlyBudget' | 'isActive' | 'description'>
+      Pick<Api.Gateway.Provider, 'providerId' | 'name' | 'providerType' | 'billingType' | 'monthlyBudget' | 'isActive' | 'description' | 'supportedFormats'>
     >;
 
     /** 供应商列表 */

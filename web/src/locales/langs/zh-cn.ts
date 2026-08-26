@@ -40,6 +40,8 @@ const local: App.I18n.Schema = {
     operate: '操作',
     pleaseCheckValue: '请检查输入的值是否合法',
     refresh: '刷新',
+    disable: '禁用',
+    enable: '启用',
     reset: '重置',
     search: '搜索',
     switch: '切换',
@@ -269,7 +271,6 @@ const local: App.I18n.Schema = {
     gateway: 'AI 看板',
     'ai-key': '密钥管理',
     models: '模型供给',
-    models_credential: '凭证管理',
     models_model: '模型管理',
     models_provider: '供应商管理',
     init: '系统初始化',
@@ -582,13 +583,15 @@ const local: App.I18n.Schema = {
           monthlyBudget: '月预算(USD)',
           monthlyUsed: '月已用',
           isActive: '状态',
-          description: '描述'
+          description: '描述',
+          supportedFormats: '接入格式'
         },
         form: {
           name: { required: '请输入供应商名称' },
           providerType: { required: '请选择供应商类型' },
           billingType: { required: '请选择计费类型' }
-        }
+        },
+        selectProviderTip: '请选择左侧供应商查看其凭证'
       },
       credential: {
         title: '凭证管理',
@@ -604,14 +607,17 @@ const local: App.I18n.Schema = {
           litellmSynced: '同步状态',
           isActive: '状态',
           description: '描述',
-          credentialValues: '凭证键值'
+          credentialValues: '凭证键值',
+          apiBase: 'API Base',
+          apiKey: 'API Key'
         },
         form: {
           credentialName: { required: '请输入凭证名称' },
           provider: { required: '请选择供应商' },
           keyPlaceholder: '键名(api_key/api_base)',
           valuePlaceholder: '值',
-          valuesTip: '敏感值编辑时掩码回传即保留旧值，填新值则覆盖'
+          valuesTip: '敏感值编辑时掩码回传即保留旧值，填新值则覆盖',
+          apiKeyPlaceholder: '留空=不改;输入新值=覆盖'
         }
       },
       model: {
@@ -643,6 +649,7 @@ const local: App.I18n.Schema = {
         edit: '编辑部署',
         inlineParams: '内联参数',
         col: {
+          provider: '供应商',
           deployName: '部署名',
           credential: '关联凭证',
           billingType: '计费类型',

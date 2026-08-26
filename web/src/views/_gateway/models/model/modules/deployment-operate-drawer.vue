@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { jsonClone } from '@sa/utils';
-import { fetchCreateDeployment, fetchGetCredentialList, fetchUpdateDeployment } from '@/service/api/gateway';
+import { fetchCreateDeployment, fetchGetCredentialList, fetchGetProviderList, fetchUpdateDeployment } from '@/service/api/gateway';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
 import { $t } from '@/locales';
 import { BILLING_TYPE_OPTIONS } from '@/constants/business/gateway';
@@ -56,13 +56,31 @@ function createDefaultModel(): Model {
 }
 
 const credentialOptions = ref<{ label: string; value: CommonType.IdType }[]>([]);
+const providerOptions = ref<{ label: string; value: CommonType.IdType }[]>([]);
+/** 表单临时供应商ID(仅过滤凭证下拉,不提交后端;deployment 经 credentialId 关联) */
+const providerId = ref<CommonType.IdType | null>(null);
 
-async function loadCredentials() {
+async function loadProviders() {
+  const { data, error } = await fetchGetProviderList({
+    pageNum: 1,
+    pageSize: 100,
+    name: null,
+    providerType: null,
+    billingType: null,
+    isActive: null,
+    params: {}
+  });
+  if (!error && data) {
+    providerOptions.value = data.rows.map(p => ({ label: p.name, value: p.providerId }));
+  }
+}
+
+async function loadCredentials(pid: CommonType.IdType | null) {
   const { data, error } = await fetchGetCredentialList({
     pageNum: 1,
     pageSize: 100,
     credentialName: null,
-    providerId: null,
+    providerId: pid,
     isActive: null,
     litellmSynced: null,
     params: {}
@@ -72,7 +90,15 @@ async function loadCredentials() {
   }
 }
 
-onMounted(loadCredentials);
+onMounted(() => {
+  loadProviders();
+  loadCredentials(null);
+});
+
+function handleProviderChange(val: CommonType.IdType | null) {
+  model.value.credentialId = null;
+  loadCredentials(val);
+}
 
 const billingTypeOptions = computed(() => BILLING_TYPE_OPTIONS.map(o => ({ label: $t(o.label), value: o.value })));
 
@@ -83,6 +109,7 @@ const rules: Record<'deployName', App.Global.FormRule> = {
 function handleUpdateModelWhenEdit() {
   model.value = createDefaultModel();
   vendorModel.value = '';
+  providerId.value = null;
 
   if (props.operateType === 'edit' && props.rowData) {
     Object.assign(model.value, jsonClone(props.rowData));
@@ -133,6 +160,16 @@ watch(visible, () => {
   <NDrawer v-model:show="visible" :title="title" display-directive="show" :width="600" class="max-w-90%">
     <NDrawerContent :title="title" :native-scrollbar="false" closable>
       <NForm ref="formRef" :model="model" :rules="rules" label-placement="left" :label-width="120">
+        <NFormItem :label="$t('page.gateway.deployment.col.provider')">
+          <NSelect
+            v-model:value="providerId"
+            clearable
+            filterable
+            :options="providerOptions"
+            :placeholder="$t('common.placeholderSelect')"
+            @update:value="handleProviderChange"
+          />
+        </NFormItem>
         <NFormItem :label="$t('page.gateway.deployment.col.credential')" path="credentialId">
           <NSelect
             v-model:value="model.credentialId"

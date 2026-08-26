@@ -181,15 +181,6 @@ export const generatedRoutes: GeneratedRoute[] = [
     },
     children: [
       {
-        name: 'models_credential',
-        path: '/models/credential',
-        component: 'view.models_credential',
-        meta: {
-          title: 'models_credential',
-          i18nKey: 'route.models_credential'
-        }
-      },
-      {
         name: 'models_model',
         path: '/models/model',
         component: 'view.models_model',

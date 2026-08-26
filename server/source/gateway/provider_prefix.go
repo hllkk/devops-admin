@@ -28,6 +28,7 @@ func (i *initProviderPrefix) MigrateTable(ctx context.Context) (context.Context,
 	}
 	return ctx, db.AutoMigrate(
 		&gatewayModel.ProviderPrefix{},
+		&gatewayModel.Model{},
 		&gatewayModel.AiKey{},
 		&gatewayModel.CostSummaryDaily{},
 	)

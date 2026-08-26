@@ -40,6 +40,8 @@ const local: App.I18n.Schema = {
     operate: 'Operate',
     pleaseCheckValue: 'Please check whether the value is valid',
     refresh: 'Refresh',
+    disable: 'Disable',
+    enable: 'Enable',
     reset: 'Reset',
     search: 'Search',
     switch: 'Switch',
@@ -273,7 +275,6 @@ const local: App.I18n.Schema = {
     gateway: 'AI Dashboard',
     'ai-key': 'AI Keys',
     models: 'Model Supply',
-    models_credential: 'Credentials',
     models_model: 'Models',
     models_provider: 'Providers',
     init: 'System Init',
@@ -586,13 +587,15 @@ const local: App.I18n.Schema = {
           monthlyBudget: 'Monthly Budget',
           monthlyUsed: 'Monthly Used',
           isActive: 'Status',
-          description: 'Description'
+          description: 'Description',
+          supportedFormats: 'Format'
         },
         form: {
           name: { required: 'Please enter provider name' },
           providerType: { required: 'Please select provider type' },
           billingType: { required: 'Please select billing type' }
-        }
+        },
+        selectProviderTip: 'Select a provider on the left to view its credentials'
       },
       credential: {
         title: 'Credentials',
@@ -608,14 +611,17 @@ const local: App.I18n.Schema = {
           litellmSynced: 'Sync Status',
           isActive: 'Status',
           description: 'Description',
-          credentialValues: 'Credential Values'
+          credentialValues: 'Credential Values',
+          apiBase: 'API Base',
+          apiKey: 'API Key'
         },
         form: {
           credentialName: { required: 'Please enter credential name' },
           provider: { required: 'Please select provider' },
           keyPlaceholder: 'key (api_key/api_base)',
           valuePlaceholder: 'value',
-          valuesTip: 'Masked value reposted keeps old plain, new value overwrites'
+          valuesTip: 'Masked value reposted keeps old plain, new value overwrites',
+          apiKeyPlaceholder: 'Empty=keep; new value=overwrite'
         }
       },
       model: {
@@ -647,6 +653,7 @@ const local: App.I18n.Schema = {
         edit: 'Edit Deployment',
         inlineParams: 'Inline Params',
         col: {
+          provider: 'Provider',
           deployName: 'Deploy Name',
           credential: 'Credential',
           billingType: 'Billing Type',

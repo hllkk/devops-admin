@@ -35,7 +35,37 @@ func (s *ProviderService) GetProviderList(ctx context.Context, q gatewayReq.Prov
 	} else {
 		err = db.Count(&total).Order("provider_id DESC").Find(&list).Error
 	}
+	if err == nil && len(list) > 0 {
+		s.fillCredentialCount(ctx, list)
+	}
 	return
+}
+
+// fillCredentialCount 批量填充凭证数(一条 GROUP BY 查询,避免 N+1)。
+func (s *ProviderService) fillCredentialCount(ctx context.Context, list []gateway.Provider) {
+	ids := make([]int64, 0, len(list))
+	for _, p := range list {
+		ids = append(ids, p.ProviderId)
+	}
+	type cntRow struct {
+		ProviderId int64
+		Cnt        int64
+	}
+	var rows []cntRow
+	if err := global.OPS_DB.WithContext(ctx).Model(&gateway.Credential{}).
+		Select("provider_id, COUNT(*) as cnt").
+		Where("provider_id IN ?", ids).
+		Group("provider_id").
+		Scan(&rows).Error; err != nil {
+		return
+	}
+	m := make(map[int64]int64, len(rows))
+	for _, r := range rows {
+		m[r.ProviderId] = r.Cnt
+	}
+	for i := range list {
+		list[i].CredentialCount = m[list[i].ProviderId]
+	}
 }
 
 // GetProvider 查供应商详情(对齐前端 GET /gateway/provider/:id)。
@@ -60,6 +90,7 @@ func (s *ProviderService) CreateProvider(ctx context.Context, req gatewayReq.Pro
 		MonthlyBudget: req.MonthlyBudget,
 		IsActive:      req.IsActive == nil || *req.IsActive, // nil/true → true，显式 false → false
 		Description:   req.Description,
+		SupportedFormats: req.SupportedFormats,
 	}
 	p.CreateBy = createBy
 	p.UpdateBy = createBy
@@ -79,11 +110,12 @@ func (s *ProviderService) UpdateProvider(ctx context.Context, req gatewayReq.Pro
 		return errors.New("供应商名称不能为空")
 	}
 	updates := map[string]any{
-		"name":          req.Name,
-		"provider_type": req.ProviderType,
-		"billing_type":  normalizeBillingType(req.BillingType),
-		"description":   req.Description,
-		"update_by":     updateBy,
+		"name":             req.Name,
+		"provider_type":    req.ProviderType,
+		"billing_type":     normalizeBillingType(req.BillingType),
+		"description":      req.Description,
+		"supported_formats": req.SupportedFormats,
+		"update_by":        updateBy,
 	}
 	if req.MonthlyBudget != nil {
 		updates["monthly_budget"] = *req.MonthlyBudget

@@ -349,6 +349,8 @@ declare namespace App {
         operate: string;
         pleaseCheckValue: string;
         refresh: string;
+        disable: string;
+        enable: string;
         reset: string;
         search: string;
         switch: string;
@@ -767,12 +769,14 @@ declare namespace App {
               monthlyUsed: string;
               isActive: string;
               description: string;
+              supportedFormats: string;
             };
             form: {
               name: { required: string };
               providerType: { required: string };
               billingType: { required: string };
             };
+            selectProviderTip: string;
           };
           credential: {
             title: string;
@@ -789,6 +793,8 @@ declare namespace App {
               isActive: string;
               description: string;
               credentialValues: string;
+              apiBase: string;
+              apiKey: string;
             };
             form: {
               credentialName: { required: string };
@@ -796,6 +802,7 @@ declare namespace App {
               keyPlaceholder: string;
               valuePlaceholder: string;
               valuesTip: string;
+              apiKeyPlaceholder: string;
             };
           };
           model: {
@@ -827,6 +834,7 @@ declare namespace App {
             edit: string;
             inlineParams: string;
             col: {
+              provider: string;
               deployName: string;
               credential: string;
               billingType: string;

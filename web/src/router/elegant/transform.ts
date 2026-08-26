@@ -178,7 +178,6 @@ const routeMap: RouteMap = {
   "log_operlog": "/log/operlog",
   "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat)?",
   "models": "/models",
-  "models_credential": "/models/credential",
   "models_model": "/models/model",
   "models_provider": "/models/provider",
   "server": "/server",

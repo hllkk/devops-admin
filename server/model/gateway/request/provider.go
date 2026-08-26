@@ -2,6 +2,7 @@ package request
 
 import (
 	commonReq "github.com/hllkk/devops-admin/server/model/common/request"
+	"gorm.io/datatypes"
 )
 
 // ProviderSearch 供应商分页查询(对齐前端 GET /gateway/provider/list，query 传输)。
@@ -25,4 +26,5 @@ type ProviderOperateParams struct {
 	MonthlyBudget *float64 `json:"monthlyBudget" form:"monthlyBudget"`     // 月预算(USD)
 	IsActive      *bool    `json:"isActive" form:"isActive"`              // 是否启用
 	Description   string   `json:"description" form:"description"`        // 描述
+	SupportedFormats datatypes.JSON `json:"supportedFormats" form:"supportedFormats" swaggertype:"object"` // 支持的接入格式(凭证 format 从中选)
 }

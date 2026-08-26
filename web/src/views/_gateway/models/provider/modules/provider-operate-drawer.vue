@@ -4,7 +4,7 @@ import { jsonClone } from '@sa/utils';
 import { fetchCreateProvider, fetchUpdateProvider } from '@/service/api/gateway';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
 import { $t } from '@/locales';
-import { BILLING_TYPE_OPTIONS, PROVIDER_TYPE_OPTIONS } from '@/constants/business/gateway';
+import { BILLING_TYPE_OPTIONS, CREDENTIAL_FORMAT_OPTIONS, PROVIDER_TYPE_OPTIONS } from '@/constants/business/gateway';
 
 defineOptions({ name: 'ProviderOperateDrawer' });
 
@@ -44,11 +44,13 @@ function createDefaultModel(): Model {
     billingType: 'token',
     monthlyBudget: null,
     isActive: true,
-    description: ''
+    description: '',
+    supportedFormats: null
   };
 }
 
 const billingTypeOptions = computed(() => BILLING_TYPE_OPTIONS.map(o => ({ label: $t(o.label), value: o.value })));
+const formatOptions = computed(() => CREDENTIAL_FORMAT_OPTIONS.map(o => ({ label: $t(o.label), value: o.value })));
 
 const rules: Record<'name' | 'providerType' | 'billingType', App.Global.FormRule> = {
   name: createRequiredRule($t('page.gateway.provider.form.name.required')),
@@ -108,6 +110,14 @@ watch(visible, () => {
             filterable
             tag
             :options="PROVIDER_TYPE_OPTIONS"
+            :placeholder="$t('common.placeholderSelect')"
+          />
+        </NFormItem>
+        <NFormItem :label="$t('page.gateway.provider.col.supportedFormats')" path="supportedFormats">
+          <NSelect
+            v-model:value="model.supportedFormats"
+            multiple
+            :options="formatOptions"
             :placeholder="$t('common.placeholderSelect')"
           />
         </NFormItem>

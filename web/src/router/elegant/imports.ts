@@ -40,7 +40,6 @@ export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<Ro
   "user-center": () => import("@/views/_builtin/user-center/index.vue"),
   "ai-key": () => import("@/views/_gateway/ai-key/index.vue"),
   gateway: () => import("@/views/_gateway/gateway/index.vue"),
-  models_credential: () => import("@/views/_gateway/models/credential/index.vue"),
   models_model: () => import("@/views/_gateway/models/model/index.vue"),
   models_provider: () => import("@/views/_gateway/models/provider/index.vue"),
   server: () => import("@/views/_server/server/index.vue"),

@@ -324,7 +324,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			OrderNum:  3,
 			Module:    "admin",
 		},
-		// ── AI 网关(密钥升顶层单页;模型目录下供应商/凭证/模型三页按链路排序;ApiPrefix 沿用后端接口前缀,与菜单 Path 解耦) ──
+		// ── AI 网关(密钥升顶层单页;模型目录下供应商/模型两页;凭证内聚进供应商管理页;ApiPrefix 沿用后端接口前缀,与菜单 Path 解耦) ──
 		{
 			ParentId:  menuNameMap["route.models"],
 			MenuName:  "route.models_provider",
@@ -339,18 +339,6 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 		},
 		{
 			ParentId:  menuNameMap["route.models"],
-			MenuName:  "route.models_credential",
-			MenuType:  "C",
-			Path:      "models/credential",
-			ApiPrefix: "/gateway/credential, /gateway/credential/*",
-			Component: "_gateway/models/credential/index",
-			Icon:      "mdi:key-chain-variant",
-			Visible:   "0",
-			OrderNum:  2,
-			Module:    "gateway",
-		},
-		{
-			ParentId:  menuNameMap["route.models"],
 			MenuName:  "route.models_model",
 			MenuType:  "C",
 			Path:      "models/model",
@@ -358,7 +346,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			Component: "_gateway/models/model/index",
 			Icon:      "mdi:brain",
 			Visible:   "0",
-			OrderNum:  3,
+			OrderNum:  2,
 			Module:    "gateway",
 		},
 	}
