@@ -537,6 +537,7 @@ const local: App.I18n.Schema = {
       title: 'AI Gateway',
       comingSoon: 'Coming soon',
       common: {
+        optional: 'Optional',
         unlimited: 'Unlimited',
         active: 'Active',
         inactive: 'Inactive',
@@ -655,8 +656,14 @@ const local: App.I18n.Schema = {
         add: 'New Deployment',
         edit: 'Edit Deployment',
         inlineParams: 'Inline Params',
+        test: 'Test Connection',
+        testing: 'Testing…',
+        testOk: 'OK',
+        testFail: 'Failed',
+        testDetail: 'Technical Detail',
         group: {
           billing: 'Billing & Quota',
+          pricing: 'Pricing',
           routing: 'Routing',
           advanced: 'Advanced'
         },
@@ -667,6 +674,12 @@ const local: App.I18n.Schema = {
           billingType: 'Billing Type',
           costPerCall: 'Cost/Call',
           monthlyCallQuota: 'Monthly Quota',
+          externalPricing: 'External Official Pricing',
+          internalPricing: 'Internal Settlement Pricing',
+          inputCost: 'Input',
+          outputCost: 'Output',
+          cacheReadCost: 'Cache Read',
+          cacheCreationCost: 'Cache Write',
           isActive: 'Status',
           vendorModel: 'Vendor Model',
           weight: 'Weight',
@@ -676,7 +689,8 @@ const local: App.I18n.Schema = {
           maxRetries: 'Max Retries',
           tags: 'Tags',
           useInPassThrough: 'Pass-through',
-          dropParams: 'Drop Unsupported Params'
+          dropParams: 'Drop Unsupported Params',
+          connectivity: 'Connectivity'
         },
         form: {
           deployName: { required: 'Please enter deploy name' },
@@ -694,7 +708,8 @@ const local: App.I18n.Schema = {
           timeoutPlaceholder: 'Default 30',
           streamTimeoutPlaceholder: 'Optional',
           maxRetriesPlaceholder: 'Default 2',
-          tagsPlaceholder: 'Type tag and press enter'
+          tagsPlaceholder: 'Type tag and press enter',
+          pricingTip: 'Token-based pricing in ¥/M tokens. External official pricing syncs to LiteLLM (converted to USD/token on push); internal settlement pricing is used for platform cost accounting. Cache and empty fields count as 0'
         }
       },
       aiKey: {

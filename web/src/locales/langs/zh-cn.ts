@@ -533,6 +533,7 @@ const local: App.I18n.Schema = {
       title: 'AI 网关管理',
       comingSoon: '敬请期待',
       common: {
+        optional: '可选',
         unlimited: '不限',
         active: '启用',
         inactive: '禁用',
@@ -651,8 +652,14 @@ const local: App.I18n.Schema = {
         add: '新增部署',
         edit: '编辑部署',
         inlineParams: '内联参数',
+        test: '测试连通',
+        testing: '测试中…',
+        testOk: '连通',
+        testFail: '失败',
+        testDetail: '技术详情',
         group: {
           billing: '计费与配额',
+          pricing: '定价配置',
           routing: '路由配置',
           advanced: '高级设置'
         },
@@ -663,6 +670,12 @@ const local: App.I18n.Schema = {
           billingType: '计费类型',
           costPerCall: '单次成本',
           monthlyCallQuota: '月调用配额',
+          externalPricing: '外部官方定价',
+          internalPricing: '内部结算定价',
+          inputCost: '输入',
+          outputCost: '输出',
+          cacheReadCost: '缓存读取',
+          cacheCreationCost: '缓存写入',
           isActive: '状态',
           vendorModel: '厂商模型名',
           weight: '权重',
@@ -672,7 +685,8 @@ const local: App.I18n.Schema = {
           maxRetries: '最大重试',
           tags: '标签',
           useInPassThrough: '透传',
-          dropParams: '丢弃不支持参数'
+          dropParams: '丢弃不支持参数',
+          connectivity: '连通性'
         },
         form: {
           deployName: { required: '请输入部署名' },
@@ -690,7 +704,8 @@ const local: App.I18n.Schema = {
           timeoutPlaceholder: '默认 30',
           streamTimeoutPlaceholder: '可选',
           maxRetriesPlaceholder: '默认 2',
-          tagsPlaceholder: '输入标签回车添加'
+          tagsPlaceholder: '输入标签回车添加',
+          pricingTip: '按 Token 计费的定价，单位 ¥/百万 token；外部官方定价同步至 LiteLLM（推送时换算为 USD/token），内部结算定价用于平台对内成本统计；缓存与未填项按 0 计'
         }
       },
       aiKey: {

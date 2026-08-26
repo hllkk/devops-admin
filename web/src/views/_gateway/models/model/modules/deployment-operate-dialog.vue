@@ -45,6 +45,8 @@ type Model = Api.Gateway.DeploymentOperateParams;
 const formModel = ref<Model>(createDefaultModel());
 /** litellmParams 非空引用(createDefault 已给完整对象，编辑回填覆盖后仍非空) */
 const params = computed(() => formModel.value.litellmParams!);
+/** modelInfo 非空引用(内部结算定价绑 internal_* 键;createDefault 已给 {},编辑回填覆盖后仍非空) */
+const modelInfo = computed(() => formModel.value.modelInfo ?? {});
 /** litellmParams.model(厂商模型名，如 claude-sonnet-4-20250514) */
 const vendorModel = ref('');
 /** 关联模型未设置模型 ID 时的新增部署补填值(创建部署前先回写模型) */
@@ -58,6 +60,8 @@ const needRouteKey = computed(() => props.operateType === 'add' && !!props.model
 const showBillingGroup = computed(() => formModel.value.billingType !== 'token');
 /** 月配额仅包月计费有意义 */
 const showMonthlyQuota = computed(() => formModel.value.billingType === 'monthly_quota');
+/** 定价组仅按Token计费时展示(外部官方定价+内部结算定价) */
+const showTokenPricing = computed(() => formModel.value.billingType === 'token');
 
 function createDefaultModel(): Model {
   return {
@@ -73,6 +77,11 @@ function createDefaultModel(): Model {
     isActive: true
   };
 }
+
+/** litellm 定价四键(外部官方定价,¥/百万token;对齐后端 costParamKeys) */
+const COST_PARAM_KEYS = ['input_cost_per_token', 'output_cost_per_token', 'cache_read_input_token_cost', 'cache_creation_input_token_cost'] as const;
+/** model_info 内部结算定价四键(¥/百万token;对齐 AIHelms internal_* 命名,后端 calcCosts 读此) */
+const INTERNAL_COST_KEYS = ['internal_input_cost', 'internal_output_cost', 'internal_cache_read_cost', 'internal_cache_creation_cost'] as const;
 
 const credentialOptions = ref<{ label: string; value: CommonType.IdType }[]>([]);
 const providerOptions = ref<{ label: string; value: CommonType.IdType }[]>([]);
@@ -124,7 +133,7 @@ const rules: Record<'deployName', App.Global.FormRule> = {
   deployName: createRequiredRule($t('page.gateway.deployment.form.deployName.required'))
 };
 
-function handleUpdateModelWhenEdit() {
+async function handleUpdateModelWhenEdit() {
   formModel.value = createDefaultModel();
   vendorModel.value = '';
   routeKey.value = '';
@@ -141,6 +150,9 @@ function handleUpdateModelWhenEdit() {
     p.tags = Array.isArray(p.tags) ? p.tags : [];
     p.use_in_pass_through = p.use_in_pass_through === true;
     p.drop_params = p.drop_params === true;
+    // 编辑回填供应商：后端视图已带 providerId，回填后按其过滤凭证下拉(否则 credentialId 无匹配项)
+    providerId.value = props.rowData.providerId ?? null;
+    await loadCredentials(providerId.value);
     // 已有值则自动展开对应折叠组
     expandedNames.value = computeExpandedNames();
   } else {
@@ -163,6 +175,10 @@ function computeExpandedNames(): string[] {
   }
   if (formModel.value.costPerCall != null || formModel.value.monthlyCallQuota != null) {
     names.push('billing');
+  }
+  // 按Token计费默认展开定价组(外部官方定价+内部结算定价为核心配置)
+  if (formModel.value.billingType === 'token') {
+    names.push('pricing');
   }
   if (p.use_in_pass_through || p.drop_params) {
     names.push('advanced');
@@ -210,7 +226,24 @@ async function handleSubmit() {
   }
   nextParams.use_in_pass_through = nextParams.use_in_pass_through === true;
   nextParams.drop_params = nextParams.drop_params === true;
+  // 定价四键空值剔除(后端按"有键=有效价"镜像,空值会污染 model_info)
+  for (const key of COST_PARAM_KEYS) {
+    const v = nextParams[key];
+    if (v === null || v === undefined || v === '') {
+      Reflect.deleteProperty(nextParams, key);
+    }
+  }
   formModel.value.litellmParams = nextParams;
+
+  // 内部结算定价四键空值剔除(保留 model_info 其它镜像键如 input_cost,由后端 MergeCostsToModelInfo 重算)
+  const info = { ...(formModel.value.modelInfo ?? {}) };
+  for (const key of INTERNAL_COST_KEYS) {
+    const v = info[key];
+    if (v === null || v === undefined || v === '') {
+      Reflect.deleteProperty(info, key);
+    }
+  }
+  formModel.value.modelInfo = info;
 
   if (props.operateType === 'add') {
     const { error } = await fetchCreateDeployment(formModel.value);
@@ -228,9 +261,9 @@ async function handleSubmit() {
   emit('submitted');
 }
 
-watch(visible, () => {
+watch(visible, async () => {
   if (visible.value) {
-    handleUpdateModelWhenEdit();
+    await handleUpdateModelWhenEdit();
     restoreValidation();
   }
 });
@@ -299,6 +332,58 @@ watch(visible, () => {
             </NFormItemGi>
             <NFormItemGi v-if="showMonthlyQuota" span="24 s:12" :label="$t('page.gateway.deployment.col.monthlyCallQuota')" path="monthlyCallQuota">
               <NInputNumber v-model:value="formModel.monthlyCallQuota" :min="0" clearable :placeholder="$t('page.gateway.common.unlimited')" class="w-full" />
+            </NFormItemGi>
+          </NGrid>
+        </NCollapseItem>
+
+        <NCollapseItem v-if="showTokenPricing" :title="$t('page.gateway.deployment.group.pricing')" name="pricing">
+          <p class="mb-8px text-12px text-slate-400">{{ $t('page.gateway.deployment.form.pricingTip') }}</p>
+          <!-- 外部官方定价(同步至 LiteLLM,推送时换算为 USD/token) -->
+          <div class="mb-8px text-13px font-500 text-slate-500">{{ $t('page.gateway.deployment.col.externalPricing') }}</div>
+          <NGrid responsive="screen" item-responsive :x-gap="16" class="mb-12px">
+            <NFormItemGi span="24 s:12" :label="$t('page.gateway.deployment.col.inputCost')">
+              <NInputNumber v-model:value="params.input_cost_per_token" :min="0" :precision="6" :step="0.000001" clearable :placeholder="$t('page.gateway.common.optional')" class="w-full">
+                <template #suffix>¥/M</template>
+              </NInputNumber>
+            </NFormItemGi>
+            <NFormItemGi span="24 s:12" :label="$t('page.gateway.deployment.col.outputCost')">
+              <NInputNumber v-model:value="params.output_cost_per_token" :min="0" :precision="6" :step="0.000001" clearable :placeholder="$t('page.gateway.common.optional')" class="w-full">
+                <template #suffix>¥/M</template>
+              </NInputNumber>
+            </NFormItemGi>
+            <NFormItemGi span="24 s:12" :label="$t('page.gateway.deployment.col.cacheReadCost')">
+              <NInputNumber v-model:value="params.cache_read_input_token_cost" :min="0" :precision="6" :step="0.000001" clearable :placeholder="$t('page.gateway.common.optional')" class="w-full">
+                <template #suffix>¥/M</template>
+              </NInputNumber>
+            </NFormItemGi>
+            <NFormItemGi span="24 s:12" :label="$t('page.gateway.deployment.col.cacheCreationCost')">
+              <NInputNumber v-model:value="params.cache_creation_input_token_cost" :min="0" :precision="6" :step="0.000001" clearable :placeholder="$t('page.gateway.common.optional')" class="w-full">
+                <template #suffix>¥/M</template>
+              </NInputNumber>
+            </NFormItemGi>
+          </NGrid>
+          <!-- 内部结算定价(平台对内成本统计,不进 LiteLLM) -->
+          <div class="mb-8px text-13px font-500 text-slate-500">{{ $t('page.gateway.deployment.col.internalPricing') }}</div>
+          <NGrid responsive="screen" item-responsive :x-gap="16">
+            <NFormItemGi span="24 s:12" :label="$t('page.gateway.deployment.col.inputCost')">
+              <NInputNumber v-model:value="modelInfo.internal_input_cost" :min="0" :precision="6" :step="0.000001" clearable :placeholder="$t('page.gateway.common.optional')" class="w-full">
+                <template #suffix>¥/M</template>
+              </NInputNumber>
+            </NFormItemGi>
+            <NFormItemGi span="24 s:12" :label="$t('page.gateway.deployment.col.outputCost')">
+              <NInputNumber v-model:value="modelInfo.internal_output_cost" :min="0" :precision="6" :step="0.000001" clearable :placeholder="$t('page.gateway.common.optional')" class="w-full">
+                <template #suffix>¥/M</template>
+              </NInputNumber>
+            </NFormItemGi>
+            <NFormItemGi span="24 s:12" :label="$t('page.gateway.deployment.col.cacheReadCost')">
+              <NInputNumber v-model:value="modelInfo.internal_cache_read_cost" :min="0" :precision="6" :step="0.000001" clearable :placeholder="$t('page.gateway.common.optional')" class="w-full">
+                <template #suffix>¥/M</template>
+              </NInputNumber>
+            </NFormItemGi>
+            <NFormItemGi span="24 s:12" :label="$t('page.gateway.deployment.col.cacheCreationCost')">
+              <NInputNumber v-model:value="modelInfo.internal_cache_creation_cost" :min="0" :precision="6" :step="0.000001" clearable :placeholder="$t('page.gateway.common.optional')" class="w-full">
+                <template #suffix>¥/M</template>
+              </NInputNumber>
             </NFormItemGi>
           </NGrid>
         </NCollapseItem>

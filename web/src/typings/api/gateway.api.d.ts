@@ -247,6 +247,8 @@ declare namespace Api {
       credentialName: string;
       /** 凭证协议格式(openai/anthropic) */
       format: string;
+      /** 关联供应商ID(编辑回填供应商下拉用,后端视图联表凭证带出) */
+      providerId: CommonType.IdType;
       /** 关联供应商类型 */
       providerType: string;
       /** LiteLLM 侧完整调用名(三态命名,routable 版) */
@@ -272,6 +274,24 @@ declare namespace Api {
     >;
 
     type DeploymentList = Api.Common.PaginatingQueryRecord<Deployment>;
+
+    /** 部署连通性测试参数(管理员视角,经 LiteLLM 数据面) */
+    type DeploymentTestParams = {
+      deploymentId: CommonType.IdType;
+    };
+
+    /** 部署连通性测试结果(技术详情已脱敏+截断) */
+    type DeploymentTestResult = {
+      success: boolean;
+      /** 耗时(毫秒) */
+      latencyMs: number;
+      /** 错误类别(auth_error/model_not_found/rate_limited/bad_request/provider_error/network_error/unknown) */
+      errorCategory: string;
+      /** 用户可读错误信息(后端已分类) */
+      message: string;
+      /** 技术详情(已脱敏+截断,用于排障) */
+      technicalDetail: string;
+    };
 
     // ───────────────── AI 密钥 AiKey(搜索/操作参数) ─────────────────
 

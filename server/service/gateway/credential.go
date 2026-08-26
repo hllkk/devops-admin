@@ -262,8 +262,9 @@ func syncCredentialRouting(ctx context.Context, tx *gorm.DB, cli *litellm.Client
 			errs = append(errs, fmt.Sprintf("部署 %q: 关联模型缺失: %v", dep.DeployName, err))
 			continue
 		}
-		params, modelInfo := buildDeploymentParams(tx, dep, &model, cred)
-		if err := pushDeployment(ctx, cli, dep, model.ModelKey, format, routableOf(dep.IsActive, cred), params, modelInfo); err != nil {
+		params, modelInfo := buildDeploymentParams(dep, cred)
+		prefix, needsV1 := resolveDeploymentPrefix(tx, cred, format, model.Category)
+		if err := pushDeployment(ctx, cli, dep, model.ModelKey, format, routableOf(dep.IsActive, cred), prefix, needsV1, params, modelInfo); err != nil {
 			errs = append(errs, fmt.Sprintf("部署 %q: %v", dep.DeployName, err))
 			continue
 		}

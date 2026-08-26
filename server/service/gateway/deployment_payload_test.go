@@ -73,6 +73,43 @@ func TestPrefixModelName(t *testing.T) {
 	}
 }
 
+func TestApplyPrefixProjection(t *testing.T) {
+	// 前缀化 model + 补 /v1，非前缀键保留
+	params := map[string]any{"model": "glm-5.2", "api_base": "http://x:8000", "tpm": 100}
+	out := ApplyPrefixProjection(params, "anthropic", true)
+	if out["model"] != "anthropic/glm-5.2" {
+		t.Fatalf("model 应前缀化: %v", out["model"])
+	}
+	if out["api_base"] != "http://x:8000/v1" {
+		t.Fatalf("api_base 应补 /v1: %v", out["api_base"])
+	}
+	if out["tpm"] != 100 {
+		t.Fatalf("非前缀键应保留: %v", out["tpm"])
+	}
+	// 入参不变异(DB 侧 litellm_params.model 必须保留原始厂商名)
+	if params["model"] != "glm-5.2" || params["api_base"] != "http://x:8000" {
+		t.Fatalf("入参被变异: %v", params)
+	}
+
+	// prefix 空 → 原样拷贝(内联部署合法斜杠串不动)
+	out = ApplyPrefixProjection(params, "", true)
+	if out["model"] != "glm-5.2" || out["api_base"] != "http://x:8000" {
+		t.Fatalf("空 prefix 应原样: %v", out)
+	}
+
+	// 剥旧前缀取末段重拼(防 anthropic/anthropic/glm-5.2 双重前缀，历史脏数据幂等)
+	out = ApplyPrefixProjection(map[string]any{"model": "zhipu/glm-5.2"}, "anthropic", false)
+	if out["model"] != "anthropic/glm-5.2" {
+		t.Fatalf("应剥旧前缀重拼: %v", out["model"])
+	}
+
+	// needsV1=false → api_base 不补
+	out = ApplyPrefixProjection(map[string]any{"model": "m", "api_base": "http://x:8000"}, "openai", false)
+	if out["api_base"] != "http://x:8000" {
+		t.Fatalf("needsV1=false 不应补 /v1: %v", out["api_base"])
+	}
+}
+
 func TestEnsureV1Suffix(t *testing.T) {
 	cases := []struct {
 		apiBase string

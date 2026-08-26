@@ -10,8 +10,10 @@ import (
 
 // 本文件是部署投影的纯函数层（零 DB/配置依赖，可单测）。
 // 总原则：平台 DB 永远存人民币口径原始值，派生值（前缀化 model、USD/token 换算、
-// active 标志、api_base 的 /v1 补齐）只存在于发往 LiteLLM 前的投影构建，绝不回写平台 DB
-// （litellm_params 里写回的是管线①-④的人民币口径处理值，不含换算/active）。
+// active 标志、api_base 的 /v1 补齐）只存在于发往 LiteLLM 前的投影构建，绝不回写平台 DB。
+// 写回 DB 的仅管线①(凭证绑定: litellm_credential_name/api_base 归凭证) 与 ④(定价镜像 model_info)；
+// 管线②③(前缀解析/前缀化 model/补 /v1) 在 pushDeployment 经 ApplyPrefixProjection 临时投影，不落库——
+// DB 的 litellm_params.model 始终存用户填的原始厂商模型名(如 glm-5.2)，编辑回显不再带 anthropic/ 前缀。
 
 // BuildModelRouteName 三态路由名唯一入口：
 // base = modelKey；format==anthropic → base+"(Anthropic)"（协议隔离独立分组）；
@@ -64,6 +66,26 @@ func PrefixModelName(raw, prefix string) string {
 		seg = raw
 	}
 	return prefix + "/" + seg
+}
+
+// ApplyPrefixProjection 投影层前缀化(不写回 DB)：拷贝 params，prefix 非空时
+// 前缀化 model(PrefixModelName 剥旧前缀取末段重拼) + api_base 补 /v1(EnsureV1Suffix)。
+// 入参不变异；prefix 为空 → 原样拷贝(内联部署的 model 可能本就是 azure/gpt-4 合法串)。
+// 仅 pushDeployment 推送前调用，确保 DB 的 litellm_params.model 保持原始厂商名。
+func ApplyPrefixProjection(params map[string]any, prefix string, needsV1 bool) map[string]any {
+	out := make(map[string]any, len(params))
+	for k, v := range params {
+		out[k] = v
+	}
+	if prefix != "" {
+		if raw, ok := out["model"].(string); ok {
+			out["model"] = PrefixModelName(raw, prefix)
+		}
+		if base, ok := out["api_base"].(string); ok {
+			out["api_base"] = EnsureV1Suffix(base, needsV1)
+		}
+	}
+	return out
 }
 
 // EnsureV1Suffix needs_v1 且 api_base 未含 /v1 时补齐（去尾斜杠；空串原样）。

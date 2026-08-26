@@ -20,12 +20,12 @@ import (
 
 // 用量回流常量（对齐 AIHelms，可由 config 覆盖）
 const (
-	defaultSpendBatchSize     = 1000
-	defaultMaxBatchesPerRun   = 50
+	defaultSpendBatchSize      = 1000
+	defaultMaxBatchesPerRun    = 50
 	defaultReconcileWindowDays = 30
-	syncStateKey             = "llm_logs"
-	masterKeyToken           = "litellm_proxy_master_key"
-	defaultUserId            = "default_user_id"
+	syncStateKey               = "llm_logs"
+	masterKeyToken             = "litellm_proxy_master_key"
+	defaultUserId              = "default_user_id"
 )
 
 // UsageSyncService 用量回流与成本重算（对齐前端 /gateway/usage/* 与定时任务）。
@@ -209,8 +209,6 @@ func (s *UsageSyncService) GetUsageLogList(ctx context.Context, q gatewayReq.Usa
 	return
 }
 
-
-
 type spendCursor struct {
 	t   time.Time
 	rid string
@@ -306,26 +304,26 @@ func (s *UsageSyncService) toLlmLog(ctx context.Context, db *gorm.DB, r *gateway
 		durationMs = int(ended.Sub(started).Milliseconds())
 	}
 	return &gateway.LlmLog{
-		RequestId:          r.RequestId,
-		UserId:             userId,
-		AiKeyId:            aiKeyId,
-		DeploymentId:       depId,
-		Model:              r.Model,
-		Provider:           r.CustomLlmProvider,
-		CallType:           r.CallType,
-		PromptTokens:       r.PromptTokens,
-		CompletionTokens:   r.CompletionTokens,
-		TotalTokens:        r.TotalTokens,
-		CacheReadTokens:    cacheRead,
+		RequestId:           r.RequestId,
+		UserId:              userId,
+		AiKeyId:             aiKeyId,
+		DeploymentId:        depId,
+		Model:               r.Model,
+		Provider:            r.CustomLlmProvider,
+		CallType:            r.CallType,
+		PromptTokens:        r.PromptTokens,
+		CompletionTokens:    r.CompletionTokens,
+		TotalTokens:         r.TotalTokens,
+		CacheReadTokens:     cacheRead,
 		CacheCreationTokens: cacheCreation,
-		ExternalCost:       external,
-		InternalCost:       internal,
-		DurationMs:         durationMs,
-		StartedAt:          started,
-		EndedAt:            ended,
-		SessionId:          r.SessionId,
-		Metadata:           datatypes.JSON(r.Metadata),
-		SyncedAt:           time.Now().UTC(),
+		ExternalCost:        external,
+		InternalCost:        internal,
+		DurationMs:          durationMs,
+		StartedAt:           started,
+		EndedAt:             ended,
+		SessionId:           r.SessionId,
+		Metadata:            datatypes.JSON(r.Metadata),
+		SyncedAt:            time.Now().UTC(),
 	}
 }
 
@@ -512,8 +510,16 @@ func calcCosts(dep *gateway.ModelDeployment, prompt, completion, cacheRead, cach
 	cr := toFloatCost(info["cache_read_cost"])
 	cc := toFloatCost(info["cache_creation_cost"])
 	external = (in*float64(prompt) + out*float64(completion) + cr*float64(cacheRead) + cc*float64(cacheCreation)) / million
-	// TODO(P3 成本效能): internal 用 model_info.internal_* 键区分对内成本，P1 同 external
-	return external, external
+	// 内部结算定价：有 internal_* 键则独立计算对内成本，未填回落 external（兼容历史数据）
+	iin := toFloatCost(info["internal_input_cost"])
+	iout := toFloatCost(info["internal_output_cost"])
+	icr := toFloatCost(info["internal_cache_read_cost"])
+	icc := toFloatCost(info["internal_cache_creation_cost"])
+	if iin == 0 && iout == 0 && icr == 0 && icc == 0 {
+		return external, external
+	}
+	internal = (iin*float64(prompt) + iout*float64(completion) + icr*float64(cacheRead) + icc*float64(cacheCreation)) / million
+	return external, internal
 }
 
 // toFloatCost 成本键数值容错。

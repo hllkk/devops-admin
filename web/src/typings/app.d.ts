@@ -718,6 +718,7 @@ declare namespace App {
           title: string;
           comingSoon: string;
           common: {
+            optional: string;
             unlimited: string;
             active: string;
             inactive: string;
@@ -836,8 +837,14 @@ declare namespace App {
             add: string;
             edit: string;
             inlineParams: string;
+            test: string;
+            testing: string;
+            testOk: string;
+            testFail: string;
+            testDetail: string;
             group: {
               billing: string;
+              pricing: string;
               routing: string;
               advanced: string;
             };
@@ -848,6 +855,12 @@ declare namespace App {
               billingType: string;
               costPerCall: string;
               monthlyCallQuota: string;
+              externalPricing: string;
+              internalPricing: string;
+              inputCost: string;
+              outputCost: string;
+              cacheReadCost: string;
+              cacheCreationCost: string;
               isActive: string;
               vendorModel: string;
               weight: string;
@@ -858,6 +871,7 @@ declare namespace App {
               tags: string;
               useInPassThrough: string;
               dropParams: string;
+              connectivity: string;
             };
             form: {
               deployName: { required: string };
@@ -873,6 +887,7 @@ declare namespace App {
               streamTimeoutPlaceholder: string;
               maxRetriesPlaceholder: string;
               tagsPlaceholder: string;
+              pricingTip: string;
             };
           };
           aiKey: {

@@ -92,17 +92,15 @@ func providerTypeOfTx(db *gorm.DB, providerId int64) string {
 	return p.ProviderType
 }
 
-// buildDeploymentParams 部署投影构建管线(人民币口径，DB 侧事实)：
+// buildDeploymentParams 部署投影的 DB 侧事实构建(人民币口径，写回平台 DB)：
 // ①绑定凭证: 剔 inline api_key → 写 litellm_credential_name → api_base 归凭证
-// ②前缀解析: 差异表 (provider_type, format, category)
-// ③前缀化 model + needs_v1 补 /v1
 // ④定价镜像: params 四键 → model_info (input_cost 等)
-// 返回的 params/modelInfo 写回 DB 与推送共用(推送前仅做 USD 换算副本)。
-func buildDeploymentParams(db *gorm.DB, dep *gateway.ModelDeployment, model *gateway.Model, cred *gateway.Credential) (params, modelInfo map[string]any) {
+// 管线②③(前缀解析/前缀化 model/补 /v1)是 LiteLLM 投影层派生值，不在此构建、不落库——
+// pushDeployment 推送时经 resolveDeploymentPrefix + ApplyPrefixProjection 临时投影，
+// DB 的 litellm_params.model 始终存用户填的原始厂商模型名。
+func buildDeploymentParams(dep *gateway.ModelDeployment, cred *gateway.Credential) (params, modelInfo map[string]any) {
 	params = jsonToMap(dep.LitellmParams)
 	modelInfo = jsonToMap(dep.ModelInfo)
-
-	providerType, format := "", "openai"
 	if cred != nil {
 		values, err := decryptCredentialValues(cred.CredentialValues)
 		if err == nil {
@@ -111,30 +109,27 @@ func buildDeploymentParams(db *gorm.DB, dep *gateway.ModelDeployment, model *gat
 			// 解密失败仍保留引用关系(凭证名)，仅 api_base 不覆盖——推送侧凭证同步会先失败暴露问题
 			params = ApplyCredentialToParams(params, cred.CredentialName, map[string]any{})
 		}
-		providerType = providerTypeOfTx(db, cred.ProviderId)
-		format = formatOf(cred)
-		if format == "" {
-			format = "openai"
-		}
-	}
-	prefix, needsV1 := resolvePrefix(db, providerType, format, model.Category)
-	if prefix != "" {
-		if raw, ok := params["model"].(string); ok {
-			params["model"] = PrefixModelName(raw, prefix)
-		}
-		if base, ok := params["api_base"].(string); ok {
-			params["api_base"] = EnsureV1Suffix(base, needsV1)
-		}
 	}
 	modelInfo = MergeCostsToModelInfo(modelInfo, params)
 	return params, modelInfo
 }
 
-// pushDeployment 推送部署投影到 LiteLLM：路由名三态 + active 双写 + USD/token 换算副本。
+// resolveDeploymentPrefix 投影层前缀解析(封装 providerTypeOfTx + resolvePrefix)：cred 为 nil
+// 或未关联供应商 → 返 ("", false)；仅 pushDeployment 投影用，不写回 DB。
+func resolveDeploymentPrefix(db *gorm.DB, cred *gateway.Credential, format, category string) (prefix string, needsV1 bool) {
+	if cred == nil {
+		return "", false
+	}
+	providerType := providerTypeOfTx(db, cred.ProviderId)
+	return resolvePrefix(db, providerType, format, category)
+}
+
+// pushDeployment 推送部署投影到 LiteLLM：路由名三态 + 投影层前缀化 + active 双写 + USD/token 换算副本。
 // litellm_model_id 为空 → AddModel 并写回(dep.LitellmModelId)；否则 UpdateModel(改名+全量)。
-func pushDeployment(ctx context.Context, cli *litellm.Client, dep *gateway.ModelDeployment, modelKey, format string, routable bool, params, modelInfo map[string]any) error {
+// prefix/needsV1 来自 resolveDeploymentPrefix，经 ApplyPrefixProjection 临时投影(不写回 DB)。
+func pushDeployment(ctx context.Context, cli *litellm.Client, dep *gateway.ModelDeployment, modelKey, format string, routable bool, prefix string, needsV1 bool, params, modelInfo map[string]any) error {
 	routeName := BuildModelRouteName(modelKey, format, routable)
-	pushParams := ConvertCostsForLitellm(params, global.OPS_CONFIG.Litellm.UsdToCnyRate)
+	pushParams := ConvertCostsForLitellm(ApplyPrefixProjection(params, prefix, needsV1), global.OPS_CONFIG.Litellm.UsdToCnyRate)
 	pushInfo := withActive(modelInfo, routable)
 	if dep.LitellmModelId == "" {
 		resp, err := cli.AddModel(ctx, routeName, pushParams, pushInfo)
@@ -275,18 +270,19 @@ func (s *DeploymentService) CreateDeployment(ctx context.Context, req gatewayReq
 				return err
 			}
 		}
-		params, modelInfo := buildDeploymentParams(tx, &dep, &model, cred)
+		params, modelInfo := buildDeploymentParams(&dep, cred)
 		if cli != nil && routable {
-			if err := pushDeployment(ctx, cli, &dep, model.ModelKey, format, routable, params, modelInfo); err != nil {
+			prefix, needsV1 := resolveDeploymentPrefix(tx, cred, format, model.Category)
+			if err := pushDeployment(ctx, cli, &dep, model.ModelKey, format, routable, prefix, needsV1, params, modelInfo); err != nil {
 				return err
 			}
 		}
 		return tx.Model(&gateway.ModelDeployment{}).Where("deployment_id = ?", dep.DeploymentId).
 			Updates(map[string]any{
-				"litellm_params":  marshalJSON(params),
-				"model_info":      marshalJSON(modelInfo),
+				"litellm_params":   marshalJSON(params),
+				"model_info":       marshalJSON(modelInfo),
 				"litellm_model_id": dep.LitellmModelId,
-				"update_by":       createBy,
+				"update_by":        createBy,
 			}).Error
 	})
 	if err != nil {
@@ -379,9 +375,10 @@ func (s *DeploymentService) UpdateDeployment(ctx context.Context, req gatewayReq
 				return err
 			}
 		}
-		params, modelInfo := buildDeploymentParams(tx, &dep, &model, cred)
+		params, modelInfo := buildDeploymentParams(&dep, cred)
 		if cli != nil && (routable || dep.LitellmModelId != "") {
-			if err := pushDeployment(ctx, cli, &dep, model.ModelKey, format, routable, params, modelInfo); err != nil {
+			prefix, needsV1 := resolveDeploymentPrefix(tx, cred, format, model.Category)
+			if err := pushDeployment(ctx, cli, &dep, model.ModelKey, format, routable, prefix, needsV1, params, modelInfo); err != nil {
 				return err
 			}
 		}
@@ -517,6 +514,7 @@ func (s *DeploymentService) toView(ctx context.Context, dep gateway.ModelDeploym
 		if err := global.OPS_DB.WithContext(ctx).Where("credential_id = ?", dep.CredentialId).First(&c).Error; err == nil {
 			cred = &c
 			view.CredentialName = c.CredentialName
+			view.ProviderId = c.ProviderId
 			format = formatOf(cred)
 			view.ProviderType = providerTypeOfTx(global.OPS_DB.WithContext(ctx), c.ProviderId)
 		}

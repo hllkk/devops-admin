@@ -1,8 +1,8 @@
 <script setup lang="tsx">
 import { ref, watch } from 'vue';
-import { NTag } from 'naive-ui';
+import { NPopover, NTag } from 'naive-ui';
 import type { DataTableColumns } from 'naive-ui';
-import { fetchBatchDeleteDeployment, fetchGetDeploymentList } from '@/service/api/gateway';
+import { fetchBatchDeleteDeployment, fetchGetDeploymentList, fetchTestDeployment } from '@/service/api/gateway';
 import { $t } from '@/locales';
 import ButtonIcon from '@/components/custom/button-icon.vue';
 import { BILLING_TYPE_OPTIONS, MODEL_CATEGORY_OPTIONS } from '@/constants/business/gateway';
@@ -20,6 +20,9 @@ const emit = defineEmits<Emits>();
 
 const deploymentList = ref<Api.Gateway.Deployment[]>([]);
 const loading = ref(false);
+// 部署连通性测试结果：未测=undefined、测试中='loading'、已测=DeploymentTestResult
+const testState = ref<Record<string, 'loading' | Api.Gateway.DeploymentTestResult>>({});
+
 
 async function getDeploymentData() {
   loading.value = true;
@@ -89,12 +92,28 @@ const columns: DataTableColumns<Api.Gateway.Deployment> = [
     render: row => <NTag size="small" type={row.isActive ? 'success' : 'default'}>{$t(row.isActive ? 'page.gateway.common.active' : 'page.gateway.common.inactive')}</NTag>
   },
   {
+    key: 'connectivity',
+    title: () => $t('page.gateway.deployment.col.connectivity'),
+    align: 'center',
+    width: 100,
+    render: row => renderConnectivity(row)
+  },
+  {
     key: 'operate',
     title: () => $t('common.operate'),
     align: 'center',
     width: 110,
     render: row => (
       <div class="flex-center gap-4px">
+        <ButtonIcon
+          text
+          type="info"
+          size="small"
+          icon="ph:speedometer-bold"
+          tooltip-content={$t('page.gateway.deployment.test')}
+          loading={testState.value[String(row.deploymentId)] === 'loading'}
+          onClick={() => handleTest(row)}
+        />
         <ButtonIcon
           text
           type="primary"
@@ -136,6 +155,59 @@ async function handleDelete(row: Api.Gateway.Deployment) {
   if (error) return;
   emit('changed');
   getDeploymentData();
+}
+
+
+async function handleTest(row: Api.Gateway.Deployment) {
+  const id = String(row.deploymentId);
+  if (testState.value[id] === 'loading') return; // 防重入
+  testState.value[id] = 'loading';
+  const { data, error } = await fetchTestDeployment({ deploymentId: row.deploymentId! });
+  if (error) {
+    testState.value[id] = {
+      success: false,
+      latencyMs: 0,
+      errorCategory: 'network_error',
+      message: '请求失败,请稍后重试',
+      technicalDetail: ''
+    };
+    return;
+  }
+  testState.value[id] = data!;
+}
+
+function renderConnectivity(row: Api.Gateway.Deployment) {
+  const st = testState.value[String(row.deploymentId)];
+  if (!st) return null;
+  if (st === 'loading') return <NTag size="small" type="default">{$t('page.gateway.deployment.testing')}</NTag>;
+  if (st.success) {
+    return (
+      <NTag size="small" type="success">
+        {$t('page.gateway.deployment.testOk')} · {st.latencyMs}ms
+      </NTag>
+    );
+  }
+  return (
+    <NPopover trigger="hover" placement="top">
+      {{
+        trigger: () => (
+          <NTag size="small" type="error">
+            {$t('page.gateway.deployment.testFail')}
+          </NTag>
+        ),
+        default: () => (
+          <div class="max-w-360px">
+            <div class="mb-4px font-500">{st.message}</div>
+            {st.technicalDetail ? (
+              <div class="whitespace-pre-wrap break-words text-12px text-slate-400">
+                {$t('page.gateway.deployment.testDetail')}：{st.technicalDetail}
+              </div>
+            ) : null}
+          </div>
+        )
+      }}
+    </NPopover>
+  );
 }
 function handleDrawerSubmitted() {
   drawerVisible.value = false;

@@ -81,3 +81,13 @@ export function fetchBatchDeleteDeployment(deploymentIds: CommonType.IdType[]) {
     method: 'delete'
   });
 }
+
+/** 部署连通性测试(经 LiteLLM 数据面,返回成功/延迟/错误分类;技术详情已脱敏) */
+export function fetchTestDeployment(data: Api.Gateway.DeploymentTestParams) {
+  return request<Api.Gateway.DeploymentTestResult>({
+    url: '/gateway/model/deployment/test',
+    method: 'post',
+    data,
+    timeout: 30000
+  });
+}
