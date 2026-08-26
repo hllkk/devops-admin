@@ -579,17 +579,13 @@ const local: App.I18n.Schema = {
         col: {
           name: '供应商名称',
           providerType: '供应商类型',
-          billingType: '计费类型',
-          monthlyBudget: '月预算(USD)',
-          monthlyUsed: '月已用',
           isActive: '状态',
           description: '描述',
           supportedFormats: '接入格式'
         },
         form: {
           name: { required: '请输入供应商名称' },
-          providerType: { required: '请选择供应商类型' },
-          billingType: { required: '请选择计费类型' }
+          providerType: { required: '请选择供应商类型' }
         },
         selectProviderTip: '请选择左侧供应商查看其凭证'
       },

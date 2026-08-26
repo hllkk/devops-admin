@@ -2051,12 +2051,6 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "string",
-                        "description": "计费类型(精确)",
-                        "name": "billingType",
-                        "in": "query"
-                    },
-                    {
                         "type": "boolean",
                         "description": "是否启用(精确)",
                         "name": "isActive",
@@ -7510,10 +7504,6 @@ const docTemplate = `{
         "gateway.Provider": {
             "type": "object",
             "properties": {
-                "billingType": {
-                    "description": "计费类型",
-                    "type": "string"
-                },
                 "createBy": {
                     "type": "string",
                     "example": "0"
@@ -7522,6 +7512,10 @@ const docTemplate = `{
                     "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
                     "type": "string"
                 },
+                "credentialCount": {
+                    "description": "凭证数(列表展示,service 层填充,不入库)",
+                    "type": "integer"
+                },
                 "description": {
                     "description": "描述",
                     "type": "string"
@@ -7529,14 +7523,6 @@ const docTemplate = `{
                 "isActive": {
                     "description": "是否启用",
                     "type": "boolean"
-                },
-                "monthlyBudget": {
-                    "description": "月预算(USD,nil=不限)",
-                    "type": "number"
-                },
-                "monthlyUsed": {
-                    "description": "月已用(USD,用量统计定时回填)",
-                    "type": "number"
                 },
                 "name": {
                     "description": "供应商名称(如 OpenAI/Anthropic)",
@@ -7550,6 +7536,10 @@ const docTemplate = `{
                 "providerType": {
                     "description": "供应商类型(对应 LiteLLM custom_llm_provider)",
                     "type": "string"
+                },
+                "supportedFormats": {
+                    "description": "支持的接入格式(凭证 format 从中选)",
+                    "type": "object"
                 },
                 "updateBy": {
                     "type": "string",
@@ -8210,10 +8200,6 @@ const docTemplate = `{
         "request.ProviderOperateParams": {
             "type": "object",
             "properties": {
-                "billingType": {
-                    "description": "计费类型(空=默认 token)",
-                    "type": "string"
-                },
                 "description": {
                     "description": "描述",
                     "type": "string"
@@ -8221,10 +8207,6 @@ const docTemplate = `{
                 "isActive": {
                     "description": "是否启用",
                     "type": "boolean"
-                },
-                "monthlyBudget": {
-                    "description": "月预算(USD)",
-                    "type": "number"
                 },
                 "name": {
                     "description": "供应商名称",
@@ -8238,6 +8220,10 @@ const docTemplate = `{
                 "providerType": {
                     "description": "供应商类型",
                     "type": "string"
+                },
+                "supportedFormats": {
+                    "description": "支持的接入格式(凭证 format 从中选)",
+                    "type": "object"
                 }
             }
         },
@@ -9279,6 +9265,10 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                },
+                "opened": {
+                    "description": "是否已开通(存在主 Key)",
+                    "type": "boolean"
                 },
                 "rateLimitMode": {
                     "description": "限流模式",

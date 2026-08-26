@@ -66,7 +66,6 @@ async function loadProviders() {
     pageSize: 100,
     name: null,
     providerType: null,
-    billingType: null,
     isActive: null,
     params: {}
   });
@@ -130,7 +129,7 @@ async function handleSubmit() {
   }
 
   // 保留 litellmParams 其他掩码键，仅覆盖 model
-  model.value.litellmParams = { ...(model.value.litellmParams ?? {}), model: vendorModel.value.trim() };
+  model.value.litellmParams = { ...model.value.litellmParams, model: vendorModel.value.trim() };
 
   if (props.operateType === 'add') {
     const { error } = await fetchCreateDeployment(model.value);

@@ -764,9 +764,6 @@ declare namespace App {
             col: {
               name: string;
               providerType: string;
-              billingType: string;
-              monthlyBudget: string;
-              monthlyUsed: string;
               isActive: string;
               description: string;
               supportedFormats: string;
@@ -774,7 +771,6 @@ declare namespace App {
             form: {
               name: { required: string };
               providerType: { required: string };
-              billingType: { required: string };
             };
             selectProviderTip: string;
           };

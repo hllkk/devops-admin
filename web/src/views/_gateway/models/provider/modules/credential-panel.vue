@@ -19,7 +19,7 @@ const props = defineProps<Props>();
 
 interface Emits {
   (e: 'changed'): void;
-  (e: 'toggle-provider'): void;
+  (e: 'toggleProvider'): void;
 }
 const emit = defineEmits<Emits>();
 
@@ -46,7 +46,7 @@ watch(() => props.provider.providerId, getCredentialData, { immediate: true });
 const formatLabelKey = (f?: string) => CREDENTIAL_FORMAT_OPTIONS.find(o => o.value === f)?.label ?? 'page.gateway.common.formatOpenai';
 
 const columns = [
-  { key: 'credentialName', title: () => $t('page.gateway.credential.col.credentialName'), minWidth: 140, ellipsis: { tooltip: true } },
+  { key: 'credentialName', title: () => $t('page.gateway.credential.col.credentialName'), minWidth: 60, ellipsis: { tooltip: true } },
   {
     key: 'format',
     title: () => $t('page.gateway.credential.col.format'),
@@ -56,14 +56,14 @@ const columns = [
   {
     key: 'apiBase',
     title: () => $t('page.gateway.credential.col.apiBase'),
-    minWidth: 160,
+    minWidth: 100,
     ellipsis: { tooltip: true },
     render: (row: Api.Gateway.Credential) => <span>{row.credentialValues?.api_base || '-'}</span>
   },
   {
     key: 'isActive',
     title: () => $t('page.gateway.credential.col.isActive'),
-    width: 80,
+    width: 60,
     render: (row: Api.Gateway.Credential) => (
       <NTag size="small" type={row.isActive ? 'success' : 'default'}>
         {$t(row.isActive ? 'page.gateway.common.active' : 'page.gateway.common.inactive')}
@@ -168,14 +168,14 @@ const supportedFormats = () => (props.provider.supportedFormats ?? []) as string
     </template>
     <template #header-extra>
       <NSpace :size="8">
-        <NButton size="small" :type="provider.isActive ? 'warning' : 'success'" @click="emit('toggle-provider')">
-          {{ $t(provider.isActive ? 'common.disable' : 'common.enable') }}
-        </NButton>
         <NButton size="small" type="primary" @click="handleAdd">
           <template #icon>
             <icon-material-symbols-add-rounded class="text-icon" />
           </template>
           {{ $t('page.gateway.credential.add') }}
+        </NButton>
+        <NButton size="small" :type="provider.isActive ? 'warning' : 'success'" @click="emit('toggleProvider')">
+          {{ $t(provider.isActive ? 'common.disable' : 'common.enable') }}
         </NButton>
       </NSpace>
     </template>
@@ -185,7 +185,7 @@ const supportedFormats = () => (props.provider.supportedFormats ?? []) as string
       :loading="loading"
       size="small"
       :row-key="row => row.credentialId"
-      :max-height="`calc(100vh - 340px)`"
+      max-height="calc(100vh - 340px)"
     />
     <CredentialOperateDialog
       v-model:visible="dialogVisible"

@@ -21,7 +21,6 @@ type ProviderApi struct{}
 // @Produce   application/json
 // @Param     name          query  string  false  "供应商名称(模糊)"
 // @Param     providerType  query  string  false  "供应商类型(精确)"
-// @Param     billingType   query  string  false  "计费类型(精确)"
 // @Param     isActive       query  bool    false  "是否启用(精确)"
 // @Param     pageNum       query  int     true   "页码"
 // @Param     pageSize      query  int     true   "每页大小"

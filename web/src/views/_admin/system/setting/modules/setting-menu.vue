@@ -36,11 +36,11 @@ function handleSelect(key: string) {
       :class="[
         props.activeKey === item.key
           ? [
-              'border-solid border-0 rounded-r-none border-r-3 border-primary-600',
-              'bg-gradient-to-r from-primary-200/80 to-primary-100/60',
-              'dark:border-primary-400 dark:from-primary-800/60 dark:to-primary-900/40',
-              'shadow-sm'
-            ]
+            'border-solid border-0 rounded-r-none border-r-3 border-primary-600',
+            'bg-gradient-to-r from-primary-200/80 to-primary-100/60',
+            'dark:border-primary-400 dark:from-primary-800/60 dark:to-primary-900/40',
+            'shadow-sm'
+          ]
           : 'border-transparent'
       ]"
       @click="handleSelect(item.key)"

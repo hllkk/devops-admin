@@ -8,7 +8,6 @@ import { SetupStoreId } from '@/enum';
 import { useAuthStore } from '../auth';
 import { useRouteStore } from '../route';
 import { DEFAULT_MODULE } from '@/constants/module';
-import { router } from '@/router';
 import {
   addThemeVarsToGlobal,
   applyStructural,

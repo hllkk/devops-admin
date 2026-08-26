@@ -13,7 +13,7 @@ declare namespace Api {
     /** 供应商计费类型 */
     type BillingType = 'token' | 'per_call' | 'monthly_quota';
 
-    /** 供应商（管理元数据，不同步 LiteLLM；其下凭证才同步） */
+    /** 供应商（管理元数据，不同步 LiteLLM；其下凭证才同步。计费/预算口径在部署级，不在供应商级） */
     type Provider = Common.CommonRecord<{
       /** 供应商ID */
       providerId: CommonType.IdType;
@@ -21,12 +21,6 @@ declare namespace Api {
       name: string;
       /** 供应商类型(openai/anthropic/vllm...) */
       providerType: string;
-      /** 计费类型 */
-      billingType: BillingType;
-      /** 月预算(USD,null=不限) */
-      monthlyBudget: number | null;
-      /** 月已用(USD,用量统计定时回填) */
-      monthlyUsed: number;
       /** 是否启用 */
       isActive: boolean;
       /** 描述 */
@@ -37,14 +31,14 @@ declare namespace Api {
       credentialCount: number;
     }>;
 
-    /** 供应商搜索参数(name 模糊;providerType/billingType/isActive 精确) */
+    /** 供应商搜索参数(name 模糊;providerType/isActive 精确) */
     type ProviderSearchParams = CommonType.RecordNullable<
-      Pick<Api.Gateway.Provider, 'name' | 'providerType' | 'billingType' | 'isActive'> & Api.Common.CommonSearchParams
+      Pick<Api.Gateway.Provider, 'name' | 'providerType' | 'isActive'> & Api.Common.CommonSearchParams
     >;
 
-    /** 供应商新增/修改参数(create 时 providerId 为空;update 必填。isActive/ monthlyBudget 为 null 表示不改) */
+    /** 供应商新增/修改参数(create 时 providerId 为空;update 必填。isActive 为 null 表示不改) */
     type ProviderOperateParams = CommonType.RecordNullable<
-      Pick<Api.Gateway.Provider, 'providerId' | 'name' | 'providerType' | 'billingType' | 'monthlyBudget' | 'isActive' | 'description' | 'supportedFormats'>
+      Pick<Api.Gateway.Provider, 'providerId' | 'name' | 'providerType' | 'isActive' | 'description' | 'supportedFormats'>
     >;
 
     /** 供应商列表 */

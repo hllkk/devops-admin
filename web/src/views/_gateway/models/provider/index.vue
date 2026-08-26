@@ -1,8 +1,10 @@
-<script setup lang="tsx">
+<script setup lang="ts">
 import { ref } from 'vue';
 import { fetchBatchDeleteProvider, fetchGetProviderList, fetchUpdateProvider } from '@/service/api/gateway';
 import { $t } from '@/locales';
+import { getProviderIcon } from '@/constants/business/gateway';
 import ButtonIcon from '@/components/custom/button-icon.vue';
+import SvgIcon from '@/components/custom/svg-icon.vue';
 import TableSiderLayout from '@/components/advanced/table-sider-layout.vue';
 import ProviderOperateDrawer from './modules/provider-operate-drawer.vue';
 import CredentialPanel from './modules/credential-panel.vue';
@@ -14,7 +16,6 @@ const searchParams = ref<Api.Gateway.ProviderSearchParams>({
   pageSize: 100,
   name: null,
   providerType: null,
-  billingType: null,
   isActive: null,
   params: {}
 });
@@ -36,56 +37,6 @@ async function getProviderData() {
 }
 
 getProviderData();
-
-const columns = [
-  {
-    key: 'name',
-    render: (row: Api.Gateway.Provider) => (
-      <div class="flex flex-col gap-2px py-2px">
-        <div class="flex items-center gap-6px">
-          <span class="text-13px font-500">{row.name}</span>
-          {!row.isActive ? <span class="rounded bg-slate-100 px-4px text-10px text-slate-400">{$t('page.gateway.common.inactive')}</span> : null}
-        </div>
-        <span class="text-11px text-slate-400">{row.providerType} · {row.credentialCount} {$t('page.gateway.credential.title')}</span>
-      </div>
-    )
-  },
-  {
-    key: 'operate',
-    width: 68,
-    render: (row: Api.Gateway.Provider) => (
-      <div class="flex-center gap-4px">
-        <ButtonIcon
-          text
-          type="primary"
-          size="small"
-          icon="material-symbols:drive-file-rename-outline-outline"
-          tooltip-content={$t('common.edit')}
-          onClick={(e: Event) => { e.stopPropagation(); handleEdit(row); }}
-        />
-        <ButtonIcon
-          text
-          type="error"
-          size="small"
-          icon="material-symbols:delete-outline"
-          tooltip-content={$t('common.delete')}
-          popconfirm-content={$t('common.confirmDelete')}
-          onClick={(e: Event) => e.stopPropagation()}
-          onPositiveClick={() => handleDelete(row)}
-        />
-      </div>
-    )
-  }
-];
-
-function rowProps(row: Api.Gateway.Provider) {
-  return {
-    class: selectedProvider.value?.providerId === row.providerId ? 'n-data-table-tr--selected' : '',
-    onClick: () => {
-      selectedProvider.value = row;
-    }
-  };
-}
 
 // 供应商增/改/删
 const drawerVisible = ref(false);
@@ -129,14 +80,14 @@ function handleCredentialChanged() {
       <ButtonIcon
         size="small"
         icon="material-symbols:add-rounded"
-        class="h-18px text-icon"
+        class="h-28px text-icon color-primary"
         :tooltip-content="$t('common.add')"
         @click.stop="handleAdd"
       />
       <ButtonIcon
         size="small"
         icon="material-symbols:refresh-rounded"
-        class="h-18px text-icon"
+        class="h-28px text-icon"
         :tooltip-content="$t('common.refresh')"
         @click.stop="getProviderData"
       />
@@ -145,21 +96,54 @@ function handleCredentialChanged() {
       <NInput
         v-model:value="searchParams.name"
         clearable
-        size="small"
         :placeholder="$t('common.keywordSearch')"
         class="mb-8px"
         @update:value="getProviderData"
       />
-      <NDataTable
-        :columns="columns"
-        :data="providerList"
-        :loading="providerLoading"
-        size="small"
-        :row-key="row => row.providerId"
-        :row-props="rowProps"
-        :max-height="`calc(100vh - 280px)`"
-        class="h-full"
-      />
+      <NSpin :show="providerLoading" size="small">
+        <div class="flex flex-col gap-4px overflow-y-auto" style="max-height: calc(100vh - 300px)">
+          <div
+            v-for="row in providerList"
+            :key="row.providerId"
+            class="provider-item"
+            :class="{ 'is-selected': selectedProvider?.providerId === row.providerId }"
+            @click="selectedProvider = row"
+          >
+            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
+              <SvgIcon :local-icon="getProviderIcon(row.providerType)" class="h-24px w-24px" />
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-6px">
+                <span class="truncate text-13px font-500">{{ row.name }}</span>
+                <span v-if="!row.isActive" class="shrink-0 rounded bg-slate-100 px-4px text-10px text-slate-400 dark:bg-slate-800">
+                  {{ $t('page.gateway.common.inactive') }}
+                </span>
+              </div>
+              <span class="text-11px text-slate-400">{{ row.providerType }} · {{ row.credentialCount }} {{ $t('page.gateway.credential.title') }}</span>
+            </div>
+            <div class="flex-center gap-12px" @click.stop>
+              <ButtonIcon
+                text
+                type="primary"
+                size="small"
+                icon="material-symbols:drive-file-rename-outline-outline"
+                :tooltip-content="$t('common.edit')"
+                @click="handleEdit(row)"
+              />
+              <ButtonIcon
+                text
+                type="error"
+                size="small"
+                icon="material-symbols:delete-outline"
+                :tooltip-content="$t('common.delete')"
+                :popconfirm-content="$t('common.confirmDelete')"
+                @positive-click="handleDelete(row)"
+              />
+            </div>
+          </div>
+          <NEmpty v-if="!providerLoading && !providerList.length" :description="$t('common.noData')" class="py-24px" />
+        </div>
+      </NSpin>
     </template>
     <div class="h-full flex-col-stretch overflow-hidden">
       <CredentialPanel
@@ -180,7 +164,25 @@ function handleCredentialChanged() {
 </template>
 
 <style scoped>
-:deep(.n-data-table-tr--selected td) {
-  background-color: var(--n-color-hover, rgba(99, 179, 237, 0.12)) !important;
+.provider-item {
+  display: flex;
+  cursor: pointer;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
+}
+
+.provider-item:hover {
+  background-color: rgb(var(--primary-color) / 0.05);
+}
+
+.provider-item.is-selected {
+  border-color: rgb(var(--primary-color) / 0.55);
+  background-color: rgb(var(--primary-color) / 0.08);
 }
 </style>

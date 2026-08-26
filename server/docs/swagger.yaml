@@ -79,9 +79,6 @@ definitions:
     type: object
   gateway.Provider:
     properties:
-      billingType:
-        description: 计费类型
-        type: string
       createBy:
         example: "0"
         type: string
@@ -91,18 +88,15 @@ definitions:
           column 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;
           json 仍叫 createTime/updateTime 对齐前端 CommonRecord。
         type: string
+      credentialCount:
+        description: 凭证数(列表展示,service 层填充,不入库)
+        type: integer
       description:
         description: 描述
         type: string
       isActive:
         description: 是否启用
         type: boolean
-      monthlyBudget:
-        description: 月预算(USD,nil=不限)
-        type: number
-      monthlyUsed:
-        description: 月已用(USD,用量统计定时回填)
-        type: number
       name:
         description: 供应商名称(如 OpenAI/Anthropic)
         type: string
@@ -113,6 +107,9 @@ definitions:
       providerType:
         description: 供应商类型(对应 LiteLLM custom_llm_provider)
         type: string
+      supportedFormats:
+        description: 支持的接入格式(凭证 format 从中选)
+        type: object
       updateBy:
         example: "0"
         type: string
@@ -593,18 +590,12 @@ definitions:
     type: object
   request.ProviderOperateParams:
     properties:
-      billingType:
-        description: 计费类型(空=默认 token)
-        type: string
       description:
         description: 描述
         type: string
       isActive:
         description: 是否启用
         type: boolean
-      monthlyBudget:
-        description: 月预算(USD)
-        type: number
       name:
         description: 供应商名称
         type: string
@@ -615,6 +606,9 @@ definitions:
       providerType:
         description: 供应商类型
         type: string
+      supportedFormats:
+        description: 支持的接入格式(凭证 format 从中选)
+        type: object
     type: object
   request.PublicSetting:
     properties:
@@ -1385,6 +1379,9 @@ definitions:
         items:
           type: string
         type: array
+      opened:
+        description: 是否已开通(存在主 Key)
+        type: boolean
       rateLimitMode:
         description: 限流模式
         type: string
@@ -4013,10 +4010,6 @@ paths:
       - description: 供应商类型(精确)
         in: query
         name: providerType
-        type: string
-      - description: 计费类型(精确)
-        in: query
-        name: billingType
         type: string
       - description: 是否启用(精确)
         in: query

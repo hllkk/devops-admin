@@ -14,7 +14,7 @@ import (
 type ProviderService struct{}
 
 // GetProviderList 分页查供应商列表(对齐前端 GET /gateway/provider/list)。
-// name 模糊、providerType/billingType 精确、isActive 精确(指针区分未传与 false)。
+// name 模糊、providerType/isActive 精确(指针区分未传与 false)。
 func (s *ProviderService) GetProviderList(ctx context.Context, q gatewayReq.ProviderSearch) (list []gateway.Provider, total int64, err error) {
 	db := global.OPS_DB.WithContext(ctx).Model(&gateway.Provider{})
 	if q.Name != "" {
@@ -22,9 +22,6 @@ func (s *ProviderService) GetProviderList(ctx context.Context, q gatewayReq.Prov
 	}
 	if q.ProviderType != "" {
 		db = db.Where("provider_type = ?", q.ProviderType)
-	}
-	if q.BillingType != "" {
-		db = db.Where("billing_type = ?", q.BillingType)
 	}
 	if q.IsActive != nil {
 		db = db.Where("is_active = ?", *q.IsActive)
@@ -75,7 +72,7 @@ func (s *ProviderService) GetProvider(ctx context.Context, id int64) (gateway.Pr
 	return p, err
 }
 
-// CreateProvider 新增供应商;createBy 填审计字段。billingType 空走默认 token，isActive 空走默认 true。
+// CreateProvider 新增供应商;createBy 填审计字段。isActive 空走默认 true。
 func (s *ProviderService) CreateProvider(ctx context.Context, req gatewayReq.ProviderOperateParams, createBy int64) (gateway.Provider, error) {
 	if req.Name == "" {
 		return gateway.Provider{}, errors.New("供应商名称不能为空")
@@ -86,8 +83,6 @@ func (s *ProviderService) CreateProvider(ctx context.Context, req gatewayReq.Pro
 	p := gateway.Provider{
 		Name:         req.Name,
 		ProviderType: req.ProviderType,
-		BillingType:  normalizeBillingType(req.BillingType),
-		MonthlyBudget: req.MonthlyBudget,
 		IsActive:      req.IsActive == nil || *req.IsActive, // nil/true → true，显式 false → false
 		Description:   req.Description,
 		SupportedFormats: req.SupportedFormats,
@@ -101,7 +96,7 @@ func (s *ProviderService) CreateProvider(ctx context.Context, req gatewayReq.Pro
 }
 
 // UpdateProvider 修改供应商;providerId 必填。用 map 显式覆盖可编辑字段(含零值)。
-// monthlyBudget/isActive 为 nil 时表示不改（不写入 map）。
+// isActive 为 nil 时表示不改（不写入 map）。
 func (s *ProviderService) UpdateProvider(ctx context.Context, req gatewayReq.ProviderOperateParams, updateBy int64) error {
 	if req.ProviderId == 0 {
 		return errors.New("供应商ID不能为空")
@@ -112,15 +107,9 @@ func (s *ProviderService) UpdateProvider(ctx context.Context, req gatewayReq.Pro
 	updates := map[string]any{
 		"name":             req.Name,
 		"provider_type":    req.ProviderType,
-		"billing_type":     normalizeBillingType(req.BillingType),
 		"description":      req.Description,
 		"supported_formats": req.SupportedFormats,
 		"update_by":        updateBy,
-	}
-	if req.MonthlyBudget != nil {
-		updates["monthly_budget"] = *req.MonthlyBudget
-	} else {
-		updates["monthly_budget"] = nil // 显式清空预算
 	}
 	if req.IsActive != nil {
 		updates["is_active"] = *req.IsActive
@@ -144,12 +133,4 @@ func (s *ProviderService) DeleteProvider(ctx context.Context, ids []int64) error
 		return errors.New("供应商下存在关联凭证，请先删除或迁移凭证")
 	}
 	return global.OPS_DB.WithContext(ctx).Where("provider_id IN ?", ids).Delete(&gateway.Provider{}).Error
-}
-
-// normalizeBillingType 计费类型归一：空串回落默认 token。
-func normalizeBillingType(b string) string {
-	if b == "" {
-		return gateway.BillingTypeToken
-	}
-	return b
 }

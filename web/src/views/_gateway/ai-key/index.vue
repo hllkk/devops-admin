@@ -134,7 +134,7 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
             type="primary"
             icon="material-symbols:drive-file-rename-outline-outline"
             tooltipContent={$t('common.edit')}
-            onClick={() => handleEdit(row.aiKeyId!)}
+            onClick={() => edit(row.aiKeyId!)}
           />
         );
 
@@ -162,6 +162,10 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
 
 const { drawerVisible, operateType, editingData, handleAdd, handleEdit, checkedRowKeys, onBatchDeleted, onDeleted } =
   useTableOperate(data, 'aiKeyId', getData);
+
+function edit(aiKeyId: CommonType.IdType) {
+  handleEdit(aiKeyId);
+}
 
 async function handleBatchDelete() {
   const { error } = await fetchBatchDeleteAiKey(checkedRowKeys.value);

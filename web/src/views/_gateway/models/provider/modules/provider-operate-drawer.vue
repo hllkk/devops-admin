@@ -1,10 +1,11 @@
-<script setup lang="ts">
+<script setup lang="tsx">
 import { computed, ref, watch } from 'vue';
 import { jsonClone } from '@sa/utils';
 import { fetchCreateProvider, fetchUpdateProvider } from '@/service/api/gateway';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
 import { $t } from '@/locales';
-import { BILLING_TYPE_OPTIONS, CREDENTIAL_FORMAT_OPTIONS, PROVIDER_TYPE_OPTIONS } from '@/constants/business/gateway';
+import { CREDENTIAL_FORMAT_OPTIONS, PROVIDER_TYPE_OPTIONS, getProviderIcon } from '@/constants/business/gateway';
+import SvgIcon from '@/components/custom/svg-icon.vue';
 
 defineOptions({ name: 'ProviderOperateDrawer' });
 
@@ -41,21 +42,27 @@ function createDefaultModel(): Model {
     providerId: null,
     name: '',
     providerType: 'openai',
-    billingType: 'token',
-    monthlyBudget: null,
     isActive: true,
     description: '',
     supportedFormats: null
   };
 }
 
-const billingTypeOptions = computed(() => BILLING_TYPE_OPTIONS.map(o => ({ label: $t(o.label), value: o.value })));
+const providerTypeOptions = computed(() => PROVIDER_TYPE_OPTIONS.map(o => ({ label: o.label, value: o.value })));
 const formatOptions = computed(() => CREDENTIAL_FORMAT_OPTIONS.map(o => ({ label: $t(o.label), value: o.value })));
 
-const rules: Record<'name' | 'providerType' | 'billingType', App.Global.FormRule> = {
+function renderProviderTypeLabel(option: { label: string; value: string }) {
+  return (
+    <div class="flex items-center gap-8px">
+      <SvgIcon local-icon={getProviderIcon(option.value)} class="h-16px w-16px" />
+      <span>{option.label}</span>
+    </div>
+  );
+}
+
+const rules: Record<'name' | 'providerType', App.Global.FormRule> = {
   name: createRequiredRule($t('page.gateway.provider.form.name.required')),
-  providerType: createRequiredRule($t('page.gateway.provider.form.providerType.required')),
-  billingType: createRequiredRule($t('page.gateway.provider.form.billingType.required'))
+  providerType: createRequiredRule($t('page.gateway.provider.form.providerType.required'))
 };
 
 function handleUpdateModelWhenEdit() {
@@ -109,7 +116,8 @@ watch(visible, () => {
             v-model:value="model.providerType"
             filterable
             tag
-            :options="PROVIDER_TYPE_OPTIONS"
+            :options="providerTypeOptions"
+            :render-label="renderProviderTypeLabel"
             :placeholder="$t('common.placeholderSelect')"
           />
         </NFormItem>
@@ -120,14 +128,6 @@ watch(visible, () => {
             :options="formatOptions"
             :placeholder="$t('common.placeholderSelect')"
           />
-        </NFormItem>
-        <NFormItem :label="$t('page.gateway.provider.col.billingType')" path="billingType">
-          <NSelect v-model:value="model.billingType" :options="billingTypeOptions" :placeholder="$t('common.placeholderSelect')" />
-        </NFormItem>
-        <NFormItem :label="$t('page.gateway.provider.col.monthlyBudget')" path="monthlyBudget">
-          <NInputNumber v-model:value="model.monthlyBudget" :min="0" clearable :placeholder="$t('page.gateway.common.unlimited')" class="w-full">
-            <template #suffix>USD</template>
-          </NInputNumber>
         </NFormItem>
         <NFormItem :label="$t('page.gateway.provider.col.isActive')" path="isActive">
           <NSwitch :value="!!model.isActive" @update:value="v => (model.isActive = v)" />

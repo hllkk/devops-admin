@@ -11,18 +11,58 @@ export const PROVIDER_TYPE_OPTIONS = [
   { label: 'OpenAI', value: 'openai' },
   { label: 'Anthropic', value: 'anthropic' },
   { label: 'Azure', value: 'azure' },
+  { label: 'Google', value: 'google' },
   { label: 'DeepSeek', value: 'deepseek' },
-  { label: 'Qwen', value: 'qwen' },
-  { label: 'Doubao', value: 'doubao' },
-  { label: 'Zhipu', value: 'zhipu' },
-  { label: 'Volcengine', value: 'volcengine' },
+  { label: 'AWS Bedrock', value: 'bedrock' },
+  { label: 'Vertex AI', value: 'vertex_ai' },
+  { label: '火山引擎', value: 'volcengine' },
+  { label: '百炼', value: 'bailian' },
+  { label: '智谱', value: 'zhipu' },
+  { label: 'Moonshot', value: 'moonshot' },
+  { label: 'Minimax', value: 'minimax' },
+  { label: '小米MiMo', value: 'xiaomi_mimo' },
+  { label: '腾讯混元', value: 'tencent' },
   { label: 'xAI', value: 'xai' },
-  { label: 'Mistral', value: 'mistral' },
-  { label: 'Cohere', value: 'cohere' },
   { label: 'vLLM', value: 'vllm' },
+  { label: 'SGLang', value: 'sglang' },
   { label: 'Ollama', value: 'ollama' },
-  { label: '百炼', value: 'bailian' }
+  { label: '其他', value: 'other' }
 ];
+
+/**
+ * 供应商类型 → 本地图标名(src/assets/svg-icon/provider/ 下的文件，经 sprite 以 localIcon 引用)。
+ * 仅覆盖有对应品牌图的类型；qwen 与 bailian 同属阿里云百炼(DashScope)平台故共用图；
+ * 自由文本类型未命中时兜底 custom。
+ */
+const PROVIDER_ICON_MAP: Record<string, string> = {
+  openai: 'provider-openai',
+  anthropic: 'provider-anthropic',
+  azure: 'provider-azure',
+  deepseek: 'provider-deepseek',
+  google: 'provider-google',
+  bedrock: 'provider-bedrock',
+  vertex_ai: 'provider-vertex_ai',
+  dashscope: 'provider-dashscope',
+  qwen: 'provider-dashscope',
+  bailian: 'provider-dashscope',
+  zhipu: 'provider-zhipu',
+  moonshot: 'provider-moonshot',
+  minimax: 'provider-minimax',
+  xiaomi_mimo: 'provider-xiaomi_mimo',
+  tencent: 'provider-tencent',
+  volcengine: 'provider-volcengine',
+  xai: 'provider-xai',
+  vllm: 'provider-vllm',
+  sglang: 'provider-sglang',
+  ollama: 'provider-ollama',
+  lmstudio: 'provider-lmstudio',
+  openai_compatible: 'provider-openai_compatible'
+};
+
+/** 取供应商类型对应的本地图标名，未收录类型兜底 custom */
+export function getProviderIcon(providerType?: string): string {
+  return (providerType && PROVIDER_ICON_MAP[providerType]) || 'provider-custom';
+}
 
 /** 计费类型选项(label 为 i18n key) */
 export const BILLING_TYPE_OPTIONS = [

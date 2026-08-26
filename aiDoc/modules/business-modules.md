@@ -58,10 +58,10 @@ devops-admin 侧表存**管理元数据 + LiteLLM 引用 ID**（`litellm_key_id`
 
 `Provider → Credential → Model + ModelDeployment → AiKey`
 
-- **Provider**（供应商）：`name`/`provider_type`(openai/anthropic/vllm…)/`billing_type`(token/per_call/monthly_quota)/`monthly_budget`/`monthly_used`/`is_active`
+- **Provider**（供应商）：`name`/`provider_type`(openai/anthropic/vllm…)/`is_active`。纯接入元数据，**不承载计费/预算**（2026-08-25 对齐 AIHelms：计费类型与预算口径统一在部署级，见 ModelDeployment；历史版本的 `billing_type`/`monthly_budget`/`monthly_used` 已移除，老库残留列无害）
 - **Credential**（凭证）：`credential_name`（全局唯一，对应 LiteLLM credential_name）/`credential_values`（JSONB：api_key、api_base）/`provider_id`/`litellm_synced`/`is_active`
 - **Model**（模型）：`model_id`（全局唯一，对应 LiteLLM model_name）/`name`/`category`/`capabilities`/`is_published`/`visibility_type`(all/selected)/`requires_approval`
-- **ModelDeployment**（部署）：`model_id` + `credential_id` + `litellm_params`（LiteLLM 路由参数 JSONB：model、api_base…）+ `model_info`（内外定价 JSONB）+ `is_active`。一个 Model 多 Deployment → LiteLLM 同 `model_name` 多部署形成负载均衡池
+- **ModelDeployment**（部署）：`model_id` + `credential_id` + `litellm_params`（LiteLLM 路由参数 JSONB：model、api_base…）+ `model_info`（内外定价 JSONB）+ `billing_type`(token/per_call/monthly_quota)+`cost_per_call`/`monthly_call_quota`+ `is_active`。一个 Model 多 Deployment → LiteLLM 同 `model_name` 多部署形成负载均衡池；**计费类型与按次/配额成本全在部署高级设置维护**（usage 回流按部署级 `billing_type` 计算成本）
 - **AiKey**（AI 身份）：`key_type`（主/场景 × 个人/部门/项目）/`owner_type`+`owner_id`（复用 SysUser/SysDepartment）/`litellm_key_id`+`litellm_key_alias`（格式 `{owner_type}:{owner_id}/{name}`）/`models`/`mcps`/`skills` 授权 JSONB/`budget_limit`+`budget_hard_limit`/`rate_limit_mode`+`tpm_limit`+`rpm_limit`
 
 ### LiteLLM 集成边界
@@ -99,7 +99,7 @@ Go HTTP 客户端封装（用 `LITELLM_MASTER_KEY` 鉴权）调 LiteLLM 管理 A
 
 **P1 · 核心网关五件套（已确认，进行中）**——打通"供应商→凭证→模型→AI 密钥→用量"主链路：
 
-1. 供应商管理 Provider（CRUD + 计费类型 + 月预算）
+1. 供应商管理 Provider（CRUD + 接入格式；计费/预算不在此层，已收敛到部署级）
 2. 凭证管理 Credential（CRUD + credential_values 加密 + 同步 LiteLLM `/credentials`）
 3. 模型管理 Model+ModelDeployment（CRUD + 部署路由参数 + 内外定价 + 同步 LiteLLM `/model/*` + 连通性测试）
 4. AI 密钥管理 AiKey（主Key自动建/场景Key申请 + owner 挂用户·部门 + 模型授权 + 预算 + 限流 + 同步 LiteLLM `/key/*`）

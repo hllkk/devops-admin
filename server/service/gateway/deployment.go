@@ -525,3 +525,11 @@ func (s *DeploymentService) toView(ctx context.Context, dep gateway.ModelDeploym
 	view.RouteName = BuildModelRouteName(view.ModelKey, format, routableOf(dep.IsActive, cred))
 	return view
 }
+
+// normalizeBillingType 计费类型归一：空串回落默认 token。
+func normalizeBillingType(b string) string {
+	if b == "" {
+		return gateway.BillingTypeToken
+	}
+	return b
+}

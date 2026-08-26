@@ -583,17 +583,13 @@ const local: App.I18n.Schema = {
         col: {
           name: 'Name',
           providerType: 'Provider Type',
-          billingType: 'Billing Type',
-          monthlyBudget: 'Monthly Budget',
-          monthlyUsed: 'Monthly Used',
           isActive: 'Status',
           description: 'Description',
           supportedFormats: 'Format'
         },
         form: {
           name: { required: 'Please enter provider name' },
-          providerType: { required: 'Please select provider type' },
-          billingType: { required: 'Please select billing type' }
+          providerType: { required: 'Please select provider type' }
         },
         selectProviderTip: 'Select a provider on the left to view its credentials'
       },

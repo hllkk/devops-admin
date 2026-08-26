@@ -117,7 +117,7 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
             type="primary"
             icon="material-symbols:drive-file-rename-outline-outline"
             tooltipContent={$t('common.edit')}
-            onClick={() => handleEdit(row.deploymentId!)}
+            onClick={() => edit(row.deploymentId!)}
           />
         );
 
@@ -144,6 +144,10 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
 });
 
 const { drawerVisible, operateType, editingData, handleAdd, handleEdit, onDeleted } = useTableOperate(data, 'deploymentId', getData);
+
+function edit(deploymentId: CommonType.IdType) {
+  handleEdit(deploymentId);
+}
 
 async function handleDelete(deploymentId: CommonType.IdType) {
   const { error } = await fetchBatchDeleteDeployment([deploymentId]);
