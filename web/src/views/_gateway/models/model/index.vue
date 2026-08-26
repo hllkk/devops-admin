@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import { fetchBatchDeleteModel, fetchGetModelList } from '@/service/api/gateway';
 import { $t } from '@/locales';
 import { MODEL_CATEGORY_OPTIONS, getProviderIcon } from '@/constants/business/gateway';
@@ -38,6 +38,16 @@ async function getModelData() {
   modelLoading.value = false;
 }
 
+/** 提交(新增/编辑)后选中目标模型并滚动到可见位置 */
+async function selectAndScrollToModel(modelId: CommonType.IdType | null) {
+  if (!modelId) return;
+  const row = modelList.value.find(m => m.modelId === modelId);
+  if (!row) return;
+  selectedModel.value = row;
+  await nextTick();
+  document.querySelector(`[data-model-id="${modelId}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
 getModelData();
 
 /** 左侧列表按类别分组：已知类别按选项顺序，未知类别兜底「其他」 */
@@ -73,9 +83,10 @@ async function handleDelete(row: Api.Gateway.Model) {
   if (selectedModel.value?.modelId === row.modelId) selectedModel.value = null;
   getModelData();
 }
-function handleSubmitted() {
+async function handleSubmitted(modelId: CommonType.IdType | null) {
   drawerVisible.value = false;
-  getModelData();
+  await getModelData();
+  await selectAndScrollToModel(modelId);
 }
 
 function handleDeploymentChanged() {
@@ -120,6 +131,7 @@ function handleDeploymentChanged() {
               :key="row.modelId"
               class="model-item"
               :class="{ 'is-selected': selectedModel?.modelId === row.modelId }"
+              :data-model-id="row.modelId"
               @click="selectedModel = row"
             >
               <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
@@ -138,7 +150,10 @@ function handleDeploymentChanged() {
                     {{ $t('page.gateway.common.unpublished') }}
                   </span>
                 </div>
-                <span class="text-11px text-slate-400">{{ row.modelKey }} · {{ row.activeDeploymentCount ?? 0 }}/{{ row.deploymentCount ?? 0 }} {{ $t('page.gateway.deployment.manageTitle') }}</span>
+                <span class="text-11px text-slate-400">
+                  {{ row.modelKey || $t('page.gateway.model.modelKeyUnset') }} · {{ row.activeDeploymentCount ?? 0 }}/{{ row.deploymentCount ?? 0 }}
+                  {{ $t('page.gateway.deployment.manageTitle') }}
+                </span>
               </div>
               <div class="flex-center gap-12px" @click.stop>
                 <ButtonIcon

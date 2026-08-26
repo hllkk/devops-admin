@@ -28,7 +28,7 @@ export function fetchCreateModel(data: Api.Gateway.ModelOperateParams) {
   });
 }
 
-/** 修改模型(改名/改类触发关联部署路由名级联重建) */
+/** 修改模型(改模型 ID/改类触发关联部署在 LiteLLM 侧级联重建) */
 export function fetchUpdateModel(data: Api.Gateway.ModelOperateParams) {
   return request<boolean>({
     url: '/gateway/model',

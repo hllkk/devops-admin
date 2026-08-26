@@ -130,7 +130,7 @@ watch(visible, () => {
 </script>
 
 <template>
-  <NModal v-model:show="visible" :title="title" preset="card" class="w-480px max-w-90%" :mask-closable="false">
+  <NModal v-model:show="visible" :title="title" preset="card" class="w-480px max-w-90%" :mask-closable="false" draggable>
     <NForm ref="formRef" :model="formModel" :rules="rules" label-placement="left" :label-width="90">
       <NFormItem :label="$t('page.gateway.credential.col.credentialName')" path="credentialName">
         <NInput v-model:value="credentialName" :disabled="operateType === 'edit'" :placeholder="$t('page.gateway.credential.form.credentialName.required')" />

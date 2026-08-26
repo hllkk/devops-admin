@@ -627,7 +627,7 @@ const local: App.I18n.Schema = {
         edit: '编辑模型',
         col: {
           name: '模型名称',
-          modelKey: '路由名',
+          modelKey: '模型 ID',
           category: '类别',
           capabilities: '能力标签',
           deploymentCount: '部署数',
@@ -637,12 +637,13 @@ const local: App.I18n.Schema = {
           logoProviderType: 'LOGO供应商'
         },
         form: {
-          modelKey: { required: '请输入路由名' },
+          modelKey: { placeholder: '选填，留空可在新增部署时设置' },
           name: { required: '请输入模型名称' },
           category: { required: '请选择类别' },
           capabilitiesPlaceholder: '输入能力标签回车添加',
-          renameTip: '修改路由名将级联重建关联部署的路由名，请谨慎操作'
+          renameTip: '修改模型 ID 将级联重建关联部署在 LiteLLM 侧的注册名，请谨慎操作'
         },
+        modelKeyUnset: '未设置模型 ID',
         selectModelTip: '请选择左侧模型查看其部署'
       },
       deployment: {
@@ -650,6 +651,11 @@ const local: App.I18n.Schema = {
         add: '新增部署',
         edit: '编辑部署',
         inlineParams: '内联参数',
+        group: {
+          billing: '计费与配额',
+          routing: '路由配置',
+          advanced: '高级设置'
+        },
         col: {
           provider: '供应商',
           deployName: '部署名',
@@ -658,12 +664,33 @@ const local: App.I18n.Schema = {
           costPerCall: '单次成本',
           monthlyCallQuota: '月调用配额',
           isActive: '状态',
-          vendorModel: '厂商模型名'
+          vendorModel: '厂商模型名',
+          weight: '权重',
+          order: '优先级',
+          timeout: '超时(秒)',
+          streamTimeout: '流式超时(秒)',
+          maxRetries: '最大重试',
+          tags: '标签',
+          useInPassThrough: '透传',
+          dropParams: '丢弃不支持参数'
         },
         form: {
           deployName: { required: '请输入部署名' },
           vendorModel: { required: '请输入厂商模型名' },
-          credentialPlaceholder: '不选则使用内联参数'
+          credentialPlaceholder: '不选则使用内联参数',
+          modelKey: {
+            required: '请输入模型 ID',
+            tip: '该模型尚未设置模型 ID（用户请求时 model 字段使用的标识），新增部署前需先设置'
+          },
+          vendorModelTip: '供应商 API 中的模型标识，用于实际调用上游',
+          routingTip: '同步至 LiteLLM 路由参数，留空使用全局默认',
+          passThroughTip: '开启透传后限流(RPM/TPM)将不生效',
+          weightPlaceholder: '默认 1',
+          orderPlaceholder: '数字小优先',
+          timeoutPlaceholder: '默认 30',
+          streamTimeoutPlaceholder: '可选',
+          maxRetriesPlaceholder: '默认 2',
+          tagsPlaceholder: '输入标签回车添加'
         }
       },
       aiKey: {

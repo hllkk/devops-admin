@@ -6,7 +6,7 @@ import { fetchBatchDeleteDeployment, fetchGetDeploymentList } from '@/service/ap
 import { $t } from '@/locales';
 import ButtonIcon from '@/components/custom/button-icon.vue';
 import { BILLING_TYPE_OPTIONS, MODEL_CATEGORY_OPTIONS } from '@/constants/business/gateway';
-import DeploymentOperateDrawer from './deployment-operate-drawer.vue';
+import DeploymentOperateDialog from './deployment-operate-dialog.vue';
 
 interface Props {
   model: Api.Gateway.Model;
@@ -170,7 +170,8 @@ function handleDrawerSubmitted() {
       </NSpace>
     </template>
     <div class="mb-8px flex items-center gap-12px text-12px text-slate-400">
-      <span>{{ model.modelKey }}</span>
+      <NTag v-if="!model.modelKey" size="small" type="warning">{{ $t('page.gateway.model.modelKeyUnset') }}</NTag>
+      <span v-else>{{ model.modelKey }}</span>
       <span v-if="model.description">· {{ model.description }}</span>
     </div>
     <NDataTable
@@ -181,11 +182,11 @@ function handleDrawerSubmitted() {
       :row-key="row => row.deploymentId"
       max-height="calc(100vh - 360px)"
     />
-    <DeploymentOperateDrawer
+    <DeploymentOperateDialog
       v-model:visible="drawerVisible"
       :operate-type="operateType"
       :row-data="editingData"
-      :model-id="model.modelId"
+      :model="model"
       @submitted="handleDrawerSubmitted"
     />
   </NCard>

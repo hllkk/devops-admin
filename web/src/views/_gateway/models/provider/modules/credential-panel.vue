@@ -53,14 +53,14 @@ const columns: DataTableColumns<Api.Gateway.Credential> = [
   {
     key: 'credentialName',
     title: () => $t('page.gateway.credential.col.credentialName'),
-    width: 150,
+    width: 180,
     ellipsis: { tooltip: true }
   },
   {
     key: 'format',
     title: () => $t('page.gateway.credential.col.format'),
     align: 'center',
-    width: 90,
+    width: 150,
     render: (row: Api.Gateway.Credential) => <NTag size="small">{$t(formatLabelKey(row.credentialInfo?.format))}</NTag>
   },
   {

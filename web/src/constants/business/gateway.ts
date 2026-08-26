@@ -95,6 +95,16 @@ export const MODEL_CATEGORY_OPTIONS = [
   { label: 'page.gateway.common.categoryRerank', value: 'rerank' }
 ] as const;
 
+/**
+ * 各类别的能力标签预设(值为展示文本即存储值，与供应商类型选项同风格不走 i18n)。
+ * 表单中作为下拉打底选项，仍可 tag 输入自定义；切换类别时清空重选。
+ */
+export const MODEL_CAPABILITY_PRESETS: Record<string, string[]> = {
+  chat: ['图像', '推理', '工具调用', '长上下文'],
+  embedding: ['多语言', '多模态', '代码', '长文本'],
+  rerank: ['多语言', '多模态']
+};
+
 /** 启停状态选项(value 用 1/0，NSelect 不支持 boolean，由搜索组件 computed 转 boolean) */
 export const ACTIVE_OPTIONS = [
   { label: 'page.gateway.common.active', value: 1 },

@@ -218,7 +218,7 @@ declare namespace Api {
       Pick<Model, 'name' | 'modelKey' | 'category' | 'isActive' | 'isPublished'> & Api.Common.CommonSearchParams
     >;
 
-    /** 模型新增/修改参数(update 允许改 modelKey,触发关联部署路由名级联重建) */
+    /** 模型新增/修改参数(update 允许改 modelKey,触发关联部署在 LiteLLM 侧级联重建) */
     type ModelOperateParams = CommonType.RecordNullable<
       Pick<Model, 'modelId' | 'modelKey' | 'name' | 'category' | 'logoProviderType' | 'description' | 'capabilities'>
     >;
@@ -241,7 +241,7 @@ declare namespace Api {
       monthlyCallQuota: number | null;
       monthlyCallUsed: number;
       isActive: boolean;
-      /** 关联模型路由名 */
+      /** 关联模型 ID(用户请求标识) */
       modelKey: string;
       /** 关联凭证名(无关联为空) */
       credentialName: string;
@@ -249,7 +249,7 @@ declare namespace Api {
       format: string;
       /** 关联供应商类型 */
       providerType: string;
-      /** 当前路由名(三态命名,routable 版) */
+      /** LiteLLM 侧完整调用名(三态命名,routable 版) */
       routeName: string;
     }>;
 

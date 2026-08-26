@@ -822,12 +822,13 @@ declare namespace App {
               logoProviderType: string;
             };
             form: {
-              modelKey: { required: string };
+              modelKey: { placeholder: string };
               name: { required: string };
               category: { required: string };
               capabilitiesPlaceholder: string;
               renameTip: string;
             };
+            modelKeyUnset: string;
             selectModelTip: string;
           };
           deployment: {
@@ -835,6 +836,11 @@ declare namespace App {
             add: string;
             edit: string;
             inlineParams: string;
+            group: {
+              billing: string;
+              routing: string;
+              advanced: string;
+            };
             col: {
               provider: string;
               deployName: string;
@@ -844,11 +850,29 @@ declare namespace App {
               monthlyCallQuota: string;
               isActive: string;
               vendorModel: string;
+              weight: string;
+              order: string;
+              timeout: string;
+              streamTimeout: string;
+              maxRetries: string;
+              tags: string;
+              useInPassThrough: string;
+              dropParams: string;
             };
             form: {
               deployName: { required: string };
               vendorModel: { required: string };
               credentialPlaceholder: string;
+              modelKey: { required: string; tip: string };
+              vendorModelTip: string;
+              routingTip: string;
+              passThroughTip: string;
+              weightPlaceholder: string;
+              orderPlaceholder: string;
+              timeoutPlaceholder: string;
+              streamTimeoutPlaceholder: string;
+              maxRetriesPlaceholder: string;
+              tagsPlaceholder: string;
             };
           };
           aiKey: {

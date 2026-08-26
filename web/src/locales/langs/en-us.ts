@@ -631,7 +631,7 @@ const local: App.I18n.Schema = {
         edit: 'Edit Model',
         col: {
           name: 'Name',
-          modelKey: 'Model Key',
+          modelKey: 'Model ID',
           category: 'Category',
           capabilities: 'Capabilities',
           deploymentCount: 'Deployments',
@@ -641,12 +641,13 @@ const local: App.I18n.Schema = {
           logoProviderType: 'Logo Provider'
         },
         form: {
-          modelKey: { required: 'Please enter model key' },
+          modelKey: { placeholder: 'Optional; set it when adding a deployment' },
           name: { required: 'Please enter model name' },
           category: { required: 'Please select category' },
           capabilitiesPlaceholder: 'Type capability and press enter',
-          renameTip: 'Renaming model key will cascade rebuild deployment routes, proceed with caution'
+          renameTip: 'Changing model ID will cascade rebuild deployment registrations in LiteLLM, proceed with caution'
         },
+        modelKeyUnset: 'No model ID',
         selectModelTip: 'Select a model on the left to view its deployments'
       },
       deployment: {
@@ -654,6 +655,11 @@ const local: App.I18n.Schema = {
         add: 'New Deployment',
         edit: 'Edit Deployment',
         inlineParams: 'Inline Params',
+        group: {
+          billing: 'Billing & Quota',
+          routing: 'Routing',
+          advanced: 'Advanced'
+        },
         col: {
           provider: 'Provider',
           deployName: 'Deploy Name',
@@ -662,12 +668,33 @@ const local: App.I18n.Schema = {
           costPerCall: 'Cost/Call',
           monthlyCallQuota: 'Monthly Quota',
           isActive: 'Status',
-          vendorModel: 'Vendor Model'
+          vendorModel: 'Vendor Model',
+          weight: 'Weight',
+          order: 'Priority',
+          timeout: 'Timeout (s)',
+          streamTimeout: 'Stream Timeout (s)',
+          maxRetries: 'Max Retries',
+          tags: 'Tags',
+          useInPassThrough: 'Pass-through',
+          dropParams: 'Drop Unsupported Params'
         },
         form: {
           deployName: { required: 'Please enter deploy name' },
           vendorModel: { required: 'Please enter vendor model name' },
-          credentialPlaceholder: 'Leave empty to use inline params'
+          credentialPlaceholder: 'Leave empty to use inline params',
+          modelKey: {
+            required: 'Please enter model ID',
+            tip: 'This model has no model ID yet (the identifier for the model field in requests); set one before adding a deployment'
+          },
+          vendorModelTip: 'Model identifier in the provider API, used for upstream calls',
+          routingTip: 'Synced to LiteLLM routing params; leave empty to use global defaults',
+          passThroughTip: 'Rate limits (RPM/TPM) will not apply when pass-through is on',
+          weightPlaceholder: 'Default 1',
+          orderPlaceholder: 'Lower first',
+          timeoutPlaceholder: 'Default 30',
+          streamTimeoutPlaceholder: 'Optional',
+          maxRetriesPlaceholder: 'Default 2',
+          tagsPlaceholder: 'Type tag and press enter'
         }
       },
       aiKey: {
