@@ -20,6 +20,7 @@ func (r *AiKeyRouter) InitAiKeyRouter(Router *gin.RouterGroup) {
 		g.PUT("scenario", keyScenarioApi.UpdateKeyScenario)        // 修改使用场景
 		g.DELETE("scenario/:ids", keyScenarioApi.BatchDeleteKeyScenarios) // 批量删除使用场景
 		g.GET(":id", aiKeyApi.GetAiKey)                           // 密钥详情
+		g.GET("value/:id", aiKeyApi.RevealAiKey)                  // 查看密钥完整明文(仅管理员/超管,审计)
 		g.POST("rotate/:id", aiKeyApi.RotateAiKey)                 // 轮换密钥(原地换Key值保归因)
 		g.POST("", aiKeyApi.CreateSceneKey)                        // 创建密钥
 		g.PUT("", aiKeyApi.UpdateAiKey)                           // 修改密钥

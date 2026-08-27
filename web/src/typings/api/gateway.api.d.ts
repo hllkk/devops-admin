@@ -155,6 +155,11 @@ declare namespace Api {
       lastUsedAt: string | null;
     }>;
 
+    /** 密钥完整明文(仅 value/:id 按需返回，管理员/超管复制给用户用) */
+    type AiKeyReveal = {
+      keyValue: string;
+    };
+
     /** 可授权模型(发布+激活，含 anthropic 变体标注) */
     type AvailableModel = {
       modelId: CommonType.IdType;

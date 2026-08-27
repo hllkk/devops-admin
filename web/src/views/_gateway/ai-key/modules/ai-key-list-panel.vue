@@ -1,7 +1,7 @@
 <script setup lang="tsx">
 import { ref } from 'vue';
 import { NProgress, NTag, NTime } from 'naive-ui';
-import { fetchBatchDeleteAiKey, fetchGetAiKeyList, fetchRotateAiKey } from '@/service/api/gateway';
+import { fetchBatchDeleteAiKey, fetchGetAiKeyList, fetchRevealAiKeyValue, fetchRotateAiKey } from '@/service/api/gateway';
 import { useAppStore } from '@/store/modules/app';
 import { defaultTransform, useNaivePaginatedTable, useTableOperate } from '@/hooks/common/table';
 import { $t } from '@/locales';
@@ -30,6 +30,34 @@ const searchParams = ref<Api.Gateway.AiKeySearchParams>({
 });
 
 const keyTypeLabelKey = (v: string) => KEY_TYPE_OPTIONS.find(o => o.value === v)?.label ?? 'page.gateway.common.keyPersonalScene';
+
+/** 行瞬态字段：完整明文缓存 + 展开态(data 深层 reactive，改行对象即触发单元格重渲；翻页/刷新自然重置) */
+type AiKeyRow = Api.Gateway.AiKey & { fullKeyValue?: string; keyRevealed?: boolean };
+
+/** 确保行内已有完整明文(首次点击经 value/:id 按需拉取并缓存，避免明文随列表批量出网) */
+async function ensureFullKey(row: AiKeyRow): Promise<string | null> {
+  if (row.fullKeyValue) return row.fullKeyValue;
+  const { data, error } = await fetchRevealAiKeyValue(row.aiKeyId!);
+  if (error) return null;
+  row.fullKeyValue = data.keyValue;
+  return data.keyValue;
+}
+
+async function toggleKeyReveal(row: AiKeyRow) {
+  if (row.keyRevealed) {
+    row.keyRevealed = false;
+    return;
+  }
+  const plain = await ensureFullKey(row);
+  if (plain == null) return;
+  row.keyRevealed = true;
+}
+
+async function copyFullKey(row: AiKeyRow) {
+  const plain = await ensureFullKey(row);
+  if (plain == null) return;
+  handleCopy(plain);
+}
 
 const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagination, scrollX } = useNaivePaginatedTable({
   api: () => fetchGetAiKeyList(searchParams.value),
@@ -73,12 +101,36 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       key: 'keyPrefix',
       title: $t('page.gateway.aiKey.col.keyPrefix'),
       align: 'center',
-      minWidth: 180,
-      render: row => (
-        <span class="cursor-copy font-mono" onClick={() => handleCopy(row.keyPrefix)}>
-          {row.keyPrefix}
-        </span>
-      )
+      minWidth: 240,
+      // 默认只显前缀；hover 出眼睛/复制(触屏恒显)：眼睛切换明文(按需拉 value/:id 缓存行内)，复制取明文入剪贴板
+      render: (row: AiKeyRow) => {
+        const shown = row.keyRevealed && row.fullKeyValue ? row.fullKeyValue : row.keyPrefix;
+        return (
+          <div class="group flex items-center justify-center gap-4px">
+            <span class="cursor-pointer font-mono text-13px break-all" onClick={() => toggleKeyReveal(row)}>
+              {shown}
+            </span>
+            <div class="hidden items-center gap-2px group-hover:flex lt-sm:flex">
+              <ButtonIcon
+                text
+                type="primary"
+                class="h-24px text-14px"
+                icon={row.keyRevealed ? 'material-symbols:visibility-off-outline' : 'material-symbols:visibility-outline'}
+                tooltipContent={$t(row.keyRevealed ? 'page.gateway.aiKey.hideKey' : 'page.gateway.aiKey.viewKey')}
+                onClick={() => toggleKeyReveal(row)}
+              />
+              <ButtonIcon
+                text
+                type="primary"
+                class="h-24px text-14px"
+                icon="material-symbols:content-copy-outline"
+                tooltipContent={$t('page.gateway.aiKey.copyKey')}
+                onClick={() => copyFullKey(row)}
+              />
+            </div>
+          </div>
+        );
+      }
     },
     {
       key: 'owner',

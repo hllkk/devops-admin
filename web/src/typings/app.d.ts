@@ -986,6 +986,9 @@ declare namespace App {
             rotate: string;
             rotateConfirm: string;
             rotateSuccess: string;
+            viewKey: string;
+            hideKey: string;
+            copyKey: string;
             never: string;
             expired: string;
             expiringSoon: string;

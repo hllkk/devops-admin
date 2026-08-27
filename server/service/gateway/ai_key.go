@@ -15,6 +15,7 @@ import (
 	gatewayReq "github.com/hllkk/devops-admin/server/model/gateway/request"
 	gatewayResp "github.com/hllkk/devops-admin/server/model/gateway/response"
 	"github.com/hllkk/devops-admin/server/model/system"
+	systemReq "github.com/hllkk/devops-admin/server/model/system/request"
 	"github.com/hllkk/devops-admin/server/utils/litellm"
 	"github.com/hllkk/devops-admin/server/utils/logger"
 )
@@ -191,6 +192,53 @@ func (s *AiKeyService) GetAiKey(ctx context.Context, id int64) (gatewayResp.AiKe
 	fillOwnerNames(ctx, []gatewayResp.AiKeyView{v})
 	fillScenarioNames(ctx, []gatewayResp.AiKeyView{v})
 	return v, nil
+}
+
+// RevealAiKeyValue 查密钥完整明文(管理员把 Key 复制给用户的支撑接口)：解密 key_value 返回。
+// 仅超管/管理员可调；单机模式(litellm_key_id 空)与未同步 LiteLLM 的行无明文可用。
+func (s *AiKeyService) RevealAiKeyValue(ctx context.Context, id int64, claims *systemReq.CustomClaims) (gatewayResp.AiKeyRevealView, error) {
+	if !keyRevealAllowed(ctx, claims) {
+		return gatewayResp.AiKeyRevealView{}, errors.New("仅管理员/超管可查看密钥明文")
+	}
+	var k gateway.AiKey
+	if err := global.OPS_DB.WithContext(ctx).Where("ai_key_id = ?", id).First(&k).Error; err != nil {
+		return gatewayResp.AiKeyRevealView{}, err
+	}
+	if k.LitellmKeyId == "" {
+		return gatewayResp.AiKeyRevealView{}, errors.New("密钥未同步 LiteLLM，无可用明文")
+	}
+	plain, err := decryptCredentialValues(k.KeyValue)
+	if err != nil {
+		return gatewayResp.AiKeyRevealView{}, fmt.Errorf("密钥明文解密失败: %w", err)
+	}
+	v, _ := plain["k"].(string)
+	if v == "" {
+		return gatewayResp.AiKeyRevealView{}, errors.New("密钥明文为空")
+	}
+	return gatewayResp.AiKeyRevealView{KeyValue: v}, nil
+}
+
+// keyRevealAllowed 查看明文权限：JWT 超管标志直接放行；其余查启用角色，
+// 任一角色带 SuperAdmin 标志或 RoleKey=admin(系统管理员)即视为管理员。
+func keyRevealAllowed(ctx context.Context, claims *systemReq.CustomClaims) bool {
+	if claims == nil {
+		return false
+	}
+	if claims.SuperAdmin {
+		return true
+	}
+	var user system.SysUser
+	if err := global.OPS_DB.WithContext(ctx).
+		Preload("Roles", "status = ?", "0"). // 与 getUserInfo 组装口径一致：仅启用角色参与
+		Where("id = ?", claims.BaseClaims.ID).First(&user).Error; err != nil {
+		return false
+	}
+	for i := range user.Roles {
+		if user.Roles[i].SuperAdmin || user.Roles[i].RoleKey == "admin" {
+			return true
+		}
+	}
+	return false
 }
 
 // fillOwnerNames 批量填充 view.OwnerName/OwnerUsername(user→SysUser.NickName+Username;

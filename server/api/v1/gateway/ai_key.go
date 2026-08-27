@@ -100,6 +100,28 @@ func (a *AiKeyApi) GetAiKey(c *gin.Context) {
 	response.OkWithDetailed(view, "获取成功", c)
 }
 
+// RevealAiKey
+// @Tags      GatewayAiKey
+// @Summary   查看密钥完整明文(仅管理员/超管；解密 key_value，操作日志自动审计)
+// @Produce   application/json
+// @Param     id  path  int  true  "密钥ID"
+// @Success   200  {object}  response.Response{data=response.AiKeyRevealView,msg=string}
+// @Router    /gateway/ai-key/value/{id} [get]
+func (a *AiKeyApi) RevealAiKey(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.FailWithMessage("无效的密钥ID", c)
+		return
+	}
+	view, err := aiKeyService.RevealAiKeyValue(c.Request.Context(), id, utils.GetUserInfo(c))
+	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("查看密钥明文失败")
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	response.OkWithDetailed(view, "获取成功", c)
+}
+
 // CreateSceneKey
 // @Tags      GatewayAiKey
 // @Summary   创建密钥(场景 Key 或管理员手动建部门主 Key)

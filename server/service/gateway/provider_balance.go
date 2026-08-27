@@ -30,11 +30,11 @@ import (
 type ProviderBalanceService struct{}
 
 const (
-	bailianAPIVersion = "2026-02-10"                    // ModelStudio OpenAPI 版本
-	bailianSeatsPath  = "/tokenplan/subscription/seat-detail"   // GetSubscriptionSeatDetails
+	bailianAPIVersion = "2026-02-10"                              // ModelStudio OpenAPI 版本
+	bailianSeatsPath  = "/tokenplan/subscription/seat-detail"     // GetSubscriptionSeatDetails
 	bailianPkgPath    = "/tokenplan/subscription/shared-packages" // ListSubscriptionSharedPackages(门户元数据确认复数)
-	balancePageSize   = 100                              // 采集翻页大小
-	balanceMaxPages   = 10                               // 翻页保护上限(坐席/共享包各最多1000条)
+	balancePageSize   = 100                                       // 采集翻页大小
+	balanceMaxPages   = 10                                        // 翻页保护上限(坐席/共享包各最多1000条)
 )
 
 // GetProviderBalances 供应商余量明细（快照现状 + 汇总）。
@@ -292,24 +292,24 @@ func (s *ProviderBalanceService) SyncAllProviderBalances(ctx context.Context) (m
 
 // bailianEquity 权益实例（TokenPlan 下每坐席/包仅一个 CREDITS 权益生效）。
 type bailianEquity struct {
-	EquityType       string  `json:"EquityType"`
-	CycleStartTime   int64   `json:"CycleStartTime"`
-	CycleEndTime     int64   `json:"CycleEndTime"`
-	CycleTotalValue  float64 `json:"CycleTotalValue"`
+	EquityType        string  `json:"EquityType"`
+	CycleStartTime    int64   `json:"CycleStartTime"`
+	CycleEndTime      int64   `json:"CycleEndTime"`
+	CycleTotalValue   float64 `json:"CycleTotalValue"`
 	CycleSurplusValue float64 `json:"CycleSurplusValue"`
 }
 
 // bailianSeatItem GetSubscriptionSeatDetails.Items 元素。
 type bailianSeatItem struct {
-	InstanceCode   string         `json:"InstanceCode"`
-	SeatId         string         `json:"SeatId"`
-	SpecType       string         `json:"SpecType"`
-	Status         string         `json:"Status"`
-	AssignedStatus string         `json:"AssignedStatus"`
-	AccountName    string         `json:"AccountName"`
-	AccountEmail   string         `json:"AccountEmail"`
-	StartTime      int64          `json:"StartTime"`
-	EndTime        int64          `json:"EndTime"`
+	InstanceCode   string          `json:"InstanceCode"`
+	SeatId         string          `json:"SeatId"`
+	SpecType       string          `json:"SpecType"`
+	Status         string          `json:"Status"`
+	AssignedStatus string          `json:"AssignedStatus"`
+	AccountName    string          `json:"AccountName"`
+	AccountEmail   string          `json:"AccountEmail"`
+	StartTime      int64           `json:"StartTime"`
+	EndTime        int64           `json:"EndTime"`
 	EquityList     []bailianEquity `json:"EquityList"`
 }
 
@@ -327,7 +327,7 @@ type bailianEnvelope[T any] struct {
 	Message string `json:"Message"`
 	Data    struct {
 		Items []T `json:"Items"`
-		Total int  `json:"Total"`
+		Total int `json:"Total"`
 	} `json:"Data"`
 }
 
@@ -450,7 +450,10 @@ var acs3SignedHeaders = []string{"content-type", "host", "x-acs-action", "x-acs-
 func acs3CanonicalRequest(method, path, canonicalQuery string, headers map[string]string, payloadHash string) string {
 	var canonicalHeaders strings.Builder
 	for _, h := range acs3SignedHeaders {
-		canonicalHeaders.WriteString(h + ":" + headers[h] + "\n")
+		canonicalHeaders.WriteString(h)
+		canonicalHeaders.WriteString(":")
+		canonicalHeaders.WriteString(headers[h])
+		canonicalHeaders.WriteString("\n")
 	}
 	return strings.Join([]string{
 		method,

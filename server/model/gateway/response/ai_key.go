@@ -17,6 +17,12 @@ type AiKeyView struct {
 	ModelLimits   map[string]any `json:"modelLimits"`   // per-model限流(展开)
 }
 
+// AiKeyRevealView 密钥完整明文出网视图(仅 value/:id 按需返回)：管理员把 Key 复制给用户用，
+// 与列表/详情的"只回 KeyPrefix"默认安全边界区分开。
+type AiKeyRevealView struct {
+	KeyValue string `json:"keyValue"` // 密钥明文(解密 key_value)
+}
+
 // MyIdentityView 我的 AI 身份(home 切真实接口的契约，对齐前端 home mock 的 IdentityKey)：
 // 主 Key 明文(仅 owner 本人可查) + 我的场景 Key 列表 + 可用模型列表。
 // 管理员创建制：主 Key 由管理员后台创建，未创建时 opened=false 其余字段为空。

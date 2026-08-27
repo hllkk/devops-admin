@@ -4,6 +4,7 @@
 
 | 日期 | 需求 | 文件 | 状态 |
 |---|---|---|---|
+| 2026-08-27 | AI 网关·密钥列表查看/复制完整 Key（keyPrefix 列 hover 眼睛/复制图标：眼睛切换明文、复制给用户转发；独立接口 GET value/:id 按需解密 key_value 返回 AiKeyRevealView，keyRevealAllowed 超管标志+启用角色 RoleKey=admin/SuperAdmin 硬校验，操作日志自动审计，前端明文仅缓存在内存行瞬态字段，列表/详情仍不返回 KeyValue） | business/ai-gateway-ai-key-reveal-value.md | 已实现 |
 | 2026-08-27 | AI 网关·套餐余量旁路 ProviderBalance（百炼 Token Plan Credits：gateway_provider_balance 快照现状表 + Provider 加密列 balance_sync_config(AK/SK AES 复用 litellm.credential-key) + ACS3 签名直连 GetSubscriptionSeatDetails/ListSubscriptionSharedPackages + 坐席/共享包明细挂供应商页 + 看板汇总卡(非超管空) + 定时任务 SyncProviderBalances 每日 17:08；总消耗=Σ坐席(CycleTotalValue-CycleSurplusValue)+共享包；硬边界不进成本链路） | business/ai-gateway-provider-balance.md | 已实现(待录入 AK/SK 实测) |
 | 2026-08-26 | AI 网关·使用场景 KeyScenario 落地（场景 Key 分类字典：gateway_key_scenario 表 + AiKey.scenario_id 逻辑关联 + 密钥管理页双 Tab 场景管理 + 建 Key 表单场景下拉必选联动名称带出 + 同名按未软删行唯一/被引用拒删，接口挂 /gateway/ai-key/scenario/* 复用菜单 api_prefix） | business/ai-gateway-key-scenario.md | 已实现 |
 | 2026-07-11 | 借鉴 gin-vue-admin 实现系统初始化流程（checkdb→initdb，路由守卫自动跳转，后端响应码对齐 "0000"） | business/system-init-flow.md | 已实现 |

@@ -51,6 +51,14 @@ export function fetchRotateAiKey(aiKeyId: CommonType.IdType) {
   });
 }
 
+/** 查看密钥完整明文(仅管理员/超管，解密 key_value 按需返回；操作日志审计) */
+export function fetchRevealAiKeyValue(aiKeyId: CommonType.IdType) {
+  return request<Api.Gateway.AiKeyReveal>({
+    url: `/gateway/ai-key/value/${aiKeyId}`,
+    method: 'get'
+  });
+}
+
 /** 批量开通个人主 Key(按部门/按用户；已有跳过，部分失败不中断) */
 export function fetchBatchCreateMainKeys(data: Api.Gateway.AiKeyBatchCreateParams) {
   return request<Api.Gateway.AiKeyBatchCreateResult>({
