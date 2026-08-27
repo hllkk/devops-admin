@@ -49,6 +49,8 @@ type BalanceSyncConfig struct {
 }
 
 // 支持余量采集的供应商类型（采集入口按此白名单校验）。
+// bailian 为前端供应商类型选项的"百炼"value，dashscope 为供应商前缀差异表的叫法，两值等义均收录。
 var BalanceSyncProviderTypes = map[string]string{
-	"dashscope": "百炼 Token Plan", // 阿里云百炼
+	"bailian":   "百炼 Token Plan", // 阿里云百炼(前端选项 value)
+	"dashscope": "百炼 Token Plan", // 阿里云百炼(前缀差异表 value)
 }

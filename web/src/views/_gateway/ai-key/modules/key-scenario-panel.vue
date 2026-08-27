@@ -40,13 +40,6 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       width: 48
     },
     {
-      key: 'index',
-      title: $t('common.index'),
-      align: 'center',
-      width: 64,
-      render: (_, index) => index + 1
-    },
-    {
       key: 'name',
       title: $t('page.gateway.keyScenario.col.name'),
       align: 'center',

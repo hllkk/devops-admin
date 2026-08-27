@@ -301,6 +301,7 @@ type KeyCreateReq struct {
 	MaxBudget          *float64 `json:"max_budget,omitempty"`
 	Metadata           map[string]any `json:"metadata,omitempty"`
 	Duration           string   `json:"duration,omitempty"`
+	ExpiresAt          *time.Time `json:"expires_at,omitempty"` // 过期时间(ISO，nil=永不过期)
 	AllowedMCPServers  []string `json:"allowed_mcp_servers,omitempty"`
 	TPMLimit           *int     `json:"tpm_limit,omitempty"`
 	RPMLimit           *int     `json:"rpm_limit,omitempty"`
@@ -336,17 +337,20 @@ func (c *Client) DeleteKey(ctx context.Context, keyID string) error {
 }
 
 // KeyUpdateReq /key/update 请求。SyncRateLimits=true 强制刷限流字段(即便为零值)；
-// SyncBudget=true 强制刷 max_budget(含 nil→null 清空，用于停用→启用无硬限恢复)。
+// SyncBudget=true 强制刷 max_budget(含 nil→null 清空，用于停用→启用无硬限恢复)；
+// SyncExpiry=true 强制刷 expires_at(含 nil→null 清空，用于改回永不过期)。
 type KeyUpdateReq struct {
 	Models            []string `json:"models,omitempty"`
 	MaxBudget         *float64 `json:"max_budget,omitempty"`
 	Metadata          map[string]any `json:"metadata,omitempty"`
+	ExpiresAt         *time.Time `json:"expires_at,omitempty"`
 	AllowedMCPServers []string `json:"allowed_mcp_servers,omitempty"`
 	TPMLimit          *int     `json:"tpm_limit,omitempty"`
 	RPMLimit          *int     `json:"rpm_limit,omitempty"`
 	MaxParallelReqs   *int     `json:"max_parallel_requests,omitempty"`
 	SyncRateLimits    bool     `json:"-"`
 	SyncBudget        bool     `json:"-"`
+	SyncExpiry        bool     `json:"-"`
 }
 
 // UpdateKey 更新 LiteLLM 虚拟 Key（POST /key/update {key:id, ...}）。
@@ -357,6 +361,9 @@ func (c *Client) UpdateKey(ctx context.Context, keyID string, req KeyUpdateReq) 
 	}
 	if req.MaxBudget != nil || req.SyncBudget {
 		body["max_budget"] = req.MaxBudget // nil + SyncBudget → JSON null 清空
+	}
+	if req.ExpiresAt != nil || req.SyncExpiry {
+		body["expires_at"] = req.ExpiresAt // nil + SyncExpiry → JSON null 清空
 	}
 	if len(req.Metadata) > 0 {
 		body["metadata"] = req.Metadata

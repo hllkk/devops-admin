@@ -1,6 +1,9 @@
 package request
 
 import (
+	"time"
+
+	"github.com/hllkk/devops-admin/server/model/common"
 	commonReq "github.com/hllkk/devops-admin/server/model/common/request"
 )
 
@@ -37,4 +40,13 @@ type AiKeyOperateParams struct {
 	RpmLimit         *int            `json:"rpmLimit" form:"rpmLimit"`         // 全局RPM
 	ModelLimits      map[string]any   `json:"modelLimits" form:"modelLimits"`  // per-model限流
 	IsActive         *bool           `json:"isActive" form:"isActive"`         // 是否启用
+	ExpiresAt        *time.Time      `json:"expiresAt" form:"expiresAt"`       // 过期时间(nil=永不过期,覆盖式更新)
+}
+
+// AiKeyBatchCreateParams 批量开通个人主 Key(管理员创建制的效率件)：按用户ID列表或按部门
+// (取部门下全部用户)二选一；对每个目标用户：已有 personal_main 跳过，无则按主 Key 默认
+// 语义创建(公开模型、name=main)。部分失败不中断，结果经 data 标记返回。
+type AiKeyBatchCreateParams struct {
+	UserIds common.Int64StringSlice `json:"userIds"`              // 目标用户ID列表(与 deptId 至少一项;雪花id字符串/数字元素兼容)
+	DeptId  *int64                  `json:"deptId,string" form:"deptId"` // 按部门开通(优先,取部门下全部用户)
 }

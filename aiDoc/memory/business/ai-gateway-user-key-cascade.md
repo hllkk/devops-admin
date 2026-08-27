@@ -20,3 +20,4 @@
 
 - P1 模型改名级联已于 2026-08-26 落地，见 [[ai-gateway-model-rename-cascade]]。
 - P2 待办：批量建场景 Key（名称模板 `{username}`）/按 user_ids 批量调主 Key；建 Key 表单"复制自主 Key"模板；expires_at/last_used_at 字段。
+  - 更新（2026-08-27）：**批量开通主 Key 与 expires_at/last_used_at 已落地**（批量开通/轮换/过期时间三件套），见 [[ai-gateway-mainkey-p0-lifecycle]]；剩余待办：批量建场景 Key、"复制自主 Key"模板、被动停用标记位（重新启用误恢复手动停用 Key 的取舍仍未做）。

@@ -52,6 +52,7 @@ func (s *AiKeyService) GetMyIdentity(ctx context.Context, userId int64) (gateway
 	view.BudgetLimit = mainKey.BudgetLimit
 	view.BudgetHardLimit = mainKey.BudgetHardLimit
 	view.BudgetDuration = mainKey.BudgetDuration
+	view.ExpiresAt = mainKey.ExpiresAt
 	view.Models = jsonToSlice(mainKey.Models)
 	view.ModelBudgets = jsonToMap(mainKey.ModelBudgets)
 	view.RateLimitMode = mainKey.RateLimitMode
@@ -358,6 +359,7 @@ func (s *AiKeyService) CreateSceneKey(ctx context.Context, req gatewayReq.AiKeyO
 		RpmLimit:        req.RpmLimit,
 		ModelLimits:     marshalJSONMap(req.ModelLimits),
 		IsActive:        req.IsActive == nil || *req.IsActive,
+		ExpiresAt:       req.ExpiresAt,
 	}
 	k.CreateBy = createBy
 	k.UpdateBy = createBy
@@ -436,6 +438,7 @@ func (s *AiKeyService) UpdateAiKey(ctx context.Context, req gatewayReq.AiKeyOper
 		"tpm_limit":         req.TpmLimit,
 		"rpm_limit":         req.RpmLimit,
 		"model_limits":      marshalJSONMap(req.ModelLimits),
+		"expires_at":        req.ExpiresAt, // 过期时间覆盖式更新(nil=改回永不过期)
 		"update_by":         updateBy,
 	}
 	if req.BudgetLimit != nil {
@@ -450,6 +453,7 @@ func (s *AiKeyService) UpdateAiKey(ctx context.Context, req gatewayReq.AiKeyOper
 		updates["is_active"] = *req.IsActive
 		k.IsActive = *req.IsActive
 	}
+	k.ExpiresAt = req.ExpiresAt
 	if req.Name != "" {
 		k.Name = req.Name
 	}
@@ -500,6 +504,142 @@ func (s *AiKeyService) DeleteAiKey(ctx context.Context, ids []int64) error {
 		}
 	}
 	return global.OPS_DB.WithContext(ctx).Where("ai_key_id IN ?", ids).Delete(&gateway.AiKey{}).Error
+}
+
+// RotateAiKey 轮换密钥：LiteLLM 删旧 Key → 复用 syncKeyToLitellm(create=true) 建新 Key 并
+// 原地更新同一行的 litellm_key_id/key_value(加密)/key_prefix。AiKeyId 与 key_alias 均不变，
+// 历史用量归因(alias 匹配)保持连续——优于手工删旧建新(换行断归因、场景引用丢失)。
+// 旧 Key 在 LiteLLM 删除成功瞬间即失效(轮换的安全语义：宁可短暂不可用，不留旧值)；
+// 建新失败则本地行指向已删 Key(用户 Key 失效)，返回错误提示重试。管理员视角只回 KeyPrefix，
+// 新明文仅 owner 本人经 identity/my 查看。
+func (s *AiKeyService) RotateAiKey(ctx context.Context, id, updateBy int64) (gatewayResp.AiKeyView, error) {
+	var k gateway.AiKey
+	if err := global.OPS_DB.WithContext(ctx).Where("ai_key_id = ?", id).First(&k).Error; err != nil {
+		return gatewayResp.AiKeyView{}, err
+	}
+	cli := litellm.Default()
+	if cli == nil {
+		return gatewayResp.AiKeyView{}, errors.New("单机模式(LiteLLM 未配置)不支持轮换")
+	}
+	if k.LitellmKeyId == "" {
+		return gatewayResp.AiKeyView{}, errors.New("密钥未同步 LiteLLM，无法轮换")
+	}
+	// 先删旧(失败中止，本地不动)
+	if err := cli.DeleteKey(ctx, k.LitellmKeyId); err != nil {
+		return gatewayResp.AiKeyView{}, fmt.Errorf("轮换删除旧 Key 失败，已中止(本地未动): %w", err)
+	}
+	// 建新并原地更新(复用创建管线：加密落库/prefix/anthropic 扩展/max_budget/expires_at 语义全保留)
+	if err := syncKeyToLitellm(ctx, cli, global.OPS_DB.WithContext(ctx), &k, true); err != nil {
+		return gatewayResp.AiKeyView{}, fmt.Errorf("轮换生成新 Key 失败(旧 Key 已失效，请重试): %w", err)
+	}
+	if err := global.OPS_DB.WithContext(ctx).Model(&gateway.AiKey{}).Where("ai_key_id = ?", id).
+		Update("update_by", updateBy).Error; err != nil {
+		return gatewayResp.AiKeyView{}, err
+	}
+	var fresh gateway.AiKey
+	if err := global.OPS_DB.WithContext(ctx).Where("ai_key_id = ?", id).First(&fresh).Error; err != nil {
+		return gatewayResp.AiKeyView{}, err
+	}
+	return toAiKeyView(fresh), nil
+}
+
+// BatchCreateMainKeys 批量开通个人主 Key(管理员创建制的效率件)：目标 = deptId 部门下全部
+// 用户 ∪ userIds；已有 personal_main 跳过，停用用户标记失败(建了也会被级联停用)；单用户
+// 创建失败不中断(每用户独立事务)。部分成功语义：结果经 data 标记返回(created/skipped/failed)。
+func (s *AiKeyService) BatchCreateMainKeys(ctx context.Context, req gatewayReq.AiKeyBatchCreateParams, createBy int64) (gatewayResp.BatchCreateMainKeysResult, error) {
+	users, err := s.resolveBatchTargets(ctx, req)
+	if err != nil {
+		return gatewayResp.BatchCreateMainKeysResult{}, err
+	}
+	result := gatewayResp.BatchCreateMainKeysResult{Total: len(users), Failed: []gatewayResp.BatchCreateMainKeysFailure{}}
+
+	// 已有主 Key 的目标(一次 IN 查询去重集)
+	ids := make([]int64, 0, len(users))
+	for i := range users {
+		ids = append(ids, users[i].UserId)
+	}
+	var existing []int64
+	if err := global.OPS_DB.WithContext(ctx).Model(&gateway.AiKey{}).
+		Where("key_type = ? AND owner_type = ? AND owner_id IN ?", gateway.KeyTypePersonalMain, gateway.OwnerTypeUser, ids).
+		Pluck("owner_id", &existing).Error; err != nil {
+		return gatewayResp.BatchCreateMainKeysResult{}, err
+	}
+	existingSet := map[int64]bool{}
+	for _, id := range existing {
+		existingSet[id] = true
+	}
+
+	toCreate, skipped, failed := classifyBatchTargets(users, existingSet)
+	result.Skipped = skipped
+	for i := range toCreate {
+		u := toCreate[i]
+		isActive := true
+		params := gatewayReq.AiKeyOperateParams{
+			KeyType:     gateway.KeyTypePersonalMain,
+			OwnerType:   gateway.OwnerTypeUser,
+			OwnerId:     u.UserId,
+			Name:        "main",
+			Description: "个人主 Key(批量开通)",
+			IsActive:    &isActive,
+		}
+		if _, err := s.CreateSceneKey(ctx, params, createBy); err != nil {
+			failed = append(failed, gatewayResp.BatchCreateMainKeysFailure{
+				UserId: u.UserId, Name: u.NickName, Reason: err.Error(),
+			})
+			continue
+		}
+		result.Created++
+	}
+	result.Failed = failed
+	return result, nil
+}
+
+// classifyBatchTargets 批量开通目标分类(纯函数,可单测)：停用用户→失败(建了也会被
+// 用户级联停用，无意义)、已有主 Key→跳过、其余→待创建。判定顺序：停用优先于已存在
+// (状态异常先报，避免"看似跳过实则账号不可用"的误判)。
+func classifyBatchTargets(users []system.SysUser, existingSet map[int64]bool) (
+	toCreate []system.SysUser, skipped int, failed []gatewayResp.BatchCreateMainKeysFailure) {
+	// failed 初始化为空切片：nil 切片 JSON 序列化为 null，违反「空数组=全部成功」契约，
+	// 前端 data.failed.length 会 TypeError 导致批量弹窗渲染崩溃冻结。
+	failed = make([]gatewayResp.BatchCreateMainKeysFailure, 0)
+	for i := range users {
+		u := users[i]
+		if u.Status != "0" {
+			failed = append(failed, gatewayResp.BatchCreateMainKeysFailure{
+				UserId: u.UserId, Name: u.NickName, Reason: "用户已停用",
+			})
+			continue
+		}
+		if existingSet[u.UserId] {
+			skipped++
+			continue
+		}
+		toCreate = append(toCreate, u)
+		existingSet[u.UserId] = true // 防御同批重复ID
+	}
+	return toCreate, skipped, failed
+}
+
+// resolveBatchTargets 解析批量开通目标用户：deptId 优先(部门下全部)，userIds 补充，
+// 两者并集按行过滤天然去重。仅取 id/nick_name/status 最小列集。
+func (s *AiKeyService) resolveBatchTargets(ctx context.Context, req gatewayReq.AiKeyBatchCreateParams) ([]system.SysUser, error) {
+	if req.DeptId == nil && len(req.UserIds) == 0 {
+		return nil, errors.New("请指定目标用户或部门")
+	}
+	q := global.OPS_DB.WithContext(ctx).Model(&system.SysUser{})
+	switch {
+	case req.DeptId != nil && len(req.UserIds) > 0:
+		q = q.Where("dept_id = ? OR id IN ?", *req.DeptId, req.UserIds)
+	case req.DeptId != nil:
+		q = q.Where("dept_id = ?", *req.DeptId)
+	default:
+		q = q.Where("id IN ?", req.UserIds)
+	}
+	var users []system.SysUser
+	if err := q.Select("id, nick_name, status").Order("id ASC").Find(&users).Error; err != nil {
+		return nil, err
+	}
+	return users, nil
 }
 
 // SyncUserKeysActive 用户启停/删除级联：同步其名下全部 AiKey(主+场景，软删行除外)的启停状态。
@@ -753,6 +893,7 @@ func syncKeyToLitellm(ctx context.Context, cli *litellm.Client, tx *gorm.DB, k *
 			Models:    expandedModels,
 			MaxBudget: maxBudget,
 			Metadata:  metadata,
+			ExpiresAt: k.ExpiresAt,
 		}
 		if k.RateLimitMode == gateway.RateLimitModeTotal {
 			req.TPMLimit = k.TpmLimit
@@ -786,7 +927,9 @@ func syncKeyToLitellm(ctx context.Context, cli *litellm.Client, tx *gorm.DB, k *
 		Models:      expandedModels,
 		MaxBudget:   maxBudget,
 		Metadata:    metadata,
+		ExpiresAt:   k.ExpiresAt,
 		SyncBudget:  syncBudget,
+		SyncExpiry:  true, // 过期时间始终与 DB 行同步(含 nil→null 清空)
 	}
 	if k.RateLimitMode == gateway.RateLimitModeTotal {
 		req.TPMLimit = k.TpmLimit

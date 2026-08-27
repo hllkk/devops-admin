@@ -79,6 +79,7 @@ func (s *UsageSyncService) SyncLLMLogs(ctx context.Context) (map[string]int, err
 			}
 			result["inserted"] += int(tx.RowsAffected)
 			tx.Commit()
+			touchAiKeyLastUsed(ctx, mdb, logs)
 		}
 
 		// 游标推进：复合游标 (COALESCE(endTime,startTime), request_id)
@@ -167,6 +168,7 @@ func (s *UsageSyncService) ReconcileLLMLogs(ctx context.Context) (map[string]int
 		}
 		tx.Commit()
 		result["reconciled"] = len(logs)
+		touchAiKeyLastUsed(ctx, mdb, logs)
 	}
 	logger.WithCtx(ctx).Mod("gateway").Info(fmt.Sprintf("用量对账完成: reconciled=%d", result["reconciled"]))
 	return result, nil
@@ -324,6 +326,27 @@ func (s *UsageSyncService) toLlmLog(ctx context.Context, db *gorm.DB, r *gateway
 		SessionId:           r.SessionId,
 		Metadata:            datatypes.JSON(r.Metadata),
 		SyncedAt:            time.Now().UTC(),
+	}
+}
+
+// touchAiKeyLastUsed 回填 AiKey.last_used_at(僵尸 Key 治理)：按 Key 聚合本批最大
+// started_at，仅前推不回退(幂等，回流/对账双路径复用)；失败仅告警不影响用量主流程。
+func touchAiKeyLastUsed(ctx context.Context, db *gorm.DB, logs []gateway.LlmLog) {
+	latest := map[int64]time.Time{}
+	for i := range logs {
+		if logs[i].AiKeyId == 0 || logs[i].StartedAt.IsZero() {
+			continue
+		}
+		if t, ok := latest[logs[i].AiKeyId]; !ok || logs[i].StartedAt.After(t) {
+			latest[logs[i].AiKeyId] = logs[i].StartedAt
+		}
+	}
+	for id, t := range latest {
+		if err := db.Model(&gateway.AiKey{}).
+			Where("ai_key_id = ? AND (last_used_at IS NULL OR last_used_at < ?)", id, t).
+			Update("last_used_at", t).Error; err != nil {
+			logger.WithCtx(ctx).Mod("gateway").Warn(fmt.Sprintf("回填密钥 %d 最近使用时间失败: %v", id, err))
+		}
 	}
 }
 

@@ -97,6 +97,14 @@ const budgetDisplay = computed(() => {
   return `¥${key.budgetLimit}`;
 });
 
+/** 主 Key 有效期(过期由 LiteLLM expires_at 原生拦截；null=永不过期) */
+const expiresDisplay = computed(() => {
+  const raw = mainKey.value?.expiresAt;
+  if (!raw) return $t('page.home.identity.expiresNever');
+  const d = new Date(raw);
+  return Number.isNaN(d.getTime()) ? raw : d.toLocaleDateString();
+});
+
 const totalBudget = computed(() => mainKey.value?.budgetLimit ?? null);
 
 const budgetUsedPercent = computed(() => {
@@ -416,6 +424,14 @@ onMounted(async () => {
                       </div>
                       <div class="mt-2px text-12px font-bold text-slate-900 dark:text-slate-100">
                         {{ mainKey.models.length }}
+                      </div>
+                    </div>
+                    <div>
+                      <div class="text-10px tracking-1px text-slate-400">
+                        {{ $t('page.home.identity.expiresLabel') }}
+                      </div>
+                      <div class="mt-2px text-12px font-bold text-slate-900 dark:text-slate-100">
+                        {{ expiresDisplay }}
                       </div>
                     </div>
                   </div>

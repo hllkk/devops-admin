@@ -678,6 +678,8 @@ declare namespace App {
             apiKeyLabel: string;
             budgetLabel: string;
             modelsLabel: string;
+            expiresLabel: string;
+            expiresNever: string;
             mcpLabel: string;
             skillLabel: string;
             copy: string;
@@ -965,6 +967,28 @@ declare namespace App {
             authSection: string;
             budgetSection: string;
             rateLimitSection: string;
+            batchCreate: string;
+            batchTitle: string;
+            batchModeDept: string;
+            batchModeUsers: string;
+            batchDeptRequired: string;
+            batchUsersRequired: string;
+            batchSubmit: string;
+            batchTip: string;
+            batchResult: string;
+            batchResultTotal: string;
+            batchResultCreated: string;
+            batchResultSkipped: string;
+            batchResultFailedCount: string;
+            batchResultFailed: string;
+            batchResultUser: string;
+            batchResultReason: string;
+            rotate: string;
+            rotateConfirm: string;
+            rotateSuccess: string;
+            never: string;
+            expired: string;
+            expiringSoon: string;
             col: {
               name: string;
               keyType: string;
@@ -982,6 +1006,8 @@ declare namespace App {
               tpmLimit: string;
               rpmLimit: string;
               isActive: string;
+              expiresAt: string;
+              lastUsedAt: string;
               description: string;
             };
             form: {
@@ -996,6 +1022,7 @@ declare namespace App {
               budgetHardLimitDesc: string;
               ownerUserPlaceholder: string;
               ownerDeptPlaceholder: string;
+              expiresAtPlaceholder: string;
               keyTypeDescPersonalMain: string;
               keyTypeDescPersonalScene: string;
               keyTypeDescDeptMain: string;

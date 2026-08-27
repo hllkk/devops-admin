@@ -1,6 +1,8 @@
 package response
 
 import (
+	"time"
+
 	"github.com/hllkk/devops-admin/server/model/gateway"
 )
 
@@ -21,6 +23,7 @@ type MyIdentityView struct {
 	Opened           bool               `json:"opened"`           // 是否已开通(存在主 Key)
 	KeyValue         string             `json:"keyValue"`         // 主Key明文(仅identity/my返回)
 	IsActive         bool               `json:"isActive"`         // 主Key是否启用
+	ExpiresAt        *time.Time         `json:"expiresAt"`        // 过期时间(nil=永不过期)
 	BudgetLimit      *float64           `json:"budgetLimit"`      // 预算上限
 	BudgetHardLimit  bool               `json:"budgetHardLimit"`  // 硬限
 	BudgetDuration   string             `json:"budgetDuration"`   // 预算周期
@@ -42,4 +45,20 @@ type AvailableModelView struct {
 	Category              string   `json:"category"`              // 类别
 	RequiresApproval      bool     `json:"requiresApproval"`      // 订阅需审批
 	HasAnthropicDeployment bool    `json:"hasAnthropicDeployment"` // 有anthropic活跃部署
+}
+
+// BatchCreateMainKeysResult 批量开通个人主 Key 结果(部分成功语义：走 OkWithDetailed 成功
+// 响应+data 标记，前端按 failed 列表渲染，避免 axios 自动弹错误码造成双提示)。
+type BatchCreateMainKeysResult struct {
+	Total   int                          `json:"total"`   // 目标用户数
+	Created int                          `json:"created"` // 新开通
+	Skipped int                          `json:"skipped"` // 已有主 Key 跳过
+	Failed  []BatchCreateMainKeysFailure `json:"failed"`  // 失败明细(空数组=全部成功)
+}
+
+// BatchCreateMainKeysFailure 单用户开通失败明细。
+type BatchCreateMainKeysFailure struct {
+	UserId int64  `json:"userId,string"` // 用户ID
+	Name   string `json:"name"`          // 用户昵称
+	Reason string `json:"reason"`        // 失败原因
 }

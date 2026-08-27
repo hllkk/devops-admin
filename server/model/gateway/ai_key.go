@@ -1,6 +1,8 @@
 package gateway
 
 import (
+	"time"
+
 	"github.com/hllkk/devops-admin/server/global"
 	"gorm.io/datatypes"
 )
@@ -36,6 +38,8 @@ type AiKey struct {
 	RpmLimit        *int           `json:"rpmLimit" gorm:"comment:全局RPM限流(total模式)"`        // 全局RPM
 	ModelLimits     datatypes.JSON `json:"modelLimits" gorm:"type:jsonb;comment:按模型限流({modelKey:{tpm,rpm}})" swaggertype:"object"` // per-model 限流
 	IsActive        bool           `json:"isActive" gorm:"default:true;comment:是否启用"`             // 是否启用(停用=max_budget=0)
+	ExpiresAt       *time.Time     `json:"expiresAt" gorm:"comment:过期时间(nil=永不过期,下发LiteLLM expires_at)"` // 过期时间(LiteLLM 原生拒绝过期请求)
+	LastUsedAt      *time.Time     `json:"lastUsedAt" gorm:"comment:最近使用时间(用量回流回填,取最近调用时间)"` // 最近使用(僵尸Key治理)
 }
 
 // 密钥类型

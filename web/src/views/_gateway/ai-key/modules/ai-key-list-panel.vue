@@ -1,7 +1,7 @@
 <script setup lang="tsx">
 import { ref } from 'vue';
 import { NProgress, NTag, NTime } from 'naive-ui';
-import { fetchBatchDeleteAiKey, fetchGetAiKeyList } from '@/service/api/gateway';
+import { fetchBatchDeleteAiKey, fetchGetAiKeyList, fetchRotateAiKey } from '@/service/api/gateway';
 import { useAppStore } from '@/store/modules/app';
 import { defaultTransform, useNaivePaginatedTable, useTableOperate } from '@/hooks/common/table';
 import { $t } from '@/locales';
@@ -10,6 +10,7 @@ import ButtonIcon from '@/components/custom/button-icon.vue';
 import { KEY_TYPE_OPTIONS, OWNER_TYPE_OPTIONS, isMainKeyType } from '@/constants/business/gateway';
 import AiKeySearch from './ai-key-search.vue';
 import AiKeyOperateDrawer from './ai-key-operate-drawer.vue';
+import AiKeyBatchModal from './ai-key-batch-modal.vue';
 
 defineOptions({
   name: 'AiKeyListPanel'
@@ -43,13 +44,6 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       type: 'selection',
       align: 'center',
       width: 48
-    },
-    {
-      key: 'index',
-      title: $t('common.index'),
-      align: 'center',
-      width: 64,
-      render: (_, index) => index + 1
     },
     {
       key: 'name',
@@ -135,6 +129,39 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       render: row => <NTag type={row.isActive ? 'success' : 'default'}>{$t(row.isActive ? 'page.gateway.common.active' : 'page.gateway.common.inactive')}</NTag>
     },
     {
+      key: 'expiresAt',
+      title: $t('page.gateway.aiKey.col.expiresAt'),
+      align: 'center',
+      minWidth: 110,
+      // 过期由 LiteLLM expires_at 原生拦截；展示层：已过期红 / 7天内黄 / 永不过期灰
+      render: row => {
+        if (!row.expiresAt) return <span class="text-slate-400">{$t('page.gateway.aiKey.never')}</span>;
+        const ts = Date.parse(row.expiresAt);
+        const diff = ts - Date.now();
+        if (diff < 0) {
+          return (
+            <NTag type="error">{$t('page.gateway.aiKey.expired')}</NTag>
+          );
+        }
+        if (diff < 7 * 24 * 3600 * 1000) {
+          return (
+            <div class="flex flex-col items-center gap-2px">
+              <NTag type="warning">{$t('page.gateway.aiKey.expiringSoon')}</NTag>
+              <NTime time={ts} format="yyyy-MM-dd HH:mm" />
+            </div>
+          );
+        }
+        return <NTime time={ts} format="yyyy-MM-dd HH:mm" />;
+      }
+    },
+    {
+      key: 'lastUsedAt',
+      title: $t('page.gateway.aiKey.col.lastUsedAt'),
+      align: 'center',
+      minWidth: 110,
+      render: row => (row.lastUsedAt ? <NTime time={Date.parse(row.lastUsedAt)} format="yyyy-MM-dd HH:mm" /> : <span class="text-slate-400">-</span>)
+    },
+    {
       key: 'createTime',
       title: $t('page.gateway.common.createTime'),
       align: 'center',
@@ -145,7 +172,7 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       key: 'operate',
       title: $t('common.operate'),
       align: 'center',
-      width: 160,
+      width: 200,
       render: row => {
         const editBtn = () => (
           <ButtonIcon
@@ -154,6 +181,18 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
             icon="material-symbols:drive-file-rename-outline-outline"
             tooltipContent={$t('common.edit')}
             onClick={() => edit(row.aiKeyId!)}
+          />
+        );
+
+        // 轮换：原地换 Key 值保归因；旧 Key 立即失效，新明文仅 owner 经 home 查看
+        const rotateBtn = () => (
+          <ButtonIcon
+            text
+            type="warning"
+            icon="material-symbols:autorenew"
+            tooltipContent={$t('page.gateway.aiKey.rotate')}
+            popconfirmContent={$t('page.gateway.aiKey.rotateConfirm')}
+            onPositiveClick={() => handleRotate(row.aiKeyId!)}
           />
         );
 
@@ -171,6 +210,7 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
         return (
           <div class="flex-center gap-8px">
             {editBtn()}
+            {rotateBtn()}
             {deleteBtn()}
           </div>
         );
@@ -198,6 +238,16 @@ async function handleDelete(aiKeyId: CommonType.IdType) {
   onDeleted();
 }
 
+async function handleRotate(aiKeyId: CommonType.IdType) {
+  const { error } = await fetchRotateAiKey(aiKeyId);
+  if (error) return;
+  window.$message?.success($t('page.gateway.aiKey.rotateSuccess'));
+  getData();
+}
+
+/** 批量开通个人主 Key 弹窗(管理员创建制的效率件) */
+const batchVisible = ref(false);
+
 // 场景管理侧变更(增/改/删场景)会影响密钥列表的场景列展示，由父组件调用 refresh 联动刷新
 defineExpose({
   refresh: getData
@@ -218,7 +268,13 @@ defineExpose({
           @add="handleAdd"
           @delete="handleBatchDelete"
           @refresh="getData"
-        />
+        >
+          <template #prefix>
+            <NButton size="small" type="primary" ghost @click="batchVisible = true">
+              {{ $t('page.gateway.aiKey.batchCreate') }}
+            </NButton>
+          </template>
+        </TableHeaderOperation>
       </template>
       <NDataTable
         v-model:checked-row-keys="checkedRowKeys"
@@ -240,6 +296,7 @@ defineExpose({
       :row-data="editingData"
       @submitted="getData"
     />
+    <AiKeyBatchModal v-model:visible="batchVisible" @submitted="getData" />
   </div>
 </template>
 

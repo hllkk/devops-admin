@@ -148,6 +148,10 @@ declare namespace Api {
       rpmLimit: number | null;
       modelLimits: Record<string, { tpm?: number; rpm?: number }>;
       isActive: boolean;
+      /** 过期时间(RFC3339,null=永不过期;下发 LiteLLM expires_at 原生拦截) */
+      expiresAt: string | null;
+      /** 最近使用时间(用量回流回填,僵尸 Key 治理) */
+      lastUsedAt: string | null;
     }>;
 
     /** 可授权模型(发布+激活，含 anthropic 变体标注) */
@@ -166,6 +170,7 @@ declare namespace Api {
       opened: boolean;
       keyValue: string;
       isActive: boolean;
+      expiresAt: string | null;
       budgetLimit: number | null;
       budgetHardLimit: boolean;
       budgetDuration: BudgetDuration;
@@ -436,8 +441,23 @@ declare namespace Api {
         | 'rpmLimit'
         | 'modelLimits'
         | 'isActive'
+        | 'expiresAt'
       >
     >;
+
+    /** 批量开通个人主 Key 参数(deptId 优先取部门下全部用户,userIds 补充,两者并集) */
+    type AiKeyBatchCreateParams = {
+      deptId?: CommonType.IdType | null;
+      userIds?: CommonType.IdType[] | null;
+    };
+
+    /** 批量开通个人主 Key 结果(部分成功语义:failed 空数组=全部成功) */
+    type AiKeyBatchCreateResult = {
+      total: number;
+      created: number;
+      skipped: number;
+      failed: Array<{ userId: CommonType.IdType; name: string; reason: string }>;
+    };
 
     // ───────────────── 使用场景 KeyScenario(场景 Key 的分类字典) ─────────────────
 

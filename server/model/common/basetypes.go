@@ -172,3 +172,22 @@ func (s Int64StringSlice) MarshalJSON() ([]byte, error) {
 	}
 	return json.Marshal(strs)
 }
+
+// UnmarshalJSON 兼容字符串/数字/混合元素的数组入参(雪花 id 前端 IdType=string|number,
+// 批量传参常为字符串数组;null 元素按 0 处理,查询无副作用)。
+func (s *Int64StringSlice) UnmarshalJSON(data []byte) error {
+	var raw []json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	out := make([]int64, 0, len(raw))
+	for _, r := range raw {
+		v := Int64String(0)
+		if err := v.UnmarshalJSON(r); err != nil {
+			return err
+		}
+		out = append(out, v.Int64())
+	}
+	*s = out
+	return nil
+}

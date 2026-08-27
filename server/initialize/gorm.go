@@ -85,6 +85,7 @@ func RegisterTables() {
 		gateway.SyncState{},
 		gateway.CostSummaryDaily{},
 		gateway.RouterSettings{},
+		gateway.ProviderBalance{},
 	)
 
 	if err != nil {

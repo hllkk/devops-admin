@@ -63,7 +63,8 @@ function createDefaultModel(): Model {
     tpmLimit: null,
     rpmLimit: null,
     modelLimits: {},
-    isActive: true
+    isActive: true,
+    expiresAt: null
   };
 }
 
@@ -295,6 +296,17 @@ watch(visible, () => {
 
         <NFormItem :label="$t('page.gateway.aiKey.col.isActive')" path="isActive">
           <NSwitch :value="!!model.isActive" @update:value="v => (model.isActive = v)" />
+        </NFormItem>
+        <!-- 过期时间(下发 LiteLLM expires_at，过期请求由网关原生拒绝；清空=永不过期) -->
+        <NFormItem :label="$t('page.gateway.aiKey.col.expiresAt')" path="expiresAt">
+          <NDatePicker
+            v-model:formatted-value="model.expiresAt"
+            type="datetime"
+            value-format="yyyy-MM-dd'T'HH:mm:ssXXX"
+            clearable
+            :placeholder="$t('page.gateway.aiKey.form.expiresAtPlaceholder')"
+            class="w-full"
+          />
         </NFormItem>
       </NForm>
       <template #footer>

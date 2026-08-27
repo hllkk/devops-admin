@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -169,4 +170,51 @@ func (a *AiKeyApi) BatchDeleteAiKeys(c *gin.Context) {
 		return
 	}
 	response.OkWithDetailed(true, "删除成功", c)
+}
+
+// RotateAiKey
+// @Tags      GatewayAiKey
+// @Summary   轮换密钥(原地换 Key 值保归因；旧 Key 立即失效，新明文仅 owner 经 identity/my 可查)
+// @Produce   application/json
+// @Param     id  path  int  true  "密钥ID"
+// @Success   200  {object}  response.Response{data=response.AiKeyView,msg=string}
+// @Router    /gateway/ai-key/rotate/{id} [post]
+func (a *AiKeyApi) RotateAiKey(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.FailWithMessage("无效的密钥ID", c)
+		return
+	}
+	view, err := aiKeyService.RotateAiKey(c.Request.Context(), id, utils.GetUserID(c))
+	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("轮换密钥失败")
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	response.OkWithDetailed(view, "轮换成功，新 Key 请用户在首页查看", c)
+}
+
+// BatchCreateMainKeys
+// @Tags      GatewayAiKey
+// @Summary   批量开通个人主 Key(按部门/按用户；已有跳过，部分失败不中断)
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  body  gatewayReq.AiKeyBatchCreateParams  true  "目标(deptId 优先,userIds 补充)"
+// @Success   200   {object}  response.Response{data=response.BatchCreateMainKeysResult,msg=string}
+// @Router    /gateway/ai-key/batch [post]
+func (a *AiKeyApi) BatchCreateMainKeys(c *gin.Context) {
+	var req gatewayReq.AiKeyBatchCreateParams
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	result, err := aiKeyService.BatchCreateMainKeys(c.Request.Context(), req, utils.GetUserID(c))
+	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("批量开通主 Key 失败")
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	// 部分失败走成功响应+data 标记(前端按 failed 渲染)，避免 axios 自动弹错误造成双提示
+	response.OkWithDetailed(result, fmt.Sprintf("开通 %d/%d(跳过 %d，失败 %d)",
+		result.Created, result.Total, result.Skipped, len(result.Failed)), c)
 }
