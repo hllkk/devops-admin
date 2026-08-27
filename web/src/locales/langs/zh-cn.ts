@@ -631,26 +631,26 @@ const local: App.I18n.Schema = {
           modelKey: '模型 ID',
           category: '类别',
           capabilities: '能力标签',
-          deploymentCount: '部署数',
+          deploymentCount: '渠道数',
           isPublished: '发布状态',
           isActive: '状态',
           description: '描述',
           logoProviderType: 'LOGO供应商'
         },
         form: {
-          modelKey: { placeholder: '选填，留空可在新增部署时设置' },
+          modelKey: { placeholder: '选填，留空可在新增渠道时设置' },
           name: { required: '请输入模型名称' },
           category: { required: '请选择类别' },
           capabilitiesPlaceholder: '输入能力标签回车添加',
-          renameTip: '修改模型 ID 将级联重建关联部署在 LiteLLM 侧的注册名，请谨慎操作'
+          renameTip: '修改模型 ID 将级联重建关联渠道在 LiteLLM 侧的注册名，请谨慎操作'
         },
         modelKeyUnset: '未设置模型 ID',
-        selectModelTip: '请选择左侧模型查看其部署'
+        selectModelTip: '请选择左侧模型查看其渠道'
       },
       deployment: {
-        manageTitle: '部署管理',
-        add: '新增部署',
-        edit: '编辑部署',
+        manageTitle: '渠道管理',
+        add: '新增渠道',
+        edit: '编辑渠道',
         inlineParams: '内联参数',
         test: '测试连通',
         testing: '测试中…',
@@ -665,7 +665,7 @@ const local: App.I18n.Schema = {
         },
         col: {
           provider: '供应商',
-          deployName: '部署名',
+          deployName: '渠道名',
           credential: '关联凭证',
           billingType: '计费类型',
           costPerCall: '单次成本',
@@ -689,12 +689,12 @@ const local: App.I18n.Schema = {
           connectivity: '连通性'
         },
         form: {
-          deployName: { required: '请输入部署名' },
+          deployName: { required: '请输入渠道名' },
           vendorModel: { required: '请输入厂商模型名' },
           credentialPlaceholder: '不选则使用内联参数',
           modelKey: {
             required: '请输入模型 ID',
-            tip: '该模型尚未设置模型 ID（用户请求时 model 字段使用的标识），新增部署前需先设置'
+            tip: '该模型尚未设置模型 ID（用户请求时 model 字段使用的标识），新增渠道前需先设置'
           },
           vendorModelTip: '供应商 API 中的模型标识，用于实际调用上游',
           routingTip: '同步至 LiteLLM 路由参数，留空使用全局默认',
@@ -740,6 +740,8 @@ const local: App.I18n.Schema = {
         title: 'AI密钥管理',
         tabKeys: '密钥列表',
         tabScenario: '场景管理',
+        tabKeysDesc: '平台 AI Key 的全量清单与预算执行',
+        tabScenarioDesc: '场景 Key 的用途分类字典',
         add: '新增密钥',
         edit: '编辑密钥',
         baseSection: '基础信息',

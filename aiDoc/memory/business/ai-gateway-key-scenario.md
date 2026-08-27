@@ -11,7 +11,7 @@
 ## 设计决策
 
 - **场景 = 密钥域内的轻量字典实体**（`gateway_key_scenario`：name/description/is_active），不建顶级菜单、不放 sys_dict 通用字典——场景需要被 Key 引用/停用联动/将来按场景聚合，通用字典承载不了。
-- **维护入口 = 密钥管理页双 Tab**（密钥列表/场景管理），对齐 AIHelms AiKeyManage 的"人员/部门/项目/场景"Tab 布局；管理员主路径是建场景 Key，表单里场景为下拉必选，名称默认带出场景名可改。
+- **维护入口 = 密钥管理页左侧菜单**（密钥列表/场景管理；2026-08-26 前为双 Tab，后改左右布局见 [[ai-gateway-ai-key-layout]]），对齐 AIHelms AiKeyManage 的多页签域维护思路；管理员主路径是建场景 Key，表单里场景为下拉必选，名称默认带出场景名可改。
 - **区分两个概念**：本实体对齐 AIHelms `key_scenarios`（分类标签）；P4 规划的"业务场景模板+资源配置包"（AIHelms `business_scenarios`）是重概念，不在此范围。
 - **同名口径**：未软删行内唯一（应用层查重 + 部分唯一索引 `idx_keyscenario_name WHERE deleted_at IS NULL` 兜底）；停用行占名（防同名二义），软删行不占名（可重建）。规避 AIHelms"DB unique + is_active 软删 → 同名永远建不回"的坑。
 - **删除策略**：被未软删密钥引用时拒删；场景删除走 gorm 软删（区别于 AIHelms 的置 is_active=false）。

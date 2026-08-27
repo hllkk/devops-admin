@@ -1,6 +1,5 @@
 <script setup lang="tsx">
 import { computed, ref } from 'vue';
-import { jsonClone } from '@sa/utils';
 import { NTag, NTime } from 'naive-ui';
 import {
   fetchBatchDeleteKeyScenario,
@@ -195,7 +194,7 @@ function notifyChanged() {
 </script>
 
 <template>
-  <div class="flex-col-stretch gap-16px">
+  <div class="h-full flex-col-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
     <NCard :bordered="false" size="small" class="card-wrapper">
       <NCollapse>
         <NCollapseItem :title="$t('common.search')" name="key-scenario-search">

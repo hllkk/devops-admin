@@ -159,7 +159,7 @@ async function edit(noticeId: CommonType.IdType) {
 </script>
 
 <template>
-  <div class="min-h-500px flex-col-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
+  <div class="min-h-500px flex-col-stretch gap-16px overflow-hidden flex-shrink-0 lt-sm:overflow-auto">
     <NoticeSearch v-model:model="searchParams" @search="getDataByPage" />
     <NCard
       :title="$t('page.system.notice.listTitle')"

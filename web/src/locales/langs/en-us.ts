@@ -635,26 +635,26 @@ const local: App.I18n.Schema = {
           modelKey: 'Model ID',
           category: 'Category',
           capabilities: 'Capabilities',
-          deploymentCount: 'Deployments',
+          deploymentCount: 'Channels',
           isPublished: 'Published',
           isActive: 'Status',
           description: 'Description',
           logoProviderType: 'Logo Provider'
         },
         form: {
-          modelKey: { placeholder: 'Optional; set it when adding a deployment' },
+          modelKey: { placeholder: 'Optional; set it when adding a channel' },
           name: { required: 'Please enter model name' },
           category: { required: 'Please select category' },
           capabilitiesPlaceholder: 'Type capability and press enter',
-          renameTip: 'Changing model ID will cascade rebuild deployment registrations in LiteLLM, proceed with caution'
+          renameTip: 'Changing model ID will cascade rebuild channel registrations in LiteLLM, proceed with caution'
         },
         modelKeyUnset: 'No model ID',
-        selectModelTip: 'Select a model on the left to view its deployments'
+        selectModelTip: 'Select a model on the left to view its channels'
       },
       deployment: {
-        manageTitle: 'Deployment',
-        add: 'New Deployment',
-        edit: 'Edit Deployment',
+        manageTitle: 'Channel Management',
+        add: 'New Channel',
+        edit: 'Edit Channel',
         inlineParams: 'Inline Params',
         test: 'Test Connection',
         testing: 'Testing…',
@@ -669,7 +669,7 @@ const local: App.I18n.Schema = {
         },
         col: {
           provider: 'Provider',
-          deployName: 'Deploy Name',
+          deployName: 'Channel Name',
           credential: 'Credential',
           billingType: 'Billing Type',
           costPerCall: 'Cost/Call',
@@ -693,12 +693,12 @@ const local: App.I18n.Schema = {
           connectivity: 'Connectivity'
         },
         form: {
-          deployName: { required: 'Please enter deploy name' },
+          deployName: { required: 'Please enter channel name' },
           vendorModel: { required: 'Please enter vendor model name' },
           credentialPlaceholder: 'Leave empty to use inline params',
           modelKey: {
             required: 'Please enter model ID',
-            tip: 'This model has no model ID yet (the identifier for the model field in requests); set one before adding a deployment'
+            tip: 'This model has no model ID yet (the identifier for the model field in requests); set one before adding a channel'
           },
           vendorModelTip: 'Model identifier in the provider API, used for upstream calls',
           routingTip: 'Synced to LiteLLM routing params; leave empty to use global defaults',
@@ -744,6 +744,8 @@ const local: App.I18n.Schema = {
         title: 'AI Keys',
         tabKeys: 'Keys',
         tabScenario: 'Scenarios',
+        tabKeysDesc: 'All platform AI keys and budget status',
+        tabScenarioDesc: 'Scenario categories for scene keys',
         add: 'New Key',
         edit: 'Edit Key',
         baseSection: 'Basic',

@@ -922,6 +922,8 @@ declare namespace App {
             title: string;
             tabKeys: string;
             tabScenario: string;
+            tabKeysDesc: string;
+            tabScenarioDesc: string;
             add: string;
             edit: string;
             baseSection: string;

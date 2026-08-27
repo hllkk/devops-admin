@@ -108,7 +108,7 @@ onMounted(loadAll);
 </script>
 
 <template>
-  <div class="min-h-500px flex-col-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
+  <div class="min-h-500px flex-col-stretch gap-16px overflow-hidden flex-shrink-0 lt-sm:overflow-auto">
     <NCard :bordered="false" size="small" class="card-wrapper">
       <div class="flex flex-wrap items-center gap-12px">
         <NSelect v-model:value="range" :options="rangeOptions" size="small" class="w-140px" />

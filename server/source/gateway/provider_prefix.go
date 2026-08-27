@@ -32,6 +32,10 @@ func (i *initProviderPrefix) MigrateTable(ctx context.Context) (context.Context,
 		&gatewayModel.AiKey{},
 		&gatewayModel.KeyScenario{},
 		&gatewayModel.CostSummaryDaily{},
+		&gatewayModel.Provider{},
+		&gatewayModel.RouterSettings{},
+		&gatewayModel.Credential{},
+		&gatewayModel.ModelDeployment{},
 	)
 }
 
