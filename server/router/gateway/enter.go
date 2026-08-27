@@ -24,4 +24,5 @@ var (
 	usageApi          = v1.ApiGroupApp.GatewayApiGroup.UsageApi
 	dashboardApi      = v1.ApiGroupApp.GatewayApiGroup.DashboardApi
 	routerSettingsApi = v1.ApiGroupApp.GatewayApiGroup.RouterSettingsApi
+	providerBalanceApi = v1.ApiGroupApp.GatewayApiGroup.ProviderBalanceApi
 )

@@ -44,6 +44,74 @@ declare namespace Api {
     /** 供应商列表 */
     type ProviderList = Api.Common.PaginatingQueryRecord<Provider>;
 
+    /** 余量条目类型 */
+    type BalanceItemType = 'seat' | 'shared_package';
+
+    /** 套餐余量条目(厂商侧快照行,旁路只读,与网关标价成本口径互不并) */
+    type ProviderBalance = Common.CommonRecord<{
+      /** 余量ID */
+      balanceId: CommonType.IdType;
+      /** 供应商ID */
+      providerId: CommonType.IdType;
+      /** 套餐类型(token_plan) */
+      planType: string;
+      /** 条目类型(seat=坐席/shared_package=共享包) */
+      itemType: BalanceItemType;
+      /** 条目键(坐席SeatId/共享包InstanceCode) */
+      itemKey: string;
+      /** 条目名称(坐席成员名/共享包说明) */
+      itemName: string;
+      /** 坐席档位(standard/pro/max) */
+      specType: string;
+      /** 条目状态(NORMAL/LIMIT/...) */
+      status: string;
+      /** 权益类型(CREDITS) */
+      equityType: string;
+      /** 当前计费周期开始 */
+      cycleStart: string | null;
+      /** 当前计费周期结束 */
+      cycleEnd: string | null;
+      /** 周期总额度(Credits) */
+      totalValue: number;
+      /** 周期剩余额度(Credits) */
+      surplusValue: number;
+      /** 周期已用额度(Credits,总-剩余) */
+      usedValue: number;
+      /** 同步时间(UTC) */
+      syncedAt: string;
+      /** 厂商原始返回(排障) */
+      raw: Record<string, unknown> | null;
+    }>;
+
+    /** 套餐余量汇总(供应商面板头 + 看板汇总卡共用,厂商侧口径) */
+    type ProviderBalanceSummary = {
+      providerId: CommonType.IdType;
+      providerName: string;
+      /** 套餐标签(如"百炼 Token Plan") */
+      planLabel: string;
+      totalValue: number;
+      usedValue: number;
+      surplusValue: number;
+      seatCount: number;
+      packageCount: number;
+      /** 最近同步时间(空=从未同步) */
+      syncedAt: string | null;
+    };
+
+    /** 供应商余量明细(汇总+条目) */
+    type ProviderBalanceDetail = {
+      summary: ProviderBalanceSummary;
+      items: ProviderBalance[];
+    };
+
+    /** 余量采集配置(AK/SK 掩码回显,保存时掩码占位保留旧明文) */
+    type BalanceSyncConfig = {
+      accessKeyId: string;
+      accessKeySecret: string;
+      /** 服务地域(默认 cn-beijing) */
+      region: string;
+    };
+
     /** 密钥类型 */
     type KeyType = 'personal_main' | 'personal_scene' | 'dept_main' | 'dept_scene';
     /** 归属类型 */

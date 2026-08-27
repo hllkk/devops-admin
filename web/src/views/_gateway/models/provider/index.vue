@@ -2,12 +2,13 @@
 import { ref } from 'vue';
 import { fetchBatchDeleteProvider, fetchGetProviderList, fetchUpdateProvider } from '@/service/api/gateway';
 import { $t } from '@/locales';
-import { getProviderIcon } from '@/constants/business/gateway';
+import { BALANCE_SYNC_PROVIDER_TYPES, getProviderIcon } from '@/constants/business/gateway';
 import ButtonIcon from '@/components/custom/button-icon.vue';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import TableSiderLayout from '@/components/advanced/table-sider-layout.vue';
 import ProviderOperateDrawer from './modules/provider-operate-drawer.vue';
 import CredentialPanel from './modules/credential-panel.vue';
+import ProviderBalancePanel from './modules/provider-balance-panel.vue';
 
 defineOptions({ name: 'ProviderList' });
 
@@ -145,14 +146,22 @@ function handleCredentialChanged() {
         </div>
       </NSpin>
     </template>
-    <div class="h-full flex-col-stretch overflow-hidden">
-      <CredentialPanel
-        v-if="selectedProvider"
-        :provider="selectedProvider"
-        @toggle-provider="handleToggleProvider(selectedProvider!)"
-        @changed="handleCredentialChanged"
-      />
-      <NCard v-else :bordered="false" size="small" class="card-wrapper h-full" content-style="height: 100%">
+    <div class="h-full flex flex-col gap-12px overflow-hidden">
+      <template v-if="selectedProvider">
+        <CredentialPanel
+          class="min-h-0 flex-1"
+          :provider="selectedProvider"
+          @toggle-provider="handleToggleProvider(selectedProvider!)"
+          @changed="handleCredentialChanged"
+        />
+        <!-- 套餐余量旁路(仅支持采集的供应商类型展示,厂商侧口径与网关标价成本互不并) -->
+        <ProviderBalancePanel
+          v-if="BALANCE_SYNC_PROVIDER_TYPES.has(selectedProvider.providerType)"
+          class="flex-shrink-0"
+          :provider="selectedProvider"
+        />
+      </template>
+      <NCard v-else :bordered="false" size="small" class="card-wrapper min-h-0 flex-1" content-style="height: 100%">
         <div class="h-full flex-center">
           <NEmpty :description="$t('page.gateway.provider.selectProviderTip')" />
         </div>

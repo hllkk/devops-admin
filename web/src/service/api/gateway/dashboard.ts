@@ -50,3 +50,11 @@ export function fetchAggregateUsage() {
     method: 'post'
   });
 }
+
+/** 获取跨供应商套餐余量汇总(厂商侧旁路口径,非超管返回空) */
+export function fetchGetBalanceSummary() {
+  return request<Api.Gateway.ProviderBalanceSummary[]>({
+    url: '/gateway/dashboard/balance-summary',
+    method: 'get'
+  });
+}

@@ -41,4 +41,8 @@ func Timer() {
 		_, err := (&gatewayService.UsageAggregateService{}).AggregateUsage(ctx)
 		return err
 	})
+	task.Register("SyncProviderBalances", "同步供应商套餐余量(百炼TokenPlan坐席+共享包,旁路只读)", func(ctx context.Context, _ json.RawMessage) error {
+		_, err := (&gatewayService.ProviderBalanceService{}).SyncAllProviderBalances(ctx)
+		return err
+	})
 }

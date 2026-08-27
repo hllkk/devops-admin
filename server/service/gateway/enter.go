@@ -13,4 +13,5 @@ type ServiceGroup struct {
 	UsageAggregateService
 	DashboardService
 	RouterSettingsService
+	ProviderBalanceService
 }

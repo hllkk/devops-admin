@@ -1,6 +1,7 @@
 # AI 网关·订阅/积分制厂商计费集成 spec
 
-> 状态：设计稿（2026-08-24）。只聚焦"厂商计费五花八门怎么接"这一个点，不重述四层模型与成本算法全貌——见 `business-modules.md`「AI网关模块」节。
+> 状态：设计稿（2026-08-24）。「套餐真实余量旁路」一节已于 2026-08-27 落地（见文末「落地记录」）。
+> 只聚焦"厂商计费五花八门怎么接"这一个点，不重述四层模型与成本算法全貌——见 `business-modules.md`「AI网关模块」节。
 
 ## 背景
 
@@ -50,7 +51,7 @@
 - 积分/Credits 折成 ¥ 塞 `model_info` 后**自动走这条换算，无需改同步层**。
 - per_call 的 `CostPerCall`(¥) 不进 token 四键换算——但因项目"本地重算不信任 LiteLLM spend"，即便推给 LiteLLM 的 per_call 值口径不严丝合缝，也不影响项目成本正确性（`calcCosts` 读本地 `dep.CostPerCall`）。
 
-## 套餐真实余量旁路（新地）
+## 套餐真实余量旁路（新地，已落地）
 
 标价成本口径不含套餐真实余量，单独走旁路：
 
@@ -61,6 +62,17 @@
 - **边界（硬约束）**：不进 `calcCosts`、不触发 `enforceBudgetHardLimit`、不并入 `gateway_cost_summary_daily`。
 
 > 降级：若初期仅接百炼一家有余量 API，可暂不建表，先用配置/日志承载；待 ≥2 家再落表。
+
+### 落地记录（2026-08-27）
+
+百炼一家已直接落表（未走降级），明细见 `aiDoc/memory/business/ai-gateway-provider-balance.md`。要点：
+
+- 表为**快照现状**语义：每 `(provider_id, item_type=seat/shared_package, item_key)` 一行，同步整批 DELETE+INSERT 重建（同 `CostSummaryDaily` 派生缓存模式），坐席粒度可归因到成员。
+- 采集不走 bl CLI，Go 直连 OpenAPI：`modelstudio.cn-beijing.aliyuncs.com` + ACS3-HMAC-SHA256 签名（自实现，无 SDK 依赖），接口 `GetSubscriptionSeatDetails`(`/tokenplan/subscription/seat-detail`) 与 `ListSubscriptionSharedPackages`(`/tokenplan/subscription/shared-packages` 复数)。
+- **总消耗口径**：每条目 `CycleTotalValue - CycleSurplusValue`（EquityList 中 EquityType=CREDITS），组织总消耗 = Σ坐席 + Σ共享包。时间戳秒/毫秒两义已自适应归一。
+- AK/SK 存 `gateway_provider.balance_sync_config`（AES-256-GCM 密文，密钥复用 `litellm.credential-key`；出网掩码、保存掩码占位保留旧明文）。
+- 展示双层：供应商管理页余量面板（配置+明细+手动同步，仅 dashscope 类型显示）+ 看板汇总卡（非超管后端返回空数组）。
+- 定时任务 `SyncProviderBalances`（每日 08:17，失败不阻断）。
 
 ## 口径与风险
 
@@ -74,5 +86,5 @@
 |---|---|
 | 字段映射（积分/Credits 折 ¥ 塞定价键） | 随各厂商部署接入时（P1 已具备字段） |
 | `model_info.billing_unit_note` 元数据键 | P3（看板标注时） |
-| `gateway_provider_balance` 表 + 采集任务 + 看板卡片 | P3「成本效能与预算管控」 |
-| Provider 月预算口径改 ¥ + 回填闭环 | P3 |
+| `gateway_provider_balance` 表 + 采集任务 + 看板卡片 | ~~P3~~ 已落地（2026-08-27，仅百炼；扩第 2 家时再抽象采集器接口） |
+| Provider 月预算口径改 ¥ + 回填闭环 | P3（注：`monthly_budget/monthly_used` 字段已在部署层重构中移除，此项按部署层 `cost_per_call`/四键现状重新评估） |

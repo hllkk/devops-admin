@@ -42,3 +42,38 @@ export function fetchBatchDeleteProvider(providerIds: CommonType.IdType[]) {
     method: 'delete'
   });
 }
+
+/** 获取供应商套餐余量明细(坐席/共享包,厂商侧快照) */
+export function fetchGetProviderBalances(providerId: CommonType.IdType) {
+  return request<Api.Gateway.ProviderBalanceDetail>({
+    url: `/gateway/provider/${providerId}/balance`,
+    method: 'get'
+  });
+}
+
+/** 读余量采集配置(AK/SK 掩码回显) */
+export function fetchGetBalanceConfig(providerId: CommonType.IdType) {
+  return request<Api.Gateway.BalanceSyncConfig>({
+    url: `/gateway/provider/${providerId}/balance-config`,
+    method: 'get'
+  });
+}
+
+/** 保存余量采集配置(掩码占位保留旧明文) */
+export function fetchSaveBalanceConfig(providerId: CommonType.IdType, data: Api.Gateway.BalanceSyncConfig) {
+  return request<boolean>({
+    url: `/gateway/provider/${providerId}/balance-config`,
+    method: 'put',
+    data
+  });
+}
+
+/** 手动同步供应商套餐余量 */
+export function fetchSyncProviderBalance(providerId: CommonType.IdType) {
+  return request<Api.Gateway.ProviderBalanceSummary>({
+    url: `/gateway/provider/${providerId}/balance-sync`,
+    method: 'post',
+    timeout: 0 // 厂商 OpenAPI 外呼+翻页,不吃默认 10s 超时
+  });
+}
+

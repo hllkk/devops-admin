@@ -17,6 +17,7 @@ type Provider struct {
 	IsActive      bool     `json:"isActive" gorm:"default:true;comment:是否启用"`               // 是否启用
 	Description   string   `json:"description" gorm:"type:text;comment:描述"`                  // 描述
 	SupportedFormats datatypes.JSON `json:"supportedFormats" gorm:"type:jsonb;comment:支持的接入格式(openai/anthropic/lmstudio/ollama)" swaggertype:"object"` // 支持的接入格式(凭证 format 从中选)
+	BalanceSyncConfig string        `json:"-" gorm:"type:text;comment:余量采集配置(AES-256-GCM密文JSON,含阿里云AK/SK,不序列化出网)"` // 余量采集配置(密文,旁路只读)
 	CredentialCount  int64           `json:"credentialCount" gorm:"-"`                                // 凭证数(列表展示,service 层填充,不入库)
 }
 

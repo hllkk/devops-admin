@@ -778,6 +778,41 @@ declare namespace App {
             };
             selectProviderTip: string;
           };
+          balance: {
+            title: string;
+            dashboardTitle: string;
+            dashboardEmpty: string;
+            vendorSideNote: string;
+            sync: string;
+            syncSuccess: string;
+            config: string;
+            configTitle: string;
+            configSaved: string;
+            configAccessKeyId: string;
+            configAccessKeySecret: string;
+            configRegion: string;
+            configMaskTip: string;
+            configTip: string;
+            lastSync: string;
+            neverSynced: string;
+            typeSeat: string;
+            typePackage: string;
+            specStandard: string;
+            specPro: string;
+            specMax: string;
+            col: {
+              itemName: string;
+              itemType: string;
+              specType: string;
+              status: string;
+              cycleEnd: string;
+              totalValue: string;
+              usedValue: string;
+              surplusValue: string;
+              seatCount: string;
+              packageCount: string;
+            };
+          };
           credential: {
             title: string;
             add: string;

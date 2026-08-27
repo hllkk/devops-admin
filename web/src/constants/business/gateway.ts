@@ -88,6 +88,9 @@ export const FORMAT_API_BASE_PLACEHOLDER: Record<string, string> = {
 /** Ollama 本地推理无鉴权，这些格式不需要 API Key(前端隐藏输入框) */
 export const FORMAT_NEEDS_NO_KEY = new Set(['ollama']);
 
+/** 支持套餐余量采集的供应商类型(与后端 gateway.BalanceSyncProviderTypes 白名单保持一致) */
+export const BALANCE_SYNC_PROVIDER_TYPES = new Set(['dashscope']);
+
 /** 模型类别选项(label 为 i18n key) */
 export const MODEL_CATEGORY_OPTIONS = [
   { label: 'page.gateway.common.categoryChat', value: 'chat' },

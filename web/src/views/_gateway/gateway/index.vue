@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import {
   fetchAggregateUsage,
+  fetchGetBalanceSummary,
   fetchGetDashboardBudget,
   fetchGetDashboardOverview,
   fetchGetDashboardTop,
@@ -13,6 +14,7 @@ import DashboardOverview from './modules/dashboard-overview.vue';
 import DashboardTrend from './modules/dashboard-trend.vue';
 import DashboardTop from './modules/dashboard-top.vue';
 import DashboardBudget from './modules/dashboard-budget.vue';
+import DashboardBalance from './modules/dashboard-balance.vue';
 
 defineOptions({ name: 'GatewayDashboard' });
 
@@ -69,6 +71,7 @@ const overview = ref<Api.Gateway.DashboardOverview>();
 const trend = ref<Api.Gateway.TrendItem[]>([]);
 const top = ref<Api.Gateway.TopItem[]>([]);
 const budget = ref<Api.Gateway.BudgetItem[]>([]);
+const balanceSummary = ref<Api.Gateway.ProviderBalanceSummary[]>([]);
 const topDimension = ref<'user' | 'model' | 'aiKey'>('user');
 const loading = ref(false);
 
@@ -80,14 +83,16 @@ async function loadTop() {
 async function loadAll() {
   loading.value = true;
   try {
-    const [ov, tr, bg] = await Promise.all([
+    const [ov, tr, bg, bal] = await Promise.all([
       fetchGetDashboardOverview(queryParams.value),
       fetchGetDashboardTrend(queryParams.value),
-      fetchGetDashboardBudget({ scope: scope.value })
+      fetchGetDashboardBudget({ scope: scope.value }),
+      fetchGetBalanceSummary()
     ]);
     if (!ov.error) overview.value = ov.data;
     if (!tr.error) trend.value = tr.data ?? [];
     if (!bg.error) budget.value = bg.data ?? [];
+    if (!bal.error) balanceSummary.value = bal.data ?? [];
     await loadTop();
   } finally {
     loading.value = false;
@@ -142,6 +147,7 @@ onMounted(loadAll);
           <DashboardTrend :data="trend" />
           <DashboardTop v-model:dimension="topDimension" :data="top" />
         </div>
+        <DashboardBalance :data="balanceSummary" />
         <DashboardBudget :data="budget" />
       </div>
     </NSpin>

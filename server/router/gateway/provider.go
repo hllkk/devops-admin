@@ -14,5 +14,10 @@ func (p *ProviderRouter) InitProviderRouter(Router *gin.RouterGroup) {
 		r.POST("", providerApi.CreateProvider)        // 新增供应商
 		r.PUT("", providerApi.UpdateProvider)         // 修改供应商
 		r.DELETE(":ids", providerApi.BatchDeleteProvider) // 批量删除供应商
+		// 套餐余量旁路(厂商侧只读快照,api_prefix /gateway/provider/* 已覆盖)
+		r.GET(":id/balance", providerBalanceApi.GetProviderBalances)         // 余量明细(坐席/共享包)
+		r.GET(":id/balance-config", providerBalanceApi.GetBalanceConfig)     // 采集配置(掩码)
+		r.PUT(":id/balance-config", providerBalanceApi.SaveBalanceConfig)    // 保存采集配置(AK/SK)
+		r.POST(":id/balance-sync", providerBalanceApi.SyncProviderBalance)   // 手动同步
 	}
 }
