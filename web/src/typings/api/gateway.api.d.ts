@@ -130,6 +130,7 @@ declare namespace Api {
       ownerType: OwnerType;
       ownerId: CommonType.IdType;
       ownerName: string;
+      ownerUsername: string;
       scenarioId: CommonType.IdType;
       scenarioName: string;
       keyPrefix: string;

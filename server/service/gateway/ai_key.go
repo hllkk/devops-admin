@@ -193,8 +193,9 @@ func (s *AiKeyService) GetAiKey(ctx context.Context, id int64) (gatewayResp.AiKe
 	return v, nil
 }
 
-// fillOwnerNames 批量填充 view.OwnerName(user→SysUser.NickName; dept→SysDepartment.DeptName)，
-// 按 ownerType 分组一次性 IN 查询，避免逐行 N+1；查不到留空(不影响主流程)。
+// fillOwnerNames 批量填充 view.OwnerName/OwnerUsername(user→SysUser.NickName+Username;
+// dept→SysDepartment.DeptName)，按 ownerType 分组一次性 IN 查询，避免逐行 N+1；
+// 查不到留空(不影响主流程)。
 func fillOwnerNames(ctx context.Context, list []gatewayResp.AiKeyView) {
 	if len(list) == 0 {
 		return
@@ -209,7 +210,11 @@ func fillOwnerNames(ctx context.Context, list []gatewayResp.AiKeyView) {
 			deptIDs[list[i].OwnerId] = struct{}{}
 		}
 	}
-	userMap := make(map[int64]string, len(userIDs))
+	type userBrief struct {
+		NickName string
+		UserName string
+	}
+	userMap := make(map[int64]userBrief, len(userIDs))
 	deptMap := make(map[int64]string, len(deptIDs))
 	if len(userIDs) > 0 {
 		ids := make([]int64, 0, len(userIDs))
@@ -217,9 +222,9 @@ func fillOwnerNames(ctx context.Context, list []gatewayResp.AiKeyView) {
 			ids = append(ids, id)
 		}
 		var us []system.SysUser
-		if err := global.OPS_DB.WithContext(ctx).Select("id, nick_name").Where("id IN ?", ids).Find(&us).Error; err == nil {
+		if err := global.OPS_DB.WithContext(ctx).Select("id, nick_name, user_name").Where("id IN ?", ids).Find(&us).Error; err == nil {
 			for _, u := range us {
-				userMap[u.UserId] = u.NickName
+				userMap[u.UserId] = userBrief{NickName: u.NickName, UserName: u.UserName}
 			}
 		}
 	}
@@ -238,7 +243,8 @@ func fillOwnerNames(ctx context.Context, list []gatewayResp.AiKeyView) {
 	for i := range list {
 		switch list[i].OwnerType {
 		case gateway.OwnerTypeUser:
-			list[i].OwnerName = userMap[list[i].OwnerId]
+			list[i].OwnerName = userMap[list[i].OwnerId].NickName
+			list[i].OwnerUsername = userMap[list[i].OwnerId].UserName
 		case gateway.OwnerTypeDept:
 			list[i].OwnerName = deptMap[list[i].OwnerId]
 		}
@@ -348,7 +354,7 @@ func (s *AiKeyService) CreateSceneKey(ctx context.Context, req gatewayReq.AiKeyO
 		LitellmKeyAlias: alias,
 		ScenarioId:      scenarioId,
 		Models:          marshalJSONStringSlice(models),
-		ModelBudgets:   marshalJSONMap(req.ModelBudgets),
+		ModelBudgets:    marshalJSONMap(req.ModelBudgets),
 		Mcps:            datatypes.JSON([]byte("[]")),
 		Skills:          datatypes.JSON([]byte("[]")),
 		BudgetLimit:     req.BudgetLimit,
@@ -428,18 +434,18 @@ func (s *AiKeyService) UpdateAiKey(ctx context.Context, req gatewayReq.AiKeyOper
 	}
 
 	updates := map[string]any{
-		"name":              req.Name,
-		"description":       req.Description,
-		"scenario_id":       scenarioId,
-		"models":            marshalJSONStringSlice(models),
-		"model_budgets":    marshalJSONMap(req.ModelBudgets),
-		"budget_duration":   normalizeBudgetDuration(req.BudgetDuration),
-		"rate_limit_mode":   normalizeRateLimitMode(req.RateLimitMode),
-		"tpm_limit":         req.TpmLimit,
-		"rpm_limit":         req.RpmLimit,
-		"model_limits":      marshalJSONMap(req.ModelLimits),
-		"expires_at":        req.ExpiresAt, // 过期时间覆盖式更新(nil=改回永不过期)
-		"update_by":         updateBy,
+		"name":            req.Name,
+		"description":     req.Description,
+		"scenario_id":     scenarioId,
+		"models":          marshalJSONStringSlice(models),
+		"model_budgets":   marshalJSONMap(req.ModelBudgets),
+		"budget_duration": normalizeBudgetDuration(req.BudgetDuration),
+		"rate_limit_mode": normalizeRateLimitMode(req.RateLimitMode),
+		"tpm_limit":       req.TpmLimit,
+		"rpm_limit":       req.RpmLimit,
+		"model_limits":    marshalJSONMap(req.ModelLimits),
+		"expires_at":      req.ExpiresAt, // 过期时间覆盖式更新(nil=改回永不过期)
+		"update_by":       updateBy,
 	}
 	if req.BudgetLimit != nil {
 		updates["budget_limit"] = *req.BudgetLimit
@@ -871,8 +877,8 @@ func syncKeyToLitellm(ctx context.Context, cli *litellm.Client, tx *gorm.DB, k *
 	}
 
 	metadata := map[string]any{
-		"aiKeyId":  k.AiKeyId,
-		"keyType":  k.KeyType,
+		"aiKeyId": k.AiKeyId,
+		"keyType": k.KeyType,
 	}
 	// per-model 限流(per_model 模式，含 anthropic 变体复制)
 	if k.RateLimitMode == gateway.RateLimitModePerModel {
@@ -916,20 +922,20 @@ func syncKeyToLitellm(ctx context.Context, cli *litellm.Client, tx *gorm.DB, k *
 		k.KeyPrefix = keyPrefixOf(resp.Key)
 		return tx.Model(&gateway.AiKey{}).Where("ai_key_id = ?", k.AiKeyId).
 			Updates(map[string]any{
-				"litellm_key_id":    k.LitellmKeyId,
-				"key_value":         k.KeyValue,
-				"key_prefix":        k.KeyPrefix,
+				"litellm_key_id": k.LitellmKeyId,
+				"key_value":      k.KeyValue,
+				"key_prefix":     k.KeyPrefix,
 			}).Error
 	}
 
 	// Update
 	req := litellm.KeyUpdateReq{
-		Models:      expandedModels,
-		MaxBudget:   maxBudget,
-		Metadata:    metadata,
-		ExpiresAt:   k.ExpiresAt,
-		SyncBudget:  syncBudget,
-		SyncExpiry:  true, // 过期时间始终与 DB 行同步(含 nil→null 清空)
+		Models:     expandedModels,
+		MaxBudget:  maxBudget,
+		Metadata:   metadata,
+		ExpiresAt:  k.ExpiresAt,
+		SyncBudget: syncBudget,
+		SyncExpiry: true, // 过期时间始终与 DB 行同步(含 nil→null 清空)
 	}
 	if k.RateLimitMode == gateway.RateLimitModeTotal {
 		req.TPMLimit = k.TpmLimit

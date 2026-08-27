@@ -7,7 +7,7 @@ import { defaultTransform, useNaivePaginatedTable, useTableOperate } from '@/hoo
 import { $t } from '@/locales';
 import { handleCopy } from '@/utils/copy';
 import ButtonIcon from '@/components/custom/button-icon.vue';
-import { KEY_TYPE_OPTIONS, OWNER_TYPE_OPTIONS, isMainKeyType } from '@/constants/business/gateway';
+import { KEY_TYPE_OPTIONS, isMainKeyType } from '@/constants/business/gateway';
 import AiKeySearch from './ai-key-search.vue';
 import AiKeyOperateDrawer from './ai-key-operate-drawer.vue';
 import AiKeyBatchModal from './ai-key-batch-modal.vue';
@@ -30,7 +30,6 @@ const searchParams = ref<Api.Gateway.AiKeySearchParams>({
 });
 
 const keyTypeLabelKey = (v: string) => KEY_TYPE_OPTIONS.find(o => o.value === v)?.label ?? 'page.gateway.common.keyPersonalScene';
-const ownerTypeLabelKey = (v: string) => OWNER_TYPE_OPTIONS.find(o => o.value === v)?.label ?? 'page.gateway.common.ownerUser';
 
 const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagination, scrollX } = useNaivePaginatedTable({
   api: () => fetchGetAiKeyList(searchParams.value),
@@ -46,38 +45,28 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       width: 48
     },
     {
-      key: 'name',
-      title: $t('page.gateway.aiKey.col.name'),
+      key: 'ownerUsername',
+      title: $t('page.gateway.aiKey.col.username'),
       align: 'center',
-      minWidth: 120,
-      ellipsis: { tooltip: true },
-      // 对齐 AIHelms 展示编排：主 Key 名称恒为 main(无信息量)，改显归属对象名；
-      // 场景 Key 显 name。归属名兜底 ownerType:ownerId。
-      render: row => (isMainKeyType(row.keyType) ? row.ownerName || `${row.ownerType}:${row.ownerId}` : row.name)
+      minWidth: 110,
+      // 登录用户名(user 归属联表 sys_users；dept 归属无登录名显示 -)
+      render: row => row.ownerUsername || <span class="text-slate-400">-</span>
     },
     {
       key: 'keyType',
       title: $t('page.gateway.aiKey.col.keyType'),
       align: 'center',
       minWidth: 120,
-      render: row => <NTag type={row.keyType.endsWith('_main') ? 'success' : 'info'}>{$t(keyTypeLabelKey(row.keyType))}</NTag>
-    },
-    {
-      key: 'scenario',
-      title: $t('page.gateway.aiKey.col.scenario'),
-      align: 'center',
-      minWidth: 110,
-      render: row =>
-        isMainKeyType(row.keyType) ? <span class="text-slate-400">-</span> : row.scenarioName || <span class="text-slate-400">-</span>
-    },
-    {
-      key: 'owner',
-      title: $t('page.gateway.aiKey.col.owner'),
-      align: 'center',
-      minWidth: 120,
+      // 类型+场景同属"这是什么 Key"：场景 Key 在类型标签下以小字带出场景名(吸收原独立场景列)
       render: row => {
-        const typeLabel = $t(ownerTypeLabelKey(row.ownerType));
-        return row.ownerName ? `${row.ownerName}（${typeLabel}）` : `${typeLabel}:${row.ownerId}`;
+        const tag = <NTag type={row.keyType.endsWith('_main') ? 'success' : 'info'}>{$t(keyTypeLabelKey(row.keyType))}</NTag>;
+        if (isMainKeyType(row.keyType) || !row.scenarioName) return tag;
+        return (
+          <div class="flex flex-col items-center gap-2px">
+            {tag}
+            <span class="text-12px text-slate-400">{row.scenarioName}</span>
+          </div>
+        );
       }
     },
     {
@@ -92,11 +81,20 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       )
     },
     {
+      key: 'owner',
+      title: $t('page.gateway.aiKey.col.owner'),
+      align: 'center',
+      minWidth: 110,
+      // 只显昵称/部门名(登录用户名已独立成列)；联表名缺失时兜底 ownerType:ownerId
+      render: row => row.ownerName || `${row.ownerType}:${row.ownerId}`
+    },
+    {
       key: 'models',
       title: $t('page.gateway.aiKey.col.models'),
       align: 'center',
-      minWidth: 80,
-      render: row => `${(row.models ?? []).length}`
+      minWidth: 90,
+      // 资源=授权给该 Key 的可用能力：现阶段仅模型，P2 扩 skill/mcp 后在此叠加计数
+      render: row => $t('page.gateway.aiKey.modelCount', { n: (row.models ?? []).length })
     },
     {
       key: 'budget',
@@ -117,6 +115,34 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
                 {$t(row.budgetHardLimit ? 'page.gateway.common.hardLimitOn' : 'page.gateway.common.hardLimitOff')}
               </NTag>
             </div>
+          </div>
+        );
+      }
+    },
+    {
+      key: 'rateLimit',
+      title: $t('page.gateway.aiKey.col.rateLimit'),
+      align: 'center',
+      minWidth: 130,
+      // none→灰字；total→TPM/RPM 值；per_model→按模型项数(明细在编辑抽屉维护)
+      render: row => {
+        if (!row.rateLimitMode || row.rateLimitMode === 'none') {
+          return <span class="text-slate-400">{$t('page.gateway.common.rateLimitNone')}</span>;
+        }
+        if (row.rateLimitMode === 'total') {
+          return (
+            <div class="flex flex-col items-center gap-2px">
+              <NTag size="small" bordered={false}>{$t('page.gateway.common.rateLimitTotal')}</NTag>
+              <span class="text-12px text-slate-400">
+                TPM {row.tpmLimit ?? '-'} / RPM {row.rpmLimit ?? '-'}
+              </span>
+            </div>
+          );
+        }
+        return (
+          <div class="flex flex-col items-center gap-2px">
+            <NTag size="small" bordered={false}>{$t('page.gateway.common.rateLimitPerModel')}</NTag>
+            <span class="text-12px text-slate-400">{$t('page.gateway.aiKey.modelCount', { n: Object.keys(row.modelLimits ?? {}).length })}</span>
           </div>
         );
       }
@@ -160,13 +186,6 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       align: 'center',
       minWidth: 110,
       render: row => (row.lastUsedAt ? <NTime time={Date.parse(row.lastUsedAt)} format="yyyy-MM-dd HH:mm" /> : <span class="text-slate-400">-</span>)
-    },
-    {
-      key: 'createTime',
-      title: $t('page.gateway.common.createTime'),
-      align: 'center',
-      minWidth: 170,
-      render: row => <NTime time={Date.parse(row.createTime)} format="yyyy-MM-dd HH:mm:ss" />
     },
     {
       key: 'operate',

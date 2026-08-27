@@ -991,6 +991,7 @@ declare namespace App {
             expiringSoon: string;
             col: {
               name: string;
+              username: string;
               keyType: string;
               scenario: string;
               ownerType: string;
@@ -1002,6 +1003,7 @@ declare namespace App {
               budgetLimit: string;
               budgetHardLimit: string;
               budgetDuration: string;
+              rateLimit: string;
               rateLimitMode: string;
               tpmLimit: string;
               rpmLimit: string;
@@ -1010,6 +1012,7 @@ declare namespace App {
               lastUsedAt: string;
               description: string;
             };
+            modelCount: string;
             form: {
               keyType: { required: string };
               ownerType: { required: string };
