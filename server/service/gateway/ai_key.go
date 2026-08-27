@@ -502,6 +502,45 @@ func (s *AiKeyService) DeleteAiKey(ctx context.Context, ids []int64) error {
 	return global.OPS_DB.WithContext(ctx).Where("ai_key_id IN ?", ids).Delete(&gateway.AiKey{}).Error
 }
 
+// SyncUserKeysActive 用户启停/删除级联：同步其名下全部 AiKey(主+场景，软删行除外)的启停状态。
+// 用户禁用后 Key 若保持启用，明文 Key 仍可直连 LiteLLM 网关(仅登录被拦)，必须联动卡死；
+// LiteLLM 侧复用 is_active=false → max_budget=0 停用语义。启用时全量恢复(对齐 AIHelms
+// sync_user_keys_active；管理员此前手动停用的 Key 会被一并恢复，属已知取舍)。单个失败仅
+// 告警不中断，返回告警列表供调用方提示。
+func (s *AiKeyService) SyncUserKeysActive(ctx context.Context, userId, updateBy int64, active bool) []string {
+	var keys []gateway.AiKey
+	if err := global.OPS_DB.WithContext(ctx).
+		Where("owner_type = ? AND owner_id = ?", gateway.OwnerTypeUser, userId).
+		Find(&keys).Error; err != nil {
+		return []string{err.Error()}
+	}
+	cli := litellm.Default()
+	var warnings []string
+	for i := range keys {
+		keys[i].IsActive = active
+		if err := global.OPS_DB.WithContext(ctx).Model(&gateway.AiKey{}).
+			Where("ai_key_id = ?", keys[i].AiKeyId).
+			Updates(map[string]any{"is_active": active, "update_by": updateBy}).Error; err != nil {
+			warnings = append(warnings, fmt.Sprintf("密钥 %d: %v", keys[i].AiKeyId, err))
+			continue
+		}
+		if cli == nil || keys[i].LitellmKeyId == "" {
+			continue
+		}
+		if err := syncKeyToLitellm(ctx, cli, global.OPS_DB.WithContext(ctx), &keys[i], false); err != nil {
+			warnings = append(warnings, fmt.Sprintf("密钥 %d 同步 LiteLLM: %v", keys[i].AiKeyId, err))
+		}
+	}
+	state := "启用"
+	if !active {
+		state = "停用"
+	}
+	for _, w := range warnings {
+		logger.WithCtx(ctx).Mod("gateway").Warn(fmt.Sprintf("用户 %d 级联%s密钥失败: %s", userId, state, w))
+	}
+	return warnings
+}
+
 // ----------------------------------------------------------------------------
 // 包级共享：同步管线与主 Key 自愈
 // ----------------------------------------------------------------------------
@@ -585,6 +624,85 @@ func syncPublicModelToMainKeys(ctx context.Context, tx *gorm.DB, modelKey string
 		logger.WithCtx(ctx).Mod("gateway").Warn(w)
 	}
 	return warnings
+}
+
+// cascadeRenameKeyModels 模型 modelKey 改名级联：改写引用旧 modelKey 的密钥
+// models/model_budgets/model_limits 三个 JSONB(oldKey→newKey,值保持)并同步 LiteLLM。
+// 不做则改名后密钥授权/按模型预算/限流全部随旧名漂移(用户调新名被网关拒)。
+// 与部署侧级联重建同口径(尽力而为：单个失败记 warning 继续)；AiKey 是小表,
+// 全量拉取后内存过滤,不建 JSON 查询条件(跨库方言)。DB 存原始 modelKey,
+// (Anthropic) 变体仅在 syncKeyToLitellm 下发时扩展,无需处理。
+func cascadeRenameKeyModels(ctx context.Context, db *gorm.DB, oldKey, newKey string) []string {
+	var keys []gateway.AiKey
+	if err := db.Find(&keys).Error; err != nil {
+		return []string{err.Error()}
+	}
+	cli := litellm.Default()
+	var warnings []string
+	for i := range keys {
+		models, budgets, limits, changed := renameKeyReferences(
+			jsonToSlice(keys[i].Models), jsonToMap(keys[i].ModelBudgets), jsonToMap(keys[i].ModelLimits), oldKey, newKey)
+		if !changed {
+			continue
+		}
+		keys[i].Models = marshalJSONStringSlice(models)
+		updates := map[string]any{"models": keys[i].Models}
+		if budgets != nil {
+			keys[i].ModelBudgets = marshalJSONMap(budgets)
+			updates["model_budgets"] = keys[i].ModelBudgets
+		}
+		if limits != nil {
+			keys[i].ModelLimits = marshalJSONMap(limits)
+			updates["model_limits"] = keys[i].ModelLimits
+		}
+		if err := db.Model(&gateway.AiKey{}).Where("ai_key_id = ?", keys[i].AiKeyId).
+			Updates(updates).Error; err != nil {
+			warnings = append(warnings, fmt.Sprintf("密钥 %d: %v", keys[i].AiKeyId, err))
+			continue
+		}
+		if cli == nil || keys[i].LitellmKeyId == "" {
+			continue
+		}
+		if err := syncKeyToLitellm(ctx, cli, db, &keys[i], false); err != nil {
+			warnings = append(warnings, fmt.Sprintf("密钥 %d 同步 LiteLLM: %v", keys[i].AiKeyId, err))
+		}
+	}
+	for _, w := range warnings {
+		logger.WithCtx(ctx).Mod("gateway").Warn(fmt.Sprintf("模型改名 %q→%q 级联密钥失败: %s", oldKey, newKey, w))
+	}
+	return warnings
+}
+
+// renameKeyReferences 改名三处引用的纯函数(可单测)：models 列表元素替换、
+// budgets/limits map 键替换(值不动)。返回改写后的值与是否有任何变更。
+func renameKeyReferences(models []string, budgets, limits map[string]any, oldKey, newKey string) ([]string, map[string]any, map[string]any, bool) {
+	changed := false
+	renamed := make([]string, len(models))
+	for i, mk := range models {
+		if mk == oldKey {
+			renamed[i] = newKey
+			changed = true
+			continue
+		}
+		renamed[i] = mk
+	}
+	renameMap := func(m map[string]any) (map[string]any, bool) {
+		if _, ok := m[oldKey]; !ok {
+			return m, false
+		}
+		nm := make(map[string]any, len(m))
+		for k, v := range m {
+			if k == oldKey {
+				nm[newKey] = v
+			} else {
+				nm[k] = v
+			}
+		}
+		return nm, true
+	}
+	nb, bChanged := renameMap(budgets)
+	nl, lChanged := renameMap(limits)
+	return renamed, nb, nl, changed || bChanged || lChanged
 }
 
 // syncKeyToLitellm 同步密钥到 LiteLLM：isCreate=true 走 CreateKey(返回明文加密落库)，

@@ -23,6 +23,15 @@ var rbacWhitelistPrivate = []string{
 	"/system/notice/unread",  // 当前用户未读通知列表(顶栏小红点/通知中心,所有用户必需)
 	"/system/notice/read",    // 标记通知已读(个人操作)
 	"/system/dict/data/type", // 按字典类型查字典数据(DictTag/DictRadio 公共组件渲染,任意页面可用,只读基础数据)
+	// AI 身份自身数据(home「我的AI身份」页,所有登录用户可用;数据范围由 JWT 锁定:
+	// identity/my 取 utils.GetUserID 仅查本人主Key明文,dashboard 非超管强制 scope=self)。
+	// 管理操作(建删改 Key/scenario/POST aggregate)不在此列,仍走 casbin 菜单授权。
+	"/gateway/ai-key/identity/my",             // 我的 AI 身份(未开通返回 opened=false)
+	"/gateway/ai-key/identity/available-models", // 可授权模型列表(只读公共数据)
+	"/gateway/dashboard/overview",             // 我的用量总览
+	"/gateway/dashboard/trend",                // 我的成本趋势
+	"/gateway/dashboard/top",                  // 我的成本Top
+	"/gateway/dashboard/budget",               // 我的预算执行率
 }
 
 // isRbacWhitelisted 判断去前缀后的接口路径是否命中已登录用户白名单。

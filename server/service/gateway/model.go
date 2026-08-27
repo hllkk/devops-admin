@@ -247,6 +247,10 @@ func (s *ModelService) UpdateModel(ctx context.Context, req gatewayReq.ModelOper
 		updated := m
 		updated.ModelKey, updated.Category = newKey, newCategory
 		cascadeRebuildModelDeployments(ctx, global.OPS_DB.WithContext(ctx), litellm.Default(), &updated)
+		// Key 侧级联：改写引用旧 modelKey 的密钥授权/按模型预算/限流并同步 LiteLLM(尽力而为)
+		if newKey != m.ModelKey {
+			cascadeRenameKeyModels(ctx, global.OPS_DB.WithContext(ctx), m.ModelKey, newKey)
+		}
 	}
 
 	var fresh gateway.Model

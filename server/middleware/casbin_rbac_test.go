@@ -23,6 +23,14 @@ func TestIsRbacWhitelisted(t *testing.T) {
 		{"/system/notice/read", true},
 		{"/system/dict/data/type/sys_user_sex", true},
 
+		// AI 身份自身数据(home「我的AI身份」页,所有登录用户):放行
+		{"/gateway/ai-key/identity/my", true},
+		{"/gateway/ai-key/identity/available-models", true},
+		{"/gateway/dashboard/overview", true},
+		{"/gateway/dashboard/trend", true},
+		{"/gateway/dashboard/top", true},
+		{"/gateway/dashboard/budget", true},
+
 		// 同前缀的管理接口:不得被误放行
 		{"/system/notice/list", false},
 		{"/system/dict/data/list", false},
@@ -31,6 +39,10 @@ func TestIsRbacWhitelisted(t *testing.T) {
 		{"/system/user/list", false},      // 用户管理
 		{"/system/role/list", false},      // 角色管理
 		{"/system/menu/list", false},
+		{"/gateway/ai-key/list", false},             // 密钥管理列表
+		{"/gateway/ai-key/1", false},                // 密钥详情/改/删
+		{"/gateway/ai-key/scenario/list", false},    // 场景管理
+		{"/gateway/dashboard/aggregate", false},     // 手动触发聚合(管理操作)
 	}
 	for _, c := range cases {
 		got := isRbacWhitelisted(c.obj)

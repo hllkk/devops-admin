@@ -375,7 +375,7 @@ func (a *UserApi) BatchDeleteUser(c *gin.Context) {
 		}
 		ids = append(ids, n)
 	}
-	if err := userService.Delete(c.Request.Context(), ids); err != nil {
+	if err := userService.Delete(c.Request.Context(), ids, utils.GetUserID(c)); err != nil {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}

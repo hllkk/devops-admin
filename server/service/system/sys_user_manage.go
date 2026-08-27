@@ -15,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hllkk/devops-admin/server/global"
 	"github.com/hllkk/devops-admin/server/model/system"
+	"github.com/hllkk/devops-admin/server/service/gateway"
 	systemReq "github.com/hllkk/devops-admin/server/model/system/request"
 	"github.com/hllkk/devops-admin/server/utils"
 	"github.com/hllkk/devops-admin/server/utils/upload"
@@ -164,7 +165,11 @@ func (s *UserService) Update(ctx context.Context, req systemReq.UserOperateParam
 		updates["role_id"] = roleIds[0] // 主角色随所选角色同步,避免落 default 888
 	}
 	postIds := toInt64Slice(req.PostIds)
-	return global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	var before system.SysUser
+	if err := global.OPS_DB.WithContext(ctx).Select("id", "status").Where("id = ?", userId).First(&before).Error; err != nil {
+		return err
+	}
+	if err := global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Model(&system.SysUser{}).Where("id = ?", userId).Updates(updates).Error; err != nil {
 			return err
 		}
@@ -178,25 +183,44 @@ func (s *UserService) Update(ctx context.Context, req systemReq.UserOperateParam
 			return err
 		}
 		return saveUserPosts(tx, userId, postIds)
-	})
+	}); err != nil {
+		return err
+	}
+	// status 实际变化时级联同步 AiKey 启停(编辑表单也携带 status)
+	if (req.Status == "0" || req.Status == "1") && req.Status != before.Status {
+		if warnings := (&gateway.AiKeyService{}).SyncUserKeysActive(ctx, userId, updateBy, req.Status == "0"); len(warnings) > 0 {
+			return fmt.Errorf("用户已更新,但 %d 个 AI 密钥级联启停失败(重试改状态可补同步)", len(warnings))
+		}
+	}
+	return nil
 }
 
 // UpdateStatus 修改用户状态(对齐前端 PUT /system/user/changeStatus)。
+// 状态变化后级联同步该用户名下 AiKey 启停(禁用后明文 Key 不能继续直连网关)。
 func (s *UserService) UpdateStatus(ctx context.Context, req systemReq.UserOperateParams, updateBy int64) error {
 	userId := req.UserId.Int64()
 	if userId == 0 {
 		return errors.New("用户ID不能为空")
 	}
-	return global.OPS_DB.WithContext(ctx).Model(&system.SysUser{}).Where("id = ?", userId).
-		Updates(map[string]interface{}{"status": req.Status, "update_by": updateBy}).Error
+	if err := global.OPS_DB.WithContext(ctx).Model(&system.SysUser{}).Where("id = ?", userId).
+		Updates(map[string]interface{}{"status": req.Status, "update_by": updateBy}).Error; err != nil {
+		return err
+	}
+	if req.Status == "0" || req.Status == "1" {
+		if warnings := (&gateway.AiKeyService{}).SyncUserKeysActive(ctx, userId, updateBy, req.Status == "0"); len(warnings) > 0 {
+			return fmt.Errorf("用户状态已更新,但 %d 个 AI 密钥级联启停失败(重试本操作可补同步)", len(warnings))
+		}
+	}
+	return nil
 }
 
 // Delete 批量删除用户(事务:清理 sys_user_role/sys_user_post/sys_user_departments → 删用户)。
-func (s *UserService) Delete(ctx context.Context, ids []int64) error {
+// 删除后级联停用其名下 AiKey(用户已删,Key 保留以承载历史用量归因)。
+func (s *UserService) Delete(ctx context.Context, ids []int64, updateBy int64) error {
 	if len(ids) == 0 {
 		return errors.New("未选择删除项")
 	}
-	return global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	if err := global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Where("sys_user_id IN ?", ids).Delete(&system.SysUserRole{}).Error; err != nil {
 			return err
 		}
@@ -207,7 +231,17 @@ func (s *UserService) Delete(ctx context.Context, ids []int64) error {
 			return err
 		}
 		return tx.Where("id IN ?", ids).Delete(&system.SysUser{}).Error
-	})
+	}); err != nil {
+		return err
+	}
+	failed := 0
+	for _, id := range ids {
+		failed += len((&gateway.AiKeyService{}).SyncUserKeysActive(ctx, id, updateBy, false))
+	}
+	if failed > 0 {
+		return fmt.Errorf("用户已删除,但 %d 个 AI 密钥级联停用失败,请到密钥管理手动停用", failed)
+	}
+	return nil
 }
 
 // GetDetail 用户详情(对齐前端 GET /system/user/{userId}):postIds/roleIds(字符串)/roles(供 drawer 回显+下拉)。
