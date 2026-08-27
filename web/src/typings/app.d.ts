@@ -874,8 +874,11 @@ declare namespace App {
               visibilityType: string;
               visibilityAll: string;
               visibilitySelected: string;
+              visibilityUser: string;
               departmentIds: string;
               departmentRequired: string;
+              userIds: string;
+              userRequired: string;
               requiresApproval: string;
               autoGrantTip: string;
               modelKeyUnsetTip: string;

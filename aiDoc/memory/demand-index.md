@@ -4,6 +4,7 @@
 
 | 日期 | 需求 | 文件 | 状态 |
 |---|---|---|---|
+| 2026-08-27 | AI 网关·模型发布新增「指定用户可见」档并改名「模型发布」（对齐 AIHelms model_user_visibility 蓝本：后端 ModelVisibilityUser 投影表/VisibilityTypeUser/UserIds 请求视图字段/校验与事务重建/删除级联；自动授权收窄为仅 all 档——PublishModel 与 publicModelKeys 同口径加 visibility_type=all，定向发布不全量授权主 Key；前端弹窗加 user 档 NSelect 多选用户 fetchGetUserSelect 懒加载；go build/vet+typecheck/eslint 通过） | business/ai-gateway-model-publish.md | 已实现 |
 | 2026-08-27 | AI 网关·模型发布配置前端落地（后端 GET/PUT /gateway/model/publish 早已就绪，前端补齐：ModelPublishView/Params 契约 + fetch 函数 + model-publish-dialog 居中模态框——是否发布/可见范围 all·selected+NTreeSelect 多选部门树懒加载/订阅需审批，回填以 GET 视图为准含可见部门投影行；详情面板 header-extra 加「发布配置」入口，提交后 changed 联动列表徽标；发布+免审批+未设模型 ID 顶部 NAlert 提示不自动授权；纯前端零后端改动，typecheck/eslint 通过） | business/ai-gateway-model-publish.md | 已实现 |
 | 2026-08-27 | AI 网关·密钥列表查看/复制完整 Key（keyPrefix 列 hover 眼睛/复制图标：眼睛切换明文、复制给用户转发；独立接口 GET value/:id 按需解密 key_value 返回 AiKeyRevealView，keyRevealAllowed 超管标志+启用角色 RoleKey=admin/SuperAdmin 硬校验，操作日志自动审计，前端明文仅缓存在内存行瞬态字段，列表/详情仍不返回 KeyValue） | business/ai-gateway-ai-key-reveal-value.md | 已实现 |
 | 2026-08-27 | AI 网关·套餐余量旁路 ProviderBalance（百炼 Token Plan Credits：gateway_provider_balance 快照现状表 + Provider 加密列 balance_sync_config(AK/SK AES 复用 litellm.credential-key) + ACS3 签名直连 GetSubscriptionSeatDetails/ListSubscriptionSharedPackages + 坐席/共享包明细挂供应商页 + 看板汇总卡(非超管空) + 定时任务 SyncProviderBalances 每日 17:08；总消耗=Σ坐席(CycleTotalValue-CycleSurplusValue)+共享包；硬边界不进成本链路） | business/ai-gateway-provider-balance.md | 已实现(待录入 AK/SK 实测) |

@@ -49,9 +49,10 @@ type DeploymentView struct {
 type ModelPublishView struct {
 	ModelId          int64   `json:"modelId,string"`   // 模型ID
 	IsPublished      bool    `json:"isPublished"`      // 是否发布
-	VisibilityType   string  `json:"visibilityType"`   // 可见范围
+	VisibilityType   string  `json:"visibilityType"`   // 可见范围(all/selected/user)
 	RequiresApproval bool    `json:"requiresApproval"` // 订阅需审批
 	DepartmentIds    []int64 `json:"departmentIds"`    // 可见部门(selected 模式)
+	UserIds          []int64 `json:"userIds"`          // 可见用户(user 模式)
 }
 
 // DeploymentTestResult 部署连通性测试结果(管理员视角,经 LiteLLM 数据面)。

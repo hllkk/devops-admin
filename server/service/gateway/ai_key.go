@@ -1144,11 +1144,13 @@ func toInt(v any) (int, bool) {
 	return 0, false
 }
 
-// publicModelKeys 公开模型 modelKey 列表(is_published AND !requires_approval AND is_active)。
+// publicModelKeys 公开模型 modelKey 列表(is_published AND !requires_approval AND is_active AND visibility_type=all)。
+// 定向发布(selected/user 档)不进入公开自动授权与主 Key 自愈差集。
 func publicModelKeys(db *gorm.DB) []string {
 	var keys []string
 	db.Model(&gateway.Model{}).
 		Where("is_active = ? AND is_published = ? AND requires_approval = ?", true, true, false).
+		Where("visibility_type = ?", gateway.VisibilityTypeAll).
 		Where("model_key <> ''").Pluck("model_key", &keys)
 	return keys
 }

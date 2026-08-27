@@ -1,7 +1,7 @@
-# AI 网关·模型发布配置前端落地（打通既有后端发布 API）
+# AI 网关·模型发布（含用户级可见档）
 
 - 日期：2026-08-27
-- 状态：已实现（vue-tsc typecheck + eslint 通过；后端零改动）
+- 状态：已实现（go build/vet + vue-tsc + eslint 通过）
 - 反向链接：[[ai-gateway-overview]]、[[ai-gateway-deployment-dialog-terminology]]、[[ai-gateway-model-rename-cascade]]
 
 ## 需求
@@ -25,7 +25,15 @@
 - **回填以 GET publish/:id 为准**而非列表行：可见部门投影行只在视图中返回，列表 Model 行没有该信息。
 - **部门树 NTreeSelect 直用**而非复用 `dept-tree-select` 组件：该封装 value 模型是单选 IdType，多选勾选语义下直接用 NTreeSelect（multiple+checkable+filterable，默认 cascade 级联勾选父带子）。
 - **取消发布不回收已授权 Key**：沿用既有边界（loadMainKey 自愈按 publicModelKeys 差集不会加回），弹窗不做取消发布的二次确认——发布设置可随时改回。
-- **不改后端**：`PublishModel` 的事务（更新三字段 + 物理删插投影行 + syncPublicModelToMainKeys 尽力而为）已满足前端交互。
+- **用户级可见档(user)**：对齐 AIHelms `model_user_visibility` 蓝本。新增 `gateway.ModelVisibilityUser`（`gateway_model_visibility_user`，唯一索引 model_id+user_id，物理删插同部门投影表口径）；`VisibilityTypeUser` 常量；请求/视图加 `UserIds []int64`；`PublishModel` 校验「user+发布时 userIds 必填 + 存在性校验(sys_users)」，事务内重建用户可见行；`DeleteModels` 级联清空。
+- **自动授权收窄为仅 all 档**：`PublishModel` 的 `syncPublicModelToMainKeys` 与 `publicModelKeys`（新主 Key 默认授权 + 自愈差集来源）都加 `visibility_type = all` 条件——定向发布（selected/user）不应全量授权到主 Key，语义与可见性投影一致。这是行为变更：此前 selected 档发布也会自动授权。
+- **改名**：「发布配置」→「模型发布」（i18n title 一处，按钮/弹窗标题共用该 key）。
+
+## 前端(第二轮：user 档 + 改名)
+
+- `ModelPublishView/Params` 的 visibilityType 扩为 `'all' | 'selected' | 'user'`，加 `userIds: CommonType.IdType[]`。
+- 弹窗 radio 加「指定用户可见」；user 档下 NSelect multiple+filterable 用户多选（`fetchGetUserSelect` 全量一次加载缓存，label `${nickName} ( ${userName} )`，先例 ai-key-batch-modal）；校验 user+发布时必选至少一个用户；切换非 user 档清空 userIds。
+- i18n 新增 `visibilityUser/userIds/userRequired`，`autoGrantTip` 补「全员可见」限定，title 改「模型发布」(en: Model Publish)。
 
 ## 关联
 

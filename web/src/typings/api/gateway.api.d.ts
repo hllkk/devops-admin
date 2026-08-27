@@ -311,19 +311,22 @@ declare namespace Api {
     type ModelPublishView = {
       modelId: CommonType.IdType;
       isPublished: boolean;
-      visibilityType: 'all' | 'selected';
+      visibilityType: 'all' | 'selected' | 'user';
       requiresApproval: boolean;
       /** 可见部门 ID 列表(selected 模式) */
       departmentIds: CommonType.IdType[];
+      /** 可见用户 ID 列表(user 模式) */
+      userIds: CommonType.IdType[];
     };
 
-    /** 模型发布设置提交参数(visibilityType=selected 且 isPublished 时 departmentIds 必填) */
+    /** 模型发布设置提交参数(selected/user 档且 isPublished 时对应 ID 列表必填) */
     type ModelPublishParams = {
       modelId: CommonType.IdType;
       isPublished: boolean;
-      visibilityType: 'all' | 'selected';
+      visibilityType: 'all' | 'selected' | 'user';
       requiresApproval: boolean;
       departmentIds: CommonType.IdType[];
+      userIds: CommonType.IdType[];
     };
 
     // ───────────────── 部署 Deployment ─────────────────

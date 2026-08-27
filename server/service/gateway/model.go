@@ -292,11 +292,14 @@ func (s *ModelService) DeleteModels(ctx context.Context, ids []int64) error {
 		if err := tx.Where("model_id IN ?", ids).Delete(&gateway.Model{}).Error; err != nil {
 			return err
 		}
-		return tx.Unscoped().Where("model_id IN ?", ids).Delete(&gateway.ModelVisibility{}).Error
+		if err := tx.Unscoped().Where("model_id IN ?", ids).Delete(&gateway.ModelVisibility{}).Error; err != nil {
+			return err
+		}
+		return tx.Unscoped().Where("model_id IN ?", ids).Delete(&gateway.ModelVisibilityUser{}).Error
 	})
 }
 
-// GetModelPublish 查模型发布设置(含 selected 模式的可见部门)。
+// GetModelPublish 查模型发布设置(含 selected/user 模式的可见部门与可见用户)。
 func (s *ModelService) GetModelPublish(ctx context.Context, id int64) (gatewayResp.ModelPublishView, error) {
 	var m gateway.Model
 	if err := global.OPS_DB.WithContext(ctx).Where("model_id = ?", id).First(&m).Error; err != nil {
@@ -308,6 +311,7 @@ func (s *ModelService) GetModelPublish(ctx context.Context, id int64) (gatewayRe
 		VisibilityType:   m.VisibilityType,
 		RequiresApproval: m.RequiresApproval,
 		DepartmentIds:    []int64{},
+		UserIds:          []int64{},
 	}
 	var rows []gateway.ModelVisibility
 	if err := global.OPS_DB.WithContext(ctx).Where("model_id = ?", id).Find(&rows).Error; err != nil {
@@ -316,11 +320,18 @@ func (s *ModelService) GetModelPublish(ctx context.Context, id int64) (gatewayRe
 	for _, r := range rows {
 		view.DepartmentIds = append(view.DepartmentIds, r.DepartmentId)
 	}
+	var userRows []gateway.ModelVisibilityUser
+	if err := global.OPS_DB.WithContext(ctx).Where("model_id = ?", id).Find(&userRows).Error; err != nil {
+		return gatewayResp.ModelPublishView{}, err
+	}
+	for _, r := range userRows {
+		view.UserIds = append(view.UserIds, r.UserId)
+	}
 	return view, nil
 }
 
-// PublishModel 更新发布设置：selected+发布 必须指定可见部门(存在性校验)，
-// 可见性行重建(物理删+插，投影表不软删)；取消发布或全员可见时清空可见行。
+// PublishModel 更新发布设置：selected+发布 必须指定可见部门、user+发布 必须指定可见用户
+// (均含存在性校验)；可见性行重建(物理删+插，投影表不软删)；取消发布或全员可见时清空可见行。
 func (s *ModelService) PublishModel(ctx context.Context, req gatewayReq.ModelPublishParams, updateBy int64) error {
 	if req.ModelId == 0 {
 		return errors.New("模型ID不能为空")
@@ -329,11 +340,14 @@ func (s *ModelService) PublishModel(ctx context.Context, req gatewayReq.ModelPub
 	if visibility == "" {
 		visibility = gateway.VisibilityTypeAll
 	}
-	if visibility != gateway.VisibilityTypeAll && visibility != gateway.VisibilityTypeSelected {
-		return errors.New("可见范围取值非法(all/selected)")
+	if visibility != gateway.VisibilityTypeAll && visibility != gateway.VisibilityTypeSelected && visibility != gateway.VisibilityTypeUser {
+		return errors.New("可见范围取值非法(all/selected/user)")
 	}
 	if req.IsPublished && visibility == gateway.VisibilityTypeSelected && len(req.DepartmentIds) == 0 {
 		return errors.New("指定部门可见时必须选择至少一个部门")
+	}
+	if req.IsPublished && visibility == gateway.VisibilityTypeUser && len(req.UserIds) == 0 {
+		return errors.New("指定用户可见时必须选择至少一个用户")
 	}
 	var m gateway.Model
 	if err := global.OPS_DB.WithContext(ctx).Where("model_id = ?", req.ModelId).First(&m).Error; err != nil {
@@ -349,6 +363,16 @@ func (s *ModelService) PublishModel(ctx context.Context, req gatewayReq.ModelPub
 			return errors.New("可见部门列表包含不存在的部门")
 		}
 	}
+	if len(req.UserIds) > 0 {
+		var cnt int64
+		if err := global.OPS_DB.WithContext(ctx).Model(&system.SysUser{}).
+			Where("user_id IN ?", req.UserIds).Count(&cnt).Error; err != nil {
+			return err
+		}
+		if cnt != int64(len(req.UserIds)) {
+			return errors.New("可见用户列表包含不存在的用户")
+		}
+	}
 	return global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Model(&gateway.Model{}).Where("model_id = ?", req.ModelId).Updates(map[string]any{
 			"is_published":      req.IsPublished,
@@ -362,6 +386,9 @@ func (s *ModelService) PublishModel(ctx context.Context, req gatewayReq.ModelPub
 		if err := tx.Unscoped().Where("model_id = ?", req.ModelId).Delete(&gateway.ModelVisibility{}).Error; err != nil {
 			return err
 		}
+		if err := tx.Unscoped().Where("model_id = ?", req.ModelId).Delete(&gateway.ModelVisibilityUser{}).Error; err != nil {
+			return err
+		}
 		if req.IsPublished && visibility == gateway.VisibilityTypeSelected {
 			rows := make([]gateway.ModelVisibility, 0, len(req.DepartmentIds))
 			for _, deptId := range req.DepartmentIds {
@@ -371,8 +398,18 @@ func (s *ModelService) PublishModel(ctx context.Context, req gatewayReq.ModelPub
 				return err
 			}
 		}
+		if req.IsPublished && visibility == gateway.VisibilityTypeUser {
+			userRows := make([]gateway.ModelVisibilityUser, 0, len(req.UserIds))
+			for _, userId := range req.UserIds {
+				userRows = append(userRows, gateway.ModelVisibilityUser{ModelId: req.ModelId, UserId: userId})
+			}
+			if err := tx.Create(&userRows).Error; err != nil {
+				return err
+			}
+		}
 		// 发布公开模型(发布+免审批+有路由名)→自动授权到所有 active 主 Key(回补 slice3 TODO)
-		if req.IsPublished && !req.RequiresApproval && m.ModelKey != "" {
+		// 边界：仅 all 档自动授权；selected/user 档定向发布不自动授权(订阅入口后续落地)
+		if req.IsPublished && !req.RequiresApproval && visibility == gateway.VisibilityTypeAll && m.ModelKey != "" {
 			syncPublicModelToMainKeys(ctx, tx, m.ModelKey) // 单个失败 warning 不中断
 		}
 		return nil

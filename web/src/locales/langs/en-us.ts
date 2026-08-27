@@ -688,15 +688,18 @@ const local: App.I18n.Schema = {
         modelKeyUnset: 'No model ID',
         selectModelTip: 'Select a model on the left to view its channels',
         publish: {
-          title: 'Publish',
+          title: 'Model Publish',
           isPublished: 'Published',
           visibilityType: 'Visibility',
           visibilityAll: 'All members',
           visibilitySelected: 'Selected departments',
+          visibilityUser: 'Selected users',
           departmentIds: 'Visible departments',
           departmentRequired: 'Select at least one department for selected-department visibility',
+          userIds: 'Visible users',
+          userRequired: 'Select at least one user for selected-user visibility',
           requiresApproval: 'Subscription requires approval',
-          autoGrantTip: 'Published + no approval + model ID set: auto-grants to all active main keys',
+          autoGrantTip: 'All-members + no approval + model ID set: auto-grants to all active main keys',
           modelKeyUnsetTip: 'This model has no model ID; publishing will not auto-grant it to main keys'
         }
       },

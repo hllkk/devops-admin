@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { fetchGetDeptTree } from '@/service/api/system';
+import { fetchGetDeptTree, fetchGetUserSelect } from '@/service/api/system';
 import { fetchGetModelPublish, fetchPublishModel } from '@/service/api/gateway';
 import { useNaiveForm } from '@/hooks/common/form';
 import { $t } from '@/locales';
@@ -36,17 +36,27 @@ function createDefaultModel(): Model {
     isPublished: props.model.isPublished,
     visibilityType: props.model.visibilityType ?? 'all',
     requiresApproval: props.model.requiresApproval ?? false,
-    departmentIds: []
+    departmentIds: [],
+    userIds: []
   };
 }
 
-/** 指定部门可见 + 发布时，可见部门必填 */
+/** 指定部门/用户可见 + 发布时，对应列表必填 */
 const rules: Record<string, App.Global.FormRule> = {
   departmentIds: {
     trigger: ['change', 'blur'],
     validator: (_rule, value: CommonType.IdType[]) => {
       if (formModel.value.isPublished && formModel.value.visibilityType === 'selected' && (!value || value.length === 0)) {
         return new Error($t('page.gateway.model.publish.departmentRequired'));
+      }
+      return true;
+    }
+  },
+  userIds: {
+    trigger: ['change', 'blur'],
+    validator: (_rule, value: CommonType.IdType[]) => {
+      if (formModel.value.isPublished && formModel.value.visibilityType === 'user' && (!value || value.length === 0)) {
+        return new Error($t('page.gateway.model.publish.userRequired'));
       }
       return true;
     }
@@ -66,11 +76,27 @@ async function loadDeptTree() {
   }
 }
 
+const userOptions = ref<CommonType.Option<CommonType.IdType>[]>([]);
+const userLoaded = ref(false);
+
+async function loadUserOptions() {
+  if (userLoaded.value) return;
+  const { data, error } = await fetchGetUserSelect();
+  if (!error && data) {
+    userOptions.value = data.map(item => ({
+      label: `${item.nickName} ( ${item.userName} )`,
+      value: item.userId
+    }));
+    userLoaded.value = true;
+  }
+}
+
 async function handleOpen() {
   formModel.value = createDefaultModel();
   restoreValidation();
   loadDeptTree();
-  // 拉取权威发布设置(可见部门投影行只在视图里返回)
+  loadUserOptions();
+  // 拉取权威发布设置(可见部门/用户投影行只在视图里返回)
   loading.value = true;
   const { data, error } = await fetchGetModelPublish(props.model.modelId!);
   if (!error && data) {
@@ -79,15 +105,17 @@ async function handleOpen() {
       isPublished: data.isPublished,
       visibilityType: data.visibilityType,
       requiresApproval: data.requiresApproval,
-      departmentIds: data.departmentIds ?? []
+      departmentIds: data.departmentIds ?? [],
+      userIds: data.userIds ?? []
     };
   }
   loading.value = false;
 }
 
 function handleVisibilityChange(val: string) {
-  formModel.value.visibilityType = val as 'all' | 'selected';
+  formModel.value.visibilityType = val as 'all' | 'selected' | 'user';
   if (val !== 'selected') formModel.value.departmentIds = [];
+  if (val !== 'user') formModel.value.userIds = [];
 }
 
 function closeDialog() {
@@ -131,6 +159,7 @@ watch(visible, val => {
         <NRadioGroup :value="formModel.visibilityType" @update:value="handleVisibilityChange">
           <NRadio value="all">{{ $t('page.gateway.model.publish.visibilityAll') }}</NRadio>
           <NRadio value="selected">{{ $t('page.gateway.model.publish.visibilitySelected') }}</NRadio>
+          <NRadio value="user">{{ $t('page.gateway.model.publish.visibilityUser') }}</NRadio>
         </NRadioGroup>
       </NFormItem>
       <NFormItem v-if="formModel.visibilityType === 'selected'" :label="$t('page.gateway.model.publish.departmentIds')" path="departmentIds">
@@ -143,6 +172,17 @@ watch(visible, val => {
           key-field="id"
           label-field="label"
           :options="deptOptions as []"
+          :placeholder="$t('common.placeholderSelect')"
+        />
+      </NFormItem>
+      <NFormItem v-if="formModel.visibilityType === 'user'" :label="$t('page.gateway.model.publish.userIds')" path="userIds">
+        <NSelect
+          v-model:value="formModel.userIds"
+          multiple
+          filterable
+          clearable
+          :loading="loading || !userLoaded"
+          :options="userOptions"
           :placeholder="$t('common.placeholderSelect')"
         />
       </NFormItem>

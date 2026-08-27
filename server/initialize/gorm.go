@@ -79,6 +79,7 @@ func RegisterTables() {
 		gateway.Model{},
 		gateway.ModelDeployment{},
 		gateway.ModelVisibility{},
+		gateway.ModelVisibilityUser{},
 		gateway.AiKey{},
 		gateway.KeyScenario{},
 		gateway.LlmLog{},

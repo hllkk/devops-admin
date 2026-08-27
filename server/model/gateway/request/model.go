@@ -27,13 +27,15 @@ type ModelOperateParams struct {
 }
 
 // ModelPublishParams 模型发布设置(对齐前端 PUT /gateway/model/publish)。
-// visibilityType=selected 且 isPublished=true 时 departmentIds 必填(重建部门可见行)。
+// visibilityType=selected 且 isPublished=true 时 departmentIds 必填(重建部门可见行)；
+// visibilityType=user 且 isPublished=true 时 userIds 必填(重建用户可见行)。
 type ModelPublishParams struct {
 	ModelId          int64   `json:"modelId,string" form:"modelId"`  // 模型ID
 	IsPublished      bool    `json:"isPublished" form:"isPublished"` // 是否发布
-	VisibilityType   string  `json:"visibilityType" form:"visibilityType"` // 可见范围(all/selected)
+	VisibilityType   string  `json:"visibilityType" form:"visibilityType"` // 可见范围(all/selected/user)
 	RequiresApproval bool    `json:"requiresApproval" form:"requiresApproval"` // 订阅需审批
 	DepartmentIds    []int64 `json:"departmentIds" form:"departmentIds"`      // 可见部门(selected 模式)
+	UserIds          []int64 `json:"userIds" form:"userIds"`          // 可见用户(user 模式)
 }
 
 // DeploymentSearch 部署分页查询(对齐前端 GET /gateway/model/deployment/list)。

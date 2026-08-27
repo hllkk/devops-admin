@@ -684,15 +684,18 @@ const local: App.I18n.Schema = {
         modelKeyUnset: '未设置模型 ID',
         selectModelTip: '请选择左侧模型查看其渠道',
         publish: {
-          title: '发布配置',
+          title: '模型发布',
           isPublished: '是否发布',
           visibilityType: '可见范围',
           visibilityAll: '全员可见',
           visibilitySelected: '指定部门可见',
+          visibilityUser: '指定用户可见',
           departmentIds: '可见部门',
           departmentRequired: '指定部门可见时必须选择至少一个部门',
+          userIds: '可见用户',
+          userRequired: '指定用户可见时必须选择至少一个用户',
           requiresApproval: '订阅需审批',
-          autoGrantTip: '发布 + 订阅免审批 + 已设模型 ID 时，自动授权到所有启用中的主 Key',
+          autoGrantTip: '全员可见 + 订阅免审批 + 已设模型 ID 时，自动授权到所有启用中的主 Key',
           modelKeyUnsetTip: '该模型未设置模型 ID，发布后不会自动授权到主 Key'
         }
       },
