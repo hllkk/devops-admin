@@ -45,6 +45,23 @@ export function fetchBatchDeleteModel(modelIds: CommonType.IdType[]) {
   });
 }
 
+/** 获取模型发布设置(含 selected 模式的可见部门) */
+export function fetchGetModelPublish(modelId: CommonType.IdType) {
+  return request<Api.Gateway.ModelPublishView>({
+    url: `/gateway/model/publish/${modelId}`,
+    method: 'get'
+  });
+}
+
+/** 更新发布设置(发布公开模型会自动授权到所有启用中的主 Key) */
+export function fetchPublishModel(data: Api.Gateway.ModelPublishParams) {
+  return request<boolean>({
+    url: '/gateway/model/publish',
+    method: 'put',
+    data
+  });
+}
+
 // ── 部署 Deployment ──
 
 /** 分页获取部署列表(按 modelId/credentialId 过滤) */

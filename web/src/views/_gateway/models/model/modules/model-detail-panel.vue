@@ -7,6 +7,7 @@ import { $t } from '@/locales';
 import ButtonIcon from '@/components/custom/button-icon.vue';
 import { BILLING_TYPE_OPTIONS, MODEL_CATEGORY_OPTIONS } from '@/constants/business/gateway';
 import DeploymentOperateDialog from './deployment-operate-dialog.vue';
+import ModelPublishDialog from './model-publish-dialog.vue';
 
 interface Props {
   model: Api.Gateway.Model;
@@ -140,6 +141,13 @@ const drawerVisible = ref(false);
 const operateType = ref<NaiveUI.TableOperateType>('add');
 const editingData = ref<Api.Gateway.Deployment | null>(null);
 
+// 发布配置(模型级属性,多渠道共享)
+const publishVisible = ref(false);
+function handlePublishSubmitted() {
+  publishVisible.value = false;
+  emit('changed');
+}
+
 function handleAdd() {
   operateType.value = 'add';
   editingData.value = null;
@@ -233,6 +241,12 @@ function handleDrawerSubmitted() {
     </template>
     <template #header-extra>
       <NSpace :size="8">
+        <NButton size="small" @click="publishVisible = true">
+          <template #icon>
+            <icon-material-symbols-publish class="text-icon" />
+          </template>
+          {{ $t('page.gateway.model.publish.title') }}
+        </NButton>
         <NButton size="small" type="primary" @click="handleAdd">
           <template #icon>
             <icon-material-symbols-add-rounded class="text-icon" />
@@ -261,6 +275,7 @@ function handleDrawerSubmitted() {
       :model="model"
       @submitted="handleDrawerSubmitted"
     />
+    <ModelPublishDialog v-model:visible="publishVisible" :model="model" @submitted="handlePublishSubmitted" />
   </NCard>
 </template>
 

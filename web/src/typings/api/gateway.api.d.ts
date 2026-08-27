@@ -307,6 +307,25 @@ declare namespace Api {
 
     type ModelList = Api.Common.PaginatingQueryRecord<Model>;
 
+    /** 模型发布设置视图(GET publish/:id 返回) */
+    type ModelPublishView = {
+      modelId: CommonType.IdType;
+      isPublished: boolean;
+      visibilityType: 'all' | 'selected';
+      requiresApproval: boolean;
+      /** 可见部门 ID 列表(selected 模式) */
+      departmentIds: CommonType.IdType[];
+    };
+
+    /** 模型发布设置提交参数(visibilityType=selected 且 isPublished 时 departmentIds 必填) */
+    type ModelPublishParams = {
+      modelId: CommonType.IdType;
+      isPublished: boolean;
+      visibilityType: 'all' | 'selected';
+      requiresApproval: boolean;
+      departmentIds: CommonType.IdType[];
+    };
+
     // ───────────────── 部署 Deployment ─────────────────
 
     /** 部署(出网视图：含关联上下文 + 掩码后的路由参数) */

@@ -868,6 +868,18 @@ declare namespace App {
             };
             modelKeyUnset: string;
             selectModelTip: string;
+            publish: {
+              title: string;
+              isPublished: string;
+              visibilityType: string;
+              visibilityAll: string;
+              visibilitySelected: string;
+              departmentIds: string;
+              departmentRequired: string;
+              requiresApproval: string;
+              autoGrantTip: string;
+              modelKeyUnsetTip: string;
+            };
           };
           deployment: {
             manageTitle: string;

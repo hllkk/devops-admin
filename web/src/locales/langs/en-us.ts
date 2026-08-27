@@ -686,7 +686,19 @@ const local: App.I18n.Schema = {
           renameTip: 'Changing model ID will cascade rebuild channel registrations in LiteLLM, proceed with caution'
         },
         modelKeyUnset: 'No model ID',
-        selectModelTip: 'Select a model on the left to view its channels'
+        selectModelTip: 'Select a model on the left to view its channels',
+        publish: {
+          title: 'Publish',
+          isPublished: 'Published',
+          visibilityType: 'Visibility',
+          visibilityAll: 'All members',
+          visibilitySelected: 'Selected departments',
+          departmentIds: 'Visible departments',
+          departmentRequired: 'Select at least one department for selected-department visibility',
+          requiresApproval: 'Subscription requires approval',
+          autoGrantTip: 'Published + no approval + model ID set: auto-grants to all active main keys',
+          modelKeyUnsetTip: 'This model has no model ID; publishing will not auto-grant it to main keys'
+        }
       },
       deployment: {
         manageTitle: 'Channel Management',

@@ -682,7 +682,19 @@ const local: App.I18n.Schema = {
           renameTip: '修改模型 ID 将级联重建关联渠道在 LiteLLM 侧的注册名，请谨慎操作'
         },
         modelKeyUnset: '未设置模型 ID',
-        selectModelTip: '请选择左侧模型查看其渠道'
+        selectModelTip: '请选择左侧模型查看其渠道',
+        publish: {
+          title: '发布配置',
+          isPublished: '是否发布',
+          visibilityType: '可见范围',
+          visibilityAll: '全员可见',
+          visibilitySelected: '指定部门可见',
+          departmentIds: '可见部门',
+          departmentRequired: '指定部门可见时必须选择至少一个部门',
+          requiresApproval: '订阅需审批',
+          autoGrantTip: '发布 + 订阅免审批 + 已设模型 ID 时，自动授权到所有启用中的主 Key',
+          modelKeyUnsetTip: '该模型未设置模型 ID，发布后不会自动授权到主 Key'
+        }
       },
       deployment: {
         manageTitle: '渠道管理',
