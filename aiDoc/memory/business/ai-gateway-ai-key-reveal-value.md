@@ -27,3 +27,13 @@
 - `web/src/typings/api/gateway.api.d.ts`：`Api.Gateway.AiKeyReveal`。
 - `web/src/views/_gateway/ai-key/modules/ai-key-list-panel.vue`：keyPrefix 列 hover 图标改造 + `ensureFullKey/toggleKeyReveal/copyFullKey`。
 - i18n：`page.gateway.aiKey.viewKey/hideKey/copyKey`（zh-cn/en-us/app.d.ts 三处同步），列 minWidth 180→240。
+
+## 复制不成功排查（2026-08-27 追记）
+
+现象：点复制无任何反应、无 toast。后端链路逐一验证正常（value/:id 路由已在运行进程、`gateway_ai_key.litellm_key_id/key_value` 非空、super/admin 角色数据正常），根因在 `web/src/utils/copy.ts`：
+
+1. dev 经 `http://<IP>:9527` 访问（远程开发机，非 localhost 非 https）→ 非安全上下文 → `navigator.clipboard === undefined`，走 execCommand 降级分支；
+2. 降级分支引用 `document.getElementById('tokenDetailInput')` —— 该 ID **全库无任何组件定义**（上游拷来的死引用），`range.selectNode(null)` 抛 TypeError，未捕获 → 静默失败；
+3. `if (!isSupported)` 判断的是 Ref 对象本身（恒 truthy），"不支持剪贴板"保护形同虚设。
+
+修复：`useClipboard({ legacy: true })`（vueuse 内部临时 textarea 自动降级，不依赖页面元素）+ `isSupported.value` 正确判断 + try/catch 失败兜底提示，删除死代码分支。此修复惠及全项目所有 `handleCopy` 调用点。

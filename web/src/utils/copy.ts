@@ -1,27 +1,24 @@
 import { useClipboard } from '@vueuse/core';
 import { $t } from '@/locales';
 
-const { copy, isSupported } = useClipboard();
+// legacy: true —— 非安全上下文(http/IP 直连访问)下无 navigator.clipboard 时，
+// 由 vueuse 自动降级为 execCommand(内部临时 textarea)，不依赖页面内任何元素
+const { copy, isSupported } = useClipboard({ legacy: true });
 
 export async function handleCopy(source?: string) {
-  if (!isSupported) {
-    window.$message?.error($t('common.copyNotSupported'));
-    return;
-  }
-
   if (!source) {
     return;
   }
 
-  if (navigator.clipboard && window.isSecureContext) {
-    await copy(source);
-  } else {
-    const range = document.createRange();
-    range.selectNode(document.getElementById('tokenDetailInput')!);
-    const selection = window.getSelection();
-    if (selection?.rangeCount) selection.removeAllRanges();
-    selection?.addRange(range);
-    document.execCommand('copy');
+  if (!isSupported.value) {
+    window.$message?.error($t('common.copyNotSupported'));
+    return;
   }
-  window.$message?.success($t('common.copySuccess'));
+
+  try {
+    await copy(source);
+    window.$message?.success($t('common.copySuccess'));
+  } catch {
+    window.$message?.error($t('common.copyNotSupported'));
+  }
 }

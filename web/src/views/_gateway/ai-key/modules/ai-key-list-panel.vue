@@ -101,7 +101,7 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       key: 'keyPrefix',
       title: $t('page.gateway.aiKey.col.keyPrefix'),
       align: 'center',
-      minWidth: 240,
+      minWidth: 600,
       // 默认只显前缀；hover 出眼睛/复制(触屏恒显)：眼睛切换明文(按需拉 value/:id 缓存行内)，复制取明文入剪贴板
       render: (row: AiKeyRow) => {
         const shown = row.keyRevealed && row.fullKeyValue ? row.fullKeyValue : row.keyPrefix;
