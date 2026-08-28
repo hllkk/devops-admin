@@ -28,7 +28,7 @@ var rbacWhitelistPrivate = []string{
 	// 管理操作(建删改 Key/scenario/POST aggregate)不在此列,仍走 casbin 菜单授权。
 	"/gateway/ai-key/identity/my",             // 我的 AI 身份(未开通返回 opened=false)
 	"/gateway/ai-key/identity/available-models", // 可授权模型列表(只读公共数据)
-		"/gateway/model/active", // 用户侧可见模型列表(模型广场/home,按发布可见性过滤)
+		"/gateway/model/active", // 用户侧可见模型列表(home「模型广场」Tab,按发布可见性过滤)
 		// 资源申请审批(P2)用户侧:提交申请/我的申请(数据范围由 JWT 锁定本人)。
 		// 管理端接口(list/approve/reject/batch-*)为独立 path 不以这两个前缀开头,不进白名单。
 		"/gateway/application/apply", // 提交申请

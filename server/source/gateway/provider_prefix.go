@@ -41,6 +41,7 @@ func (i *initProviderPrefix) MigrateTable(ctx context.Context) (context.Context,
 		&gatewayModel.LlmLog{},
 		&gatewayModel.SyncState{},
 		&gatewayModel.ResourceApplication{},
+		&gatewayModel.ModelVisibilityUser{},
 	)
 }
 

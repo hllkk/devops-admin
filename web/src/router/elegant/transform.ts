@@ -183,7 +183,6 @@ const routeMap: RouteMap = {
   "models_provider": "/models/provider",
   "server": "/server",
   "social-callback": "/social-callback",
-  "square": "/square",
   "system": "/system",
   "system_dept": "/system/dept",
   "system_dict": "/system/dict",

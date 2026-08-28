@@ -273,7 +273,6 @@ const local: App.I18n.Schema = {
     models: '模型供给',
     models_model: '模型管理',
     models_provider: '供应商管理',
-    square: '模型广场',
     usage: '调用日志',
     application: '资源申请',
     init: '系统初始化',
@@ -538,12 +537,9 @@ const local: App.I18n.Schema = {
       myApps: {
         title: '我的应用',
         empty: '暂无可用的应用'
-      }
-    },
-    gateway: {
-      title: 'AI 网关管理',
-      comingSoon: '敬请期待',
+      },
       square: {
+        tab: '模型广场',
         title: '模型广场',
         subtitle: '展示按发布范围对您可见的模型；已授权模型可直接查看接入信息',
         searchPlaceholder: '搜索模型名称 / 路由名',
@@ -552,7 +548,6 @@ const local: App.I18n.Schema = {
         notAuthorized: '未授权',
         requiresApproval: '需审批',
         viewAccess: '查看接入',
-        contactAdmin: '请联系管理员开通',
         copy: '复制',
         copied: '已复制',
         accessTitle: '接入信息',
@@ -571,7 +566,11 @@ const local: App.I18n.Schema = {
         applyReasonPlaceholder: '请填写申请理由（必填）',
         applySubmit: '提交申请',
         applySuccess: '申请已提交，审批结果将站内通知'
-      },
+      }
+    },
+    gateway: {
+      title: 'AI 网关管理',
+      comingSoon: '敬请期待',
       application: {
         title: '资源申请',
         subtitle: '审批用户提交的模型订阅申请；通过后自动授权到申请人个人主 Key',

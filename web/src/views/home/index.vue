@@ -19,6 +19,7 @@ import {
 } from '@/service/api/gateway';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import SystemLogo from '@/components/common/system-logo.vue';
+import ModelSquarePanel from './modules/model-square-panel.vue';
 import defaultAvatar from '@/assets/imgs/soybean.jpg';
 
 defineOptions({ name: 'Home' });
@@ -47,14 +48,21 @@ function handleOpenApp(module: RouteModule) {
   routerPushByKey(homeRoute);
 }
 
-// ===== 顶部 Tab：我的应用 / 我的AI身份 =====
-type HomeTab = 'apps' | 'identity';
-type HomeTabI18nKey = 'page.home.myApps.title' | 'page.home.identity.navIdentity';
+// ===== 顶部 Tab：我的应用 / 我的AI身份 / 模型广场 =====
+type HomeTab = 'apps' | 'identity' | 'square';
+type HomeTabI18nKey = 'page.home.myApps.title' | 'page.home.identity.navIdentity' | 'page.home.square.tab';
 const homeTabs: { key: HomeTab; i18nKey: HomeTabI18nKey }[] = [
   { key: 'apps', i18nKey: 'page.home.myApps.title' },
-  { key: 'identity', i18nKey: 'page.home.identity.navIdentity' }
+  { key: 'identity', i18nKey: 'page.home.identity.navIdentity' },
+  { key: 'square', i18nKey: 'page.home.square.tab' }
 ];
 const activeTab = ref<HomeTab>('apps');
+
+// 模型广场面板懒挂载：首次切到该 Tab 才加载数据（identity 与身份卡共享，不重复请求）
+const squareLoaded = ref(false);
+watch(activeTab, val => {
+  if (val === 'square') squareLoaded.value = true;
+});
 
 // ===== 用户下拉（个人中心 / 退出登录）=====
 const dropdownOptions = computed(() => [
@@ -216,8 +224,9 @@ function fmtTime(raw: string) {
   return Number.isNaN(d.getTime()) ? raw : d.toLocaleString();
 }
 
+/** 「我的申请」空态入口：切到模型广场 Tab（广场已内嵌 home，不再跳独立路由） */
 function goSquare() {
-  routerPushByKey('square');
+  activeTab.value = 'square';
 }
 
 function handleCopy() {
@@ -625,6 +634,11 @@ onMounted(async () => {
               </NButton>
             </div>
           </NCard>
+
+          <!-- 模型广场：可见模型浏览 + 接入信息 + 申请订阅（懒挂载） -->
+          <section v-show="activeTab === 'square'" class="flex flex-col gap-12px">
+            <ModelSquarePanel v-if="squareLoaded" :identity="identity" @applied="loadApplications" />
+          </section>
         </template>
       </div>
     </main>

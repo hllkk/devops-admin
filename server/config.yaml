@@ -75,7 +75,7 @@ hua-wei-obs:
     access-key: you-access-key
     secret-key: you-secret-key
 jwt:
-    signing-key: ba457e27-d3d7-4bb8-a24f-62b68e5c4af6
+    signing-key: 9555d86a-b40f-4a71-be40-8ccf8e14a086
     expires-time: 7d
     buffer-time: 1d
     issuer: devops-admin

@@ -230,15 +230,6 @@ export const generatedRoutes: GeneratedRoute[] = [
     }
   },
   {
-    name: 'square',
-    path: '/square',
-    component: 'layout.base$view.square',
-    meta: {
-      title: 'square',
-      i18nKey: 'route.square'
-    }
-  },
-  {
     name: 'system',
     path: '/system',
     component: 'layout.base',

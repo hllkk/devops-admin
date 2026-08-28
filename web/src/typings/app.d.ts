@@ -721,11 +721,8 @@ declare namespace App {
             title: string;
             empty: string;
           };
-        };
-        gateway: {
-          title: string;
-          comingSoon: string;
           square: {
+            tab: string;
             title: string;
             subtitle: string;
             searchPlaceholder: string;
@@ -734,7 +731,6 @@ declare namespace App {
             notAuthorized: string;
             requiresApproval: string;
             viewAccess: string;
-            contactAdmin: string;
             copy: string;
             copied: string;
             accessTitle: string;
@@ -754,6 +750,10 @@ declare namespace App {
             applySubmit: string;
             applySuccess: string;
           };
+        };
+        gateway: {
+          title: string;
+          comingSoon: string;
           application: {
             title: string;
             subtitle: string;

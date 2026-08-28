@@ -277,7 +277,6 @@ const local: App.I18n.Schema = {
     models: 'Model Supply',
     models_model: 'Models',
     models_provider: 'Providers',
-    square: 'Model Square',
     usage: 'Usage Logs',
     application: 'Applications',
     init: 'System Init',
@@ -542,12 +541,9 @@ const local: App.I18n.Schema = {
       myApps: {
         title: 'My Apps',
         empty: 'No apps available'
-      }
-    },
-    gateway: {
-      title: 'AI Gateway',
-      comingSoon: 'Coming soon',
+      },
       square: {
+        tab: 'Model Square',
         title: 'Model Square',
         subtitle: 'Models visible to you by publish scope; authorized models show access info directly',
         searchPlaceholder: 'Search model name / route name',
@@ -556,7 +552,6 @@ const local: App.I18n.Schema = {
         notAuthorized: 'Not authorized',
         requiresApproval: 'Approval required',
         viewAccess: 'View Access',
-        contactAdmin: 'Contact the administrator to enable',
         copy: 'Copy',
         copied: 'Copied',
         accessTitle: 'Access Info',
@@ -575,7 +570,11 @@ const local: App.I18n.Schema = {
         applyReasonPlaceholder: 'Enter your reason (required)',
         applySubmit: 'Submit',
         applySuccess: 'Application submitted; you will be notified in-app of the result'
-      },
+      }
+    },
+    gateway: {
+      title: 'AI Gateway',
+      comingSoon: 'Coming soon',
       application: {
         title: 'Applications',
         subtitle: 'Review model subscription requests from users; approval grants the model to the applicant’s main key',
