@@ -36,6 +36,7 @@ declare module "@elegant-router/types" {
     "models_provider": "/models/provider";
     "server": "/server";
     "social-callback": "/social-callback";
+    "square": "/square";
     "system": "/system";
     "system_dept": "/system/dept";
     "system_dict": "/system/dict";
@@ -92,6 +93,7 @@ declare module "@elegant-router/types" {
     | "models"
     | "server"
     | "social-callback"
+    | "square"
     | "system"
     | "timer"
     | "user-center"
@@ -136,6 +138,7 @@ declare module "@elegant-router/types" {
     | "gateway"
     | "models_model"
     | "models_provider"
+    | "square"
     | "server"
     | "home"
   >;

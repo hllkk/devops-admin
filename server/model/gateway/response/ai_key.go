@@ -40,7 +40,8 @@ type MyIdentityView struct {
 	TpmLimit        *int                 `json:"tpmLimit"`        // 全局TPM
 	RpmLimit        *int                 `json:"rpmLimit"`        // 全局RPM
 	SceneKeys       []AiKeyView          `json:"sceneKeys"`       // 我的场景Key列表
-	AvailableModels []AvailableModelView `json:"availableModels"` // 可用模型(供申请新Key选)
+	AvailableModels []AvailableModelView `json:"availableModels"` // 可见模型(按发布可见性过滤,home 可用模型卡)
+	GatewayUrl      string               `json:"gatewayUrl"`      // 网关接入点(litellm public-url,客户端 Base URL)
 }
 
 // AvailableModelView 可授权模型(精简版，供 Key 授权选择)。

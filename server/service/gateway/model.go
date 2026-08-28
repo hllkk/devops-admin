@@ -82,44 +82,25 @@ func (s *ModelService) GetModelList(ctx context.Context, q gatewayReq.ModelSearc
 	return list, total, nil
 }
 
-// GetActiveModels 对外激活模型列表(active+published)：附 anthropic 变体路由名，
-// 供 home AI 身份/后续 AiKey 授权选择用。
-func (s *ModelService) GetActiveModels(ctx context.Context) ([]gatewayResp.ActiveModelView, error) {
+// GetActiveModels 用户侧可见模型列表(active+published+按发布可见性过滤，所有用户含超管统一过滤)：
+// all 档直通/selected 档命中用户归属部门(主部门∪多部门)/user 档命中用户投影。
+// 附 anthropic 变体路由名，模型广场与 home 可用模型的数据源(与 GetMyVisibleModels 口径一致)。
+// 管理员建 Key 的授权下拉用 AiKeyService.GetAvailableModels(全量视角)，两者勿混。
+func (s *ModelService) GetActiveModels(ctx context.Context, userId int64) ([]gatewayResp.ActiveModelView, error) {
+	q := visibleModelScope(
+		global.OPS_DB.WithContext(ctx).Model(&gateway.Model{}).
+			Where("is_active = ? AND is_published = ?", true, true),
+		userId, userDeptIdOf(global.OPS_DB.WithContext(ctx), userId),
+	)
 	var models []gateway.Model
-	if err := global.OPS_DB.WithContext(ctx).
-		Where("is_active = ? AND is_published = ?", true, true).
-		Order("model_id DESC").Find(&models).Error; err != nil {
+	if err := q.Order("model_id DESC").Find(&models).Error; err != nil {
 		return nil, err
 	}
 	modelIds := make([]int64, 0, len(models))
 	for i := range models {
 		modelIds = append(modelIds, models[i].ModelId)
 	}
-	// 活跃部署 → 模型的 anthropic 标注（存在 active 且绑定 active anthropic 凭证的部署）
-	anthropicModels := map[int64]bool{}
-	if len(modelIds) > 0 {
-		var deps []gateway.ModelDeployment
-		_ = global.OPS_DB.WithContext(ctx).
-			Where("is_active = ? AND credential_id <> 0 AND model_id IN ?", true, modelIds).
-			Find(&deps).Error
-		credIds := make([]int64, 0, len(deps))
-		for i := range deps {
-			credIds = append(credIds, deps[i].CredentialId)
-		}
-		creds := map[int64]*gateway.Credential{}
-		if len(credIds) > 0 {
-			var rows []gateway.Credential
-			_ = global.OPS_DB.WithContext(ctx).Where("credential_id IN ?", credIds).Find(&rows).Error
-			for i := range rows {
-				creds[rows[i].CredentialId] = &rows[i]
-			}
-		}
-		for i := range deps {
-			if cred, ok := creds[deps[i].CredentialId]; ok && cred.IsActive && formatOf(cred) == "anthropic" {
-				anthropicModels[deps[i].ModelId] = true
-			}
-		}
-	}
+	anthropicModels := annotateAnthropic(ctx, global.OPS_DB, modelIds)
 	list := make([]gatewayResp.ActiveModelView, 0, len(models))
 	for i := range models {
 		m := models[i]
@@ -365,8 +346,9 @@ func (s *ModelService) PublishModel(ctx context.Context, req gatewayReq.ModelPub
 	}
 	if len(req.UserIds) > 0 {
 		var cnt int64
+		// SysUser 主键 DB 列复用 id(gorm column:id)，非 user_id
 		if err := global.OPS_DB.WithContext(ctx).Model(&system.SysUser{}).
-			Where("user_id IN ?", req.UserIds).Count(&cnt).Error; err != nil {
+			Where("id IN ?", req.UserIds).Count(&cnt).Error; err != nil {
 			return err
 		}
 		if cnt != int64(len(req.UserIds)) {
@@ -407,10 +389,11 @@ func (s *ModelService) PublishModel(ctx context.Context, req gatewayReq.ModelPub
 				return err
 			}
 		}
-		// 发布公开模型(发布+免审批+有路由名)→自动授权到所有 active 主 Key(回补 slice3 TODO)
-		// 边界：仅 all 档自动授权；selected/user 档定向发布不自动授权(订阅入口后续落地)
-		if req.IsPublished && !req.RequiresApproval && visibility == gateway.VisibilityTypeAll && m.ModelKey != "" {
-			syncPublicModelToMainKeys(ctx, tx, m.ModelKey) // 单个失败 warning 不中断
+		// 发布免审批模型(有路由名)→按可见档自动授权到目标活跃主 Key(单个失败 warning 不中断)：
+		// all=全部主 Key；selected=可见部门成员的个人主 Key+可见部门的部门主 Key；user=指定
+		// 用户的个人主 Key(与 visibleModelScope 可见口径对称)。需审批模型不自动授权(申请流 P2)。
+		if req.IsPublished && !req.RequiresApproval && m.ModelKey != "" {
+			syncModelToMainKeys(ctx, tx, m.ModelKey, mainKeyScopeOf(visibility, req.DepartmentIds, req.UserIds))
 		}
 		return nil
 	})
@@ -419,6 +402,54 @@ func (s *ModelService) PublishModel(ctx context.Context, req gatewayReq.ModelPub
 // ----------------------------------------------------------------------------
 // 内部工具
 // ----------------------------------------------------------------------------
+
+// visibleModelScope 按发布可见性给模型查询加过滤条件(all 档直通/selected 档命中用户
+// 归属部门=主部门∪多部门连接表/user 档命中用户投影)。GetActiveModels(用户侧可见列表)
+// 与 visibleModelKeys(主 Key 自愈差集)共用。投影表带软删基座，手写 EXISTS 子查询需
+// 显式排除软删行(发布时物理删+插，活行 deleted_at 均 IS NULL)。
+func visibleModelScope(db *gorm.DB, userId, deptId int64) *gorm.DB {
+	return db.Where(
+		`visibility_type = ?
+		OR EXISTS(SELECT 1 FROM gateway_model_visibility v
+			WHERE v.model_id = gateway_model.model_id AND v.deleted_at IS NULL
+			AND (v.department_id = ?
+				OR v.department_id IN (SELECT ud.sys_department_id FROM sys_user_departments ud WHERE ud.sys_user_id = ?)))
+		OR EXISTS(SELECT 1 FROM gateway_model_visibility_user u
+			WHERE u.model_id = gateway_model.model_id AND u.user_id = ? AND u.deleted_at IS NULL)`,
+		gateway.VisibilityTypeAll, deptId, userId, userId,
+	)
+}
+
+// annotateAnthropic 活跃部署 → 模型的 anthropic 标注(存在 active 且绑定 active
+// anthropic 凭证的部署)。GetActiveModels/GetMyVisibleModels/GetAvailableModels 共用。
+func annotateAnthropic(ctx context.Context, db *gorm.DB, modelIds []int64) map[int64]bool {
+	anthropicModels := map[int64]bool{}
+	if len(modelIds) == 0 {
+		return anthropicModels
+	}
+	var deps []gateway.ModelDeployment
+	_ = db.WithContext(ctx).
+		Where("is_active = ? AND credential_id <> 0 AND model_id IN ?", true, modelIds).
+		Find(&deps).Error
+	credIds := make([]int64, 0, len(deps))
+	for i := range deps {
+		credIds = append(credIds, deps[i].CredentialId)
+	}
+	creds := map[int64]*gateway.Credential{}
+	if len(credIds) > 0 {
+		var rows []gateway.Credential
+		_ = db.WithContext(ctx).Where("credential_id IN ?", credIds).Find(&rows).Error
+		for i := range rows {
+			creds[rows[i].CredentialId] = &rows[i]
+		}
+	}
+	for i := range deps {
+		if cred, ok := creds[deps[i].CredentialId]; ok && cred.IsActive && formatOf(cred) == "anthropic" {
+			anthropicModels[deps[i].ModelId] = true
+		}
+	}
+	return anthropicModels
+}
 
 // cascadeRebuildModelDeployments 模型改名/改类后的部署级联重建(尽力而为)：
 // 逐个重建投影并推送(路由名切换到新 model_key/新前缀)，单个失败记 warning 继续。

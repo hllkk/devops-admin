@@ -48,12 +48,14 @@ func (a *ModelApi) GetModelList(c *gin.Context) {
 
 // GetActiveModels
 // @Tags      GatewayModel
-// @Summary   获取对外激活模型列表(active+published，含 anthropic 变体路由名)
+// @Summary   获取用户侧可见模型列表(active+published+按发布可见性过滤，含 anthropic 变体路由名)
 // @Produce   application/json
 // @Success   200  {object}  response.Response{data=[]response.ActiveModelView,msg=string}
 // @Router    /gateway/model/active [get]
 func (a *ModelApi) GetActiveModels(c *gin.Context) {
-	list, err := modelService.GetActiveModels(c.Request.Context())
+	// 所有用户(含超管)一律按发布可见性过滤，与 GetMyIdentity 的可用模型口径一致；
+	// 超管看全部模型走管理端 GetModelList，用户端不越权
+	list, err := modelService.GetActiveModels(c.Request.Context(), utils.GetUserID(c))
 	if err != nil {
 		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取激活模型列表失败")
 		response.FailWithMessage("获取失败", c)

@@ -175,6 +175,20 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			OrderNum:  9,
 			Module:    "gateway",
 		},
+		// 模型广场:用户侧可见模型浏览+接入信息(全员基础页,数据按发布可见性过滤;
+		// 接口 /gateway/model/active 已入 casbin 登录白名单,ApiPrefix 仅保留菜单-接口关联语义)
+		{
+			ParentId:  0,
+			MenuName:  "route.square",
+			MenuType:  "C",
+			Path:      "square",
+			ApiPrefix: "/gateway/model/active",
+			Component: "_gateway/square/index",
+			Icon:      "lucide:store",
+			Visible:   "0",
+			OrderNum:  10,
+			Module:    "gateway",
+		},
 	}
 
 	// 先创建父级菜单（ParentId = 0 的菜单）

@@ -28,6 +28,7 @@ var rbacWhitelistPrivate = []string{
 	// 管理操作(建删改 Key/scenario/POST aggregate)不在此列,仍走 casbin 菜单授权。
 	"/gateway/ai-key/identity/my",             // 我的 AI 身份(未开通返回 opened=false)
 	"/gateway/ai-key/identity/available-models", // 可授权模型列表(只读公共数据)
+		"/gateway/model/active", // 用户侧可见模型列表(模型广场/home,按发布可见性过滤)
 	"/gateway/dashboard/overview",             // 我的用量总览
 	"/gateway/dashboard/trend",                // 我的成本趋势
 	"/gateway/dashboard/top",                  // 我的成本Top

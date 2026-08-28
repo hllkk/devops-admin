@@ -2,6 +2,14 @@ import { request } from '@/service/request';
 
 // ── 模型 Model ──
 
+/** 获取用户侧可见模型列表(active+published+按发布可见性过滤;模型广场用,超管看全部) */
+export function fetchGetActiveModels() {
+  return request<Api.Gateway.ActiveModel[]>({
+    url: '/gateway/model/active',
+    method: 'get'
+  });
+}
+
 /** 分页获取模型列表(支持 name/modelKey/category/isActive/isPublished 筛选) */
 export function fetchGetModelList(params?: Api.Gateway.ModelSearchParams) {
   return request<Api.Gateway.ModelList>({

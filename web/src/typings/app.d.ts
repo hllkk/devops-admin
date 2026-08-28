@@ -692,6 +692,8 @@ declare namespace App {
             resMcp: string;
             resSkill: string;
             resCount: string;
+            resNotAuthorized: string;
+            resApproval: string;
             resEmptyModels: string;
             resEmptyMarket: string;
             overviewTitle: string;
@@ -719,6 +721,27 @@ declare namespace App {
         gateway: {
           title: string;
           comingSoon: string;
+          square: {
+            title: string;
+            subtitle: string;
+            searchPlaceholder: string;
+            empty: string;
+            authorized: string;
+            notAuthorized: string;
+            requiresApproval: string;
+            viewAccess: string;
+            contactAdmin: string;
+            copy: string;
+            copied: string;
+            accessTitle: string;
+            accessModelKey: string;
+            accessModelKeyTip: string;
+            accessModelKeyAnthropic: string;
+            accessAnthropicTip: string;
+            accessBaseUrl: string;
+            accessApiKey: string;
+            noIdentity: string;
+          };
           common: {
             optional: string;
             unlimited: string;
@@ -870,6 +893,7 @@ declare namespace App {
             selectModelTip: string;
             publish: {
               title: string;
+              subtitle: string;
               isPublished: string;
               visibilityType: string;
               visibilityAll: string;
@@ -880,6 +904,7 @@ declare namespace App {
               userIds: string;
               userRequired: string;
               requiresApproval: string;
+              requiresApprovalTip: string;
               autoGrantTip: string;
               modelKeyUnsetTip: string;
             };

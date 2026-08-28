@@ -78,9 +78,16 @@ function handleUserMenu(key: string) {
 // identity/my 管理员创建制：主 Key 由管理员后台创建，未开通 opened=false(身份卡显示空态)；
 // 已开通返回主 Key 明文 + 场景 Key 列表 + 可用模型；
 // 用量 KPI/趋势调 dashboard scope=self；mcps/skills/申请列表为 P2 资源申请能力，P1 占位。
-const mainKey = ref<Api.Gateway.MyIdentity | null>(null);
+// identity/my 全量保存(未开通 opened=false 也带可见模型与接入点)；mainKey 仅开通后有值
+const identity = ref<Api.Gateway.MyIdentity | null>(null);
+const mainKey = computed(() => (identity.value?.opened ? identity.value : null));
 const kpi = ref<Api.Gateway.DashboardOverview | null>(null);
 const trend = ref<Api.Gateway.TrendItem[]>([]);
+
+// ===== 可见模型(按发布可见性过滤)与主 Key 已授权集合：「我的资源」卡数据源 =====
+const visibleModels = computed(() => identity.value?.availableModels ?? []);
+const authorizedKeys = computed(() => new Set(mainKey.value?.models ?? []));
+const authorizedCount = computed(() => visibleModels.value.filter(m => authorizedKeys.value.has(m.modelKey)).length);
 
 const fullKey = computed(() => mainKey.value?.keyValue ?? '');
 const maskedKey = computed(() => {
@@ -195,9 +202,10 @@ function handleCopy() {
 }
 
 async function loadIdentity() {
-  // identity/my 管理员创建制：未开通(opened=false)保持 null，身份卡走"暂无 AI 身份"空态
+  // identity/my 管理员创建制：未开通(opened=false)时 mainKey computed 为 null,身份卡走
+  // "暂无 AI 身份"空态;可见模型照常返回,「我的资源」卡对未开通用户也展示可开通的模型
   const { data, error } = await fetchGetMyIdentity();
-  if (!error && data && data.opened) mainKey.value = data;
+  if (!error && data) identity.value = data;
 }
 
 async function loadUsage() {
@@ -443,25 +451,41 @@ onMounted(async () => {
             </div>
           </section>
 
-          <!-- 我的资源 -->
-          <section v-if="mainKey" v-show="activeTab === 'identity'" class="flex flex-col gap-12px">
+          <!-- 我的资源(可见模型不需要已开通：未开通用户也可见可开通的模型) -->
+          <section v-show="activeTab === 'identity'" class="flex flex-col gap-12px">
             <NCard :bordered="false" size="small" class="card-wrapper shadow-md">
               <div class="mb-12px flex items-center gap-8px">
                 <SvgIcon icon="lucide:cpu" class="home-accent text-16px" />
                 <span class="text-14px font-medium">{{ $t('page.home.identity.resModel') }}</span>
                 <span class="ml-auto text-12px text-slate-400">
-                  {{ $t('page.home.identity.resCount', { count: mainKey.models.length }) }}
+                  {{ $t('page.home.identity.resCount', { authorized: authorizedCount, visible: visibleModels.length }) }}
                 </span>
               </div>
-              <div v-if="mainKey.models.length" class="flex flex-wrap gap-8px">
-                <NTag v-for="model in mainKey.models" :key="model" type="primary" size="small" round :bordered="false">
-                  {{ model }}
-                </NTag>
+              <div v-if="visibleModels.length" class="flex flex-wrap gap-8px">
+                <NTooltip v-for="model in visibleModels" :key="model.modelId" trigger="hover">
+                  <template #trigger>
+                    <NTag
+                      :type="authorizedKeys.has(model.modelKey) ? 'primary' : 'default'"
+                      size="small"
+                      round
+                      :bordered="authorizedKeys.has(model.modelKey)"
+                    >
+                      {{ model.name }}
+                    </NTag>
+                  </template>
+                  {{
+                    authorizedKeys.has(model.modelKey)
+                      ? model.modelKey
+                      : model.requiresApproval
+                        ? $t('page.home.identity.resApproval')
+                        : $t('page.home.identity.resNotAuthorized')
+                  }}
+                </NTooltip>
               </div>
               <p v-else class="text-12px text-slate-400">{{ $t('page.home.identity.resEmptyModels') }}</p>
             </NCard>
 
-            <NCard :bordered="false" size="small" class="card-wrapper shadow-md">
+            <NCard v-if="mainKey" :bordered="false" size="small" class="card-wrapper shadow-md">
               <div class="mb-12px flex items-center gap-8px">
                 <SvgIcon icon="lucide:server" class="text-16px text-emerald-600" />
                 <span class="text-14px font-medium">{{ $t('page.home.identity.resMcp') }}</span>
@@ -469,7 +493,7 @@ onMounted(async () => {
               <p class="text-12px text-slate-400">{{ $t('page.gateway.comingSoon') }}</p>
             </NCard>
 
-            <NCard :bordered="false" size="small" class="card-wrapper shadow-md">
+            <NCard v-if="mainKey" :bordered="false" size="small" class="card-wrapper shadow-md">
               <div class="mb-12px flex items-center gap-8px">
                 <SvgIcon icon="lucide:sparkles" class="text-16px text-amber-500" />
                 <span class="text-14px font-medium">{{ $t('page.home.identity.resSkill') }}</span>

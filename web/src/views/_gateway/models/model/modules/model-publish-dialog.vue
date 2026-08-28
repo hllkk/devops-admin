@@ -146,6 +146,7 @@ watch(visible, val => {
     content-style="max-height: calc(100vh - 220px); overflow-y: auto;"
   >
     <NForm ref="formRef" :model="formModel" :rules="rules" label-placement="left" :label-width="110">
+      <p class="mb-12px text-12px text-slate-400">{{ $t('page.gateway.model.publish.subtitle') }}</p>
       <NAlert v-if="formModel.isPublished && !formModel.requiresApproval && !model.modelKey" type="warning" :show-icon="true" class="mb-12px">
         {{ $t('page.gateway.model.publish.modelKeyUnsetTip') }}
       </NAlert>
@@ -155,40 +156,46 @@ watch(visible, val => {
           <span class="text-12px text-slate-400">{{ $t('page.gateway.model.publish.autoGrantTip') }}</span>
         </div>
       </NFormItem>
-      <NFormItem :label="$t('page.gateway.model.publish.visibilityType')">
-        <NRadioGroup :value="formModel.visibilityType" @update:value="handleVisibilityChange">
-          <NRadio value="all">{{ $t('page.gateway.model.publish.visibilityAll') }}</NRadio>
-          <NRadio value="selected">{{ $t('page.gateway.model.publish.visibilitySelected') }}</NRadio>
-          <NRadio value="user">{{ $t('page.gateway.model.publish.visibilityUser') }}</NRadio>
-        </NRadioGroup>
-      </NFormItem>
-      <NFormItem v-if="formModel.visibilityType === 'selected'" :label="$t('page.gateway.model.publish.departmentIds')" path="departmentIds">
-        <NTreeSelect
-          v-model:value="formModel.departmentIds"
-          multiple
-          checkable
-          filterable
-          :loading="loading || !deptLoaded"
-          key-field="id"
-          label-field="label"
-          :options="deptOptions as []"
-          :placeholder="$t('common.placeholderSelect')"
-        />
-      </NFormItem>
-      <NFormItem v-if="formModel.visibilityType === 'user'" :label="$t('page.gateway.model.publish.userIds')" path="userIds">
-        <NSelect
-          v-model:value="formModel.userIds"
-          multiple
-          filterable
-          clearable
-          :loading="loading || !userLoaded"
-          :options="userOptions"
-          :placeholder="$t('common.placeholderSelect')"
-        />
-      </NFormItem>
-      <NFormItem :label="$t('page.gateway.model.publish.requiresApproval')">
-        <NSwitch v-model:value="formModel.requiresApproval" />
-      </NFormItem>
+      <!-- 可见范围与领用审批仅发布开启时配置(参照 AIHelms 发布设置弹窗) -->
+      <template v-if="formModel.isPublished">
+        <NFormItem :label="$t('page.gateway.model.publish.visibilityType')">
+          <NRadioGroup :value="formModel.visibilityType" @update:value="handleVisibilityChange">
+            <NRadio value="all">{{ $t('page.gateway.model.publish.visibilityAll') }}</NRadio>
+            <NRadio value="selected">{{ $t('page.gateway.model.publish.visibilitySelected') }}</NRadio>
+            <NRadio value="user">{{ $t('page.gateway.model.publish.visibilityUser') }}</NRadio>
+          </NRadioGroup>
+        </NFormItem>
+        <NFormItem v-if="formModel.visibilityType === 'selected'" :label="$t('page.gateway.model.publish.departmentIds')" path="departmentIds">
+          <NTreeSelect
+            v-model:value="formModel.departmentIds"
+            multiple
+            checkable
+            filterable
+            :loading="loading || !deptLoaded"
+            key-field="id"
+            label-field="label"
+            :options="deptOptions as []"
+            :placeholder="$t('common.placeholderSelect')"
+          />
+        </NFormItem>
+        <NFormItem v-if="formModel.visibilityType === 'user'" :label="$t('page.gateway.model.publish.userIds')" path="userIds">
+          <NSelect
+            v-model:value="formModel.userIds"
+            multiple
+            filterable
+            clearable
+            :loading="loading || !userLoaded"
+            :options="userOptions"
+            :placeholder="$t('common.placeholderSelect')"
+          />
+        </NFormItem>
+        <NFormItem :label="$t('page.gateway.model.publish.requiresApproval')">
+          <div class="flex items-center gap-8px">
+            <NSwitch v-model:value="formModel.requiresApproval" />
+            <span class="text-12px text-slate-400">{{ $t('page.gateway.model.publish.requiresApprovalTip') }}</span>
+          </div>
+        </NFormItem>
+      </template>
     </NForm>
     <template #footer>
       <NSpace justify="end" :size="12">

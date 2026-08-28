@@ -236,7 +236,7 @@ async function handleSubmit() {
   formModel.value.litellmParams = nextParams;
 
   // 内部结算定价四键空值剔除(保留 model_info 其它镜像键如 input_cost,由后端 MergeCostsToModelInfo 重算)
-  const info = { ...(formModel.value.modelInfo ?? {}) };
+  const info = { ...formModel.value.modelInfo };
   for (const key of INTERNAL_COST_KEYS) {
     const v = info[key];
     if (v === null || v === undefined || v === '') {

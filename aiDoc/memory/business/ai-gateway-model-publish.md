@@ -25,7 +25,9 @@
 - **回填以 GET publish/:id 为准**而非列表行：可见部门投影行只在视图中返回，列表 Model 行没有该信息。
 - **部门树 NTreeSelect 直用**而非复用 `dept-tree-select` 组件：该封装 value 模型是单选 IdType，多选勾选语义下直接用 NTreeSelect（multiple+checkable+filterable，默认 cascade 级联勾选父带子）。
 - **取消发布不回收已授权 Key**：沿用既有边界（loadMainKey 自愈按 publicModelKeys 差集不会加回），弹窗不做取消发布的二次确认——发布设置可随时改回。
-- **用户级可见档(user)**：对齐 AIHelms `model_user_visibility` 蓝本。新增 `gateway.ModelVisibilityUser`（`gateway_model_visibility_user`，唯一索引 model_id+user_id，物理删插同部门投影表口径）；`VisibilityTypeUser` 常量；请求/视图加 `UserIds []int64`；`PublishModel` 校验「user+发布时 userIds 必填 + 存在性校验(sys_users)」，事务内重建用户可见行；`DeleteModels` 级联清空。
+- **用户级可见档(user)**：对齐 AIHelms `model_user_visibility` 蓝本。新增 `gateway.ModelVisibilityUser`（`gateway_model_visibility_user`，唯一索引 model_id+user_id，物理删插同部门投影表口径）；`VisibilityTypeUser` 常量；请求/视图加 `UserIds`；`PublishModel` 校验「user+发布时 userIds 必填 + 存在性校验(sys_users)」，事务内重建用户可见行；`DeleteModels` 级联清空。
+- **请求 ID 列表必须用 `common.Int64StringSlice`**（踩坑：`[]int64` 遇前端 NSelect 用户 id 为 string 时报 `json: cannot unmarshal string into Go struct field ... of type int64`；用户下拉 value 来自 `fetchGetUserSelect` 的 IdType=string，而部门树 id 是 number 所以之前没炸）。发布参数 DepartmentIds/UserIds 均已改 Int64StringSlice（元素级 string/number 兼容，先例 ai_key 批量开通）。
+- **SysUser 的 DB 列陷阱**（踩坑：`column "user_id" does not exist`）：`system.SysUser` 主键 gorm `column:id` 复用 id 列，手写 SQL 校验存在性要用 `id IN ?` 而非 `user_id IN ?`（部门侧 SysDepartment 是正常 `dept_id`，故 selected 档没炸）。
 - **自动授权收窄为仅 all 档**：`PublishModel` 的 `syncPublicModelToMainKeys` 与 `publicModelKeys`（新主 Key 默认授权 + 自愈差集来源）都加 `visibility_type = all` 条件——定向发布（selected/user）不应全量授权到主 Key，语义与可见性投影一致。这是行为变更：此前 selected 档发布也会自动授权。
 - **改名**：「发布配置」→「模型发布」（i18n title 一处，按钮/弹窗标题共用该 key）。
 

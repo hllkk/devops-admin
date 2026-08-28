@@ -44,7 +44,9 @@ func (s *AiKeyService) GetMyIdentity(ctx context.Context, userId int64) (gateway
 		RateLimitMode:  gateway.RateLimitModeNone,
 		BudgetDuration: gateway.BudgetDuration30d,
 	}
-	view.AvailableModels, _ = s.GetAvailableModels(ctx)
+	view.AvailableModels, _ = s.GetMyVisibleModels(ctx, userId)
+	// 网关接入点(litellm public-url)：客户端直连 Base URL，接入信息展示用
+	view.GatewayUrl = global.OPS_CONFIG.Litellm.PublicURL
 	if mainKey == nil {
 		return view, nil // 未开通：等管理员在后台创建主 Key
 	}
@@ -82,42 +84,35 @@ func (s *AiKeyService) GetMyIdentity(ctx context.Context, userId int64) (gateway
 	return view, nil
 }
 
-// GetAvailableModels 可授权模型(active+published，含 anthropic 变体标注)，复用 slice3 逻辑。
+// GetAvailableModels 可授权模型(active+published，含 anthropic 变体标注)——管理员全量视角
+// (建 Key 授权下拉用)，不按用户可见性过滤。
 func (s *AiKeyService) GetAvailableModels(ctx context.Context) ([]gatewayResp.AvailableModelView, error) {
+	return s.listModelsAsAvailable(ctx, func(q *gorm.DB) *gorm.DB { return q })
+}
+
+// GetMyVisibleModels 当前用户可见的激活模型(按发布可见性过滤)：all 档直通/selected 档
+// 命中归属部门/user 档命中用户投影。home「可用模型」卡数据源，与 GetAvailableModels
+// (管理员全量)区分。
+func (s *AiKeyService) GetMyVisibleModels(ctx context.Context, userId int64) ([]gatewayResp.AvailableModelView, error) {
+	db := global.OPS_DB.WithContext(ctx)
+	return s.listModelsAsAvailable(ctx, func(q *gorm.DB) *gorm.DB {
+		return visibleModelScope(q, userId, userDeptIdOf(db, userId))
+	})
+}
+
+// listModelsAsAvailable 激活模型 → AvailableModelView 贫字段列表(scope 注入过滤条件)。
+func (s *AiKeyService) listModelsAsAvailable(ctx context.Context, scope func(*gorm.DB) *gorm.DB) ([]gatewayResp.AvailableModelView, error) {
 	var models []gateway.Model
-	if err := global.OPS_DB.WithContext(ctx).
-		Where("is_active = ? AND is_published = ?", true, true).
+	if err := scope(global.OPS_DB.WithContext(ctx).Model(&gateway.Model{}).
+		Where("is_active = ? AND is_published = ?", true, true)).
 		Order("model_id DESC").Find(&models).Error; err != nil {
 		return nil, err
 	}
-	// 活跃部署→anthropic 标注(复用 slice3 GetActiveModels 同款联查)
-	anthropicKeys := map[int64]bool{}
 	modelIds := make([]int64, 0, len(models))
 	for i := range models {
 		modelIds = append(modelIds, models[i].ModelId)
 	}
-	if len(modelIds) > 0 {
-		var deps []gateway.ModelDeployment
-		_ = global.OPS_DB.WithContext(ctx).
-			Where("is_active = ? AND credential_id <> 0 AND model_id IN ?", true, modelIds).Find(&deps).Error
-		credIds := make([]int64, 0, len(deps))
-		for i := range deps {
-			credIds = append(credIds, deps[i].CredentialId)
-		}
-		creds := map[int64]*gateway.Credential{}
-		if len(credIds) > 0 {
-			var rows []gateway.Credential
-			_ = global.OPS_DB.WithContext(ctx).Where("credential_id IN ?", credIds).Find(&rows).Error
-			for i := range rows {
-				creds[rows[i].CredentialId] = &rows[i]
-			}
-		}
-		for i := range deps {
-			if cred, ok := creds[deps[i].CredentialId]; ok && cred.IsActive && formatOf(cred) == "anthropic" {
-				anthropicKeys[deps[i].ModelId] = true
-			}
-		}
-	}
+	anthropicKeys := annotateAnthropic(ctx, global.OPS_DB, modelIds)
 
 	list := make([]gatewayResp.AvailableModelView, 0, len(models))
 	for i := range models {
@@ -376,9 +371,15 @@ func (s *AiKeyService) CreateSceneKey(ctx context.Context, req gatewayReq.AiKeyO
 	if models == nil {
 		models = []string{}
 	}
-	// 主 Key 未显式指定授权模型时默认含全部公开模型(管理员创建制下对齐主 Key 原默认语义)
+	// 主 Key 未显式指定授权模型时默认含对其可见的全部免审批模型(对齐原"全部公开模型"
+	// 默认语义；定向发布对可见范围同样生效——个人主 Key 按用户可见,部门主 Key 按部门可见)
 	if gateway.MainKeyType(req.KeyType) && len(models) == 0 {
-		models = publicModelKeys(global.OPS_DB.WithContext(ctx))
+		db := global.OPS_DB.WithContext(ctx)
+		if req.OwnerType == gateway.OwnerTypeUser {
+			models = visibleModelKeys(db, req.OwnerId, userDeptIdOf(db, req.OwnerId))
+		} else {
+			models = visibleModelKeys(db, 0, req.OwnerId)
+		}
 	}
 
 	// 场景归属(仅场景 Key；主 Key 恒无场景)
@@ -753,8 +754,8 @@ func loadMainKey(ctx context.Context, userId int64) (*gateway.AiKey, error) {
 		return nil, err
 	}
 
-	// 已有主 Key：补缺失公开模型(幂等自愈)
-	publicKeys := publicModelKeys(global.OPS_DB.WithContext(ctx))
+	// 已有主 Key：补缺失的可见免审批模型(幂等自愈；定向发布对可见范围内的个人主 Key 同样生效)
+	publicKeys := visibleModelKeys(global.OPS_DB.WithContext(ctx), userId, userDeptIdOf(global.OPS_DB.WithContext(ctx), userId))
 	current := jsonToSlice(k.Models)
 	missing := []string{}
 	seen := map[string]bool{}
@@ -785,13 +786,40 @@ func loadMainKey(ctx context.Context, userId int64) (*gateway.AiKey, error) {
 	return &k, nil
 }
 
-// syncPublicModelToMainKeys 发布公开模型时遍历所有 active 主 Key 追加 modelKey 并同步
-// LiteLLM(事务内，单个失败 warning 继续)。回补 slice3 PublishModel 的 TODO。
-func syncPublicModelToMainKeys(ctx context.Context, tx *gorm.DB, modelKey string) []string {
+// mainKeyScopeOf 按发布可见档构造自动授权的主 Key 目标集合查询(scope 加在密钥查询上)：
+// all=全部主 Key；selected=可见部门成员(sys_users 主部门∪多部门)的个人主 Key+可见部门
+// 的部门主 Key；user=指定用户的个人主 Key。与 visibleModelScope 的可见口径对称。
+func mainKeyScopeOf(visibility string, deptIds, userIds []int64) func(*gorm.DB) *gorm.DB {
+	switch visibility {
+	case gateway.VisibilityTypeSelected:
+		return func(q *gorm.DB) *gorm.DB {
+			return q.Where(
+				`(key_type = ? AND owner_type = ? AND owner_id IN (
+					SELECT u.id FROM sys_users u WHERE u.deleted_at IS NULL AND (
+						u.dept_id IN ?
+						OR u.id IN (SELECT ud.sys_user_id FROM sys_user_departments ud WHERE ud.sys_department_id IN ?))))
+				OR (key_type = ? AND owner_type = ? AND owner_id IN ?)`,
+				gateway.KeyTypePersonalMain, gateway.OwnerTypeUser, deptIds, deptIds,
+				gateway.KeyTypeDeptMain, gateway.OwnerTypeDept, deptIds)
+		}
+	case gateway.VisibilityTypeUser:
+		return func(q *gorm.DB) *gorm.DB {
+			return q.Where("key_type = ? AND owner_type = ? AND owner_id IN ?",
+				gateway.KeyTypePersonalMain, gateway.OwnerTypeUser, userIds)
+		}
+	default: // all
+		return func(q *gorm.DB) *gorm.DB {
+			return q.Where("key_type IN ?", []string{gateway.KeyTypePersonalMain, gateway.KeyTypeDeptMain})
+		}
+	}
+}
+
+// syncModelToMainKeys 发布免审批模型时向目标活跃主 Key 集合追加 modelKey 并同步
+// LiteLLM(事务内，单个失败 warning 继续)。目标集合由 mainKeyScopeOf 按发布可见档构造
+// (all=全部主 Key/selected=可见部门成员+部门主Key/user=指定用户个人主Key)。
+func syncModelToMainKeys(ctx context.Context, tx *gorm.DB, modelKey string, scope func(*gorm.DB) *gorm.DB) []string {
 	var keys []gateway.AiKey
-	if err := tx.
-		Where("key_type IN ? AND is_active = ?", []string{gateway.KeyTypePersonalMain, gateway.KeyTypeDeptMain}, true).
-		Find(&keys).Error; err != nil {
+	if err := scope(tx).Where("is_active = ?", true).Find(&keys).Error; err != nil {
 		return []string{err.Error()}
 	}
 	cli := litellm.Default()
@@ -1144,14 +1172,25 @@ func toInt(v any) (int, bool) {
 	return 0, false
 }
 
-// publicModelKeys 公开模型 modelKey 列表(is_published AND !requires_approval AND is_active AND visibility_type=all)。
-// 定向发布(selected/user 档)不进入公开自动授权与主 Key 自愈差集。
-func publicModelKeys(db *gorm.DB) []string {
+// userDeptIdOf 用户主部门ID(查不到/无部门给 0)。
+func userDeptIdOf(db *gorm.DB, userId int64) int64 {
+	var deptId int64
+	db.Model(&system.SysUser{}).Select("dept_id").Where("id = ?", userId).Scan(&deptId)
+	return deptId
+}
+
+// visibleModelKeys 对指定主 Key owner 可见的免审批模型 modelKey 列表(主 Key 自愈差集
+// 与新建主 Key 默认授权的数据源)：个人 owner 传 (userId,主部门) 三档全生效；部门 owner
+// 传 (0,deptId) 仅 all/selected 档生效(user 档对部门无意义,userId=0 不命中投影)。
+// 定向发布(selected/user 档)对可见范围内的主 Key 同样生效，与发布时自动授权口径一致。
+func visibleModelKeys(db *gorm.DB, userId, deptId int64) []string {
 	var keys []string
-	db.Model(&gateway.Model{}).
-		Where("is_active = ? AND is_published = ? AND requires_approval = ?", true, true, false).
-		Where("visibility_type = ?", gateway.VisibilityTypeAll).
-		Where("model_key <> ''").Pluck("model_key", &keys)
+	visibleModelScope(
+		db.Model(&gateway.Model{}).
+			Where("is_active = ? AND is_published = ? AND requires_approval = ?", true, true, false).
+			Where("model_key <> ''"),
+		userId, deptId,
+	).Pluck("model_key", &keys)
 	return keys
 }
 

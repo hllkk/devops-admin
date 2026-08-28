@@ -171,7 +171,7 @@ declare namespace Api {
       hasAnthropicDeployment: boolean;
     };
 
-    /** 我的 AI 身份(home 契约：主 Key 明文 + 场景 Key 列表 + 可用模型；管理员创建制，未开通 opened=false) */
+    /** 我的 AI 身份(home 契约：主 Key 明文 + 场景 Key 列表 + 可见模型；管理员创建制，未开通 opened=false) */
     type MyIdentity = {
       opened: boolean;
       keyValue: string;
@@ -186,7 +186,24 @@ declare namespace Api {
       tpmLimit: number | null;
       rpmLimit: number | null;
       sceneKeys: AiKey[];
+      /** 可见模型(按发布可见性过滤:全员/部门/指定用户) */
       availableModels: AvailableModel[];
+      /** 网关接入点(litellm public-url,客户端 Base URL) */
+      gatewayUrl: string;
+    };
+
+    /** 用户侧可见模型(模型广场契约:active+published+按发布可见性过滤,含 anthropic 变体标注) */
+    type ActiveModel = {
+      modelId: CommonType.IdType;
+      modelKey: string;
+      modelKeyAnthropic: string;
+      name: string;
+      category: string;
+      description: string;
+      logoProviderType: string;
+      capabilities: string[];
+      requiresApproval: boolean;
+      hasAnthropicDeployment: boolean;
     };
 
     /** 看板总览(按时间范围汇总) */
