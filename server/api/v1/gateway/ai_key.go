@@ -146,7 +146,7 @@ func (a *AiKeyApi) CreateSceneKey(c *gin.Context) {
 
 // UpdateAiKey
 // @Tags      GatewayAiKey
-// @Summary   修改密钥(授权/预算/限流/启停；类型不可改)
+// @Summary   修改密钥(授权/预算/限流/启停；类型不可改。name/预算周期/限流模式空串与 tpm/rpm/预算额度 nil=不改，expires_at nil=改回永不过期)
 // @Accept    application/json
 // @Produce   application/json
 // @Param     data  body  gatewayReq.AiKeyOperateParams  true  "密钥信息(含 aiKeyId)"

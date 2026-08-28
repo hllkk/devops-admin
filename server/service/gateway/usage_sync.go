@@ -287,17 +287,10 @@ func (s *UsageSyncService) toLlmLog(ctx context.Context, db *gorm.DB, r *gateway
 	depId, dep := attributeDeployment(db, meta, r.ModelId, r.Model, depCache)
 
 	cacheRead, cacheCreation := parseCacheTokens(meta)
-	external, internal := calcCosts(dep, r.PromptTokens, r.CompletionTokens, cacheRead, cacheCreation)
-	if r.PromptTokens == 0 && meta["prompt_tokens"] != nil {
-		// 部分 LiteLLM 版本 token 在 metadata.usage_object 而非顶层列
-		if pt, ct := extractTokensFromUsage(meta); pt > 0 || ct > 0 {
-			if r.PromptTokens == 0 {
-				// 不覆盖顶层列值，仅兜底
-			}
-			_ = pt
-			_ = ct
-		}
-	}
+	// token 兜底：部分 LiteLLM 版本/provider 的 token 只在 metadata.usage_object(顶层列为 0)，
+	// 兜底值同时供成本重算与落库(不兜则 token 计费模型的成本记 0)
+	promptTokens, completionTokens, totalTokens := applyTokenFallback(r.PromptTokens, r.CompletionTokens, r.TotalTokens, meta)
+	external, internal := calcCosts(dep, promptTokens, completionTokens, cacheRead, cacheCreation)
 
 	started := r.StartTime.UTC()
 	ended := r.EndTime.UTC()
@@ -313,9 +306,9 @@ func (s *UsageSyncService) toLlmLog(ctx context.Context, db *gorm.DB, r *gateway
 		Model:               r.Model,
 		Provider:            r.CustomLlmProvider,
 		CallType:            r.CallType,
-		PromptTokens:        r.PromptTokens,
-		CompletionTokens:    r.CompletionTokens,
-		TotalTokens:         r.TotalTokens,
+		PromptTokens:        promptTokens,
+		CompletionTokens:    completionTokens,
+		TotalTokens:         totalTokens,
 		CacheReadTokens:     cacheRead,
 		CacheCreationTokens: cacheCreation,
 		ExternalCost:        external,
@@ -508,6 +501,26 @@ func extractTokensFromUsage(meta map[string]any) (prompt, completion int) {
 		completion = int(v)
 	}
 	return
+}
+
+// applyTokenFallback token 兜底纯函数(可单测)：顶层列为 0 时从 metadata.usage_object 补
+// prompt/completion(仅零值补位，不覆盖非零列值)；total 为 0 时回落 prompt+completion 之和。
+// 返回值供 calcCosts 与 LlmLog 落库共用——只兜一处则两侧口径分叉。
+func applyTokenFallback(prompt, completion, total int, meta map[string]any) (int, int, int) {
+	if prompt == 0 || completion == 0 {
+		if pt, ct := extractTokensFromUsage(meta); pt > 0 || ct > 0 {
+			if prompt == 0 {
+				prompt = pt
+			}
+			if completion == 0 {
+				completion = ct
+			}
+		}
+	}
+	if total == 0 {
+		total = prompt + completion
+	}
+	return prompt, completion, total
 }
 
 // calcCosts 成本重算：external 用 deployment.model_info 四键（¥/百万token），internal P1 同 external。

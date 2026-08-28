@@ -1,6 +1,7 @@
 package response
 
 import (
+	"github.com/hllkk/devops-admin/server/model/common"
 	"github.com/hllkk/devops-admin/server/model/gateway"
 )
 
@@ -51,8 +52,8 @@ type ModelPublishView struct {
 	IsPublished      bool    `json:"isPublished"`      // 是否发布
 	VisibilityType   string  `json:"visibilityType"`   // 可见范围(all/selected/user)
 	RequiresApproval bool    `json:"requiresApproval"` // 订阅需审批
-	DepartmentIds    []int64 `json:"departmentIds"`    // 可见部门(selected 模式)
-	UserIds          []int64 `json:"userIds"`          // 可见用户(user 模式)
+	DepartmentIds    common.Int64StringSlice `json:"departmentIds"`    // 可见部门(selected 模式,string[] 雪花id,与部门树节点 id 统一)
+	UserIds          common.Int64StringSlice `json:"userIds"`          // 可见用户(user 模式,string[] 雪花id,与用户下拉 value 统一)
 }
 
 // DeploymentTestResult 部署连通性测试结果(管理员视角,经 LiteLLM 数据面)。

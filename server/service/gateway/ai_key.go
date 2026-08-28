@@ -101,10 +101,11 @@ func (s *AiKeyService) GetMyVisibleModels(ctx context.Context, userId int64) ([]
 }
 
 // listModelsAsAvailable 激活模型 → AvailableModelView 贫字段列表(scope 注入过滤条件)。
+// model_key <> '' 与 visibleModelKeys/GetActiveModels 口径对齐：空路由名模型无法授权/调用，不列出。
 func (s *AiKeyService) listModelsAsAvailable(ctx context.Context, scope func(*gorm.DB) *gorm.DB) ([]gatewayResp.AvailableModelView, error) {
 	var models []gateway.Model
 	if err := scope(global.OPS_DB.WithContext(ctx).Model(&gateway.Model{}).
-		Where("is_active = ? AND is_published = ?", true, true)).
+		Where("is_active = ? AND is_published = ? AND model_key <> ''", true, true)).
 		Order("model_id DESC").Find(&models).Error; err != nil {
 		return nil, err
 	}
@@ -436,7 +437,11 @@ func (s *AiKeyService) CreateSceneKey(ctx context.Context, req gatewayReq.AiKeyO
 }
 
 // UpdateAiKey 修改密钥：改授权/预算/限流/启停 → 重建 LiteLLM 投影并 UpdateKey。
-// key_type/owner 不可改(改=删旧建新)。
+// key_type/owner 不可改(改=删旧建新)。字段覆盖语义：指针字段(budget/active/expires_at)
+// nil=不改(expires_at 例外：nil=改回永不过期，注释见下)；name/budget_duration/rate_limit_mode
+// 空串=不改(局部更新防护——name 建Key必填不可清空，duration/mode DB 恒有合法值，
+// 空串归一成默认会静默改预算周期/关限流)；tpm/rpm nil=不改(清限流=切 none 模式，
+// LiteLLM 侧随 P2 修复同步清)。全量表单提交(前端现状)不受影响。
 func (s *AiKeyService) UpdateAiKey(ctx context.Context, req gatewayReq.AiKeyOperateParams, updateBy int64) (gatewayResp.AiKeyView, error) {
 	if req.AiKeyId == 0 {
 		return gatewayResp.AiKeyView{}, errors.New("密钥ID不能为空")
@@ -483,18 +488,36 @@ func (s *AiKeyService) UpdateAiKey(ctx context.Context, req gatewayReq.AiKeyOper
 	}
 
 	updates := map[string]any{
-		"name":            req.Name,
-		"description":     req.Description,
-		"scenario_id":     scenarioId,
-		"models":          marshalJSONStringSlice(models),
-		"model_budgets":   marshalJSONMap(req.ModelBudgets),
-		"budget_duration": normalizeBudgetDuration(req.BudgetDuration),
-		"rate_limit_mode": normalizeRateLimitMode(req.RateLimitMode),
-		"tpm_limit":       req.TpmLimit,
-		"rpm_limit":       req.RpmLimit,
-		"model_limits":    marshalJSONMap(req.ModelLimits),
-		"expires_at":      req.ExpiresAt, // 过期时间覆盖式更新(nil=改回永不过期)
-		"update_by":       updateBy,
+		"description":   req.Description,
+		"scenario_id":   scenarioId,
+		"models":        marshalJSONStringSlice(models),
+		"model_budgets": marshalJSONMap(req.ModelBudgets),
+		"model_limits":  marshalJSONMap(req.ModelLimits),
+		"expires_at":    req.ExpiresAt, // 过期时间覆盖式更新(nil=改回永不过期)
+		"update_by":     updateBy,
+	}
+	// 空值即"未传"的字段条件覆盖(局部更新防护，全量提交不受影响)：name 建Key必填不可清空；
+	// duration/mode DB 恒有合法值，空串归一成默认会静默改预算周期/关限流；tpm/rpm 随模式走，
+	// nil 不清空(清限流=切 none 模式，LiteLLM 侧随 SyncRateLimits 恒刷同步清)。
+	if req.Name != "" {
+		updates["name"] = req.Name
+		k.Name = req.Name
+	}
+	if req.BudgetDuration != "" {
+		k.BudgetDuration = normalizeBudgetDuration(req.BudgetDuration)
+		updates["budget_duration"] = k.BudgetDuration
+	}
+	if req.RateLimitMode != "" {
+		k.RateLimitMode = normalizeRateLimitMode(req.RateLimitMode)
+		updates["rate_limit_mode"] = k.RateLimitMode
+	}
+	if req.TpmLimit != nil {
+		updates["tpm_limit"] = req.TpmLimit
+		k.TpmLimit = req.TpmLimit
+	}
+	if req.RpmLimit != nil {
+		updates["rpm_limit"] = req.RpmLimit
+		k.RpmLimit = req.RpmLimit
 	}
 	if req.BudgetLimit != nil {
 		updates["budget_limit"] = *req.BudgetLimit
@@ -508,17 +531,11 @@ func (s *AiKeyService) UpdateAiKey(ctx context.Context, req gatewayReq.AiKeyOper
 		updates["is_active"] = *req.IsActive
 		k.IsActive = *req.IsActive
 	}
+	// 内存态对齐(供事务内 syncKeyToLitellm；条件字段已在上方各自赋值)
 	k.ExpiresAt = req.ExpiresAt
-	if req.Name != "" {
-		k.Name = req.Name
-	}
 	k.Models = marshalJSONStringSlice(models)
 	k.ModelBudgets = marshalJSONMap(req.ModelBudgets)
 	k.ModelLimits = marshalJSONMap(req.ModelLimits)
-	k.RateLimitMode = normalizeRateLimitMode(req.RateLimitMode)
-	k.TpmLimit = req.TpmLimit
-	k.RpmLimit = req.RpmLimit
-	k.BudgetDuration = normalizeBudgetDuration(req.BudgetDuration)
 
 	cli := litellm.Default()
 	err := global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -848,6 +865,74 @@ func syncModelToMainKeys(ctx context.Context, tx *gorm.DB, modelKey string, scop
 	return warnings
 }
 
+// revokeModelFromMainKeys 主 Key 授权对齐的减法半边：从不应再持有 modelKey 的主 Key 回收
+// (发布对齐/模型删除调用)。keepScope 命中的主 Key 保留(应持有，不限启停——停用 Key 恢复后
+// 授权应在)，nil=全部回收；扫描全部主 Key 含停用(停用 Key 不回收会在重新启用后死灰复燃)。
+// AiKey 小表全量拉取后内存过滤(对齐 cascadeRenameKeyModels，不建 JSONB 查询条件)；
+// DB 存原始 modelKey，anthropic 变体仅下发时扩展、无需处理。场景 Key 手工授权不在此域。
+// 事务内尽力而为，单个失败 warning 继续；与 loadMainKey 自愈差集源(visibleModelKeys)同口径，
+// 回收后自愈不会回加。
+func revokeModelFromMainKeys(ctx context.Context, tx *gorm.DB, modelKey string, keepScope func(*gorm.DB) *gorm.DB) []string {
+	keep := map[int64]bool{}
+	if keepScope != nil {
+		var keepRows []gateway.AiKey
+		if err := keepScope(tx).Find(&keepRows).Error; err != nil {
+			return []string{err.Error()}
+		}
+		for i := range keepRows {
+			keep[keepRows[i].AiKeyId] = true
+		}
+	}
+	var keys []gateway.AiKey
+	if err := tx.Where("key_type IN ?", []string{gateway.KeyTypePersonalMain, gateway.KeyTypeDeptMain}).
+		Find(&keys).Error; err != nil {
+		return []string{err.Error()}
+	}
+	cli := litellm.Default()
+	var warnings []string
+	for i := range keys {
+		if keep[keys[i].AiKeyId] {
+			continue
+		}
+		models, changed := removeModelKey(jsonToSlice(keys[i].Models), modelKey)
+		if !changed {
+			continue
+		}
+		keys[i].Models = marshalJSONStringSlice(models)
+		if err := tx.Model(&gateway.AiKey{}).Where("ai_key_id = ?", keys[i].AiKeyId).
+			Update("models", keys[i].Models).Error; err != nil {
+			warnings = append(warnings, fmt.Sprintf("主Key %d: %v", keys[i].AiKeyId, err))
+			continue
+		}
+		if cli != nil && keys[i].LitellmKeyId != "" {
+			if err := syncKeyToLitellm(ctx, cli, tx, &keys[i], false); err != nil {
+				warnings = append(warnings, fmt.Sprintf("主Key %d: %v", keys[i].AiKeyId, err))
+			}
+		}
+	}
+	for _, w := range warnings {
+		logger.WithCtx(ctx).Mod("gateway").Warn(fmt.Sprintf("主Key 回收模型 %q 授权: %s", modelKey, w))
+	}
+	return warnings
+}
+
+// removeModelKey 从 models 列表移除 modelKey(纯函数，可单测)：返回移除后列表与是否有变更。
+func removeModelKey(models []string, modelKey string) ([]string, bool) {
+	out := make([]string, 0, len(models))
+	changed := false
+	for _, m := range models {
+		if m == modelKey {
+			changed = true
+			continue
+		}
+		out = append(out, m)
+	}
+	if !changed {
+		return models, false
+	}
+	return out, true
+}
+
 // cascadeRenameKeyModels 模型 modelKey 改名级联：改写引用旧 modelKey 的密钥
 // models/model_budgets/model_limits 三个 JSONB(oldKey→newKey,值保持)并同步 LiteLLM。
 // 不做则改名后密钥授权/按模型预算/限流全部随旧名漂移(用户调新名被网关拒)。
@@ -928,12 +1013,15 @@ func renameKeyReferences(models []string, budgets, limits map[string]any, oldKey
 }
 
 // syncKeyToLitellm 同步密钥到 LiteLLM：isCreate=true 走 CreateKey(返回明文加密落库)，
-// 否则 UpdateKey(改授权/预算/限流/启停)。models 经 anthropic 扩展；max_budget 按硬限/启停语义。
+// 否则 UpdateKey(改授权/预算/限流/启停)。models 经 anthropic 扩展；max_budget 按硬限/启停语义，
+// ¥ 按汇率换算 USD 下发(LiteLLM spend 记 USD，部署定价推送时已同口径换算)；
+// budget_duration 一并下发，LiteLLM 窗口到期自动重置 spend，与平台 budget_used 滚动窗口对齐
+// (不下发则 LiteLLM 永久累计，第 N+1 周期起误拒且与平台预算看板永不收敛)。
 func syncKeyToLitellm(ctx context.Context, cli *litellm.Client, tx *gorm.DB, k *gateway.AiKey, isCreate bool) error {
 	db := tx
 	expandedModels := expandModelsWithAnthropic(db, jsonToSlice(k.Models))
 
-	// max_budget 语义：停用→0；硬限+有额度→limit；否则→nil(不限)
+	// max_budget 语义：停用→0；硬限+有额度→limit(¥→USD)；否则→nil(不限)
 	var maxBudget *float64
 	syncBudget := false
 	if !k.IsActive {
@@ -941,7 +1029,8 @@ func syncKeyToLitellm(ctx context.Context, cli *litellm.Client, tx *gorm.DB, k *
 		maxBudget = &zero
 		syncBudget = true
 	} else if k.BudgetHardLimit && k.BudgetLimit != nil {
-		maxBudget = k.BudgetLimit
+		usd := budgetLimitToUsd(*k.BudgetLimit, global.OPS_CONFIG.Litellm.UsdToCnyRate)
+		maxBudget = &usd
 		syncBudget = true
 	} else if k.BudgetHardLimit && k.BudgetLimit == nil {
 		// 硬限但无额度=停用语义
@@ -951,6 +1040,8 @@ func syncKeyToLitellm(ctx context.Context, cli *litellm.Client, tx *gorm.DB, k *
 	} else {
 		syncBudget = true // 启用无硬限→清空(nil→null)
 	}
+	// 预算周期恒有值(normalize 兜底 30d)，create/update 一并下发保持两侧窗口一致
+	budgetDuration := normalizeBudgetDuration(k.BudgetDuration)
 
 	metadata := map[string]any{
 		"aiKeyId": k.AiKeyId,
@@ -971,11 +1062,12 @@ func syncKeyToLitellm(ctx context.Context, cli *litellm.Client, tx *gorm.DB, k *
 
 	if isCreate {
 		req := litellm.KeyCreateReq{
-			KeyAlias:  k.LitellmKeyAlias,
-			Models:    expandedModels,
-			MaxBudget: maxBudget,
-			Metadata:  metadata,
-			ExpiresAt: k.ExpiresAt,
+			KeyAlias:       k.LitellmKeyAlias,
+			Models:         expandedModels,
+			MaxBudget:      maxBudget,
+			BudgetDuration: budgetDuration,
+			Metadata:       metadata,
+			ExpiresAt:      k.ExpiresAt,
 		}
 		if k.RateLimitMode == gateway.RateLimitModeTotal {
 			req.TPMLimit = k.TpmLimit
@@ -1006,17 +1098,20 @@ func syncKeyToLitellm(ctx context.Context, cli *litellm.Client, tx *gorm.DB, k *
 
 	// Update
 	req := litellm.KeyUpdateReq{
-		Models:     expandedModels,
-		MaxBudget:  maxBudget,
-		Metadata:   metadata,
-		ExpiresAt:  k.ExpiresAt,
-		SyncBudget: syncBudget,
-		SyncExpiry: true, // 过期时间始终与 DB 行同步(含 nil→null 清空)
+		Models:         expandedModels,
+		MaxBudget:      maxBudget,
+		BudgetDuration: budgetDuration,
+		Metadata:       metadata,
+		ExpiresAt:      k.ExpiresAt,
+		SyncBudget:     syncBudget,
+		SyncExpiry:     true, // 过期时间始终与 DB 行同步(含 nil→null 清空)
 	}
+	// 限流字段始终刷：非 total 模式 TPMLimit/RPMLimit 为 nil → JSON null 清空，
+	// 防 total 切 none/per_model 后 LiteLLM 侧旧全局限流残留继续生效
+	req.SyncRateLimits = true
 	if k.RateLimitMode == gateway.RateLimitModeTotal {
 		req.TPMLimit = k.TpmLimit
 		req.RPMLimit = k.RpmLimit
-		req.SyncRateLimits = true
 	}
 	return cli.UpdateKey(ctx, k.LitellmKeyId, req)
 }
@@ -1200,6 +1295,15 @@ func keyPrefixOf(plain string) string {
 		return strings.Repeat("*", len(plain))
 	}
 	return plain[:8] + "****"
+}
+
+// budgetLimitToUsd 预算上限 ¥→USD(LiteLLM spend 记 USD，max_budget 须同币种；
+// rate<=0 兜底 7.0，与 ConvertCostsForLitellm 换算口径一致)。
+func budgetLimitToUsd(cny, usdToCnyRate float64) float64 {
+	if usdToCnyRate <= 0 {
+		usdToCnyRate = 7.0
+	}
+	return cny / usdToCnyRate
 }
 
 // validKeyType 校验 key_type 与 owner_type 匹配。

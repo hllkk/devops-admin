@@ -82,14 +82,16 @@ func (s *ModelService) GetModelList(ctx context.Context, q gatewayReq.ModelSearc
 	return list, total, nil
 }
 
-// GetActiveModels 用户侧可见模型列表(active+published+按发布可见性过滤，所有用户含超管统一过滤)：
-// all 档直通/selected 档命中用户归属部门(主部门∪多部门)/user 档命中用户投影。
+// GetActiveModels 用户侧可见模型列表(active+published+有路由名+按发布可见性过滤，所有用户含
+// 超管统一过滤)：all 档直通/selected 档命中用户归属部门(主部门∪多部门)/user 档命中用户投影。
 // 附 anthropic 变体路由名，模型广场与 home 可用模型的数据源(与 GetMyVisibleModels 口径一致)。
-// 管理员建 Key 的授权下拉用 AiKeyService.GetAvailableModels(全量视角)，两者勿混。
+// model_key <> '' 与 visibleModelKeys 对齐：空路由名模型展示与可调用不一致，不列出(兜存量，
+// 源头由 PublishModel 校验堵)。管理员建 Key 的授权下拉用 AiKeyService.GetAvailableModels
+// (全量视角)，两者勿混。
 func (s *ModelService) GetActiveModels(ctx context.Context, userId int64) ([]gatewayResp.ActiveModelView, error) {
 	q := visibleModelScope(
 		global.OPS_DB.WithContext(ctx).Model(&gateway.Model{}).
-			Where("is_active = ? AND is_published = ?", true, true),
+			Where("is_active = ? AND is_published = ? AND model_key <> ''", true, true),
 		userId, userDeptIdOf(global.OPS_DB.WithContext(ctx), userId),
 	)
 	var models []gateway.Model
@@ -243,10 +245,15 @@ func (s *ModelService) UpdateModel(ctx context.Context, req gatewayReq.ModelOper
 
 // DeleteModels 批量删除模型(软删三连，任一 LiteLLM 禁用失败整体中止)：
 // ①每个已同步部署先在 LiteLLM 侧禁用(active=false 留痕，不改名不删记录)
-// ②关联部署全部置 is_active=false ③模型软删(is_active=false+deleted_at)+清发布投影(物理删)。
+// ②关联部署全部置 is_active=false ③模型软删(is_active=false+deleted_at)+清发布投影(物理删)
+// ④删后从全部主 Key 回收授权(模型已软删，visibleModelKeys 不再含，自愈不回加)。
 func (s *ModelService) DeleteModels(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return errors.New("未选择删除项")
+	}
+	var models []gateway.Model
+	if err := global.OPS_DB.WithContext(ctx).Where("model_id IN ?", ids).Find(&models).Error; err != nil {
+		return err
 	}
 	var deps []gateway.ModelDeployment
 	if err := global.OPS_DB.WithContext(ctx).Where("model_id IN ?", ids).Find(&deps).Error; err != nil {
@@ -261,7 +268,7 @@ func (s *ModelService) DeleteModels(ctx context.Context, ids []int64) error {
 			return fmt.Errorf("部署 %q 在 LiteLLM 侧禁用失败，已中止删除: %w", deps[i].DeployName, err)
 		}
 	}
-	return global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	err := global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// 部署一并软删(软删行默认查询不可见，避免模型已删后部署列表出现孤儿行)
 		if err := tx.Where("model_id IN ?", ids).Delete(&gateway.ModelDeployment{}).Error; err != nil {
 			return err
@@ -278,6 +285,16 @@ func (s *ModelService) DeleteModels(ctx context.Context, ids []int64) error {
 		}
 		return tx.Unscoped().Where("model_id IN ?", ids).Delete(&gateway.ModelVisibilityUser{}).Error
 	})
+	if err != nil {
+		return err
+	}
+	// 删后回收主 Key 授权(尽力而为)：不收则 Key 编辑列表残留死 modelKey
+	for i := range models {
+		if models[i].ModelKey != "" {
+			revokeModelFromMainKeys(ctx, global.OPS_DB.WithContext(ctx), models[i].ModelKey, nil)
+		}
+	}
+	return nil
 }
 
 // GetModelPublish 查模型发布设置(含 selected/user 模式的可见部门与可见用户)。
@@ -312,7 +329,9 @@ func (s *ModelService) GetModelPublish(ctx context.Context, id int64) (gatewayRe
 }
 
 // PublishModel 更新发布设置：selected+发布 必须指定可见部门、user+发布 必须指定可见用户
-// (均含存在性校验)；可见性行重建(物理删+插，投影表不软删)；取消发布或全员可见时清空可见行。
+// (均含存在性校验)；发布必须已设置路由名(空 ModelKey 上架会出现在广场却无法授权/调用——
+// 授权与调用均以 modelKey 为锚)；可见性行重建(物理删+插，投影表不软删)；取消发布或全员
+// 可见时清空可见行。
 func (s *ModelService) PublishModel(ctx context.Context, req gatewayReq.ModelPublishParams, updateBy int64) error {
 	if req.ModelId == 0 {
 		return errors.New("模型ID不能为空")
@@ -333,6 +352,9 @@ func (s *ModelService) PublishModel(ctx context.Context, req gatewayReq.ModelPub
 	var m gateway.Model
 	if err := global.OPS_DB.WithContext(ctx).Where("model_id = ?", req.ModelId).First(&m).Error; err != nil {
 		return errors.New("模型不存在")
+	}
+	if req.IsPublished && m.ModelKey == "" {
+		return errors.New("模型未设置路由名(ModelKey)，请先编辑模型补齐后再发布")
 	}
 	if len(req.DepartmentIds) > 0 {
 		var cnt int64
@@ -389,11 +411,21 @@ func (s *ModelService) PublishModel(ctx context.Context, req gatewayReq.ModelPub
 				return err
 			}
 		}
-		// 发布免审批模型(有路由名)→按可见档自动授权到目标活跃主 Key(单个失败 warning 不中断)：
-		// all=全部主 Key；selected=可见部门成员的个人主 Key+可见部门的部门主 Key；user=指定
-		// 用户的个人主 Key(与 visibleModelScope 可见口径对称)。需审批模型不自动授权(申请流 P2)。
-		if req.IsPublished && !req.RequiresApproval && m.ModelKey != "" {
-			syncModelToMainKeys(ctx, tx, m.ModelKey, mainKeyScopeOf(visibility, req.DepartmentIds, req.UserIds))
+		// 主 Key 授权对齐(有路由名才谈授权；单个失败 warning 不中断)：
+		// 发布免审批 → 按可见档向目标活跃主 Key 追加(all=全部主 Key/selected=可见部门成员
+		// 个人主 Key+可见部门主 Key/user=指定用户个人主 Key,与 visibleModelScope 可见口径对称)
+		// 并回收范围外持有者(收紧档位后广场不可见却能继续调的口径漂移)；
+		// 取消发布/转需审批 → 应持有为空集，回收全部持有者。需审批模型不自动授权(申请流 P2)。
+		// 仅主 Key(系统自动授权域)，场景 Key 手工授权不动；与 loadMainKey 自愈差集源
+		// (visibleModelKeys)同口径，回收后自愈不回加。
+		if m.ModelKey != "" {
+			if req.IsPublished && !req.RequiresApproval {
+				scope := mainKeyScopeOf(visibility, req.DepartmentIds, req.UserIds)
+				syncModelToMainKeys(ctx, tx, m.ModelKey, scope)
+				revokeModelFromMainKeys(ctx, tx, m.ModelKey, scope)
+			} else {
+				revokeModelFromMainKeys(ctx, tx, m.ModelKey, nil)
+			}
 		}
 		return nil
 	})

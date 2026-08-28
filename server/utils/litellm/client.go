@@ -298,7 +298,8 @@ type KeyCreateReq struct {
 	UserID             string   `json:"user_id,omitempty"`
 	TeamID             string   `json:"team_id,omitempty"`
 	Models             []string `json:"models,omitempty"`
-	MaxBudget          *float64 `json:"max_budget,omitempty"`
+	MaxBudget          *float64 `json:"max_budget,omitempty"`          // USD 口径(LiteLLM spend 记 USD，平台 ¥ 须先换算)
+	BudgetDuration     string   `json:"budget_duration,omitempty"`     // 预算重置窗口("1d"/"7d"/"30d"，LiteLLM 到期重置 spend)
 	Metadata           map[string]any `json:"metadata,omitempty"`
 	Duration           string   `json:"duration,omitempty"`
 	ExpiresAt          *time.Time `json:"expires_at,omitempty"` // 过期时间(ISO，nil=永不过期)
@@ -341,7 +342,8 @@ func (c *Client) DeleteKey(ctx context.Context, keyID string) error {
 // SyncExpiry=true 强制刷 expires_at(含 nil→null 清空，用于改回永不过期)。
 type KeyUpdateReq struct {
 	Models            []string `json:"models,omitempty"`
-	MaxBudget         *float64 `json:"max_budget,omitempty"`
+	MaxBudget         *float64 `json:"max_budget,omitempty"`      // USD 口径(LiteLLM spend 记 USD，平台 ¥ 须先换算)
+	BudgetDuration    string   `json:"budget_duration,omitempty"` // 预算重置窗口("1d"/"7d"/"30d"，LiteLLM 到期重置 spend)
 	Metadata          map[string]any `json:"metadata,omitempty"`
 	ExpiresAt         *time.Time `json:"expires_at,omitempty"`
 	AllowedMCPServers []string `json:"allowed_mcp_servers,omitempty"`
@@ -361,6 +363,9 @@ func (c *Client) UpdateKey(ctx context.Context, keyID string, req KeyUpdateReq) 
 	}
 	if req.MaxBudget != nil || req.SyncBudget {
 		body["max_budget"] = req.MaxBudget // nil + SyncBudget → JSON null 清空
+	}
+	if req.BudgetDuration != "" {
+		body["budget_duration"] = req.BudgetDuration // 平台预算周期恒有值(1d/7d/30d)，与平台侧重算窗口对齐
 	}
 	if req.ExpiresAt != nil || req.SyncExpiry {
 		body["expires_at"] = req.ExpiresAt // nil + SyncExpiry → JSON null 清空
