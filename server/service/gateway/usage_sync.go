@@ -14,6 +14,7 @@ import (
 	"github.com/hllkk/devops-admin/server/global"
 	"github.com/hllkk/devops-admin/server/model/gateway"
 	gatewayReq "github.com/hllkk/devops-admin/server/model/gateway/request"
+	gatewayResp "github.com/hllkk/devops-admin/server/model/gateway/response"
 	"github.com/hllkk/devops-admin/server/model/system"
 	"github.com/hllkk/devops-admin/server/utils/logger"
 )
@@ -175,7 +176,9 @@ func (s *UsageSyncService) ReconcileLLMLogs(ctx context.Context) (map[string]int
 }
 
 // GetUsageLogList 分页查用量日志(管理员视角，按 用户/密钥/部署/模型/时间过滤)。
-func (s *UsageSyncService) GetUsageLogList(ctx context.Context, q gatewayReq.UsageLogSearch) (list []gateway.LlmLog, total int64, err error) {
+// 返回出网视图：批量回填归因实体可读名(用户昵称/密钥名/部署名)，metadata 不出网。
+func (s *UsageSyncService) GetUsageLogList(ctx context.Context, q gatewayReq.UsageLogSearch) (list []gatewayResp.LlmLogView, total int64, err error) {
+	var rows []gateway.LlmLog
 	db := global.OPS_DB.WithContext(ctx).Model(&gateway.LlmLog{})
 	if q.UserId != 0 {
 		db = db.Where("user_id = ?", q.UserId)
@@ -204,11 +207,67 @@ func (s *UsageSyncService) GetUsageLogList(ctx context.Context, q gatewayReq.Usa
 	}
 	limit, offset := q.LimitOffset()
 	if limit > 0 {
-		err = db.Count(&total).Order("started_at DESC").Limit(limit).Offset(offset).Find(&list).Error
+		err = db.Count(&total).Order("started_at DESC").Limit(limit).Offset(offset).Find(&rows).Error
 	} else {
-		err = db.Count(&total).Order("started_at DESC").Find(&list).Error
+		err = db.Count(&total).Order("started_at DESC").Find(&rows).Error
 	}
-	return
+	if err != nil {
+		return nil, 0, err
+	}
+	return fillLlmLogNames(ctx, rows), total, nil
+}
+
+// fillLlmLogNames 批量回填归因实体可读名(每页三次 IN 查询，避免逐行 N+1)。
+// ID=0(未归因)不参与回填，查不到的保留空串由前端按"未归因"展示。
+func fillLlmLogNames(ctx context.Context, rows []gateway.LlmLog) []gatewayResp.LlmLogView {
+	userIds, keyIds, depIds := make([]int64, 0, len(rows)), make([]int64, 0, len(rows)), make([]int64, 0, len(rows))
+	for i := range rows {
+		if rows[i].UserId != 0 {
+			userIds = append(userIds, rows[i].UserId)
+		}
+		if rows[i].AiKeyId != 0 {
+			keyIds = append(keyIds, rows[i].AiKeyId)
+		}
+		if rows[i].DeploymentId != 0 {
+			depIds = append(depIds, rows[i].DeploymentId)
+		}
+	}
+	userNames, keyNames, depNames := map[int64]string{}, map[int64]string{}, map[int64]string{}
+	db := global.OPS_DB.WithContext(ctx)
+	if len(userIds) > 0 {
+		var users []system.SysUser
+		if err := db.Select("id, nick_name").Where("id IN ?", userIds).Find(&users).Error; err == nil {
+			for i := range users {
+				userNames[users[i].UserId] = users[i].NickName
+			}
+		}
+	}
+	if len(keyIds) > 0 {
+		var keys []gateway.AiKey
+		if err := db.Select("ai_key_id, name").Where("ai_key_id IN ?", keyIds).Find(&keys).Error; err == nil {
+			for i := range keys {
+				keyNames[keys[i].AiKeyId] = keys[i].Name
+			}
+		}
+	}
+	if len(depIds) > 0 {
+		var deps []gateway.ModelDeployment
+		if err := db.Select("deployment_id, deploy_name").Where("deployment_id IN ?", depIds).Find(&deps).Error; err == nil {
+			for i := range deps {
+				depNames[deps[i].DeploymentId] = deps[i].DeployName
+			}
+		}
+	}
+	list := make([]gatewayResp.LlmLogView, 0, len(rows))
+	for i := range rows {
+		list = append(list, gatewayResp.LlmLogView{
+			LlmLog:         rows[i],
+			UserName:       userNames[rows[i].UserId],
+			AiKeyName:      keyNames[rows[i].AiKeyId],
+			DeploymentName: depNames[rows[i].DeploymentId],
+		})
+	}
+	return list
 }
 
 type spendCursor struct {

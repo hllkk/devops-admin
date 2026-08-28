@@ -11,7 +11,7 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const metric = ref<'cost' | 'requests'>('cost');
+const metric = ref<'cost' | 'requests' | 'tokens'>('cost');
 
 const { domRef, updateOptions } = useEcharts(() => ({
   tooltip: { trigger: 'axis' },
@@ -39,7 +39,7 @@ const { domRef, updateOptions } = useEcharts(() => ({
 function render() {
   updateOptions(opts => {
     opts.xAxis.data = props.data.map(i => i.date);
-    opts.series[0].data = props.data.map(i => (metric.value === 'cost' ? i.cost : i.requests));
+    opts.series[0].data = props.data.map(i => (metric.value === 'cost' ? i.cost : metric.value === 'tokens' ? i.tokens : i.requests));
     opts.yAxis.axisLabel.formatter = metric.value === 'cost' ? '¥{value}' : '{value}';
     return opts;
   });
@@ -63,6 +63,7 @@ const title = computed(() => $t('page.gateway.dashboard.trendTitle'));
       <NRadioGroup v-model:value="metric" size="small">
         <NRadioButton value="cost">{{ $t('page.gateway.dashboard.metricCost') }}</NRadioButton>
         <NRadioButton value="requests">{{ $t('page.gateway.dashboard.metricRequests') }}</NRadioButton>
+        <NRadioButton value="tokens">{{ $t('page.gateway.dashboard.metricTokens') }}</NRadioButton>
       </NRadioGroup>
     </div>
     <div ref="domRef" class="h-300px w-full" />

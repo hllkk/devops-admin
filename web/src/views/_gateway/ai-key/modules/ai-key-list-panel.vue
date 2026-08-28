@@ -1,7 +1,7 @@
 <script setup lang="tsx">
 import { ref } from 'vue';
 import { NProgress, NTag, NTime } from 'naive-ui';
-import { fetchBatchDeleteAiKey, fetchGetAiKeyList, fetchRevealAiKeyValue, fetchRotateAiKey } from '@/service/api/gateway';
+import { fetchBatchDeleteAiKey, fetchGetAiKeyList, fetchResyncAiKeys, fetchRevealAiKeyValue, fetchRotateAiKey } from '@/service/api/gateway';
 import { useAppStore } from '@/store/modules/app';
 import { defaultTransform, useNaivePaginatedTable, useTableOperate } from '@/hooks/common/table';
 import { $t } from '@/locales';
@@ -316,6 +316,23 @@ async function handleRotate(aiKeyId: CommonType.IdType) {
   getData();
 }
 
+/** 全量重推密钥投影到 LiteLLM(改名级联/授权对齐同步失败的漂移兜底) */
+const resyncing = ref(false);
+
+async function handleResync() {
+  resyncing.value = true;
+  const { data, error } = await fetchResyncAiKeys();
+  resyncing.value = false;
+  if (error) return;
+  window.$message?.success(
+    $t('page.gateway.aiKey.resyncSuccess', {
+      pushed: data?.pushed ?? 0,
+      skipped: data?.skipped ?? 0,
+      failed: data?.failed?.length ?? 0
+    })
+  );
+}
+
 /** 批量开通个人主 Key 弹窗(管理员创建制的效率件) */
 const batchVisible = ref(false);
 
@@ -341,6 +358,14 @@ defineExpose({
           @refresh="getData"
         >
           <template #prefix>
+            <NPopconfirm @positive-click="handleResync">
+              <template #trigger>
+                <NButton size="small" :loading="resyncing">
+                  {{ $t('page.gateway.aiKey.resync') }}
+                </NButton>
+              </template>
+              {{ $t('page.gateway.aiKey.resyncConfirm') }}
+            </NPopconfirm>
             <NButton size="small" type="primary" ghost @click="batchVisible = true">
               {{ $t('page.gateway.aiKey.batchCreate') }}
             </NButton>

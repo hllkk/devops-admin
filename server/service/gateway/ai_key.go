@@ -101,7 +101,7 @@ func (s *AiKeyService) GetMyVisibleModels(ctx context.Context, userId int64) ([]
 }
 
 // listModelsAsAvailable 激活模型 → AvailableModelView 贫字段列表(scope 注入过滤条件)。
-// model_key <> '' 与 visibleModelKeys/GetActiveModels 口径对齐：空路由名模型无法授权/调用，不列出。
+// model_key <> ” 与 visibleModelKeys/GetActiveModels 口径对齐：空路由名模型无法授权/调用，不列出。
 func (s *AiKeyService) listModelsAsAvailable(ctx context.Context, scope func(*gorm.DB) *gorm.DB) ([]gatewayResp.AvailableModelView, error) {
 	var models []gateway.Model
 	if err := scope(global.OPS_DB.WithContext(ctx).Model(&gateway.Model{}).
@@ -529,7 +529,10 @@ func (s *AiKeyService) UpdateAiKey(ctx context.Context, req gatewayReq.AiKeyOper
 	}
 	if req.IsActive != nil {
 		updates["is_active"] = *req.IsActive
+		// 手动启停覆盖被动停用标记(管理员显式意志接管，此后用户重新启用不再联动该 Key)
+		updates["disabled_by_cascade"] = false
 		k.IsActive = *req.IsActive
+		k.DisabledByCascade = false
 	}
 	// 内存态对齐(供事务内 syncKeyToLitellm；条件字段已在上方各自赋值)
 	k.ExpiresAt = req.ExpiresAt
@@ -714,11 +717,12 @@ func (s *AiKeyService) resolveBatchTargets(ctx context.Context, req gatewayReq.A
 	return users, nil
 }
 
-// SyncUserKeysActive 用户启停/删除级联：同步其名下全部 AiKey(主+场景，软删行除外)的启停状态。
+// SyncUserKeysActive 用户启停/删除级联：同步其名下 AiKey(主+场景，软删行除外)的启停状态。
 // 用户禁用后 Key 若保持启用，明文 Key 仍可直连 LiteLLM 网关(仅登录被拦)，必须联动卡死；
-// LiteLLM 侧复用 is_active=false → max_budget=0 停用语义。启用时全量恢复(对齐 AIHelms
-// sync_user_keys_active；管理员此前手动停用的 Key 会被一并恢复，属已知取舍)。单个失败仅
-// 告警不中断，返回告警列表供调用方提示。
+// LiteLLM 侧复用 is_active=false → max_budget=0 停用语义。被动停用标记(disabled_by_cascade)
+// 区分级联停与手动停：停用只动 is_active=true 的 Key(打标)，恢复只动带标记的 Key(清标恢复)，
+// 管理员手动停用/超限停用的 Key 不随用户重新启用被误恢复(对齐 AIHelms 未做的闭环)。
+// 单个失败仅告警不中断，返回告警列表供调用方提示。
 func (s *AiKeyService) SyncUserKeysActive(ctx context.Context, userId, updateBy int64, active bool) []string {
 	var keys []gateway.AiKey
 	if err := global.OPS_DB.WithContext(ctx).
@@ -726,21 +730,23 @@ func (s *AiKeyService) SyncUserKeysActive(ctx context.Context, userId, updateBy 
 		Find(&keys).Error; err != nil {
 		return []string{err.Error()}
 	}
+	targets := filterCascadeKeys(keys, active)
 	cli := litellm.Default()
 	var warnings []string
-	for i := range keys {
-		keys[i].IsActive = active
+	for i := range targets {
+		targets[i].IsActive = active
+		targets[i].DisabledByCascade = !active
 		if err := global.OPS_DB.WithContext(ctx).Model(&gateway.AiKey{}).
-			Where("ai_key_id = ?", keys[i].AiKeyId).
-			Updates(map[string]any{"is_active": active, "update_by": updateBy}).Error; err != nil {
-			warnings = append(warnings, fmt.Sprintf("密钥 %d: %v", keys[i].AiKeyId, err))
+			Where("ai_key_id = ?", targets[i].AiKeyId).
+			Updates(map[string]any{"is_active": active, "disabled_by_cascade": !active, "update_by": updateBy}).Error; err != nil {
+			warnings = append(warnings, fmt.Sprintf("密钥 %d: %v", targets[i].AiKeyId, err))
 			continue
 		}
-		if cli == nil || keys[i].LitellmKeyId == "" {
+		if cli == nil || targets[i].LitellmKeyId == "" {
 			continue
 		}
-		if err := syncKeyToLitellm(ctx, cli, global.OPS_DB.WithContext(ctx), &keys[i], false); err != nil {
-			warnings = append(warnings, fmt.Sprintf("密钥 %d 同步 LiteLLM: %v", keys[i].AiKeyId, err))
+		if err := syncKeyToLitellm(ctx, cli, global.OPS_DB.WithContext(ctx), &targets[i], false); err != nil {
+			warnings = append(warnings, fmt.Sprintf("密钥 %d 同步 LiteLLM: %v", targets[i].AiKeyId, err))
 		}
 	}
 	state := "启用"
@@ -751,6 +757,54 @@ func (s *AiKeyService) SyncUserKeysActive(ctx context.Context, userId, updateBy 
 		logger.WithCtx(ctx).Mod("gateway").Warn(fmt.Sprintf("用户 %d 级联%s密钥失败: %s", userId, state, w))
 	}
 	return warnings
+}
+
+// filterCascadeKeys 用户生命周期级联的目标筛选(纯函数，可单测)：
+// 停用=仅启用中的 Key(打被动标记)；恢复=仅带被动标记的 Key(清标恢复)。
+// 管理员手动停用(无标记)与超限停用(enforceBudgetHardLimit 不打标)的 Key 两向都不动。
+func filterCascadeKeys(keys []gateway.AiKey, active bool) []gateway.AiKey {
+	out := make([]gateway.AiKey, 0, len(keys))
+	for i := range keys {
+		if active {
+			if keys[i].DisabledByCascade {
+				out = append(out, keys[i])
+			}
+		} else if keys[i].IsActive {
+			out = append(out, keys[i])
+		}
+	}
+	return out
+}
+
+// ResyncAllKeys 全量重推密钥投影到 LiteLLM(漂移兜底，管理员手动/定时巡检)。
+// 主 Key 有 loadMainKey 自愈(身份访问驱动)，场景 Key 的改名级联/授权对齐
+// syncKeyToLitellm 失败后无补偿路径 → 无条件幂等重推(全量下发，与凭证域 resync
+// 的投影比对不同：LiteLLM /key/info 有显示缓存，远端无可靠真值可比，直接重推)。
+// 单机模式返回 ErrNotConfigured；单个失败记入 Failed 不中断。
+func (s *AiKeyService) ResyncAllKeys(ctx context.Context) (gatewayResp.ResyncResult, error) {
+	result := gatewayResp.ResyncResult{Failed: []string{}}
+	cli := litellm.Default()
+	if cli == nil {
+		return result, litellm.ErrNotConfigured
+	}
+	var keys []gateway.AiKey
+	if err := global.OPS_DB.WithContext(ctx).Find(&keys).Error; err != nil {
+		return result, err
+	}
+	result.Total = len(keys)
+	for i := range keys {
+		if keys[i].LitellmKeyId == "" {
+			result.Skipped++ // 未同步 LiteLLM 的本地 Key(单机模式新建)，无投影可推
+			continue
+		}
+		if err := syncKeyToLitellm(ctx, cli, global.OPS_DB.WithContext(ctx), &keys[i], false); err != nil {
+			logger.WithCtx(ctx).Mod("gateway").Err(err).Field("aiKeyId", keys[i].AiKeyId).Warn("resync: 密钥投影重推失败")
+			result.Failed = append(result.Failed, keys[i].Name)
+			continue
+		}
+		result.Pushed++
+	}
+	return result, nil
 }
 
 // ----------------------------------------------------------------------------

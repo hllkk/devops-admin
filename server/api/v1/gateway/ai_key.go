@@ -240,3 +240,19 @@ func (a *AiKeyApi) BatchCreateMainKeys(c *gin.Context) {
 	response.OkWithDetailed(result, fmt.Sprintf("开通 %d/%d(跳过 %d，失败 %d)",
 		result.Created, result.Total, result.Skipped, len(result.Failed)), c)
 }
+
+// ResyncAiKeys
+// @Tags      GatewayAiKey
+// @Summary   手动重推全部密钥投影到 LiteLLM(改名级联/授权对齐同步失败的漂移兜底)
+// @Produce   application/json
+// @Success   200  {object}  response.Response{data=response.ResyncResult,msg=string}
+// @Router    /gateway/ai-key/resync [post]
+func (a *AiKeyApi) ResyncAiKeys(c *gin.Context) {
+	result, err := aiKeyService.ResyncAllKeys(c.Request.Context())
+	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("密钥重同步失败")
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	response.OkWithDetailed(result, "重同步完成", c)
+}

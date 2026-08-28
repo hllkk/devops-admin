@@ -189,6 +189,20 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			OrderNum:  10,
 			Module:    "gateway",
 		},
+		// 调用日志:管理员视角的用量明细(每笔调用的归因/token/成本),含手动回流/对账入口;
+		// usage 前缀不在 casbin 登录白名单,普通用户经 user 角色未授本菜单即无接口权限
+		{
+			ParentId:  0,
+			MenuName:  "route.usage",
+			MenuType:  "C",
+			Path:      "usage",
+			ApiPrefix: "/gateway/usage, /gateway/usage/*",
+			Component: "_gateway/usage/index",
+			Icon:      "lucide:scroll-text",
+			Visible:   "0",
+			OrderNum:  11,
+			Module:    "gateway",
+		},
 	}
 
 	// 先创建父级菜单（ParentId = 0 的菜单）

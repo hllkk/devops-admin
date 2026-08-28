@@ -18,13 +18,15 @@ type TrendItem struct {
 	Date     string  `json:"date"`     // 业务日(YYYY-MM-DD)
 	Cost     float64 `json:"cost"`     // 当日成本(¥)
 	Requests int     `json:"requests"` // 当日请求数
+	Tokens   int64   `json:"tokens"`   // 当日总token
 }
 
-// TopItem 成本排行项（按维度 user/model/aiKey）。
+// TopItem 排行项（按维度 user/model/aiKey，排序键 cost/requests/tokens）。
 type TopItem struct {
 	Name     string  `json:"name"`     // 维度值(用户名/模型名/Key名)
 	Cost     float64 `json:"cost"`     // 成本(¥)
 	Requests int     `json:"requests"` // 请求数
+	Tokens   int64   `json:"tokens"`   // 总token
 }
 
 // BudgetItem 预算执行项（按 Key）。

@@ -47,6 +47,7 @@ declare module "@elegant-router/types" {
     "system_setting": "/system/setting";
     "system_user": "/system/user";
     "timer": "/timer";
+    "usage": "/usage";
     "user-center": "/user-center";
   };
 
@@ -96,6 +97,7 @@ declare module "@elegant-router/types" {
     | "square"
     | "system"
     | "timer"
+    | "usage"
     | "user-center"
   >;
 
@@ -139,6 +141,7 @@ declare module "@elegant-router/types" {
     | "models_model"
     | "models_provider"
     | "square"
+    | "usage"
     | "server"
     | "home"
   >;

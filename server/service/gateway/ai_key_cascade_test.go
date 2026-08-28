@@ -3,6 +3,8 @@ package gateway
 import (
 	"reflect"
 	"testing"
+
+	"github.com/hllkk/devops-admin/server/model/gateway"
 )
 
 // renameKeyReferences 纯函数单测：模型 modelKey 改名时密钥三处 JSONB 引用的改写。
@@ -86,4 +88,50 @@ func TestRenameKeyReferences_MapOnlyReference(t *testing.T) {
 	if _, ok := nl["qwen3-max"]; !ok {
 		t.Errorf("model_limits 键应改名: %v", nl)
 	}
+}
+
+// filterCascadeKeys 纯函数单测：被动停用标记区分级联停与手动停。
+
+func TestFilterCascadeKeys_DisableOnlyActive(t *testing.T) {
+	// 级联停用：只动启用中的 Key，管理员手动停的(无标记)不动
+	keys := []gateway.AiKey{
+		{AiKeyId: 1, IsActive: true},                          // 启用中 → 停用+打标
+		{AiKeyId: 2, IsActive: false},                         // 手动停 → 不动
+		{AiKeyId: 3, IsActive: true, DisabledByCascade: true}, // 已被动停(此前一轮) → 不重复动
+	}
+	got := filterCascadeKeys(keys, false)
+	if len(got) != 2 || got[0].AiKeyId != 1 || got[1].AiKeyId != 3 {
+		t.Errorf("停用应选中启用中的 Key 1/3, got %v", idsOf(got))
+	}
+}
+
+func TestFilterCascadeKeys_EnableOnlyCascaded(t *testing.T) {
+	// 级联恢复：只恢复带被动标记的 Key，手动停/超限停的(无标记)不动
+	keys := []gateway.AiKey{
+		{AiKeyId: 1, IsActive: false, DisabledByCascade: true},  // 被动停 → 恢复+清标
+		{AiKeyId: 2, IsActive: false},                           // 管理员手动停 → 不恢复
+		{AiKeyId: 3, IsActive: false, DisabledByCascade: false}, // 超限停(不打标) → 不恢复
+		{AiKeyId: 4, IsActive: true},                            // 本就启用 → 不动
+	}
+	got := filterCascadeKeys(keys, true)
+	if len(got) != 1 || got[0].AiKeyId != 1 {
+		t.Errorf("恢复应仅选中被动停的 Key 1, got %v", idsOf(got))
+	}
+}
+
+func TestFilterCascadeKeys_Empty(t *testing.T) {
+	if got := filterCascadeKeys(nil, true); len(got) != 0 {
+		t.Errorf("空列表应返回空, got %v", got)
+	}
+	if got := filterCascadeKeys(nil, false); len(got) != 0 {
+		t.Errorf("空列表应返回空, got %v", got)
+	}
+}
+
+func idsOf(keys []gateway.AiKey) []int64 {
+	ids := make([]int64, 0, len(keys))
+	for i := range keys {
+		ids = append(ids, keys[i].AiKeyId)
+	}
+	return ids
 }

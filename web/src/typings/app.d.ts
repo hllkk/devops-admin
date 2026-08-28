@@ -742,6 +742,33 @@ declare namespace App {
             accessApiKey: string;
             noIdentity: string;
           };
+          usage: {
+            title: string;
+            startTime: string;
+            endTime: string;
+            userPlaceholder: string;
+            modelPlaceholder: string;
+            providerPlaceholder: string;
+            unattributed: string;
+            syncNow: string;
+            syncConfirm: string;
+            syncSuccess: string;
+            reconcileNow: string;
+            reconcileConfirm: string;
+            reconcileSuccess: string;
+            col: {
+              time: string;
+              user: string;
+              aiKey: string;
+              model: string;
+              deployment: string;
+              callType: string;
+              promptTokens: string;
+              completionTokens: string;
+              cost: string;
+              duration: string;
+            };
+          };
           common: {
             optional: string;
             unlimited: string;
@@ -1026,6 +1053,9 @@ declare namespace App {
             rotate: string;
             rotateConfirm: string;
             rotateSuccess: string;
+            resync: string;
+            resyncConfirm: string;
+            resyncSuccess: string;
             viewKey: string;
             hideKey: string;
             copyKey: string;
@@ -1106,10 +1136,12 @@ declare namespace App {
             trendTitle: string;
             metricCost: string;
             metricRequests: string;
+            metricTokens: string;
             topTitle: string;
             topName: string;
             topCost: string;
             topRequests: string;
+            topTokens: string;
             budgetTitle: string;
             budgetName: string;
             budgetOwner: string;

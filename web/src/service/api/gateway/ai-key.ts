@@ -68,3 +68,12 @@ export function fetchBatchCreateMainKeys(data: Api.Gateway.AiKeyBatchCreateParam
     timeout: 0 // 批量按部门开通可能数百用户串行外呼 LiteLLM,不吃默认 10s 超时
   });
 }
+
+/** 全量重推密钥投影到 LiteLLM(改名级联/授权对齐同步失败的漂移兜底) */
+export function fetchResyncAiKeys() {
+  return request<Api.Gateway.ResyncResult>({
+    url: '/gateway/ai-key/resync',
+    method: 'post',
+    timeout: 0 // 全量 Key 串行外呼 LiteLLM,不吃默认 10s 超时
+  });
+}

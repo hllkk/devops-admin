@@ -25,8 +25,10 @@ export function fetchGetDashboardTrend(params?: DashboardQueryParams) {
   });
 }
 
-/** 获取成本 Top10(按维度 user/model/aiKey) */
-export function fetchGetDashboardTop(params?: DashboardQueryParams & { dimension?: 'user' | 'model' | 'aiKey' }) {
+/** 获取 Top10 排行(按维度 user/model/aiKey,排序键 cost/requests/tokens) */
+export function fetchGetDashboardTop(
+  params?: DashboardQueryParams & { dimension?: 'user' | 'model' | 'aiKey'; sort?: 'cost' | 'requests' | 'tokens' }
+) {
   return request<Api.Gateway.TopItem[]>({
     url: '/gateway/dashboard/top',
     method: 'get',

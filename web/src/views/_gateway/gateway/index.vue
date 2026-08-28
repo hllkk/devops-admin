@@ -73,10 +73,11 @@ const top = ref<Api.Gateway.TopItem[]>([]);
 const budget = ref<Api.Gateway.BudgetItem[]>([]);
 const balanceSummary = ref<Api.Gateway.ProviderBalanceSummary[]>([]);
 const topDimension = ref<'user' | 'model' | 'aiKey'>('user');
+const topSort = ref<'cost' | 'requests' | 'tokens'>('cost');
 const loading = ref(false);
 
 async function loadTop() {
-  const { data, error } = await fetchGetDashboardTop({ ...queryParams.value, dimension: topDimension.value });
+  const { data, error } = await fetchGetDashboardTop({ ...queryParams.value, dimension: topDimension.value, sort: topSort.value });
   if (!error) top.value = data ?? [];
 }
 
@@ -108,6 +109,7 @@ async function handleAggregate() {
 
 watch(queryParams, () => loadAll());
 watch(topDimension, () => loadTop());
+watch(topSort, () => loadTop());
 
 onMounted(loadAll);
 </script>
@@ -145,7 +147,7 @@ onMounted(loadAll);
         <DashboardOverview :data="overview" />
         <div class="grid grid-cols-1 gap-16px lg:grid-cols-2">
           <DashboardTrend :data="trend" />
-          <DashboardTop v-model:dimension="topDimension" :data="top" />
+          <DashboardTop v-model:dimension="topDimension" v-model:sort="topSort" :data="top" />
         </div>
         <DashboardBalance :data="balanceSummary" />
         <DashboardBudget :data="budget" />

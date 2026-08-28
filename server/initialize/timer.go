@@ -45,4 +45,8 @@ func Timer() {
 		_, err := (&gatewayService.ProviderBalanceService{}).SyncAllProviderBalances(ctx)
 		return err
 	})
+	task.Register("ResyncAiKeys", "全量重推AI密钥投影到LiteLLM(改名级联/授权对齐同步失败的漂移兜底)", func(ctx context.Context, _ json.RawMessage) error {
+		_, err := (&gatewayService.AiKeyService{}).ResyncAllKeys(ctx)
+		return err
+	})
 }

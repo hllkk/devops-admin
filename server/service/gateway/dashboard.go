@@ -57,20 +57,20 @@ func (s *DashboardService) GetOverview(ctx context.Context, start, end time.Time
 	return ov, nil
 }
 
-// GetTrend 按日成本趋势（读聚合表 GROUP BY summary_date）。
+// GetTrend 按日成本/调用量趋势（读聚合表 GROUP BY summary_date）。
 func (s *DashboardService) GetTrend(ctx context.Context, start, end time.Time, scope string, userId int64) ([]gatewayResp.TrendItem, error) {
 	db := applyScope(global.OPS_DB.WithContext(ctx).Model(&gateway.CostSummaryDaily{}), scope, userId)
 	db = db.Where("summary_date >= ? AND summary_date <= ?", start.Format("2006-01-02"), end.Format("2006-01-02"))
 	var items []gatewayResp.TrendItem
-	if err := db.Select("to_char(summary_date,'YYYY-MM-DD') AS date, COALESCE(SUM(external_cost),0) AS cost, COALESCE(SUM(request_count),0) AS requests").
+	if err := db.Select("to_char(summary_date,'YYYY-MM-DD') AS date, COALESCE(SUM(external_cost),0) AS cost, COALESCE(SUM(request_count),0) AS requests, COALESCE(SUM(total_tokens),0) AS tokens").
 		Group("summary_date").Order("summary_date ASC").Scan(&items).Error; err != nil {
 		return nil, err
 	}
 	return items, nil
 }
 
-// GetTop 成本 Top10（按维度 user/model/aiKey）。
-func (s *DashboardService) GetTop(ctx context.Context, start, end time.Time, dimension, scope string, userId int64) ([]gatewayResp.TopItem, error) {
+// GetTop Top10 排行（按维度 user/model/aiKey，排序键 sort: cost/requests/tokens）。
+func (s *DashboardService) GetTop(ctx context.Context, start, end time.Time, dimension, sort, scope string, userId int64) ([]gatewayResp.TopItem, error) {
 	db := applyScope(global.OPS_DB.WithContext(ctx).Model(&gateway.CostSummaryDaily{}), scope, userId)
 	db = db.Where("summary_date >= ? AND summary_date <= ?", start.Format("2006-01-02"), end.Format("2006-01-02"))
 	var groupCol, labelExpr string
@@ -82,20 +82,28 @@ func (s *DashboardService) GetTop(ctx context.Context, start, end time.Time, dim
 	default: // user
 		groupCol, labelExpr = "user_id", "COALESCE(CAST(user_id AS TEXT),'未归因')"
 	}
+	// 排序键白名单映射到聚合列(外层引用别名，PostgreSQL GROUP BY 聚合别名可排序)
+	orderCol := map[string]string{
+		"cost": "cost", "requests": "requests", "tokens": "tokens",
+	}[sort]
+	if orderCol == "" {
+		orderCol = "cost"
+	}
 	// 先按维度分组聚合，Top10；label 先用 ID，再 Go 层补名
 	type row struct {
 		Label    string
 		Cost     float64
 		Requests int
+		Tokens   int64
 	}
 	var rows []row
-	if err := db.Select(fmt.Sprintf("%s AS label, COALESCE(SUM(external_cost),0) AS cost, COALESCE(SUM(request_count),0) AS requests", labelExpr)).
-		Where(groupCol + " IS NOT NULL").Group(groupCol).Order("cost DESC").Limit(10).Scan(&rows).Error; err != nil {
+	if err := db.Select(fmt.Sprintf("%s AS label, COALESCE(SUM(external_cost),0) AS cost, COALESCE(SUM(request_count),0) AS requests, COALESCE(SUM(total_tokens),0) AS tokens", labelExpr)).
+		Where(groupCol + " IS NOT NULL").Group(groupCol).Order(orderCol + " DESC").Limit(10).Scan(&rows).Error; err != nil {
 		return nil, err
 	}
 	items := make([]gatewayResp.TopItem, 0, len(rows))
 	for _, r := range rows {
-		items = append(items, gatewayResp.TopItem{Name: s.resolveDimensionLabel(ctx, dimension, r.Label), Cost: r.Cost, Requests: r.Requests})
+		items = append(items, gatewayResp.TopItem{Name: s.resolveDimensionLabel(ctx, dimension, r.Label), Cost: r.Cost, Requests: r.Requests, Tokens: r.Tokens})
 	}
 	return items, nil
 }

@@ -224,13 +224,15 @@ declare namespace Api {
       date: string;
       cost: number;
       requests: number;
+      tokens: number;
     };
 
-    /** 成本排行项(按维度 user/model/aiKey) */
+    /** 排行项(按维度 user/model/aiKey,排序键 cost/requests/tokens) */
     type TopItem = {
       name: string;
       cost: number;
       requests: number;
+      tokens: number;
     };
 
     /** 预算执行项(按 Key) */
@@ -522,6 +524,41 @@ declare namespace Api {
     /** 使用场景新增/修改参数(name 未软删行内唯一) */
     type KeyScenarioOperateParams = CommonType.RecordNullable<
       Pick<KeyScenario, 'scenarioId' | 'name' | 'description' | 'isActive'>
+    >;
+
+    // ───────────────── 调用日志 UsageLog(管理员视角的用量明细) ─────────────────
+
+    /** 用量日志(每笔调用的归因/token/成本；userName/aiKeyName/deploymentName 后端回填) */
+    type UsageLog = {
+      logId: CommonType.IdType;
+      requestId: string;
+      userId: CommonType.IdType;
+      aiKeyId: CommonType.IdType;
+      deploymentId: CommonType.IdType;
+      userName: string;
+      aiKeyName: string;
+      deploymentName: string;
+      model: string;
+      provider: string;
+      callType: string;
+      promptTokens: number;
+      completionTokens: number;
+      totalTokens: number;
+      cacheReadTokens: number;
+      cacheCreationTokens: number;
+      externalCost: number;
+      internalCost: number;
+      durationMs: number;
+      startedAt: string;
+      endedAt: string;
+    };
+
+    /** 用量日志搜索参数(时间范围 RFC3339;userId/aiKeyId/deploymentId 0=不限) */
+    type UsageLogSearchParams = CommonType.RecordNullable<
+      Pick<UsageLog, 'userId' | 'aiKeyId' | 'deploymentId' | 'model' | 'provider'> & {
+        startTime?: string | null;
+        endTime?: string | null;
+      } & Api.Common.CommonSearchParams
     >;
   }
 }

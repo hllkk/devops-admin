@@ -5,3 +5,4 @@ export * from './credential';
 export * from './model';
 export * from './ai-key';
 export * from './key-scenario';
+export * from './usage';

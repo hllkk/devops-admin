@@ -83,9 +83,10 @@ func (a *DashboardApi) GetTrend(c *gin.Context) {
 
 // GetTop
 // @Tags      GatewayDashboard
-// @Summary   成本Top10(按维度 user/model/aiKey)
+// @Summary   Top10排行(按维度 user/model/aiKey,排序键 cost/requests/tokens)
 // @Produce   application/json
 // @Param     dimension  query  string  false  "维度(user/model/aiKey,默认user)"
+// @Param     sort       query  string  false  "排序键(cost/requests/tokens,默认cost)"
 // @Param     startDate  query  string  false  "开始日期"
 // @Param     endDate    query  string  false  "结束日期"
 // @Param     scope      query  string  false  "范围(all/self)"
@@ -95,7 +96,8 @@ func (a *DashboardApi) GetTop(c *gin.Context) {
 	start, end := parseRange(c)
 	scope, userId := resolveScope(c)
 	dimension := c.DefaultQuery("dimension", "user")
-	items, err := dashboardService.GetTop(c.Request.Context(), start, end, dimension, scope, userId)
+	sortKey := c.DefaultQuery("sort", "cost")
+	items, err := dashboardService.GetTop(c.Request.Context(), start, end, dimension, sortKey, scope, userId)
 	if err != nil {
 		response.FailWithMessage("获取失败", c)
 		return

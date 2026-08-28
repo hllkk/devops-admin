@@ -193,6 +193,7 @@ const routeMap: RouteMap = {
   "system_setting": "/system/setting",
   "system_user": "/system/user",
   "timer": "/timer",
+  "usage": "/usage",
   "user-center": "/user-center"
 };
 

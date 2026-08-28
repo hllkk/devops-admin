@@ -344,6 +344,15 @@ export const generatedRoutes: GeneratedRoute[] = [
     }
   },
   {
+    name: 'usage',
+    path: '/usage',
+    component: 'layout.base$view.usage',
+    meta: {
+      title: 'usage',
+      i18nKey: 'route.usage'
+    }
+  },
+  {
     name: 'user-center',
     path: '/user-center',
     component: 'layout.auto$view.user-center',
