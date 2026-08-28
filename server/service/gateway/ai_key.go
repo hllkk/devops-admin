@@ -40,11 +40,13 @@ func (s *AiKeyService) GetMyIdentity(ctx context.Context, userId int64) (gateway
 	view := gatewayResp.MyIdentityView{
 		SceneKeys:      []gatewayResp.AiKeyView{},
 		Models:         []string{},
+		Mcps:           []string{},
 		ModelBudgets:   jsonToMap(datatypes.JSON(nil)),
 		RateLimitMode:  gateway.RateLimitModeNone,
 		BudgetDuration: gateway.BudgetDuration30d,
 	}
 	view.AvailableModels, _ = s.GetMyVisibleModels(ctx, userId)
+	view.AvailableMcps, _ = McpSvc.GetActiveMcps(ctx, userId)
 	// 网关接入点(litellm public-url)：客户端直连 Base URL，接入信息展示用
 	view.GatewayUrl = global.OPS_CONFIG.Litellm.PublicURL
 	if mainKey == nil {
@@ -57,6 +59,7 @@ func (s *AiKeyService) GetMyIdentity(ctx context.Context, userId int64) (gateway
 	view.BudgetDuration = mainKey.BudgetDuration
 	view.ExpiresAt = mainKey.ExpiresAt
 	view.Models = jsonToSlice(mainKey.Models)
+	view.Mcps = jsonToSlice(mainKey.Mcps)
 	view.ModelBudgets = jsonToMap(mainKey.ModelBudgets)
 	view.RateLimitMode = mainKey.RateLimitMode
 	view.TpmLimit = mainKey.TpmLimit
@@ -385,6 +388,22 @@ func (s *AiKeyService) CreateSceneKey(ctx context.Context, req gatewayReq.AiKeyO
 			models = visibleModelKeys(db, 0, req.OwnerId)
 		}
 	}
+	// MCP 授权：显式列表优先(nil=[])；主 Key 未指定时默认含对其可见的免审批 MCP
+	// + 本人已批准申请的 MCP(与模型默认授权同口径，serverName 为授权锚点)
+	mcps := req.Mcps
+	if mcps == nil {
+		mcps = []string{}
+	}
+	if gateway.MainKeyType(req.KeyType) && len(mcps) == 0 {
+		db := global.OPS_DB.WithContext(ctx)
+		if req.OwnerType == gateway.OwnerTypeUser {
+			mcps = mergeMissingKeys(nil,
+				visibleMcpKeys(db, req.OwnerId, userDeptIdOf(db, req.OwnerId)),
+				approvedApplicationMcpKeys(db, req.OwnerId))
+		} else {
+			mcps = visibleMcpKeys(db, 0, req.OwnerId)
+		}
+	}
 
 	// 场景归属(仅场景 Key；主 Key 恒无场景)
 	scenarioId := int64(0)
@@ -408,7 +427,7 @@ func (s *AiKeyService) CreateSceneKey(ctx context.Context, req gatewayReq.AiKeyO
 		ScenarioId:      scenarioId,
 		Models:          marshalJSONStringSlice(models),
 		ModelBudgets:    marshalJSONMap(req.ModelBudgets),
-		Mcps:            datatypes.JSON([]byte("[]")),
+		Mcps:            marshalJSONStringSlice(mcps),
 		Skills:          datatypes.JSON([]byte("[]")),
 		BudgetLimit:     req.BudgetLimit,
 		BudgetHardLimit: req.BudgetHardLimit != nil && *req.BudgetHardLimit,
@@ -475,6 +494,11 @@ func (s *AiKeyService) UpdateAiKey(ctx context.Context, req gatewayReq.AiKeyOper
 	if models == nil {
 		models = jsonToSlice(k.Models)
 	}
+	// MCP 授权(nil=不改，与 models 同语义；空 slice=清空)
+	mcps := req.Mcps
+	if mcps == nil {
+		mcps = jsonToSlice(k.Mcps)
+	}
 
 	// 场景归属(nil=清空为无场景；非空须为启用场景；主 Key 恒清空)
 	if req.ScenarioId != nil && *req.ScenarioId != 0 {
@@ -494,6 +518,7 @@ func (s *AiKeyService) UpdateAiKey(ctx context.Context, req gatewayReq.AiKeyOper
 		"description":   req.Description,
 		"scenario_id":   scenarioId,
 		"models":        marshalJSONStringSlice(models),
+		"mcps":          marshalJSONStringSlice(mcps),
 		"model_budgets": marshalJSONMap(req.ModelBudgets),
 		"model_limits":  marshalJSONMap(req.ModelLimits),
 		"expires_at":    req.ExpiresAt, // 过期时间覆盖式更新(nil=改回永不过期)
@@ -540,6 +565,7 @@ func (s *AiKeyService) UpdateAiKey(ctx context.Context, req gatewayReq.AiKeyOper
 	// 内存态对齐(供事务内 syncKeyToLitellm；条件字段已在上方各自赋值)
 	k.ExpiresAt = req.ExpiresAt
 	k.Models = marshalJSONStringSlice(models)
+	k.Mcps = marshalJSONStringSlice(mcps)
 	k.ModelBudgets = marshalJSONMap(req.ModelBudgets)
 	k.ModelLimits = marshalJSONMap(req.ModelLimits)
 
@@ -828,23 +854,34 @@ func loadMainKey(ctx context.Context, userId int64) (*gateway.AiKey, error) {
 		return nil, err
 	}
 
-	// 已有主 Key：补缺失的可见免审批模型 + 本人已批准申请的模型(幂等自愈；定向发布对
-	// 可见范围内的个人主 Key 同样生效；审批授权不依赖发布档，批准后经此补齐——含批准时
-	// 主 Key 尚未创建/停用的场景，规避 AIHelms"无主 Key 静默 skip 仍 approved"坑)
+	// 已有主 Key：补缺失的可见免审批模型/MCP + 本人已批准申请的模型/MCP(幂等自愈；定向
+	// 发布对可见范围内的个人主 Key 同样生效；审批授权不依赖发布档，批准后经此补齐——含
+	// 批准时主 Key 尚未创建/停用的场景，规避 AIHelms"无主 Key 静默 skip 仍 approved"坑)
 	kdb := global.OPS_DB.WithContext(ctx)
+	deptId := userDeptIdOf(kdb, userId)
 	current := jsonToSlice(k.Models)
-	missing := mergeMissingKeys(current,
-		visibleModelKeys(kdb, userId, userDeptIdOf(kdb, userId)),
+	missingModels := mergeMissingKeys(current,
+		visibleModelKeys(kdb, userId, deptId),
 		approvedApplicationModelKeys(kdb, userId))
-	current = append(current, missing...)
-	if len(missing) > 0 {
+	current = append(current, missingModels...)
+	currentMcps := jsonToSlice(k.Mcps)
+	missingMcps := mergeMissingKeys(currentMcps,
+		visibleMcpKeys(kdb, userId, deptId),
+		approvedApplicationMcpKeys(kdb, userId))
+	currentMcps = append(currentMcps, missingMcps...)
+	if len(missingModels) > 0 || len(missingMcps) > 0 {
 		cli := litellm.Default()
 		_ = global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+			updates := map[string]any{
+				"models": marshalJSONStringSlice(current),
+				"mcps":   marshalJSONStringSlice(currentMcps),
+			}
 			if err := tx.Model(&gateway.AiKey{}).Where("ai_key_id = ?", k.AiKeyId).
-				Update("models", marshalJSONStringSlice(current)).Error; err != nil {
+				Updates(updates).Error; err != nil {
 				return err
 			}
 			k.Models = marshalJSONStringSlice(current)
+			k.Mcps = marshalJSONStringSlice(currentMcps)
 			if cli != nil && k.LitellmKeyId != "" {
 				_ = syncKeyToLitellm(ctx, cli, tx, &k, false)
 			}
@@ -1111,14 +1148,20 @@ func syncKeyToLitellm(ctx context.Context, cli *litellm.Client, tx *gorm.DB, k *
 		}
 	}
 
+	// MCP 授权(serverName 列表直推)：平台全库 MCP 一律 allow_all_keys=false，Key 的
+	// allowed_mcp_servers 即唯一授权凭证——空=无 MCP 权限。jsonToSlice(k.Mcps) 元素即
+	// serverName，与 models 存 modelKey 同构，无需二次解析
+	mcpServers := jsonToSlice(k.Mcps)
+
 	if isCreate {
 		req := litellm.KeyCreateReq{
-			KeyAlias:       k.LitellmKeyAlias,
-			Models:         expandedModels,
-			MaxBudget:      maxBudget,
-			BudgetDuration: budgetDuration,
-			Metadata:       metadata,
-			ExpiresAt:      k.ExpiresAt,
+			KeyAlias:          k.LitellmKeyAlias,
+			Models:            expandedModels,
+			MaxBudget:         maxBudget,
+			BudgetDuration:    budgetDuration,
+			Metadata:          metadata,
+			ExpiresAt:         k.ExpiresAt,
+			AllowedMCPServers: mcpServers, // omitempty：空=不推(无字段=无 MCP 权限)
 		}
 		if k.RateLimitMode == gateway.RateLimitModeTotal {
 			req.TPMLimit = k.TpmLimit
@@ -1149,13 +1192,15 @@ func syncKeyToLitellm(ctx context.Context, cli *litellm.Client, tx *gorm.DB, k *
 
 	// Update
 	req := litellm.KeyUpdateReq{
-		Models:         expandedModels,
-		MaxBudget:      maxBudget,
-		BudgetDuration: budgetDuration,
-		Metadata:       metadata,
-		ExpiresAt:      k.ExpiresAt,
-		SyncBudget:     syncBudget,
-		SyncExpiry:     true, // 过期时间始终与 DB 行同步(含 nil→null 清空)
+		Models:            expandedModels,
+		MaxBudget:         maxBudget,
+		BudgetDuration:    budgetDuration,
+		Metadata:          metadata,
+		ExpiresAt:         k.ExpiresAt,
+		SyncBudget:        syncBudget,
+		SyncExpiry:        true, // 过期时间始终与 DB 行同步(含 nil→null 清空)
+		AllowedMCPServers: mcpServers,
+		SyncMCPServers:    true, // 恒刷(含空数组清权，防回收后 LiteLLM 残留旧授权)
 	}
 	// 限流字段始终刷：非 total 模式 TPMLimit/RPMLimit 为 nil → JSON null 清空，
 	// 防 total 切 none/per_model 后 LiteLLM 侧旧全局限流残留继续生效

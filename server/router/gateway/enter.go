@@ -13,6 +13,7 @@ type RouterGroup struct {
 	DashboardRouter
 	RouterSettingsRouter
 	ResourceApplicationRouter
+	MCPRouter
 }
 
 var (
@@ -27,4 +28,5 @@ var (
 	routerSettingsApi = v1.ApiGroupApp.GatewayApiGroup.RouterSettingsApi
 	providerBalanceApi = v1.ApiGroupApp.GatewayApiGroup.ProviderBalanceApi
 	applicationApi    = v1.ApiGroupApp.GatewayApiGroup.ResourceApplicationApi
+	mcpApi            = v1.ApiGroupApp.GatewayApiGroup.MCPApi
 )

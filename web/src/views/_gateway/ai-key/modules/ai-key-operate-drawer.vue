@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { jsonClone } from '@sa/utils';
-import { fetchCreateAiKey, fetchGetAllKeyScenarios, fetchGetAvailableModels, fetchUpdateAiKey } from '@/service/api/gateway';
+import { fetchCreateAiKey, fetchGetAllKeyScenarios, fetchGetAvailableMcps, fetchGetAvailableModels, fetchUpdateAiKey } from '@/service/api/gateway';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
 import { $t } from '@/locales';
 import UserSelect from '@/components/custom/user-select.vue';
@@ -55,6 +55,7 @@ function createDefaultModel(): Model {
     description: '',
     scenarioId: null,
     models: [],
+    mcps: [],
     modelBudgets: {},
     budgetLimit: null,
     budgetHardLimit: false,
@@ -69,12 +70,21 @@ function createDefaultModel(): Model {
 }
 
 const modelOptions = ref<{ label: string; value: string }[]>([]);
+const mcpOptions = ref<{ label: string; value: string }[]>([]);
 const scenarioOptions = ref<{ label: string; value: string }[]>([]);
 
 async function loadModels() {
   const { data, error } = await fetchGetAvailableModels();
   if (!error && data) {
     modelOptions.value = data.map(m => ({ label: m.name, value: m.modelKey }));
+  }
+}
+
+async function loadMcps() {
+  const { data, error } = await fetchGetAvailableMcps();
+  if (!error && data) {
+    // 授权锚点是 serverName(与 LiteLLM allowed_mcp_servers 对齐)，label 附展示名
+    mcpOptions.value = data.map(m => ({ label: `${m.name} (${m.serverName})`, value: m.serverName }));
   }
 }
 
@@ -87,6 +97,7 @@ async function loadScenarios() {
 }
 
 onMounted(loadModels);
+onMounted(loadMcps);
 onMounted(loadScenarios);
 
 const keyTypeOptions = computed(() => KEY_TYPE_OPTIONS.map(o => ({ label: $t(o.label), value: o.value })));
@@ -262,6 +273,15 @@ watch(visible, () => {
             filterable
             :options="modelOptions"
             :placeholder="$t('page.gateway.aiKey.form.modelsPlaceholder')"
+          />
+        </NFormItem>
+        <NFormItem :label="$t('page.gateway.aiKey.col.mcps')" path="mcps">
+          <NSelect
+            v-model:value="model.mcps"
+            multiple
+            filterable
+            :options="mcpOptions"
+            :placeholder="$t('page.gateway.aiKey.form.mcpsPlaceholder')"
           />
         </NFormItem>
 

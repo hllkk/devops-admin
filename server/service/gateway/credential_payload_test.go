@@ -43,9 +43,9 @@ func TestBuildLitellmCredentialValues_NonVllmUnchanged(t *testing.T) {
 		info         map[string]any
 	}{
 		{"openai", map[string]any{"format": "openai"}},
-		{"openai", map[string]any{"format": "anthropic"}},  // 非 vllm 即使 anthropic 也不派生
-		{"vllm", map[string]any{"format": "openai"}},       // vllm 但 openai 格式不派生
-		{"vllm", map[string]any{}},                          // vllm 无 format 不派生
+		{"openai", map[string]any{"format": "anthropic"}}, // 非 vllm 即使 anthropic 也不派生
+		{"vllm", map[string]any{"format": "openai"}},      // vllm 但 openai 格式不派生
+		{"vllm", map[string]any{}},                        // vllm 无 format 不派生
 	} {
 		out := BuildLitellmCredentialValues(values, tt.info, tt.providerType)
 		if _, exists := out["extra_headers"]; exists {
@@ -74,10 +74,10 @@ func TestMaskSecret(t *testing.T) {
 	cases := []struct {
 		in, want string
 	}{
-		{"short", "*****"},                                  // <=8 全 *
-		{"12345678", "********"},                            // 恰 8 位全 *
-		{"sk-test-1234567890", "sk-t****7890"},               // 前4+****+后4
-		{"", ""},                                            // 空串
+		{"short", "*****"},                     // <=8 全 *
+		{"12345678", "********"},               // 恰 8 位全 *
+		{"sk-test-1234567890", "sk-t****7890"}, // 前4+****+后4
+		{"", ""},                               // 空串
 	}
 	for _, c := range cases {
 		if got := MaskSecret(c.in); got != c.want {

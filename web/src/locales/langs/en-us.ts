@@ -279,6 +279,7 @@ const local: App.I18n.Schema = {
     models_provider: 'Providers',
     usage: 'Usage Logs',
     application: 'Applications',
+    mcp: 'MCP Servers',
     init: 'System Init',
     home: 'Profile'
   },
@@ -548,6 +549,13 @@ const local: App.I18n.Schema = {
         subtitle: 'Models visible to you by publish scope; authorized models show access info directly',
         searchPlaceholder: 'Search model name / route name',
         empty: 'No visible models',
+        filterModels: 'Models',
+        filterMcps: 'MCP Tools',
+        accessMcpUrl: 'MCP Endpoint',
+        accessMcpConfig: 'Client Config JSON',
+        accessMcpConfigTip: 'Paste into MCP-capable clients to enable',
+        copyConfig: 'Copy Config',
+        toolsCount: '{count} tools',
         authorized: 'Authorized',
         notAuthorized: 'Not authorized',
         requiresApproval: 'Approval required',
@@ -584,6 +592,7 @@ const local: App.I18n.Schema = {
         statusRejected: 'Rejected',
         typeAll: 'All types',
         typeModel: 'Model',
+        typeMcp: 'MCP',
         userPlaceholder: 'Filter by applicant',
         batchApprove: 'Approve selected',
         batchReject: 'Reject selected',
@@ -633,6 +642,96 @@ const local: App.I18n.Schema = {
           completionTokens: 'Output Tokens',
           cost: 'Cost (¥)',
           duration: 'Duration'
+        }
+      },
+      mcp: {
+        title: 'MCP Servers',
+        add: 'Register MCP Server',
+        edit: 'Edit MCP Server',
+        transportSse: 'SSE',
+        transportHttp: 'Streamable HTTP',
+        authNone: 'No Auth',
+        authApiKey: 'API Key',
+        authBearer: 'Bearer Token',
+        billingFree: 'Free',
+        billingPerCall: 'Per Call',
+        costPerCall: 'Cost per Call (¥)',
+        healthCheck: {
+          short: 'Check',
+          done: 'Health check finished'
+        },
+        col: {
+          name: 'Name',
+          serverName: 'Route Name',
+          url: 'Endpoint URL',
+          transport: 'Transport',
+          authType: 'Auth Type',
+          authValue: 'Credentials',
+          category: 'Category',
+          author: 'Provider',
+          iconUrl: 'Icon URL',
+          documentationUrl: 'Docs URL',
+          billingType: 'Billing',
+          toolCount: 'Tools',
+          healthStatus: 'Health',
+          isPublished: 'Publish',
+          isActive: 'Status',
+          litellmSynced: 'Sync',
+          description: 'Description'
+        },
+        form: {
+          name: { required: 'Please enter a name' },
+          serverName: {
+            required: 'Please enter a route name',
+            pattern: 'Only letters/digits/underscores allowed (LiteLLM route constraint)',
+            tip: 'The route name is part of the gateway access URL and the grant anchor; letters/digits/underscores only',
+            renameTip: 'Route name cannot be changed (client config and grant anchor are based on it)'
+          },
+          url: { required: 'Please enter the MCP endpoint URL' },
+          authValue: 'Credential Value',
+          authValuePlaceholder: 'Leave empty to keep the old value; enter a new value to override',
+          valuesTip: 'Credentials are AES-encrypted at rest and masked in UI; unchanged mask keeps the old value',
+          costRequired: 'Per-call billing requires a cost value',
+          instructions: 'Instructions (shown in the access info dialog)'
+        },
+        health: {
+          unknown: 'Unknown',
+          healthy: 'Healthy',
+          unhealthy: 'Unhealthy'
+        },
+        publish: {
+          short: 'Publish',
+          title: 'MCP Publish Settings',
+          subtitle: 'Configure visibility and access approval of this MCP in the user portal (model square)',
+          isPublished: 'Publish to Users',
+          autoGrantTip: 'Publishing without approval auto-grants main keys by visibility; unpublishing/tightening/disabling revokes out-of-scope grants',
+          visibilityType: 'Visibility',
+          visibilityAll: 'Everyone',
+          visibilitySelected: 'Selected Departments',
+          visibilityUser: 'Selected Users',
+          departmentIds: 'Departments',
+          userIds: 'Users',
+          departmentRequired: 'Select at least one department for department visibility',
+          userRequired: 'Select at least one user for user visibility',
+          requiresApproval: 'Approval Required',
+          requiresApprovalTip: 'Users must apply in the model square; access is granted after approval'
+        },
+        toolsDrawer: {
+          short: 'Tools',
+          title: 'Tools',
+          tip: 'Tools are fetched from the remote MCP endpoint; refreshing keeps existing billing config by tool name',
+          refresh: 'Refresh from Remote',
+          refreshSuccess: 'Tools refreshed: {count} tools',
+          emptyTip: 'No tools yet. Refresh from remote first',
+          editBilling: 'Billing',
+          inheritServer: 'Inherit Server',
+          col: {
+            toolName: 'Tool',
+            displayName: 'Display Name',
+            description: 'Description',
+            billingType: 'Billing',
+            cost: 'Cost (¥)'
+          }
         }
       },
       common: {
@@ -941,6 +1040,7 @@ const local: App.I18n.Schema = {
           owner: 'Owner',
           keyPrefix: 'Key',
           models: 'Resources',
+          mcps: 'MCP Grants',
           budget: 'Budget',
           budgetLimit: 'Budget Limit',
           budgetHardLimit: 'Auto-Stop',
@@ -964,6 +1064,7 @@ const local: App.I18n.Schema = {
           namePlaceholder: 'Custom name for scene key',
           mainKeyNameFixed: 'Main key name is fixed to "main"',
           modelsPlaceholder: 'Select authorized models',
+          mcpsPlaceholder: 'Select authorized MCP (main keys default to visible no-approval MCP)',
           budgetHardLimitDesc:
             'When on, the key is auto-disabled once budget is exhausted (enforced by LiteLLM); when off, usage is only displayed.',
           ownerUserPlaceholder: 'Select user',

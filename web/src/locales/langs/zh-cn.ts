@@ -275,6 +275,7 @@ const local: App.I18n.Schema = {
     models_provider: '供应商管理',
     usage: '调用日志',
     application: '资源申请',
+    mcp: 'MCP 服务器',
     init: '系统初始化',
     home: '我的主页'
   },
@@ -544,6 +545,13 @@ const local: App.I18n.Schema = {
         subtitle: '展示按发布范围对您可见的模型；已授权模型可直接查看接入信息',
         searchPlaceholder: '搜索模型名称 / 路由名',
         empty: '暂无可见模型',
+        filterModels: '模型',
+        filterMcps: 'MCP 工具',
+        accessMcpUrl: 'MCP 接入地址',
+        accessMcpConfig: '客户端配置 JSON',
+        accessMcpConfigTip: '粘贴到支持 MCP 的客户端即可启用',
+        copyConfig: '复制配置',
+        toolsCount: '{count} 个工具',
         authorized: '已授权',
         notAuthorized: '未授权',
         requiresApproval: '需审批',
@@ -580,6 +588,7 @@ const local: App.I18n.Schema = {
         statusRejected: '已驳回',
         typeAll: '全部类型',
         typeModel: '模型',
+        typeMcp: 'MCP',
         userPlaceholder: '按申请人筛选',
         batchApprove: '批量通过',
         batchReject: '批量驳回',
@@ -629,6 +638,96 @@ const local: App.I18n.Schema = {
           completionTokens: '输出Token',
           cost: '成本(¥)',
           duration: '耗时'
+        }
+      },
+      mcp: {
+        title: 'MCP 服务器',
+        add: '注册 MCP 服务器',
+        edit: '编辑 MCP 服务器',
+        transportSse: 'SSE',
+        transportHttp: 'Streamable HTTP',
+        authNone: '无鉴权',
+        authApiKey: 'API Key',
+        authBearer: 'Bearer Token',
+        billingFree: '免费',
+        billingPerCall: '按次计费',
+        costPerCall: '单次调用价(¥)',
+        healthCheck: {
+          short: '健康',
+          done: '健康检查完成'
+        },
+        col: {
+          name: '名称',
+          serverName: '路由名',
+          url: '端点 URL',
+          transport: '传输协议',
+          authType: '鉴权方式',
+          authValue: '鉴权凭据',
+          category: '分类',
+          author: '提供方',
+          iconUrl: '图标地址',
+          documentationUrl: '文档地址',
+          billingType: '计费类型',
+          toolCount: '工具数',
+          healthStatus: '健康状态',
+          isPublished: '发布状态',
+          isActive: '状态',
+          litellmSynced: '同步状态',
+          description: '描述'
+        },
+        form: {
+          name: { required: '请输入名称' },
+          serverName: {
+            required: '请输入路由名',
+            pattern: '仅允许字母/数字/下划线(LiteLLM 路由限制)',
+            tip: '路由名是网关接入 URL 的一部分与授权锚点，仅字母/数字/下划线',
+            renameTip: '路由名不可修改(客户端接入配置与授权锚点均基于它)'
+          },
+          url: { required: '请输入 MCP 端点 URL' },
+          authValue: '凭据值',
+          authValuePlaceholder: '留空=保留旧值；输入新值=覆盖',
+          valuesTip: '凭据 AES 加密落库、界面仅回显掩码；掩码回传不变即保留旧值',
+          costRequired: '按次计费必须填写单次调用价',
+          instructions: '使用说明(展示在接入信息弹窗)'
+        },
+        health: {
+          unknown: '未检测',
+          healthy: '正常',
+          unhealthy: '异常'
+        },
+        publish: {
+          short: '发布',
+          title: 'MCP 发布设置',
+          subtitle: '设置 MCP 在用户端(模型广场)的可见性与接入审批',
+          isPublished: '发布到用户端',
+          autoGrantTip: '发布免审批会按可见范围自动授权主 Key；取消发布/收紧档位/停用将回收范围外授权',
+          visibilityType: '可见范围',
+          visibilityAll: '全员可见',
+          visibilitySelected: '指定部门可见',
+          visibilityUser: '指定用户可见',
+          departmentIds: '可见部门',
+          userIds: '可见用户',
+          departmentRequired: '指定部门可见时必须选择至少一个部门',
+          userRequired: '指定用户可见时必须选择至少一个用户',
+          requiresApproval: '接入需审批',
+          requiresApprovalTip: '开启后用户需在模型广场提交申请，审批通过后授权'
+        },
+        toolsDrawer: {
+          short: '工具',
+          title: '工具列表',
+          tip: '工具列表来自 MCP 端点远端拉取；刷新按工具名保留已有计费配置',
+          refresh: '从远端刷新',
+          refreshSuccess: '工具列表已刷新，共 {count} 个工具',
+          emptyTip: '暂无工具，请先从远端刷新',
+          editBilling: '计费设置',
+          inheritServer: '继承服务器',
+          col: {
+            toolName: '工具名',
+            displayName: '展示名',
+            description: '描述',
+            billingType: '计费',
+            cost: '单价(¥)'
+          }
         }
       },
       common: {
@@ -937,6 +1036,7 @@ const local: App.I18n.Schema = {
           owner: '归属',
           keyPrefix: 'Key',
           models: '资源',
+          mcps: '授权 MCP',
           budget: '预算',
           budgetLimit: '预算上限',
           budgetHardLimit: '超支停用',
@@ -960,6 +1060,7 @@ const local: App.I18n.Schema = {
           namePlaceholder: '场景 Key 可自定义名称',
           mainKeyNameFixed: '主 Key 名称固定为 main，无需填写',
           modelsPlaceholder: '选择授权模型',
+          mcpsPlaceholder: '选择授权 MCP（主 Key 默认含可见免审批 MCP）',
           budgetHardLimitDesc: '开启后，预算用尽自动停用该 Key（LiteLLM 拦截）；不开启仅展示用量，不拦截',
           ownerUserPlaceholder: '请选择用户',
           ownerDeptPlaceholder: '请选择部门',

@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/hllkk/devops-admin/server/model/system"
 	gatewayReq "github.com/hllkk/devops-admin/server/model/gateway/request"
+	"github.com/hllkk/devops-admin/server/model/system"
 )
 
 // TestAiKeyBatchCreateParamsBind 请求体绑定单测：userIds 兼容前端雪花 IdType 字符串数组

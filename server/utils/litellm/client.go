@@ -353,6 +353,7 @@ type KeyUpdateReq struct {
 	SyncRateLimits    bool     `json:"-"`
 	SyncBudget        bool     `json:"-"`
 	SyncExpiry        bool     `json:"-"`
+	SyncMCPServers    bool     `json:"-"` // 强制刷 allowed_mcp_servers(含空数组清空，用于回收 MCP 授权)
 }
 
 // UpdateKey 更新 LiteLLM 虚拟 Key（POST /key/update {key:id, ...}）。
@@ -373,7 +374,9 @@ func (c *Client) UpdateKey(ctx context.Context, keyID string, req KeyUpdateReq) 
 	if len(req.Metadata) > 0 {
 		body["metadata"] = req.Metadata
 	}
-	if len(req.AllowedMCPServers) > 0 {
+	if len(req.AllowedMCPServers) > 0 || req.SyncMCPServers {
+		// 空数组也须下发：回收最后一个 MCP 时仅凭 len>0 判定会漏推，
+		// LiteLLM 侧残留旧授权继续可调（同 models 空 slice 坑，此处可推空清权）
 		body["allowed_mcp_servers"] = req.AllowedMCPServers
 	}
 	if req.SyncRateLimits || req.TPMLimit != nil {
@@ -403,6 +406,96 @@ func (c *Client) GetKeyInfo(ctx context.Context, keyID string) (KeyInfo, error) 
 		return info, err
 	}
 	return info, nil
+}
+
+// ----------------------------------------------------------------------------
+// MCP Server 管理（/v1/mcp/server、/mcp-rest/test/*）—— MCPServer 同步与探测用
+// ----------------------------------------------------------------------------
+
+// CreateMCPServer 注册 MCP 服务器（POST /v1/mcp/server）。body 由 service 层按投影原则
+// 组装（server_name/url/transport/auth_type/credentials/mcp_info/allow_all_keys），
+// 返回 LiteLLM 侧 server_id（归因锚点，永不重置）。
+func (c *Client) CreateMCPServer(ctx context.Context, body map[string]any) (serverID string, err error) {
+	var resp struct {
+		ServerID string `json:"server_id"`
+	}
+	if err := c.do(ctx, http.MethodPost, "/v1/mcp/server", body, &resp); err != nil {
+		return "", err
+	}
+	if resp.ServerID == "" {
+		return "", errors.New("litellm: 创建 MCP server 未返回 server_id")
+	}
+	return resp.ServerID, nil
+}
+
+// UpdateMCPServer 更新 MCP 服务器（PUT /v1/mcp/server，body 须含 server_id）。
+func (c *Client) UpdateMCPServer(ctx context.Context, body map[string]any) error {
+	return c.do(ctx, http.MethodPut, "/v1/mcp/server", body, nil)
+}
+
+// DeleteMCPServer 删除 MCP 服务器（DELETE /v1/mcp/server/{id}）。
+func (c *Client) DeleteMCPServer(ctx context.Context, serverID string) error {
+	return c.do(ctx, http.MethodDelete, "/v1/mcp/server/"+encodeSegment(serverID), nil, nil)
+}
+
+// ListMCPServers 列出 LiteLLM 已注册的 MCP 服务器（GET /v1/mcp/server）。
+// 重同步(resync)时用于比对平台侧投影是否漂移。
+func (c *Client) ListMCPServers(ctx context.Context) (servers []map[string]any, err error) {
+	err = c.do(ctx, http.MethodGet, "/v1/mcp/server", nil, &servers)
+	return servers, err
+}
+
+// MCPProbeResult MCP 探测结果（连通性/工具列表）。status 为 success/error（LiteLLM 对
+// 探测失败也返回 200 + status=error，须检查 body 而非 HTTP 状态码）。
+type MCPProbeResult struct {
+	Status  string          `json:"status"`
+	Message string          `json:"message"`
+	Tools   json.RawMessage `json:"tools"`
+}
+
+// TestMCPConnection MCP 服务器连通性测试（POST /mcp-rest/test/connection，LiteLLM
+// 服务端代理探测，平台不直连 MCP 端点、凭据不出管理面）。传输层错误返回 err；
+// 业务失败（status=error）返回 message 供健康检查落库。
+func (c *Client) TestMCPConnection(ctx context.Context, url, transport, authType string, credentials map[string]any) (message string, err error) {
+	body := map[string]any{"url": url, "transport": transport}
+	if authType != "" && authType != "none" {
+		body["auth_type"] = authType
+		body["credentials"] = credentials
+	}
+	status, respBody, err := c.RawPost(ctx, "/mcp-rest/test/connection", body)
+	if err != nil {
+		return "", err
+	}
+	var probe MCPProbeResult
+	if err := json.Unmarshal(respBody, &probe); err != nil {
+		return "", fmt.Errorf("litellm: 解析 MCP 探测响应失败: %w (status %d)", err, status)
+	}
+	return probe.Status + ": " + probe.Message, nil
+}
+
+// ListMCPToolsFromServer 拉取 MCP 服务器工具列表（POST /mcp-rest/test/tools/list，
+// 经 LiteLLM 服务端代理）。返回原始工具项（name/description/inputSchema...）。
+func (c *Client) ListMCPToolsFromServer(ctx context.Context, url, transport, authType string, credentials map[string]any) (tools []map[string]any, err error) {
+	body := map[string]any{"url": url, "transport": transport}
+	if authType != "" && authType != "none" {
+		body["auth_type"] = authType
+		body["credentials"] = credentials
+	}
+	status, respBody, err := c.RawPost(ctx, "/mcp-rest/test/tools/list", body)
+	if err != nil {
+		return nil, err
+	}
+	var probe MCPProbeResult
+	if jsonErr := json.Unmarshal(respBody, &probe); jsonErr == nil && probe.Status == "error" {
+		return nil, fmt.Errorf("litellm: MCP 工具拉取失败: %s", probe.Message)
+	}
+	if jsonErr := json.Unmarshal(probe.Tools, &tools); jsonErr != nil {
+		// 兼容直接返回数组的版本
+		if err2 := json.Unmarshal(respBody, &tools); err2 != nil {
+			return nil, fmt.Errorf("litellm: 解析 MCP 工具列表失败: %w (status %d)", jsonErr, status)
+		}
+	}
+	return tools, nil
 }
 
 // ----------------------------------------------------------------------------

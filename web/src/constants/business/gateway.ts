@@ -186,3 +186,29 @@ export const ROUTING_STRATEGY_OPTIONS = [
   { label: 'page.gateway.router.strategyLeastBusy', value: 'least-busy' },
   { label: 'page.gateway.router.strategyUsageBased', value: 'usage-based-routing' }
 ] as const;
+
+/** MCP 传输协议选项(LiteLLM 侧 streamable_http 映射 http) */
+export const MCP_TRANSPORT_OPTIONS = [
+  { label: 'page.gateway.mcp.transportSse', value: 'sse' },
+  { label: 'page.gateway.mcp.transportHttp', value: 'streamable_http' }
+] as const;
+
+/** MCP 鉴权方式选项 */
+export const MCP_AUTH_TYPE_OPTIONS = [
+  { label: 'page.gateway.mcp.authNone', value: 'none' },
+  { label: 'page.gateway.mcp.authApiKey', value: 'api_key' },
+  { label: 'page.gateway.mcp.authBearer', value: 'bearer_token' }
+] as const;
+
+/** MCP 计费类型选项(空=工具级继承服务器) */
+export const MCP_BILLING_OPTIONS = [
+  { label: 'page.gateway.mcp.billingFree', value: 'free' },
+  { label: 'page.gateway.mcp.billingPerCall', value: 'per_call' }
+] as const;
+
+/** MCP 健康状态选项(搜索用) */
+export const MCP_HEALTH_OPTIONS = [
+  { label: 'page.gateway.mcp.health.unknown', value: 'unknown' },
+  { label: 'page.gateway.mcp.health.healthy', value: 'healthy' },
+  { label: 'page.gateway.mcp.health.unhealthy', value: 'unhealthy' }
+] as const;

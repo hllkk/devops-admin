@@ -25,33 +25,24 @@ import (
 // DB 约束——此处复合唯一索引 + 条件更新双保险;④审批无通知——api 层接 SysNotice 定向通知。
 type ResourceApplicationService struct{}
 
-// Create 提交申请(用户侧)：校验模型对申请人可见且需审批 → 唯一索引防重
-// (pending 拒/approved 拒/rejected 复用原行重置)。免审批模型不收申请(本来就自动授权)。
+// Create 提交申请(用户侧)：校验资源(模型/MCP)对申请人可见且需审批 → 唯一索引防重
+// (pending 拒/approved 拒/rejected 复用原行重置)。免审批资源不收申请(本来就自动授权)。
 func (s *ResourceApplicationService) Create(ctx context.Context, req gatewayReq.ApplicationCreateParams, userId int64) (gatewayResp.ApplicationView, error) {
-	if req.ResourceType != gateway.ApplicationResourceModel {
-		return gatewayResp.ApplicationView{}, errors.New("暂仅支持模型申请(MCP/技能市场即将上线)")
+	if req.ResourceType != gateway.ApplicationResourceModel && req.ResourceType != gateway.ApplicationResourceMcp {
+		return gatewayResp.ApplicationView{}, errors.New("暂仅支持模型/MCP 申请(技能市场即将上线)")
 	}
-	db := global.OPS_DB.WithContext(ctx)
-	// 模型校验:存在 + 启用 + 已发布 + 有路由名 + 对申请人可见(三档可见性过滤)
-	q := visibleModelScope(
-		db.Model(&gateway.Model{}).
-			Where("is_active = ? AND is_published = ? AND model_key <> ''", true, true),
-		userId, userDeptIdOf(db, userId),
-	)
-	var m gateway.Model
-	if err := q.Where("model_id = ?", req.ResourceId).First(&m).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return gatewayResp.ApplicationView{}, errors.New("模型不存在或对您不可见")
-		}
+	resourceName, _, requiresApproval, err := s.validateResourceVisible(ctx, req.ResourceType, req.ResourceId, userId)
+	if err != nil {
 		return gatewayResp.ApplicationView{}, err
 	}
-	if !m.RequiresApproval {
-		return gatewayResp.ApplicationView{}, errors.New("该模型无需申请,可直接使用")
+	if !requiresApproval {
+		return gatewayResp.ApplicationView{}, errors.New("该资源无需申请,可直接使用")
 	}
+	db := global.OPS_DB.WithContext(ctx)
 
 	// 防重:复合唯一索引兜底并发,应用层按既有行状态分流
 	var exist gateway.ResourceApplication
-	err := db.Where("user_id = ? AND resource_type = ? AND resource_id = ?",
+	err = db.Where("user_id = ? AND resource_type = ? AND resource_id = ?",
 		userId, req.ResourceType, req.ResourceId).First(&exist).Error
 	switch {
 	case errors.Is(err, gorm.ErrRecordNotFound):
@@ -67,13 +58,13 @@ func (s *ResourceApplicationService) Create(ctx context.Context, req gatewayReq.
 		if err := db.Create(&app).Error; err != nil {
 			return gatewayResp.ApplicationView{}, err
 		}
-		return toApplicationView(ctx, app, m), nil
+		return toApplicationView(ctx, app, resourceName, ""), nil
 	case err != nil:
 		return gatewayResp.ApplicationView{}, err
 	case exist.Status == gateway.ApplicationStatusPending:
 		return gatewayResp.ApplicationView{}, errors.New("已存在待审批的申请,请耐心等待")
 	case exist.Status == gateway.ApplicationStatusApproved:
-		return gatewayResp.ApplicationView{}, errors.New("您已拥有该模型,无需重复申请")
+		return gatewayResp.ApplicationView{}, errors.New("您已拥有该资源,无需重复申请")
 	default: // rejected → 复用原行重置为 pending(清审批字段;行永不软删,历史随重置覆盖)
 		res := db.Model(&gateway.ResourceApplication{}).
 			Where("application_id = ? AND status = ?", exist.ApplicationId, gateway.ApplicationStatusRejected).
@@ -93,8 +84,46 @@ func (s *ResourceApplicationService) Create(ctx context.Context, req gatewayReq.
 		}
 		exist.Status = gateway.ApplicationStatusPending
 		exist.Reason = req.Reason
-		return toApplicationView(ctx, exist, m), nil
+		return toApplicationView(ctx, exist, resourceName, ""), nil
 	}
+}
+
+// validateResourceVisible 申请资源校验：存在+启用+已发布+对申请人可见(三档可见性过滤)。
+// 返回展示名/授权锚点(modelKey/serverName)/是否需审批。
+func (s *ResourceApplicationService) validateResourceVisible(ctx context.Context, resourceType string, resourceId, userId int64) (name, key string, requiresApproval bool, err error) {
+	db := global.OPS_DB.WithContext(ctx)
+	switch resourceType {
+	case gateway.ApplicationResourceModel:
+		// 存在 + 启用 + 已发布 + 有路由名 + 对申请人可见
+		q := visibleModelScope(
+			db.Model(&gateway.Model{}).
+				Where("is_active = ? AND is_published = ? AND model_key <> ''", true, true),
+			userId, userDeptIdOf(db, userId),
+		)
+		var m gateway.Model
+		if err := q.Where("model_id = ?", resourceId).First(&m).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return "", "", false, errors.New("模型不存在或对您不可见")
+			}
+			return "", "", false, err
+		}
+		return m.Name, m.ModelKey, m.RequiresApproval, nil
+	case gateway.ApplicationResourceMcp:
+		q := visibleMcpScope(
+			db.Model(&gateway.MCPServer{}).
+				Where("is_active = ? AND is_published = ?", true, true),
+			userId, userDeptIdOf(db, userId),
+		)
+		var row gateway.MCPServer
+		if err := q.Where("mcp_server_id = ?", resourceId).First(&row).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return "", "", false, errors.New("MCP 服务器不存在或对您不可见")
+			}
+			return "", "", false, err
+		}
+		return row.Name, row.ServerName, row.RequiresApproval, nil
+	}
+	return "", "", false, errors.New("未知的资源类型")
 }
 
 // GetMyList 我的申请(用户侧,强制本人;分页+状态/类型筛选)。
@@ -135,18 +164,22 @@ func (s *ResourceApplicationService) listApplication(ctx context.Context, q gate
 	return list, total, err
 }
 
-// fillApplicationViews 批量回填视图(申请人/审批人昵称 + 模型名/路由名,每页三次 IN 查询防 N+1)。
+// fillApplicationViews 批量回填视图(申请人/审批人昵称 + 资源名/授权锚点,每页四次 IN 查询防 N+1)。
 func (s *ResourceApplicationService) fillApplicationViews(ctx context.Context, rows []gateway.ResourceApplication) ([]gatewayResp.ApplicationView, error) {
 	db := global.OPS_DB.WithContext(ctx)
 	userIds := make([]int64, 0, len(rows)*2)
 	modelIds := make([]int64, 0, len(rows))
+	mcpIds := make([]int64, 0, len(rows))
 	for i := range rows {
 		userIds = append(userIds, rows[i].UserId)
 		if rows[i].ReviewedBy != 0 {
 			userIds = append(userIds, rows[i].ReviewedBy)
 		}
-		if rows[i].ResourceType == gateway.ApplicationResourceModel {
+		switch rows[i].ResourceType {
+		case gateway.ApplicationResourceModel:
 			modelIds = append(modelIds, rows[i].ResourceId)
+		case gateway.ApplicationResourceMcp:
+			mcpIds = append(mcpIds, rows[i].ResourceId)
 		}
 	}
 	userNames := map[int64]string{}
@@ -169,31 +202,48 @@ func (s *ResourceApplicationService) fillApplicationViews(ctx context.Context, r
 			models[m.ModelId] = m
 		}
 	}
+	mcpServers := map[int64]gateway.MCPServer{}
+	if len(mcpIds) > 0 {
+		var servers []gateway.MCPServer
+		if err := db.Where("mcp_server_id IN ?", mcpIds).Find(&servers).Error; err != nil {
+			return nil, err
+		}
+		for _, srv := range servers {
+			mcpServers[srv.McpServerId] = srv
+		}
+	}
 
 	list := make([]gatewayResp.ApplicationView, 0, len(rows))
 	for i := range rows {
 		r := rows[i]
-		var m gateway.Model
-		if r.ResourceType == gateway.ApplicationResourceModel {
-			m = models[r.ResourceId]
+		var name, key string
+		switch r.ResourceType {
+		case gateway.ApplicationResourceModel:
+			if m, ok := models[r.ResourceId]; ok {
+				name, key = m.Name, m.ModelKey
+			}
+		case gateway.ApplicationResourceMcp:
+			if srv, ok := mcpServers[r.ResourceId]; ok {
+				name, key = srv.Name, srv.ServerName
+			}
 		}
 		list = append(list, gatewayResp.ApplicationView{
 			ResourceApplication: r,
 			UserName:            userNames[r.UserId],
-			ResourceName:        m.Name,
-			ResourceKey:         m.ModelKey,
+			ResourceName:        name,
+			ResourceKey:         key,
 			ReviewerName:        userNames[r.ReviewedBy],
 		})
 	}
 	return list, nil
 }
 
-// toApplicationView 单条视图组装(Create 路径,模型已查出,免重复查询)。
-func toApplicationView(ctx context.Context, app gateway.ResourceApplication, m gateway.Model) gatewayResp.ApplicationView {
+// toApplicationView 单条视图组装(Create 路径,资源已校验,免重复查询)。
+func toApplicationView(ctx context.Context, app gateway.ResourceApplication, name, key string) gatewayResp.ApplicationView {
 	view := gatewayResp.ApplicationView{
 		ResourceApplication: app,
-		ResourceName:        m.Name,
-		ResourceKey:         m.ModelKey,
+		ResourceName:        name,
+		ResourceKey:         key,
 	}
 	var u system.SysUser
 	if err := global.OPS_DB.WithContext(ctx).Select("nick_name").Where("id = ?", app.UserId).First(&u).Error; err == nil {
@@ -258,21 +308,42 @@ func (s *ResourceApplicationService) review(ctx context.Context, applicationId i
 		"update_by":    reviewBy,
 	}
 
-	var modelKey string
-	var m gateway.Model
-	err = global.OPS_DB.WithContext(ctx).Where("model_id = ?", app.ResourceId).First(&m).Error
-	switch {
-	case errors.Is(err, gorm.ErrRecordNotFound):
-		if approve { // 模型已删除:批准也无法授权,让管理员驳回
-			return gatewayResp.ApplicationReviewResult{}, gatewayResp.ReviewNotification{}, errors.New("关联模型不存在,请驳回该申请")
+	// 资源仍须可授(下架/未发布让管理员驳回)；驳回侧仅查名(通知用,查不到不阻塞)
+	var resourceKey, resourceName string
+	switch app.ResourceType {
+	case gateway.ApplicationResourceModel:
+		var m gateway.Model
+		err = global.OPS_DB.WithContext(ctx).Where("model_id = ?", app.ResourceId).First(&m).Error
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			if approve { // 模型已删除:批准也无法授权,让管理员驳回
+				return gatewayResp.ApplicationReviewResult{}, gatewayResp.ReviewNotification{}, errors.New("关联模型不存在,请驳回该申请")
+			}
+		case err != nil:
+			return gatewayResp.ApplicationReviewResult{}, gatewayResp.ReviewNotification{}, err
+		case approve && (!m.IsActive || !m.IsPublished || m.ModelKey == ""): // 模型仍须可授
+			return gatewayResp.ApplicationReviewResult{}, gatewayResp.ReviewNotification{}, errors.New("关联模型已下架或未发布,请驳回该申请")
 		}
-		m.Name = ""
-	case err != nil:
-		return gatewayResp.ApplicationReviewResult{}, gatewayResp.ReviewNotification{}, err
-	case approve && (!m.IsActive || !m.IsPublished || m.ModelKey == ""): // 模型仍须可授
-		return gatewayResp.ApplicationReviewResult{}, gatewayResp.ReviewNotification{}, errors.New("关联模型已下架或未发布,请驳回该申请")
+		resourceName, resourceKey = m.Name, m.ModelKey
+	case gateway.ApplicationResourceMcp:
+		var row gateway.MCPServer
+		err = global.OPS_DB.WithContext(ctx).Where("mcp_server_id = ?", app.ResourceId).First(&row).Error
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			if approve {
+				return gatewayResp.ApplicationReviewResult{}, gatewayResp.ReviewNotification{}, errors.New("关联MCP不存在,请驳回该申请")
+			}
+		case err != nil:
+			return gatewayResp.ApplicationReviewResult{}, gatewayResp.ReviewNotification{}, err
+		case approve && (!row.IsActive || !row.IsPublished): // MCP 仍须可授
+			return gatewayResp.ApplicationReviewResult{}, gatewayResp.ReviewNotification{}, errors.New("关联MCP已下架或未发布,请驳回该申请")
+		}
+		resourceName, resourceKey = row.Name, row.ServerName
+	default:
+		if approve {
+			return gatewayResp.ApplicationReviewResult{}, gatewayResp.ReviewNotification{}, errors.New("未知的资源类型,请驳回该申请")
+		}
 	}
-	modelKey = m.ModelKey
 
 	var warnings []string
 	err = global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -286,11 +357,19 @@ func (s *ResourceApplicationService) review(ctx context.Context, applicationId i
 		if res.RowsAffected == 0 {
 			return errors.New("该申请已处理")
 		}
-		if approve && modelKey != "" {
-			warnings = syncModelToMainKeys(ctx, tx, modelKey, func(q *gorm.DB) *gorm.DB {
+		if approve && resourceKey != "" {
+			// 授权进申请人个人主 Key(scope 锁定该用户,只圈活跃主 Key)；模型/ MCP 各自
+			// 复用发布自动授权同管线,停用主 Key 与未建主 Key 由自愈差集源补上
+			scope := func(q *gorm.DB) *gorm.DB {
 				return q.Where("key_type = ? AND owner_type = ? AND owner_id = ?",
 					gateway.KeyTypePersonalMain, gateway.OwnerTypeUser, app.UserId)
-			})
+			}
+			switch app.ResourceType {
+			case gateway.ApplicationResourceModel:
+				warnings = syncModelToMainKeys(ctx, tx, resourceKey, scope)
+			case gateway.ApplicationResourceMcp:
+				warnings = syncMcpToMainKeys(ctx, tx, resourceKey, scope)
+			}
 		}
 		return nil
 	})
@@ -301,5 +380,5 @@ func (s *ResourceApplicationService) review(ctx context.Context, applicationId i
 		logger.WithCtx(ctx).Mod("gateway").Warn(fmt.Sprintf("申请 %d 审批通过但授权同步有警告: %s", applicationId, w))
 	}
 	return gatewayResp.ApplicationReviewResult{Warnings: warnings},
-		gatewayResp.ReviewNotification{UserId: app.UserId, ResourceName: m.Name, Approved: approve, ReviewNotes: notes}, nil
+		gatewayResp.ReviewNotification{UserId: app.UserId, ResourceName: resourceName, Approved: approve, ReviewNotes: notes}, nil
 }

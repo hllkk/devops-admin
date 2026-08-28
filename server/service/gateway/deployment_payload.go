@@ -110,9 +110,9 @@ var costParamKeys = []string{
 
 // param 键 → model_info 镜像键
 var costMirrorKeys = map[string]string{
-	"input_cost_per_token":          "input_cost",
-	"output_cost_per_token":         "output_cost",
-	"cache_read_input_token_cost":   "cache_read_cost",
+	"input_cost_per_token":            "input_cost",
+	"output_cost_per_token":           "output_cost",
+	"cache_read_input_token_cost":     "cache_read_cost",
 	"cache_creation_input_token_cost": "cache_creation_cost",
 }
 
@@ -174,8 +174,8 @@ func UnmaskIncomingParams(oldParams, incoming map[string]any) map[string]any {
 }
 
 var (
-	sanitizeKeyRe  = regexp.MustCompile(`sk-[A-Za-z0-9_-]+`)
-	sanitizeKVRe   = regexp.MustCompile(`(?i)("(?:api_key|token|authorization|key)"\s*:\s*")[^"]*(")`)
+	sanitizeKeyRe = regexp.MustCompile(`sk-[A-Za-z0-9_-]+`)
+	sanitizeKVRe  = regexp.MustCompile(`(?i)("(?:api_key|token|authorization|key)"\s*:\s*")[^"]*(")`)
 )
 
 // SanitizeTechnicalDetail 连通测试技术详情脱敏：sk-xxx 串与 JSON 键值对的敏感值掩码，截断 500 字符。

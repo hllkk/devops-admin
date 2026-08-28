@@ -104,6 +104,11 @@ const visibleModels = computed(() => identity.value?.availableModels ?? []);
 const authorizedKeys = computed(() => new Set(mainKey.value?.models ?? []));
 const authorizedCount = computed(() => visibleModels.value.filter(m => authorizedKeys.value.has(m.modelKey)).length);
 
+/** 可见 MCP(未开通也展示)与已授权 serverName 集合 */
+const visibleMcps = computed(() => identity.value?.availableMcps ?? []);
+const authorizedMcpNames = computed(() => new Set(mainKey.value?.mcps ?? []));
+const authorizedMcpCount = computed(() => visibleMcps.value.filter(m => authorizedMcpNames.value.has(m.serverName)).length);
+
 const fullKey = computed(() => mainKey.value?.keyValue ?? '');
 const maskedKey = computed(() => {
   const value = fullKey.value;
@@ -525,12 +530,30 @@ onMounted(async () => {
               <p v-else class="text-12px text-slate-400">{{ $t('page.home.identity.resEmptyModels') }}</p>
             </NCard>
 
-            <NCard v-if="mainKey" :bordered="false" size="small" class="card-wrapper shadow-md">
+            <NCard :bordered="false" size="small" class="card-wrapper shadow-md">
               <div class="mb-12px flex items-center gap-8px">
                 <SvgIcon icon="lucide:server" class="text-16px text-emerald-600" />
                 <span class="text-14px font-medium">{{ $t('page.home.identity.resMcp') }}</span>
+                <span class="ml-auto text-12px text-slate-400">
+                  {{ $t('page.home.identity.resCount', { authorized: authorizedMcpCount, visible: visibleMcps.length }) }}
+                </span>
               </div>
-              <p class="text-12px text-slate-400">{{ $t('page.gateway.comingSoon') }}</p>
+              <div v-if="visibleMcps.length" class="flex flex-wrap gap-8px">
+                <NTooltip v-for="mcp in visibleMcps" :key="mcp.mcpServerId" trigger="hover">
+                  <template #trigger>
+                    <NTag
+                      :type="authorizedMcpNames.has(mcp.serverName) ? 'primary' : 'default'"
+                      size="small"
+                      round
+                      :bordered="authorizedMcpNames.has(mcp.serverName)"
+                    >
+                      {{ mcp.name }}
+                    </NTag>
+                  </template>
+                  {{ authorizedMcpNames.has(mcp.serverName) ? mcp.serverName : $t('page.home.identity.resApproval') }}
+                </NTooltip>
+              </div>
+              <p v-else class="text-12px text-slate-400">{{ $t('page.home.identity.resEmptyMarket') }}</p>
             </NCard>
 
             <NCard v-if="mainKey" :bordered="false" size="small" class="card-wrapper shadow-md">

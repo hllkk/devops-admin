@@ -749,6 +749,13 @@ declare namespace App {
             applyReasonPlaceholder: string;
             applySubmit: string;
             applySuccess: string;
+            filterModels: string;
+            filterMcps: string;
+            accessMcpUrl: string;
+            accessMcpConfig: string;
+            accessMcpConfigTip: string;
+            copyConfig: string;
+            toolsCount: string;
           };
         };
         gateway: {
@@ -763,6 +770,7 @@ declare namespace App {
             statusRejected: string;
             typeAll: string;
             typeModel: string;
+            typeMcp: string;
             userPlaceholder: string;
             batchApprove: string;
             batchReject: string;
@@ -812,6 +820,96 @@ declare namespace App {
               completionTokens: string;
               cost: string;
               duration: string;
+            };
+          };
+          mcp: {
+            title: string;
+            add: string;
+            edit: string;
+            transportSse: string;
+            transportHttp: string;
+            authNone: string;
+            authApiKey: string;
+            authBearer: string;
+            billingFree: string;
+            billingPerCall: string;
+            costPerCall: string;
+            healthCheck: {
+              short: string;
+              done: string;
+            };
+            col: {
+              name: string;
+              serverName: string;
+              url: string;
+              transport: string;
+              authType: string;
+              authValue: string;
+              category: string;
+              author: string;
+              iconUrl: string;
+              documentationUrl: string;
+              billingType: string;
+              toolCount: string;
+              healthStatus: string;
+              isPublished: string;
+              isActive: string;
+              litellmSynced: string;
+              description: string;
+            };
+            form: {
+              name: { required: string };
+              serverName: {
+                required: string;
+                pattern: string;
+                tip: string;
+                renameTip: string;
+              };
+              url: { required: string };
+              authValue: string;
+              authValuePlaceholder: string;
+              valuesTip: string;
+              costRequired: string;
+              instructions: string;
+            };
+            health: {
+              unknown: string;
+              healthy: string;
+              unhealthy: string;
+            };
+            publish: {
+              short: string;
+              title: string;
+              subtitle: string;
+              isPublished: string;
+              autoGrantTip: string;
+              visibilityType: string;
+              visibilityAll: string;
+              visibilitySelected: string;
+              visibilityUser: string;
+              departmentIds: string;
+              userIds: string;
+              departmentRequired: string;
+              userRequired: string;
+              requiresApproval: string;
+              requiresApprovalTip: string;
+            };
+            toolsDrawer: {
+              short: string;
+              title: string;
+              tip: string;
+              refresh: string;
+              refreshSuccess: string;
+              emptyTip: string;
+              editBilling: string;
+              inheritServer: string;
+              col: {
+                toolName: string;
+                displayName: string;
+                description: string;
+                billingType: string;
+                cost: string;
+              };
             };
           };
           common: {
@@ -1117,6 +1215,7 @@ declare namespace App {
               owner: string;
               keyPrefix: string;
               models: string;
+              mcps: string;
               budget: string;
               budgetLimit: string;
               budgetHardLimit: string;
@@ -1140,6 +1239,7 @@ declare namespace App {
               namePlaceholder: string;
               mainKeyNameFixed: string;
               modelsPlaceholder: string;
+              mcpsPlaceholder: string;
               budgetHardLimitDesc: string;
               ownerUserPlaceholder: string;
               ownerDeptPlaceholder: string;

@@ -72,10 +72,14 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
     },
     {
       key: 'resourceType',
-      title: $t('page.gateway.application.typeModel'),
+      title: $t('page.gateway.application.col.resourceType'),
       align: 'center',
       minWidth: 80,
-      render: () => <NTag size="small" bordered={false}>{$t('page.gateway.application.typeModel')}</NTag>
+      render: row => (
+        <NTag size="small" bordered={false}>
+          {$t(row.resourceType === 'mcp' ? 'page.gateway.application.typeMcp' : 'page.gateway.application.typeModel')}
+        </NTag>
+      )
     },
     {
       key: 'reason',

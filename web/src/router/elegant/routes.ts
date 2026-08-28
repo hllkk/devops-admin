@@ -178,6 +178,15 @@ export const generatedRoutes: GeneratedRoute[] = [
     }
   },
   {
+    name: 'mcp',
+    path: '/mcp',
+    component: 'layout.base$view.mcp',
+    meta: {
+      title: 'mcp',
+      i18nKey: 'route.mcp'
+    }
+  },
+  {
     name: 'models',
     path: '/models',
     component: 'layout.base',

@@ -19,9 +19,9 @@ type DashboardService struct{}
 
 // 看板维度
 const (
-	dimensionUser    = "user"
-	dimensionModel   = "model"
-	dimensionAiKey   = "aiKey"
+	dimensionUser  = "user"
+	dimensionModel = "model"
+	dimensionAiKey = "aiKey"
 )
 
 // GetOverview 总览：总成本/请求数/token/预算汇总（读聚合表）。

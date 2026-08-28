@@ -203,6 +203,20 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			OrderNum:  12,
 			Module:    "gateway",
 		},
+		// MCP 服务器管理(AI 市场 P2):注册/发布/授权/工具/健康;用户侧
+		// active 与 connect-config 走 casbin 登录白名单,不经本菜单
+		{
+			ParentId:  0,
+			MenuName:  "route.mcp",
+			MenuType:  "C",
+			Path:      "mcp",
+			ApiPrefix: "/gateway/mcp, /gateway/mcp/*",
+			Component: "_gateway/mcp/index",
+			Icon:      "lucide:plug",
+			Visible:   "0",
+			OrderNum:  13,
+			Module:    "gateway",
+		},
 	}
 
 	// 先创建父级菜单（ParentId = 0 的菜单）

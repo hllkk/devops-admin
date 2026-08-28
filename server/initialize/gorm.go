@@ -87,6 +87,10 @@ func RegisterTables() {
 		gateway.CostSummaryDaily{},
 		gateway.RouterSettings{},
 		gateway.ProviderBalance{},
+		gateway.MCPServer{},
+		gateway.MCPTool{},
+		gateway.MCPVisibility{},
+		gateway.MCPVisibilityUser{},
 	)
 
 	if err != nil {

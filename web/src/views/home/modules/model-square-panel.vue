@@ -2,14 +2,20 @@
 import { computed, onMounted, ref } from 'vue';
 import { useClipboard } from '@vueuse/core';
 import { $t } from '@/locales';
-import { fetchGetActiveModels, fetchGetMyApplications, fetchSubmitApplication } from '@/service/api/gateway';
+import {
+  fetchGetActiveMcps,
+  fetchGetActiveModels,
+  fetchGetMCPConnectConfig,
+  fetchGetMyApplications,
+  fetchSubmitApplication
+} from '@/service/api/gateway';
 import { MODEL_CATEGORY_OPTIONS, getProviderIcon } from '@/constants/business/gateway';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 
 defineOptions({ name: 'HomeModelSquarePanel' });
 
 /**
- * home「模型广场」Tab 面板：可见模型浏览 + 接入信息 + 申请订阅。
+ * home「模型广场」Tab 面板：可见模型/MCP 浏览 + 接入信息 + 申请订阅。
  * identity 由 home 主页统一加载后传入（与 AI 身份卡/我的资源共享同一份数据，避免重复请求）。
  */
 const props = defineProps<{
@@ -24,13 +30,18 @@ const { copy: copyText, copied } = useClipboard({ legacy: true, copiedDuring: 20
 
 const isLoading = ref(true);
 const models = ref<Api.Gateway.ActiveModel[]>([]);
+const mcps = ref<Api.Gateway.AvailableMcp[]>([]);
 const keyword = ref('');
 
-/** 主 Key 已授权 modelKey 集合(未开通为空集) */
-const authorizedKeys = computed(() => new Set(props.identity?.opened ? props.identity.models : []));
+/** 广场资源类型切换(模型/MCP) */
+const resourceKind = ref<'model' | 'mcp'>('model');
 
-/** 已有待审批申请的资源ID集合(本地维护 + 加载时从我的申请回填,刷新后状态保持) */
-const appliedIds = ref<Set<string>>(new Set());
+/** 主 Key 已授权 modelKey/serverName 集合(未开通为空集) */
+const authorizedKeys = computed(() => new Set(props.identity?.opened ? props.identity.models : []));
+const authorizedMcpNames = computed(() => new Set(props.identity?.opened ? props.identity.mcps : []));
+
+/** 已有待审批申请的资源键集合(`${type}:${id}`,本地维护 + 加载时从我的申请回填) */
+const appliedKeys = ref<Set<string>>(new Set());
 
 const filteredModels = computed(() => {
   const kw = keyword.value.trim().toLowerCase();
@@ -40,12 +51,28 @@ const filteredModels = computed(() => {
   );
 });
 
+const filteredMcps = computed(() => {
+  const kw = keyword.value.trim().toLowerCase();
+  if (!kw) return mcps.value;
+  return mcps.value.filter(
+    m => m.name.toLowerCase().includes(kw) || m.serverName.toLowerCase().includes(kw)
+  );
+});
+
 function isAuthorized(model: Api.Gateway.ActiveModel) {
   return authorizedKeys.value.has(model.modelKey);
 }
 
+function isMcpAuthorized(mcp: Api.Gateway.AvailableMcp) {
+  return authorizedMcpNames.value.has(mcp.serverName);
+}
+
 function isApplied(model: Api.Gateway.ActiveModel) {
-  return appliedIds.value.has(String(model.modelId));
+  return appliedKeys.value.has(`model:${model.modelId}`);
+}
+
+function isMcpApplied(mcp: Api.Gateway.AvailableMcp) {
+  return appliedKeys.value.has(`mcp:${mcp.mcpServerId}`);
 }
 
 function categoryLabel(category: string) {
@@ -56,6 +83,7 @@ function categoryLabel(category: string) {
 // ===== 接入信息弹窗 =====
 const accessVisible = ref(false);
 const accessModel = ref<Api.Gateway.ActiveModel | null>(null);
+const accessMcp = ref<Api.Gateway.MCPConnectConfig | null>(null);
 const showFullKey = ref(false);
 
 const fullKey = computed(() => (props.identity?.opened ? props.identity.keyValue : ''));
@@ -68,34 +96,56 @@ const displayKey = computed(() => (showFullKey.value ? fullKey.value : maskedKey
 
 function handleViewAccess(model: Api.Gateway.ActiveModel) {
   accessModel.value = model;
+  accessMcp.value = null;
   showFullKey.value = false;
   accessVisible.value = true;
 }
 
-// ===== 申请订阅(需审批模型;P2 资源申请审批) =====
+/** MCP 接入信息(后端组装客户端配置 JSON,含主 Key 鉴权头;页面只展示掩码 Key,配置经复制导出) */
+async function handleViewMcpAccess(mcp: Api.Gateway.AvailableMcp) {
+  accessModel.value = null;
+  accessMcp.value = null;
+  accessVisible.value = true;
+  const { data } = await fetchGetMCPConnectConfig(mcp.mcpServerId);
+  if (data) accessMcp.value = data;
+}
+
+function handleCopyConfig() {
+  if (accessMcp.value?.config) copyText(JSON.stringify(accessMcp.value.config, null, 2));
+}
+
+// ===== 申请订阅(需审批资源;P2 资源申请审批) =====
 const applyVisible = ref(false);
 const applyModel = ref<Api.Gateway.ActiveModel | null>(null);
+const applyMcp = ref<Api.Gateway.AvailableMcp | null>(null);
 const applyReason = ref('');
 const applySubmitting = ref(false);
 
 function handleApply(model: Api.Gateway.ActiveModel) {
   applyModel.value = model;
+  applyMcp.value = null;
+  applyReason.value = '';
+  applyVisible.value = true;
+}
+
+function handleApplyMcp(mcp: Api.Gateway.AvailableMcp) {
+  applyMcp.value = mcp;
+  applyModel.value = null;
   applyReason.value = '';
   applyVisible.value = true;
 }
 
 async function handleSubmitApply() {
-  if (!applyModel.value || !applyReason.value.trim()) return;
+  const reason = applyReason.value.trim();
+  if ((!applyModel.value && !applyMcp.value) || !reason) return;
   applySubmitting.value = true;
-  const { error } = await fetchSubmitApplication({
-    resourceType: 'model',
-    resourceId: applyModel.value.modelId,
-    reason: applyReason.value.trim()
-  });
+  const resourceType = applyModel.value ? 'model' : 'mcp';
+  const resourceId = applyModel.value ? applyModel.value.modelId : applyMcp.value!.mcpServerId;
+  const { error } = await fetchSubmitApplication({ resourceType, resourceId, reason });
   applySubmitting.value = false;
   if (error) return;
   window.$message?.success($t('page.home.square.applySuccess'));
-  appliedIds.value.add(String(applyModel.value.modelId));
+  appliedKeys.value.add(`${resourceType}:${resourceId}`);
   applyVisible.value = false;
   // 通知 home 刷新「我的申请」列表(新 pending 记录)
   emit('applied');
@@ -106,13 +156,16 @@ function handleCopy(value: string) {
 }
 
 onMounted(async () => {
-  const [activeRes, appRes] = await Promise.all([
+  const [activeRes, mcpRes, appRes] = await Promise.all([
     fetchGetActiveModels(),
+    fetchGetActiveMcps(),
     fetchGetMyApplications({ status: 'pending', pageNum: 1, pageSize: 100, params: {} })
   ]);
   if (!activeRes.error && activeRes.data) models.value = activeRes.data;
+  if (!mcpRes.error && mcpRes.data) mcps.value = mcpRes.data;
   if (!appRes.error && appRes.data?.rows) {
-    appliedIds.value = new Set(appRes.data.rows.map(r => String(r.resourceId)));
+    // 键含资源类型(model/mcp),避免两类 resourceId 撞车
+    appliedKeys.value = new Set(appRes.data.rows.map(r => `${r.resourceType}:${r.resourceId}`));
   }
   isLoading.value = false;
 });
@@ -143,87 +196,164 @@ onMounted(async () => {
       </NInput>
     </div>
 
+    <!-- 资源类型切换(模型/MCP) -->
+    <div class="flex items-center gap-8px px-4px">
+      <NRadioGroup v-model:value="resourceKind" size="small">
+        <NRadioButton value="model">{{ $t('page.home.square.filterModels') }}</NRadioButton>
+        <NRadioButton value="mcp">{{ $t('page.home.square.filterMcps') }}</NRadioButton>
+      </NRadioGroup>
+    </div>
+
     <NAlert v-if="identity && !identity.opened" type="warning" :show-icon="true">
       {{ $t('page.home.square.noIdentity') }}
     </NAlert>
 
-    <!-- 卡片网格 -->
-    <div v-if="isLoading" class="h-240px w-full animate-pulse rounded-16px bg-slate-200/60 dark:bg-slate-700/40" />
-    <div
-      v-else-if="filteredModels.length"
-      class="grid grid-cols-1 gap-12px sm:grid-cols-2 lg:grid-cols-3"
-    >
-      <NCard
-        v-for="model in filteredModels"
-        :key="model.modelId"
-        :bordered="false"
-        size="small"
-        class="card-wrapper shadow-sm transition-shadow hover:shadow-md"
+    <!-- 模型卡片网格 -->
+    <template v-if="resourceKind === 'model'">
+      <div v-if="isLoading" class="h-240px w-full animate-pulse rounded-16px bg-slate-200/60 dark:bg-slate-700/40" />
+      <div
+        v-else-if="filteredModels.length"
+        class="grid grid-cols-1 gap-12px sm:grid-cols-2 lg:grid-cols-3"
       >
-        <div class="flex h-full flex-col gap-8px">
-          <!-- 头部：logo + 名称 + 已授权标记 -->
-          <div class="flex items-start gap-10px">
-            <div class="flex size-40px shrink-0 items-center justify-center rounded-12px bg-slate-100 dark:bg-slate-700/60">
-              <SvgIcon :local-icon="getProviderIcon(model.logoProviderType)" class="h-24px w-24px" />
-            </div>
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-4px">
-                <span class="truncate text-14px font-semibold">{{ model.name }}</span>
-                <SvgIcon
-                  v-if="isAuthorized(model)"
-                  icon="lucide:circle-check"
-                  class="shrink-0 text-16px text-emerald-500"
-                />
+        <NCard
+          v-for="model in filteredModels"
+          :key="model.modelId"
+          :bordered="false"
+          size="small"
+          class="card-wrapper shadow-sm transition-shadow hover:shadow-md"
+        >
+          <div class="flex h-full flex-col gap-8px">
+            <!-- 头部：logo + 名称 + 已授权标记 -->
+            <div class="flex items-start gap-10px">
+              <div class="flex size-40px shrink-0 items-center justify-center rounded-12px bg-slate-100 dark:bg-slate-700/60">
+                <SvgIcon :local-icon="getProviderIcon(model.logoProviderType)" class="h-24px w-24px" />
               </div>
-              <code class="block truncate text-12px text-slate-400">{{ model.modelKey }}</code>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-4px">
+                  <span class="truncate text-14px font-semibold">{{ model.name }}</span>
+                  <SvgIcon
+                    v-if="isAuthorized(model)"
+                    icon="lucide:circle-check"
+                    class="shrink-0 text-16px text-emerald-500"
+                  />
+                </div>
+                <code class="block truncate text-12px text-slate-400">{{ model.modelKey }}</code>
+              </div>
+            </div>
+            <!-- 类别 + 能力标签 -->
+            <div class="flex flex-wrap gap-4px">
+              <NTag size="tiny" :bordered="false" type="primary">{{ categoryLabel(model.category) }}</NTag>
+              <NTag v-for="cap in model.capabilities.slice(0, 3)" :key="cap" size="tiny" :bordered="false">
+                {{ cap }}
+              </NTag>
+            </div>
+            <!-- 描述(两行截断) -->
+            <p class="line-clamp-2 min-h-32px text-12px text-slate-400">{{ model.description }}</p>
+            <!-- 状态 + 操作按钮 -->
+            <div class="mt-auto flex items-center justify-between gap-8px">
+              <NTag v-if="isAuthorized(model)" type="success" size="small" :bordered="false">
+                {{ $t('page.home.square.authorized') }}
+              </NTag>
+              <NTag v-else-if="isApplied(model)" type="warning" size="small" :bordered="false">
+                {{ $t('page.home.square.applyPending') }}
+              </NTag>
+              <NTag v-else-if="model.requiresApproval" type="warning" size="small" :bordered="false">
+                {{ $t('page.home.square.requiresApproval') }}
+              </NTag>
+              <NTag v-else size="small">{{ $t('page.home.square.notAuthorized') }}</NTag>
+              <div class="flex items-center gap-6px">
+                <NButton
+                  v-if="model.requiresApproval && !isAuthorized(model) && !isApplied(model)"
+                  size="tiny"
+                  type="primary"
+                  :disabled="!identity?.opened"
+                  @click="handleApply(model)"
+                >
+                  {{ $t('page.home.square.apply') }}
+                </NButton>
+                <NButton
+                  size="tiny"
+                  type="primary"
+                  ghost
+                  :disabled="!identity?.opened"
+                  @click="handleViewAccess(model)"
+                >
+                  {{ $t('page.home.square.viewAccess') }}
+                </NButton>
+              </div>
             </div>
           </div>
-          <!-- 类别 + 能力标签 -->
-          <div class="flex flex-wrap gap-4px">
-            <NTag size="tiny" :bordered="false" type="primary">{{ categoryLabel(model.category) }}</NTag>
-            <NTag v-for="cap in model.capabilities.slice(0, 3)" :key="cap" size="tiny" :bordered="false">
-              {{ cap }}
-            </NTag>
-          </div>
-          <!-- 描述(两行截断) -->
-          <p class="line-clamp-2 min-h-32px text-12px text-slate-400">{{ model.description }}</p>
-          <!-- 状态 + 操作按钮 -->
-          <div class="mt-auto flex items-center justify-between gap-8px">
-            <NTag v-if="isAuthorized(model)" type="success" size="small" :bordered="false">
-              {{ $t('page.home.square.authorized') }}
-            </NTag>
-            <NTag v-else-if="isApplied(model)" type="warning" size="small" :bordered="false">
-              {{ $t('page.home.square.applyPending') }}
-            </NTag>
-            <NTag v-else-if="model.requiresApproval" type="warning" size="small" :bordered="false">
-              {{ $t('page.home.square.requiresApproval') }}
-            </NTag>
-            <NTag v-else size="small">{{ $t('page.home.square.notAuthorized') }}</NTag>
-            <div class="flex items-center gap-6px">
-              <NButton
-                v-if="model.requiresApproval && !isAuthorized(model) && !isApplied(model)"
-                size="tiny"
-                type="primary"
-                :disabled="!identity?.opened"
-                @click="handleApply(model)"
-              >
-                {{ $t('page.home.square.apply') }}
-              </NButton>
-              <NButton
-                size="tiny"
-                type="primary"
-                ghost
-                :disabled="!identity?.opened"
-                @click="handleViewAccess(model)"
-              >
-                {{ $t('page.home.square.viewAccess') }}
-              </NButton>
+        </NCard>
+      </div>
+      <NEmpty v-else class="h-240px justify-center" :description="$t('page.home.square.empty')" />
+    </template>
+
+    <!-- MCP 卡片网格 -->
+    <template v-else>
+      <div v-if="isLoading" class="h-240px w-full animate-pulse rounded-16px bg-slate-200/60 dark:bg-slate-700/40" />
+      <div v-else-if="filteredMcps.length" class="grid grid-cols-1 gap-12px sm:grid-cols-2 lg:grid-cols-3">
+        <NCard
+          v-for="mcp in filteredMcps"
+          :key="mcp.mcpServerId"
+          :bordered="false"
+          size="small"
+          class="card-wrapper shadow-sm transition-shadow hover:shadow-md"
+        >
+          <div class="flex h-full flex-col gap-8px">
+            <div class="flex items-start gap-10px">
+              <div class="flex size-40px shrink-0 items-center justify-center rounded-12px bg-emerald-50 dark:bg-emerald-900/30">
+                <SvgIcon icon="lucide:server" class="text-20px text-emerald-600" />
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-4px">
+                  <span class="truncate text-14px font-semibold">{{ mcp.name }}</span>
+                  <SvgIcon
+                    v-if="isMcpAuthorized(mcp)"
+                    icon="lucide:circle-check"
+                    class="shrink-0 text-16px text-emerald-500"
+                  />
+                </div>
+                <code class="block truncate text-12px text-slate-400">{{ mcp.serverName }}</code>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-4px">
+              <NTag size="tiny" :bordered="false" type="primary">{{ mcp.category }}</NTag>
+              <NTag size="tiny" :bordered="false">
+                {{ $t('page.home.square.toolsCount', { count: mcp.toolCount }) }}
+              </NTag>
+            </div>
+            <p class="line-clamp-2 min-h-32px text-12px text-slate-400">{{ mcp.description }}</p>
+            <div class="mt-auto flex items-center justify-between gap-8px">
+              <NTag v-if="isMcpAuthorized(mcp)" type="success" size="small" :bordered="false">
+                {{ $t('page.home.square.authorized') }}
+              </NTag>
+              <NTag v-else-if="isMcpApplied(mcp)" type="warning" size="small" :bordered="false">
+                {{ $t('page.home.square.applyPending') }}
+              </NTag>
+              <NTag v-else-if="mcp.requiresApproval" type="warning" size="small" :bordered="false">
+                {{ $t('page.home.square.requiresApproval') }}
+              </NTag>
+              <NTag v-else size="small">{{ $t('page.home.square.notAuthorized') }}</NTag>
+              <div class="flex items-center gap-6px">
+                <NButton
+                  v-if="mcp.requiresApproval && !isMcpAuthorized(mcp) && !isMcpApplied(mcp)"
+                  size="tiny"
+                  type="primary"
+                  :disabled="!identity?.opened"
+                  @click="handleApplyMcp(mcp)"
+                >
+                  {{ $t('page.home.square.apply') }}
+                </NButton>
+                <NButton size="tiny" type="primary" ghost @click="handleViewMcpAccess(mcp)">
+                  {{ $t('page.home.square.viewAccess') }}
+                </NButton>
+              </div>
             </div>
           </div>
-        </div>
-      </NCard>
-    </div>
-    <NEmpty v-else class="h-240px justify-center" :description="$t('page.home.square.empty')" />
+        </NCard>
+      </div>
+      <NEmpty v-else class="h-240px justify-center" :description="$t('page.home.square.empty')" />
+    </template>
 
     <!-- 接入信息弹窗：路由名/变体/Base URL/API Key -->
     <NModal
@@ -262,6 +392,48 @@ onMounted(async () => {
             </NButton>
           </div>
         </div>
+      </div>
+
+      <!-- MCP 接入信息：接入地址/工具清单/客户端配置 JSON -->
+      <div v-else-if="accessMcp" class="flex flex-col gap-14px">
+        <div>
+          <div class="mb-4px text-12px font-medium">{{ $t('page.home.square.accessMcpUrl') }}</div>
+          <div class="flex items-center gap-8px">
+            <code class="min-w-0 flex-1 truncate rounded-8px bg-slate-100 px-10px py-6px text-13px dark:bg-slate-700/60">
+              {{ accessMcp.mcpUrl }}
+            </code>
+            <NButton size="tiny" :type="copied ? 'success' : 'default'" @click="handleCopy(accessMcp.mcpUrl)">
+              {{ copied ? $t('page.home.square.copied') : $t('page.home.square.copy') }}
+            </NButton>
+          </div>
+        </div>
+        <div>
+          <div class="mb-4px text-12px font-medium">
+            {{ $t('page.home.square.toolsCount', { count: accessMcp.tools.length }) }}
+          </div>
+          <div class="flex flex-wrap gap-4px">
+            <NTag v-for="tool in accessMcp.tools.slice(0, 12)" :key="tool.name" size="tiny" :bordered="false">
+              {{ tool.name }}
+            </NTag>
+            <span v-if="accessMcp.tools.length > 12" class="text-12px text-slate-400">…</span>
+          </div>
+        </div>
+        <div v-if="accessMcp.instructions" class="rounded-8px bg-slate-50 px-10px py-8px text-12px text-slate-500 dark:bg-slate-700/40 dark:text-slate-300">
+          {{ accessMcp.instructions }}
+        </div>
+        <div>
+          <div class="mb-4px text-12px font-medium">
+            {{ $t('page.home.square.accessMcpConfig') }}
+            <span class="font-normal text-slate-400">({{ $t('page.home.square.accessMcpConfigTip') }})</span>
+          </div>
+          <NButton size="tiny" :type="copied ? 'success' : 'default'" :disabled="!accessMcp.config" @click="handleCopyConfig">
+            {{ copied ? $t('page.home.square.copied') : $t('page.home.square.copyConfig') }}
+          </NButton>
+        </div>
+      </div>
+
+      <!-- Base URL 与 API Key(模型/MCP 共用) -->
+      <div v-if="accessModel || accessMcp" class="flex flex-col gap-14px">
         <div>
           <div class="mb-4px text-12px font-medium">{{ $t('page.home.square.accessBaseUrl') }}</div>
           <div class="flex items-center gap-8px">
@@ -304,12 +476,14 @@ onMounted(async () => {
       class="w-480px max-w-90%"
       :mask-closable="false"
     >
-      <div v-if="applyModel" class="flex flex-col gap-14px">
+      <div v-if="applyModel || applyMcp" class="flex flex-col gap-14px">
         <div>
           <div class="mb-4px text-12px font-medium">{{ $t('page.home.square.applyModel') }}</div>
           <div class="flex items-center gap-8px">
-            <span class="text-14px font-medium">{{ applyModel.name }}</span>
-            <code class="truncate text-12px text-slate-400">{{ applyModel.modelKey }}</code>
+            <span class="text-14px font-medium">{{ applyModel ? applyModel.name : applyMcp?.name }}</span>
+            <code class="truncate text-12px text-slate-400">
+              {{ applyModel ? applyModel.modelKey : applyMcp?.serverName }}
+            </code>
           </div>
         </div>
         <div>

@@ -15,4 +15,5 @@ type ServiceGroup struct {
 	RouterSettingsService
 	ProviderBalanceService
 	ResourceApplicationService
+	McpService
 }

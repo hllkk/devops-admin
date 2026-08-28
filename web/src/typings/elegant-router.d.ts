@@ -32,6 +32,7 @@ declare module "@elegant-router/types" {
     "log_loginlog": "/log/loginlog";
     "log_operlog": "/log/operlog";
     "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat)?";
+    "mcp": "/mcp";
     "models": "/models";
     "models_model": "/models/model";
     "models_provider": "/models/provider";
@@ -92,6 +93,7 @@ declare module "@elegant-router/types" {
     | "init"
     | "log"
     | "login"
+    | "mcp"
     | "models"
     | "server"
     | "social-callback"
@@ -139,6 +141,7 @@ declare module "@elegant-router/types" {
     | "ai-key"
     | "application"
     | "gateway"
+    | "mcp"
     | "models_model"
     | "models_provider"
     | "usage"

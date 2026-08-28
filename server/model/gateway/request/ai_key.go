@@ -31,6 +31,7 @@ type AiKeyOperateParams struct {
 	Description      string          `json:"description" form:"description"`  // 描述
 	ScenarioId       *int64          `json:"scenarioId,string" form:"scenarioId"` // 场景ID(场景Key可填;nil=清空/主Key恒0;须为未软删且启用的场景)
 	Models           []string        `json:"models" form:"models"`           // 授权模型(modelKey列表)
+	Mcps             []string        `json:"mcps" form:"mcps"`               // 授权MCP(serverName列表,nil=不改,空=清空)
 	ModelBudgets     map[string]any   `json:"modelBudgets" form:"modelBudgets"` // 按模型预算
 	BudgetLimit      *float64        `json:"budgetLimit" form:"budgetLimit"`  // 预算上限
 	BudgetHardLimit  *bool           `json:"budgetHardLimit" form:"budgetHardLimit"` // 硬限

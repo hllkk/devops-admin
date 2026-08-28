@@ -137,6 +137,7 @@ func Routers() *gin.Engine {
 		gatewayRouter.InitDashboardRouter(PrivateGroup)          // AI 网关·看板(/gateway/dashboard/*)
 		gatewayRouter.InitRouterSettingsRouter(PrivateGroup)    // AI 网关·路由策略(/gateway/router/settings)
 		gatewayRouter.InitResourceApplicationRouter(PrivateGroup) // AI 网关·资源申请审批(/gateway/application/*)
+		gatewayRouter.InitMCPRouter(PrivateGroup)                 // AI 网关·MCP 服务器管理(/gateway/mcp/*)
 	}
 
 

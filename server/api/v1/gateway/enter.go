@@ -15,6 +15,7 @@ type ApiGroup struct {
 	RouterSettingsApi
 	ProviderBalanceApi
 	ResourceApplicationApi
+	MCPApi
 }
 
 var (
@@ -30,4 +31,5 @@ var (
 	routerSettingsService  = service.ServiceGroupApp.GatewayServiceGroup.RouterSettingsService
 	providerBalanceService = service.ServiceGroupApp.GatewayServiceGroup.ProviderBalanceService
 	applicationService     = service.ServiceGroupApp.GatewayServiceGroup.ResourceApplicationService
+	mcpService             = service.ServiceGroupApp.GatewayServiceGroup.McpService
 )

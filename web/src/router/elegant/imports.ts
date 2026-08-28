@@ -41,6 +41,7 @@ export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<Ro
   "ai-key": () => import("@/views/_gateway/ai-key/index.vue"),
   application: () => import("@/views/_gateway/application/index.vue"),
   gateway: () => import("@/views/_gateway/gateway/index.vue"),
+  mcp: () => import("@/views/_gateway/mcp/index.vue"),
   models_model: () => import("@/views/_gateway/models/model/index.vue"),
   models_provider: () => import("@/views/_gateway/models/provider/index.vue"),
   usage: () => import("@/views/_gateway/usage/index.vue"),

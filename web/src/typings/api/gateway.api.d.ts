@@ -138,7 +138,8 @@ declare namespace Api {
       litellmKeyAlias: string;
       models: string[];
       modelBudgets: Record<string, number>;
-      mcps: number[];
+      /** 已授权 MCP(serverName 列表;P2 起生效) */
+      mcps: string[];
       skills: number[];
       budgetLimit: number | null;
       budgetUsed: number;
@@ -188,6 +189,10 @@ declare namespace Api {
       sceneKeys: AiKey[];
       /** 可见模型(按发布可见性过滤:全员/部门/指定用户) */
       availableModels: AvailableModel[];
+      /** 已授权 MCP(serverName 列表) */
+      mcps: string[];
+      /** 可见 MCP(按发布可见性过滤,home MCP 区) */
+      availableMcps: AvailableMcp[];
       /** 网关接入点(litellm public-url,客户端 Base URL) */
       gatewayUrl: string;
     };
@@ -204,6 +209,159 @@ declare namespace Api {
       capabilities: string[];
       requiresApproval: boolean;
       hasAnthropicDeployment: boolean;
+    };
+
+    // ───────────────── MCP 服务器 MCPServer(AI 市场 P2) ─────────────────
+
+    /** MCP 传输协议(sse/streamable_http,下发 LiteLLM 时后者映射 http) */
+    type MCPTransport = 'sse' | 'streamable_http';
+
+    /** MCP 鉴权方式(none 无凭据;api_key/bearer_token 凭据存 credentials.auth_value 密文) */
+    type MCPAuthType = 'none' | 'api_key' | 'bearer_token';
+
+    /** MCP 计费类型(per_call 按次/free 免费;工具级空=继承服务器) */
+    type MCPBilling = 'per_call' | 'free' | '';
+
+    /** MCP 健康状态 */
+    type MCPHealthStatus = 'unknown' | 'healthy' | 'unhealthy';
+
+    /** 可授权 MCP 服务器(精简版,Key 授权下拉与广场卡片共用) */
+    type AvailableMcp = {
+      mcpServerId: CommonType.IdType;
+      /** 路由名(授权锚点,LiteLLM server_name) */
+      serverName: string;
+      name: string;
+      description: string;
+      category: string;
+      author: string;
+      iconUrl: string;
+      documentationUrl: string;
+      requiresApproval: boolean;
+      toolCount: number;
+    };
+
+    /** MCP 服务器(管理面出网视图:credentials 为解密后掩码值,提交时掩码回传=保留旧明文) */
+    type MCPServer = Common.CommonRecord<{
+      mcpServerId: CommonType.IdType;
+      /** 展示名称 */
+      name: string;
+      /** LiteLLM 路由名(唯一,禁 '-',不可修改) */
+      serverName: string;
+      /** MCP 端点 URL */
+      url: string;
+      transport: MCPTransport;
+      authType: MCPAuthType;
+      /** 鉴权凭据(敏感值已掩码;auth_value 键) */
+      credentials: Record<string, string> | null;
+      description: string;
+      /** 使用说明(接入页展示) */
+      instructions: string;
+      category: string;
+      author: string;
+      iconUrl: string;
+      documentationUrl: string;
+      billingType: MCPBilling;
+      /** 单次调用价(¥,null=免费) */
+      externalCostPerCall: number | null;
+      isActive: boolean;
+      isPublished: boolean;
+      /** 可见范围(all/selected/user) */
+      visibilityType: 'all' | 'selected' | 'user';
+      /** 接入需审批 */
+      requiresApproval: boolean;
+      healthStatus: MCPHealthStatus;
+      lastHealthCheck: string | null;
+      healthCheckError: string | null;
+      /** LiteLLM 侧 server_id(归因锚点) */
+      litellmServerId: string;
+      litellmSynced: boolean;
+      litellmSyncError: string | null;
+      /** 工具数(后端填充) */
+      toolCount: number;
+    }>;
+
+    /** MCP 服务器搜索参数(name 模糊;其余精确) */
+    type MCPServerSearchParams = CommonType.RecordNullable<
+      Pick<Api.Gateway.MCPServer, 'name' | 'category' | 'isActive' | 'isPublished' | 'healthStatus'> & Api.Common.CommonSearchParams
+    >;
+
+    /** MCP 服务器新增/修改参数(create 时 mcpServerId 为空;serverName 创建后不可改) */
+    type MCPServerOperateParams = CommonType.RecordNullable<
+      Pick<
+        Api.Gateway.MCPServer,
+        | 'mcpServerId'
+        | 'name'
+        | 'serverName'
+        | 'url'
+        | 'transport'
+        | 'authType'
+        | 'credentials'
+        | 'description'
+        | 'instructions'
+        | 'category'
+        | 'author'
+        | 'iconUrl'
+        | 'documentationUrl'
+        | 'billingType'
+        | 'externalCostPerCall'
+        | 'isActive'
+      >
+    >;
+
+    /** MCP 服务器列表 */
+    type MCPServerList = Api.Common.PaginatingQueryRecord<MCPServer>;
+
+    /** MCP 工具(refresh-tools 远端全量重建;namespacedName=serverName_toolName) */
+    type MCPTool = Common.CommonRecord<{
+      mcpToolId: CommonType.IdType;
+      mcpServerId: CommonType.IdType;
+      /** 工具原始名 */
+      toolName: string;
+      /** 网关全名({serverName}_{toolName}) */
+      namespacedName: string;
+      displayName: string;
+      description: string;
+      /** 入参 Schema */
+      inputSchema: Record<string, unknown> | null;
+      /** 工具级计费类型(空=继承服务器) */
+      billingType: MCPBilling;
+      /** 工具级单次调用价(¥,null=继承) */
+      externalCostPerCall: number | null;
+    }>;
+
+    /** MCP 服务器详情(含工具列表) */
+    type MCPServerDetail = MCPServer & {
+      tools: MCPTool[];
+    };
+
+    /** MCP 发布设置(三档可见性+需审批,与模型发布同构) */
+    type MCPPublishParams = {
+      mcpServerId: CommonType.IdType;
+      isPublished: boolean;
+      visibilityType: 'all' | 'selected' | 'user';
+      requiresApproval: boolean;
+      /** 可见部门(selected 模式) */
+      departmentIds: CommonType.IdType[];
+      /** 可见用户(user 模式) */
+      userIds: CommonType.IdType[];
+    };
+
+    /** MCP 发布设置回显(含 selected/user 模式的可见部门/用户) */
+    type MCPPublishView = MCPPublishParams;
+
+    /** MCP 接入配置(用户侧:客户端配置 JSON 含主 Key 明文鉴权头) */
+    type MCPConnectConfig = {
+      name: string;
+      serverName: string;
+      /** 网关接入点 {publicUrl}/{serverName}/mcp */
+      mcpUrl: string;
+      description: string;
+      instructions: string;
+      documentationUrl: string;
+      /** 工具清单 */
+      tools: { name: string; description: string }[];
+      /** 客户端接入配置 JSON */
+      config: { mcpServers: Record<string, { url: string; name?: string; headers?: Record<string, string> }> } | null;
     };
 
     /** 看板总览(按时间范围汇总) */
@@ -479,6 +637,7 @@ declare namespace Api {
         | 'description'
         | 'scenarioId'
         | 'models'
+        | 'mcps'
         | 'modelBudgets'
         | 'budgetLimit'
         | 'budgetHardLimit'

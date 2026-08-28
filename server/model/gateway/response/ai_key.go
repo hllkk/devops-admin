@@ -41,6 +41,8 @@ type MyIdentityView struct {
 	RpmLimit        *int                 `json:"rpmLimit"`        // 全局RPM
 	SceneKeys       []AiKeyView          `json:"sceneKeys"`       // 我的场景Key列表
 	AvailableModels []AvailableModelView `json:"availableModels"` // 可见模型(按发布可见性过滤,home 可用模型卡)
+	Mcps            []string             `json:"mcps"`            // 已授权MCP(serverName列表)
+	AvailableMcps   []AvailableMcpView   `json:"availableMcps"`   // 可见MCP(按发布可见性过滤,home MCP区)
 	GatewayUrl      string               `json:"gatewayUrl"`      // 网关接入点(litellm public-url,客户端 Base URL)
 }
 

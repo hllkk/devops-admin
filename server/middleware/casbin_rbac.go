@@ -29,6 +29,8 @@ var rbacWhitelistPrivate = []string{
 	"/gateway/ai-key/identity/my",             // 我的 AI 身份(未开通返回 opened=false)
 	"/gateway/ai-key/identity/available-models", // 可授权模型列表(只读公共数据)
 		"/gateway/model/active", // 用户侧可见模型列表(home「模型广场」Tab,按发布可见性过滤)
+		"/gateway/mcp/active",   // 用户侧可见 MCP 列表(home 模型广场 MCP 分区,按发布可见性过滤)
+		"/gateway/mcp/connect-config", // MCP 接入配置(用户,主Key明文由 JWT 锁定本人)
 		// 资源申请审批(P2)用户侧:提交申请/我的申请(数据范围由 JWT 锁定本人)。
 		// 管理端接口(list/approve/reject/batch-*)为独立 path 不以这两个前缀开头,不进白名单。
 		"/gateway/application/apply", // 提交申请
