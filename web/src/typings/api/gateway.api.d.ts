@@ -560,5 +560,49 @@ declare namespace Api {
         endTime?: string | null;
       } & Api.Common.CommonSearchParams
     >;
+
+    // ───────────────── 资源申请审批 ResourceApplication(P2·AI 市场) ─────────────────
+
+    /** 资源申请(模型订阅审批;userName/resourceName/resourceKey/reviewerName 后端回填) */
+    type ApplicationItem = {
+      applicationId: CommonType.IdType;
+      userId: CommonType.IdType;
+      resourceType: 'model' | 'mcp' | 'skill';
+      resourceId: CommonType.IdType;
+      reason: string;
+      status: 'pending' | 'approved' | 'rejected';
+      reviewedBy: CommonType.IdType;
+      reviewedAt: string | null;
+      reviewNotes: string;
+      userName: string;
+      resourceName: string;
+      resourceKey: string;
+      reviewerName: string;
+      createTime: string;
+      updateTime: string;
+    };
+
+    /** 申请搜索参数(status/resourceType 空=全部;userId 0=不限,仅管理端生效) */
+    type ApplicationSearchParams = CommonType.RecordNullable<
+      Pick<ApplicationItem, 'status' | 'resourceType' | 'userId'> & Api.Common.CommonSearchParams
+    >;
+
+    /** 提交申请参数(P2 暂仅 resourceType=model) */
+    type ApplicationCreateParams = {
+      resourceType: string;
+      resourceId: CommonType.IdType;
+      reason: string;
+    };
+
+    /** 单条审批结果(warnings=LiteLLM 同步警告,由每日密钥重同步兜底) */
+    type ApplicationReviewResult = {
+      warnings: string[];
+    };
+
+    /** 批量审批结果(逐条独立事务,单条失败不中断) */
+    type BatchReviewResult = {
+      success: CommonType.IdType[];
+      failed: { applicationId: CommonType.IdType; reason: string }[];
+    };
   }
 }

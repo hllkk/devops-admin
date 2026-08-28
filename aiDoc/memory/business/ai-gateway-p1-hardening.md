@@ -27,5 +27,5 @@ P1 两个已知取舍/待办收口：①用户重新启用时全量恢复名下 
 
 ## 待办（关联）
 
-- ProviderBalance 录入百炼 AK/SK 实测（[[ai-gateway-provider-balance]]）。
+- ~~ProviderBalance 录入百炼 AK/SK 实测~~：已由用户实测通过（2026-08-27 确认，暂无问题）。
 - 复制主 Key 模板/批量建场景 Key（P2，[[ai-gateway-user-key-cascade]] 待办节）。

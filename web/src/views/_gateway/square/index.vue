@@ -2,7 +2,12 @@
 import { computed, onMounted, ref } from 'vue';
 import { useClipboard } from '@vueuse/core';
 import { $t } from '@/locales';
-import { fetchGetActiveModels, fetchGetMyIdentity } from '@/service/api/gateway';
+import {
+  fetchGetActiveModels,
+  fetchGetMyApplications,
+  fetchGetMyIdentity,
+  fetchSubmitApplication
+} from '@/service/api/gateway';
 import { MODEL_CATEGORY_OPTIONS, getProviderIcon } from '@/constants/business/gateway';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 
@@ -19,6 +24,9 @@ const keyword = ref('');
 /** 主 Key 已授权 modelKey 集合(未开通为空集) */
 const authorizedKeys = computed(() => new Set(identity.value?.opened ? identity.value.models : []));
 
+/** 已有待审批申请的资源ID集合(本地维护 + 加载时从我的申请回填,刷新后状态保持) */
+const appliedIds = ref<Set<string>>(new Set());
+
 const filteredModels = computed(() => {
   const kw = keyword.value.trim().toLowerCase();
   if (!kw) return models.value;
@@ -29,6 +37,10 @@ const filteredModels = computed(() => {
 
 function isAuthorized(model: Api.Gateway.ActiveModel) {
   return authorizedKeys.value.has(model.modelKey);
+}
+
+function isApplied(model: Api.Gateway.ActiveModel) {
+  return appliedIds.value.has(String(model.modelId));
 }
 
 function categoryLabel(category: string) {
@@ -55,14 +67,48 @@ function handleViewAccess(model: Api.Gateway.ActiveModel) {
   accessVisible.value = true;
 }
 
+// ===== 申请订阅(需审批模型;P2 资源申请审批) =====
+const applyVisible = ref(false);
+const applyModel = ref<Api.Gateway.ActiveModel | null>(null);
+const applyReason = ref('');
+const applySubmitting = ref(false);
+
+function handleApply(model: Api.Gateway.ActiveModel) {
+  applyModel.value = model;
+  applyReason.value = '';
+  applyVisible.value = true;
+}
+
+async function handleSubmitApply() {
+  if (!applyModel.value || !applyReason.value.trim()) return;
+  applySubmitting.value = true;
+  const { error } = await fetchSubmitApplication({
+    resourceType: 'model',
+    resourceId: applyModel.value.modelId,
+    reason: applyReason.value.trim()
+  });
+  applySubmitting.value = false;
+  if (error) return;
+  window.$message?.success($t('page.gateway.square.applySuccess'));
+  appliedIds.value.add(String(applyModel.value.modelId));
+  applyVisible.value = false;
+}
+
 function handleCopy(value: string) {
   if (value) copyText(value);
 }
 
 onMounted(async () => {
-  const [activeRes, identityRes] = await Promise.all([fetchGetActiveModels(), fetchGetMyIdentity()]);
+  const [activeRes, identityRes, appRes] = await Promise.all([
+    fetchGetActiveModels(),
+    fetchGetMyIdentity(),
+    fetchGetMyApplications({ status: 'pending', pageNum: 1, pageSize: 100, params: {} })
+  ]);
   if (!activeRes.error && activeRes.data) models.value = activeRes.data;
   if (!identityRes.error && identityRes.data) identity.value = identityRes.data;
+  if (!appRes.error && appRes.data?.rows) {
+    appliedIds.value = new Set(appRes.data.rows.map(r => String(r.resourceId)));
+  }
   isLoading.value = false;
 });
 </script>
@@ -133,24 +179,38 @@ onMounted(async () => {
             </div>
             <!-- 描述(两行截断) -->
             <p class="line-clamp-2 min-h-32px text-12px text-slate-400">{{ model.description }}</p>
-            <!-- 状态 + 接入按钮 -->
+            <!-- 状态 + 操作按钮 -->
             <div class="mt-auto flex items-center justify-between gap-8px">
               <NTag v-if="isAuthorized(model)" type="success" size="small" :bordered="false">
                 {{ $t('page.gateway.square.authorized') }}
+              </NTag>
+              <NTag v-else-if="isApplied(model)" type="warning" size="small" :bordered="false">
+                {{ $t('page.gateway.square.applyPending') }}
               </NTag>
               <NTag v-else-if="model.requiresApproval" type="warning" size="small" :bordered="false">
                 {{ $t('page.gateway.square.requiresApproval') }}
               </NTag>
               <NTag v-else size="small">{{ $t('page.gateway.square.notAuthorized') }}</NTag>
-              <NButton
-                size="tiny"
-                type="primary"
-                ghost
-                :disabled="!identity?.opened"
-                @click="handleViewAccess(model)"
-              >
-                {{ $t('page.gateway.square.viewAccess') }}
-              </NButton>
+              <div class="flex items-center gap-6px">
+                <NButton
+                  v-if="model.requiresApproval && !isAuthorized(model) && !isApplied(model)"
+                  size="tiny"
+                  type="primary"
+                  :disabled="!identity?.opened"
+                  @click="handleApply(model)"
+                >
+                  {{ $t('page.gateway.square.apply') }}
+                </NButton>
+                <NButton
+                  size="tiny"
+                  type="primary"
+                  ghost
+                  :disabled="!identity?.opened"
+                  @click="handleViewAccess(model)"
+                >
+                  {{ $t('page.gateway.square.viewAccess') }}
+                </NButton>
+              </div>
             </div>
           </div>
         </NCard>
@@ -225,6 +285,46 @@ onMounted(async () => {
               {{ copied ? $t('page.gateway.square.copied') : $t('page.gateway.square.copy') }}
             </NButton>
           </div>
+        </div>
+      </div>
+    </NModal>
+    <!-- 申请订阅弹窗：展示资源 + 申请理由 -->
+    <NModal
+      v-model:show="applyVisible"
+      :title="$t('page.gateway.square.applyTitle')"
+      preset="card"
+      class="w-480px max-w-90%"
+      :mask-closable="false"
+    >
+      <div v-if="applyModel" class="flex flex-col gap-14px">
+        <div>
+          <div class="mb-4px text-12px font-medium">{{ $t('page.gateway.square.applyModel') }}</div>
+          <div class="flex items-center gap-8px">
+            <span class="text-14px font-medium">{{ applyModel.name }}</span>
+            <code class="truncate text-12px text-slate-400">{{ applyModel.modelKey }}</code>
+          </div>
+        </div>
+        <div>
+          <div class="mb-4px text-12px font-medium">{{ $t('page.gateway.square.applyReason') }}</div>
+          <NInput
+            v-model:value="applyReason"
+            type="textarea"
+            :rows="3"
+            maxlength="500"
+            show-count
+            :placeholder="$t('page.gateway.square.applyReasonPlaceholder')"
+          />
+        </div>
+        <div class="flex justify-end gap-8px">
+          <NButton quaternary @click="applyVisible = false">{{ $t('common.cancel') }}</NButton>
+          <NButton
+            type="primary"
+            :loading="applySubmitting"
+            :disabled="!applyReason.trim()"
+            @click="handleSubmitApply"
+          >
+            {{ $t('page.gateway.square.applySubmit') }}
+          </NButton>
         </div>
       </div>
     </NModal>

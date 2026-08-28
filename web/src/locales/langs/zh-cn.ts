@@ -275,6 +275,7 @@ const local: App.I18n.Schema = {
     models_provider: '供应商管理',
     square: '模型广场',
     usage: '调用日志',
+    application: '资源申请',
     init: '系统初始化',
     home: '我的主页'
   },
@@ -510,7 +511,7 @@ const local: App.I18n.Schema = {
         resSkill: '技能',
         resCount: '已授权 {authorized} / 可见 {visible}',
         resNotAuthorized: '尚未授权，免审批模型开通主 Key 后自动授权',
-        resApproval: '订阅需审批，请联系管理员',
+        resApproval: '需审批，可在模型广场申请订阅',
         resEmptyModels: '暂无可见模型',
         resEmptyMarket: '暂未开通',
         overviewTitle: '用量概览',
@@ -528,6 +529,10 @@ const local: App.I18n.Schema = {
         statusPending: '待审批',
         statusApproved: '已通过',
         statusRejected: '已驳回',
+        appsResource: '申请资源',
+        appsTime: '申请时间',
+        appsNotes: '审批意见',
+        goSquare: '去模型广场申请',
         navIdentity: 'AI身份'
       },
       myApps: {
@@ -557,7 +562,48 @@ const local: App.I18n.Schema = {
         accessAnthropicTip: 'Claude Code / Claude Desktop 使用',
         accessBaseUrl: 'Base URL',
         accessApiKey: 'API Key',
-        noIdentity: '暂无 AI 身份，请联系管理员开通后查看接入信息'
+        noIdentity: '暂无 AI 身份，请联系管理员开通后查看接入信息',
+        apply: '申请订阅',
+        applyPending: '已申请，待审批',
+        applyTitle: '申请订阅模型',
+        applyModel: '申请资源',
+        applyReason: '申请理由',
+        applyReasonPlaceholder: '请填写申请理由（必填）',
+        applySubmit: '提交申请',
+        applySuccess: '申请已提交，审批结果将站内通知'
+      },
+      application: {
+        title: '资源申请',
+        subtitle: '审批用户提交的模型订阅申请；通过后自动授权到申请人个人主 Key',
+        statusAll: '全部状态',
+        statusPending: '待审批',
+        statusApproved: '已通过',
+        statusRejected: '已驳回',
+        typeAll: '全部类型',
+        typeModel: '模型',
+        userPlaceholder: '按申请人筛选',
+        batchApprove: '批量通过',
+        batchReject: '批量驳回',
+        reviewNotes: '审批意见',
+        reviewNotesPlaceholder: '填写审批意见（可选）',
+        approveConfirm: '确认通过该申请？通过后将授权模型到申请人个人主 Key',
+        rejectConfirm: '确认驳回该申请？',
+        batchConfirm: '确认批量{action}选中的 {count} 条申请？',
+        batchResult: '成功 {success} 条，失败 {failed} 条',
+        reviewApprove: '通过',
+        reviewReject: '驳回',
+        approveSuccess: '已通过并授权到申请人主 Key',
+        rejectSuccess: '已驳回',
+        reviewWarning: '已通过，但存在同步警告，将由每日密钥重同步自动兜底',
+        col: {
+          applicant: '申请人',
+          resource: '申请资源',
+          reason: '申请理由',
+          status: '状态',
+          applyTime: '申请时间',
+          reviewer: '审批人',
+          action: '操作'
+        }
       },
       usage: {
         title: '调用日志',
@@ -748,7 +794,7 @@ const local: App.I18n.Schema = {
           userIds: '可见用户',
           userRequired: '指定用户可见时必须选择至少一个用户',
           requiresApproval: '领用前需要审批',
-          requiresApprovalTip: '开启后用户领用此模型需管理员审批（审批流即将上线）',
+          requiresApprovalTip: '开启后用户领用此模型需管理员审批（在「资源申请」页处理）',
           autoGrantTip: '免审批且已设模型 ID 时，发布将自动授权到可见范围内用户的主 Key',
           modelKeyUnsetTip: '该模型未设置模型 ID，发布后不会自动授权到主 Key'
         }

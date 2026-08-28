@@ -27,6 +27,8 @@ func TestIsRbacWhitelisted(t *testing.T) {
 		{"/gateway/ai-key/identity/my", true},
 		{"/gateway/ai-key/identity/available-models", true},
 		{"/gateway/model/active", true},
+		{"/gateway/application/apply", true}, // 提交申请(用户侧)
+		{"/gateway/application/my", true},    // 我的申请(用户侧)
 		{"/gateway/dashboard/overview", true},
 		{"/gateway/dashboard/trend", true},
 		{"/gateway/dashboard/top", true},
@@ -47,6 +49,10 @@ func TestIsRbacWhitelisted(t *testing.T) {
 		{"/gateway/model/1", false},              // 模型详情/改/删
 		{"/gateway/model/publish", false},        // 发布设置(管理操作)
 		{"/gateway/dashboard/aggregate", false}, // 手动触发聚合(管理操作)
+		{"/gateway/application/list", false},          // 审批列表(管理端)
+		{"/gateway/application/approve", false},       // 审批通过(管理端)
+		{"/gateway/application/reject", false},        // 审批驳回(管理端)
+		{"/gateway/application/batch-approve", false}, // 批量通过(管理端)
 	}
 	for _, c := range cases {
 		got := isRbacWhitelisted(c.obj)

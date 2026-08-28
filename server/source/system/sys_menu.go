@@ -203,6 +203,20 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			OrderNum:  11,
 			Module:    "gateway",
 		},
+		// 资源申请审批:管理端审批页(用户侧提交/查看走 casbin 登录白名单,不经本菜单);
+		// ApiPrefix 枚举管理接口具体 path(不用 /* 通配,避免把白名单侧 apply/my 也纳入策略语义)
+		{
+			ParentId:  0,
+			MenuName:  "route.application",
+			MenuType:  "C",
+			Path:      "application",
+			ApiPrefix: "/gateway/application/list, /gateway/application/approve, /gateway/application/reject, /gateway/application/batch-approve, /gateway/application/batch-reject",
+			Component: "_gateway/application/index",
+			Icon:      "lucide:stamp",
+			Visible:   "0",
+			OrderNum:  12,
+			Module:    "gateway",
+		},
 	}
 
 	// 先创建父级菜单（ParentId = 0 的菜单）

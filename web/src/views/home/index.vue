@@ -11,7 +11,12 @@ import { useSvgIcon } from '@/hooks/common/icon';
 import { getRgb } from '@sa/color';
 import { ALL_MODULES, MODULE_CONFIG, type RouteModule } from '@/constants/module';
 import { $t } from '@/locales';
-import { fetchGetMyIdentity, fetchGetDashboardOverview, fetchGetDashboardTrend } from '@/service/api/gateway';
+import {
+  fetchGetDashboardOverview,
+  fetchGetDashboardTrend,
+  fetchGetMyApplications,
+  fetchGetMyIdentity
+} from '@/service/api/gateway';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import SystemLogo from '@/components/common/system-logo.vue';
 import defaultAvatar from '@/assets/imgs/soybean.jpg';
@@ -194,7 +199,26 @@ watch(chartColorRgb, () => {
   if (trend.value.length) applyChartColor();
 });
 
-// P2 资源申请审批落地后补 getTypeLabel/getStatusLabel 等辅助函数与"我的申请"区
+// ===== 我的申请(P2 资源申请审批)：最近 10 条,审批结果由站内通知推送 =====
+const applications = ref<Api.Gateway.ApplicationItem[]>([]);
+
+const APP_STATUS_META: Record<
+  Api.Gateway.ApplicationItem['status'],
+  { label: 'statusPending' | 'statusApproved' | 'statusRejected'; type: 'warning' | 'success' | 'error' }
+> = {
+  pending: { label: 'statusPending', type: 'warning' },
+  approved: { label: 'statusApproved', type: 'success' },
+  rejected: { label: 'statusRejected', type: 'error' }
+};
+
+function fmtTime(raw: string) {
+  const d = new Date(raw);
+  return Number.isNaN(d.getTime()) ? raw : d.toLocaleString();
+}
+
+function goSquare() {
+  routerPushByKey('square');
+}
 
 function handleCopy() {
   if (!fullKey.value) return;
@@ -208,6 +232,11 @@ async function loadIdentity() {
   if (!error && data) identity.value = data;
 }
 
+async function loadApplications() {
+  const { data, error } = await fetchGetMyApplications({ pageNum: 1, pageSize: 10, params: {} });
+  if (!error && data) applications.value = data.rows;
+}
+
 async function loadUsage() {
   const [overview, trendRes] = await Promise.all([
     fetchGetDashboardOverview({ scope: 'self' }),
@@ -219,7 +248,7 @@ async function loadUsage() {
 
 onMounted(async () => {
   // 真实接口：身份 + 用量(KPI/趋势) 并行加载；申请列表 P2 资源申请能力，P1 占位
-  await Promise.all([loadIdentity(), loadUsage()]);
+  await Promise.all([loadIdentity(), loadUsage(), loadApplications()]);
   isLoading.value = false;
 
   if (trend.value.length) {
@@ -562,7 +591,7 @@ onMounted(async () => {
             </div>
           </NCard>
 
-          <!-- 我的申请（P2 资源申请审批能力，P1 占位） -->
+          <!-- 我的申请(P2 资源申请审批)：最近 10 条,展示资源/类型/状态/申请时间/审批意见 -->
           <NCard
             v-show="activeTab === 'identity'"
             :bordered="false"
@@ -570,9 +599,31 @@ onMounted(async () => {
             class="card-wrapper shadow-md"
             :title="$t('page.home.identity.appsTitle')"
           >
-            <p class="px-16px py-24px text-center text-14px text-slate-400">
-              {{ $t('page.gateway.comingSoon') }}
-            </p>
+            <div v-if="applications.length" class="flex flex-col gap-8px">
+              <div
+                v-for="app in applications"
+                :key="app.applicationId"
+                class="flex flex-wrap items-center gap-8px rounded-10px bg-slate-50 px-12px py-8px dark:bg-slate-700/40"
+              >
+                <span class="text-13px font-medium">{{ app.resourceName || app.resourceKey }}</span>
+                <NTag size="tiny" :bordered="false">{{ $t('page.home.identity.typeModel') }}</NTag>
+                <NTag size="tiny" :bordered="false" :type="APP_STATUS_META[app.status].type">
+                  {{ $t(`page.home.identity.${APP_STATUS_META[app.status].label}`) }}
+                </NTag>
+                <span class="ml-auto text-12px text-slate-400">
+                  {{ $t('page.home.identity.appsTime') }} {{ fmtTime(app.createTime) }}
+                </span>
+                <p v-if="app.reviewNotes" class="w-full text-12px text-slate-400">
+                  {{ $t('page.home.identity.appsNotes') }}：{{ app.reviewNotes }}
+                </p>
+              </div>
+            </div>
+            <div v-else class="flex flex-col items-center gap-8px px-16px py-20px">
+              <p class="text-center text-14px text-slate-400">{{ $t('page.home.identity.appsEmpty') }}</p>
+              <NButton size="small" type="primary" ghost @click="goSquare">
+                {{ $t('page.home.identity.goSquare') }}
+              </NButton>
+            </div>
           </NCard>
         </template>
       </div>

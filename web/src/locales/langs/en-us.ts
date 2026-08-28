@@ -279,6 +279,7 @@ const local: App.I18n.Schema = {
     models_provider: 'Providers',
     square: 'Model Square',
     usage: 'Usage Logs',
+    application: 'Applications',
     init: 'System Init',
     home: 'Profile'
   },
@@ -514,7 +515,7 @@ const local: App.I18n.Schema = {
         resSkill: 'Skills',
         resCount: 'Authorized {authorized} / Visible {visible}',
         resNotAuthorized: 'Not authorized yet; approval-free models are auto-granted once your main key is created',
-        resApproval: 'Subscription requires approval, please contact the administrator',
+        resApproval: 'Approval required; apply in the Model Square',
         resEmptyModels: 'No visible models',
         resEmptyMarket: 'Not enabled',
         overviewTitle: 'Usage Overview',
@@ -532,6 +533,10 @@ const local: App.I18n.Schema = {
         statusPending: 'Pending',
         statusApproved: 'Approved',
         statusRejected: 'Rejected',
+        appsResource: 'Resource',
+        appsTime: 'Applied at',
+        appsNotes: 'Review notes',
+        goSquare: 'Apply in Model Square',
         navIdentity: 'My AI Identity'
       },
       myApps: {
@@ -561,7 +566,48 @@ const local: App.I18n.Schema = {
         accessAnthropicTip: 'For Claude Code / Claude Desktop',
         accessBaseUrl: 'Base URL',
         accessApiKey: 'API Key',
-        noIdentity: 'No AI identity yet; contact the administrator to view access info'
+        noIdentity: 'No AI identity yet; contact the administrator to view access info',
+        apply: 'Apply',
+        applyPending: 'Applied, pending',
+        applyTitle: 'Apply for Model',
+        applyModel: 'Resource',
+        applyReason: 'Reason',
+        applyReasonPlaceholder: 'Enter your reason (required)',
+        applySubmit: 'Submit',
+        applySuccess: 'Application submitted; you will be notified in-app of the result'
+      },
+      application: {
+        title: 'Applications',
+        subtitle: 'Review model subscription requests from users; approval grants the model to the applicant’s main key',
+        statusAll: 'All statuses',
+        statusPending: 'Pending',
+        statusApproved: 'Approved',
+        statusRejected: 'Rejected',
+        typeAll: 'All types',
+        typeModel: 'Model',
+        userPlaceholder: 'Filter by applicant',
+        batchApprove: 'Approve selected',
+        batchReject: 'Reject selected',
+        reviewNotes: 'Review notes',
+        reviewNotesPlaceholder: 'Review notes (optional)',
+        approveConfirm: 'Approve this application? The model will be granted to the applicant’s main key',
+        rejectConfirm: 'Reject this application?',
+        batchConfirm: 'Batch {action} {count} selected applications?',
+        batchResult: '{success} succeeded, {failed} failed',
+        reviewApprove: 'Approve',
+        reviewReject: 'Reject',
+        approveSuccess: 'Approved and granted to the applicant’s main key',
+        rejectSuccess: 'Rejected',
+        reviewWarning: 'Approved, but there were sync warnings; the daily key resync will reconcile automatically',
+        col: {
+          applicant: 'Applicant',
+          resource: 'Resource',
+          reason: 'Reason',
+          status: 'Status',
+          applyTime: 'Applied at',
+          reviewer: 'Reviewer',
+          action: 'Actions'
+        }
       },
       usage: {
         title: 'Usage Logs',
@@ -752,7 +798,7 @@ const local: App.I18n.Schema = {
           userIds: 'Visible users',
           userRequired: 'Select at least one user for selected-user visibility',
           requiresApproval: 'Approval required before claiming',
-          requiresApprovalTip: 'Users need admin approval to claim this model (approval flow coming soon)',
+          requiresApprovalTip: 'Users need admin approval to claim this model (handled on the Applications page)',
           autoGrantTip: 'No approval + model ID set: auto-grants to main keys of users in the visible scope',
           modelKeyUnsetTip: 'This model has no model ID; publishing will not auto-grant it to main keys'
         }

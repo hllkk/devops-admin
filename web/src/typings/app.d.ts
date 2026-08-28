@@ -711,6 +711,10 @@ declare namespace App {
             statusPending: string;
             statusApproved: string;
             statusRejected: string;
+            appsResource: string;
+            appsTime: string;
+            appsNotes: string;
+            goSquare: string;
             navIdentity: string;
           };
           myApps: {
@@ -741,6 +745,47 @@ declare namespace App {
             accessBaseUrl: string;
             accessApiKey: string;
             noIdentity: string;
+            apply: string;
+            applyPending: string;
+            applyTitle: string;
+            applyModel: string;
+            applyReason: string;
+            applyReasonPlaceholder: string;
+            applySubmit: string;
+            applySuccess: string;
+          };
+          application: {
+            title: string;
+            subtitle: string;
+            statusAll: string;
+            statusPending: string;
+            statusApproved: string;
+            statusRejected: string;
+            typeAll: string;
+            typeModel: string;
+            userPlaceholder: string;
+            batchApprove: string;
+            batchReject: string;
+            reviewNotes: string;
+            reviewNotesPlaceholder: string;
+            approveConfirm: string;
+            rejectConfirm: string;
+            batchConfirm: string;
+            batchResult: string;
+            reviewApprove: string;
+            reviewReject: string;
+            approveSuccess: string;
+            rejectSuccess: string;
+            reviewWarning: string;
+            col: {
+              applicant: string;
+              resource: string;
+              reason: string;
+              status: string;
+              applyTime: string;
+              reviewer: string;
+              action: string;
+            };
           };
           usage: {
             title: string;

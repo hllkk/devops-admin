@@ -6,3 +6,4 @@ export * from './model';
 export * from './ai-key';
 export * from './key-scenario';
 export * from './usage';
+export * from './application';

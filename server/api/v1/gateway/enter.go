@@ -14,6 +14,7 @@ type ApiGroup struct {
 	DashboardApi
 	RouterSettingsApi
 	ProviderBalanceApi
+	ResourceApplicationApi
 }
 
 var (
@@ -28,4 +29,5 @@ var (
 	dashboardService       = service.ServiceGroupApp.GatewayServiceGroup.DashboardService
 	routerSettingsService  = service.ServiceGroupApp.GatewayServiceGroup.RouterSettingsService
 	providerBalanceService = service.ServiceGroupApp.GatewayServiceGroup.ProviderBalanceService
+	applicationService     = service.ServiceGroupApp.GatewayServiceGroup.ResourceApplicationService
 )

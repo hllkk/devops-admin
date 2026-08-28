@@ -372,12 +372,15 @@ func (s *AiKeyService) CreateSceneKey(ctx context.Context, req gatewayReq.AiKeyO
 	if models == nil {
 		models = []string{}
 	}
-	// 主 Key 未显式指定授权模型时默认含对其可见的全部免审批模型(对齐原"全部公开模型"
-	// 默认语义；定向发布对可见范围同样生效——个人主 Key 按用户可见,部门主 Key 按部门可见)
+	// 主 Key 未显式指定授权模型时默认含对其可见的全部免审批模型 + 本人已批准申请的模型
+	// (对齐原"全部公开模型"默认语义；定向发布对可见范围同样生效——个人主 Key 按用户可见,
+	// 部门主 Key 按部门可见；审批授权不依赖发布档,建 Key 即补齐避免管理员二次手工授权)
 	if gateway.MainKeyType(req.KeyType) && len(models) == 0 {
 		db := global.OPS_DB.WithContext(ctx)
 		if req.OwnerType == gateway.OwnerTypeUser {
-			models = visibleModelKeys(db, req.OwnerId, userDeptIdOf(db, req.OwnerId))
+			models = mergeMissingKeys(nil,
+				visibleModelKeys(db, req.OwnerId, userDeptIdOf(db, req.OwnerId)),
+				approvedApplicationModelKeys(db, req.OwnerId))
 		} else {
 			models = visibleModelKeys(db, 0, req.OwnerId)
 		}
@@ -825,21 +828,15 @@ func loadMainKey(ctx context.Context, userId int64) (*gateway.AiKey, error) {
 		return nil, err
 	}
 
-	// 已有主 Key：补缺失的可见免审批模型(幂等自愈；定向发布对可见范围内的个人主 Key 同样生效)
-	publicKeys := visibleModelKeys(global.OPS_DB.WithContext(ctx), userId, userDeptIdOf(global.OPS_DB.WithContext(ctx), userId))
+	// 已有主 Key：补缺失的可见免审批模型 + 本人已批准申请的模型(幂等自愈；定向发布对
+	// 可见范围内的个人主 Key 同样生效；审批授权不依赖发布档，批准后经此补齐——含批准时
+	// 主 Key 尚未创建/停用的场景，规避 AIHelms"无主 Key 静默 skip 仍 approved"坑)
+	kdb := global.OPS_DB.WithContext(ctx)
 	current := jsonToSlice(k.Models)
-	missing := []string{}
-	seen := map[string]bool{}
-	for _, m := range current {
-		seen[m] = true
-	}
-	for _, pk := range publicKeys {
-		if !seen[pk] {
-			missing = append(missing, pk)
-			current = append(current, pk)
-			seen[pk] = true
-		}
-	}
+	missing := mergeMissingKeys(current,
+		visibleModelKeys(kdb, userId, userDeptIdOf(kdb, userId)),
+		approvedApplicationModelKeys(kdb, userId))
+	current = append(current, missing...)
 	if len(missing) > 0 {
 		cli := litellm.Default()
 		_ = global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -1341,6 +1338,40 @@ func visibleModelKeys(db *gorm.DB, userId, deptId int64) []string {
 		userId, deptId,
 	).Pluck("model_key", &keys)
 	return keys
+}
+
+// approvedApplicationModelKeys 用户已批准申请的模型 modelKey 列表(主 Key 自愈差集源扩展,
+// 与 visibleModelKeys 并集消费)：资源申请审批(P2)的授权兜底——批准时无主 Key/主 Key 停用,
+// 后建主 Key 或身份访问自愈时经此补上。只收 model 类型;模型须仍启用+已发布+有路由名
+// (下架/删除的授权由发布对齐回收,自愈不回加;重新发布后自愈补回,申请仍 approved 语义=批准继续有效)。
+func approvedApplicationModelKeys(db *gorm.DB, userId int64) []string {
+	var keys []string
+	db.Table("gateway_resource_application AS a").
+		Joins("JOIN gateway_model m ON m.model_id = a.resource_id AND m.deleted_at IS NULL AND m.is_active = ? AND m.is_published = ? AND m.model_key <> ''", true, true).
+		Where("a.deleted_at IS NULL AND a.user_id = ? AND a.resource_type = ? AND a.status = ?",
+			userId, gateway.ApplicationResourceModel, gateway.ApplicationStatusApproved).
+		Pluck("m.model_key", &keys)
+	return keys
+}
+
+// mergeMissingKeys 汇总各来源列表中 current 缺失的项(去重保序跳过空串;纯函数可单测)。
+// 消费方:loadMainKey 自愈、CreateSceneKey 主 Key 默认授权——两处共用同一差集合并口径。
+func mergeMissingKeys(current []string, sources ...[]string) []string {
+	seen := make(map[string]bool, len(current))
+	for _, k := range current {
+		seen[k] = true
+	}
+	missing := make([]string, 0)
+	for _, src := range sources {
+		for _, k := range src {
+			if k == "" || seen[k] {
+				continue
+			}
+			seen[k] = true
+			missing = append(missing, k)
+		}
+	}
+	return missing
 }
 
 // keyPrefixOf Key 明文前缀(前8位+****，短于8位全*)。

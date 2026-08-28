@@ -12,6 +12,7 @@ type RouterGroup struct {
 	UsageRouter
 	DashboardRouter
 	RouterSettingsRouter
+	ResourceApplicationRouter
 }
 
 var (
@@ -25,4 +26,5 @@ var (
 	dashboardApi      = v1.ApiGroupApp.GatewayApiGroup.DashboardApi
 	routerSettingsApi = v1.ApiGroupApp.GatewayApiGroup.RouterSettingsApi
 	providerBalanceApi = v1.ApiGroupApp.GatewayApiGroup.ProviderBalanceApi
+	applicationApi    = v1.ApiGroupApp.GatewayApiGroup.ResourceApplicationApi
 )

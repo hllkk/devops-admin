@@ -22,6 +22,7 @@ declare module "@elegant-router/types" {
     "500": "/500";
     "admin": "/admin";
     "ai-key": "/ai-key";
+    "application": "/application";
     "gateway": "/gateway";
     "home": "/home";
     "iframe-page": "/iframe-page/:url";
@@ -85,6 +86,7 @@ declare module "@elegant-router/types" {
     | "500"
     | "admin"
     | "ai-key"
+    | "application"
     | "gateway"
     | "home"
     | "iframe-page"
@@ -137,6 +139,7 @@ declare module "@elegant-router/types" {
     | "social-callback"
     | "user-center"
     | "ai-key"
+    | "application"
     | "gateway"
     | "models_model"
     | "models_provider"
