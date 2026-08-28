@@ -131,7 +131,7 @@ watch(visible, val => {
                 { key: 'reason', title: $t('page.gateway.aiKey.batchResultReason') }
               ]"
               :data="result.failed"
-              :row-key="(row: Api.Gateway.AiKeyBatchCreateResult['failed'][number]) => row.userId"
+              :row-key="row => row.userId"
             />
           </div>
         </template>
