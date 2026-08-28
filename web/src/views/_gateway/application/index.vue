@@ -2,7 +2,6 @@
 import { onMounted, ref } from 'vue';
 import { NButton, NTag, NTime } from 'naive-ui';
 import type { DataTableRowKey } from 'naive-ui';
-import { fetchGetUserSelect } from '@/service/api/system';
 import {
   fetchApproveApplication,
   fetchBatchReviewApplications,
@@ -12,6 +11,7 @@ import {
 import { useAppStore } from '@/store/modules/app';
 import { defaultTransform, useNaivePaginatedTable } from '@/hooks/common/table';
 import { $t } from '@/locales';
+import ApplicationSearch from './modules/application-search.vue';
 
 defineOptions({ name: 'GatewayApplication' });
 
@@ -27,18 +27,6 @@ const searchParams = ref<Api.Gateway.ApplicationSearchParams>({
   params: {}
 });
 
-/** 状态/类型选项(值空串=全部,后端空串忽略) */
-const STATUS_OPTIONS = [
-  { label: $t('page.gateway.application.statusAll'), value: '' },
-  { label: $t('page.gateway.application.statusPending'), value: 'pending' },
-  { label: $t('page.gateway.application.statusApproved'), value: 'approved' },
-  { label: $t('page.gateway.application.statusRejected'), value: 'rejected' }
-];
-const TYPE_OPTIONS = [
-  { label: $t('page.gateway.application.typeAll'), value: '' },
-  { label: $t('page.gateway.application.typeModel'), value: 'model' }
-];
-
 const APP_STATUS_META: Record<
   Api.Gateway.ApplicationItem['status'],
   { label: 'statusPending' | 'statusApproved' | 'statusRejected'; type: 'warning' | 'success' | 'error' }
@@ -48,32 +36,7 @@ const APP_STATUS_META: Record<
   rejected: { label: 'statusRejected', type: 'error' }
 };
 
-/** 申请人下拉(懒加载一次,筛选用) */
-const userOptions = ref<Array<{ label: string; value: CommonType.IdType }>>([]);
-
-async function loadUserOptions() {
-  const { data, error } = await fetchGetUserSelect();
-  if (!error) {
-    userOptions.value = (data ?? []).map(u => ({ label: u.nickName || u.userName, value: u.userId! }));
-  }
-}
-
-function applySearch() {
-  searchParams.value = { ...searchParams.value, pageNum: 1 };
-}
-
-function resetSearch() {
-  searchParams.value = {
-    pageNum: 1,
-    pageSize: searchParams.value.pageSize,
-    status: 'pending',
-    resourceType: null,
-    userId: null,
-    params: {}
-  };
-}
-
-const { columns, columnChecks, data, getData, loading, mobilePagination, scrollX } = useNaivePaginatedTable({
+const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagination, scrollX } = useNaivePaginatedTable({
   api: () => {
     const { pageNum, pageSize, status, resourceType, userId } = searchParams.value;
     const params: Api.Gateway.ApplicationSearchParams = { pageNum, pageSize };
@@ -228,43 +191,13 @@ async function handleReviewSubmit() {
 }
 
 onMounted(() => {
-  loadUserOptions();
   getData();
 });
 </script>
 
 <template>
   <div class="min-h-500px flex-col-stretch gap-16px overflow-hidden flex-shrink-0 lt-sm:overflow-auto">
-    <NCard :bordered="false" size="small" class="card-wrapper">
-      <div class="flex flex-wrap items-center gap-12px">
-        <NSelect
-          v-model:value="searchParams.status"
-          :options="STATUS_OPTIONS"
-          size="small"
-          class="w-140px"
-        />
-        <NSelect
-          v-model:value="searchParams.resourceType"
-          :options="TYPE_OPTIONS"
-          size="small"
-          class="w-140px"
-        />
-        <NSelect
-          v-model:value="searchParams.userId"
-          :options="userOptions"
-          size="small"
-          clearable
-          filterable
-          :placeholder="$t('page.gateway.application.userPlaceholder')"
-          class="w-180px"
-        />
-        <div class="flex-1" />
-        <NSpace size="small">
-          <NButton size="small" type="primary" @click="applySearch">{{ $t('common.search') }}</NButton>
-          <NButton size="small" quaternary @click="resetSearch">{{ $t('common.reset') }}</NButton>
-        </NSpace>
-      </div>
-    </NCard>
+    <ApplicationSearch v-model:model="searchParams" @search="getDataByPage" />
 
     <NCard :title="$t('page.gateway.application.title')" :bordered="false" size="small" class="card-wrapper sm:flex-1-hidden">
       <template #header-extra>

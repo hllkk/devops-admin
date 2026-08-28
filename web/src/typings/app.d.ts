@@ -780,6 +780,7 @@ declare namespace App {
             col: {
               applicant: string;
               resource: string;
+              resourceType: string;
               reason: string;
               status: string;
               applyTime: string;
@@ -789,8 +790,7 @@ declare namespace App {
           };
           usage: {
             title: string;
-            startTime: string;
-            endTime: string;
+            provider: string;
             userPlaceholder: string;
             modelPlaceholder: string;
             providerPlaceholder: string;

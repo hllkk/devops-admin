@@ -49,14 +49,16 @@ function handleOpenApp(module: RouteModule) {
 }
 
 // ===== 顶部 Tab：我的应用 / 我的AI身份 / 模型广场 =====
+// 「我的应用」仅对有模块权限的用户可见(apps 由后端 getUserInfo 按菜单权限聚合下发,超管=全部);
+// 无任何模块权限的普通用户 Tab 收敛为 身份+广场,且打开 home 默认落在「我的AI身份」页
 type HomeTab = 'apps' | 'identity' | 'square';
 type HomeTabI18nKey = 'page.home.myApps.title' | 'page.home.identity.navIdentity' | 'page.home.square.tab';
-const homeTabs: { key: HomeTab; i18nKey: HomeTabI18nKey }[] = [
-  { key: 'apps', i18nKey: 'page.home.myApps.title' },
+const homeTabs = computed<{ key: HomeTab; i18nKey: HomeTabI18nKey }[]>(() => [
+  ...(myApps.value.length ? [{ key: 'apps' as const, i18nKey: 'page.home.myApps.title' as const }] : []),
   { key: 'identity', i18nKey: 'page.home.identity.navIdentity' },
   { key: 'square', i18nKey: 'page.home.square.tab' }
-];
-const activeTab = ref<HomeTab>('apps');
+]);
+const activeTab = ref<HomeTab>('identity');
 
 // 模型广场面板懒挂载：首次切到该 Tab 才加载数据（identity 与身份卡共享，不重复请求）
 const squareLoaded = ref(false);
@@ -331,8 +333,8 @@ onMounted(async () => {
         </template>
 
         <template v-else>
-          <!-- 我的应用：按权限展示可访问的业务模块 -->
-          <section v-show="activeTab === 'apps'" class="flex flex-col gap-12px">
+          <!-- 我的应用：按权限展示可访问的业务模块(无模块权限时 Tab 与内容一并收敛) -->
+          <section v-if="myApps.length" v-show="activeTab === 'apps'" class="flex flex-col gap-12px">
             <div class="flex items-center gap-8px px-4px">
               <SvgIcon icon="mdi:apps" class="home-accent text-20px" />
               <span class="text-16px font-bold text-slate-900 dark:text-slate-100">

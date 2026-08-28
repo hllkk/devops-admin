@@ -4,6 +4,7 @@
 
 | 日期 | 需求 | 文件 | 状态 |
 |---|---|---|---|
+| 2026-08-28 | home 默认 Tab 落「我的AI身份」+「我的应用」按权限收敛（getUserInfo.apps 即模块权限判定零后端改动：homeTabs 改 computed 仅 myApps 非空插入 apps 项——无模块权限普通用户只见身份+广场两 Tab；activeTab 默认 identity；apps section 加 v-if 防空壳；纯前端 home/index.vue 单文件） | business/ai-gateway-home-default-identity-tab.md | 已实现 |
 | 2026-08-28 | AI 网关·模型广场并入 home 第三个 Tab（用户侧页面移出后台菜单：home Tab 扩为 3 个，square 内容组件化 model-square-panel + identity prop 共享/懒挂载/applied 事件联动我的申请；i18n 迁移 page.gateway.square.*→page.home.square.*；sys_menu/role_menu 删 square 授权、casbin 白名单接口零改动；已有库补丁 2026-08-28-square-menu-removal.sql） | business/ai-gateway-square-into-home.md | 已实现 |
 | 2026-08-28 | AI 网关·P2 资源申请审批（gateway_resource_application 复合唯一索引+rejected 重置复用；Create 经 visibleModelScope 强校验+防重分流；Approve 事务内状态+授权原子提交复用 syncModelToMainKeys 自建 scope 锁 personal_main；主 Key 自愈差集源扩展 approvedApplicationModelKeys+mergeMissingKeys 纯函数——规避 AIHelms 四坑：无主Key静默skip/申请不校验可见性/防重无DB约束/外呼无容错；用户侧 apply+my 入白名单路径刻意避裸前缀；审批结果通知放 api 层复用 SysNotice+SSE；管理审批页+广场申请按钮+home 申请列表；resource_type 预留 mcp/skill 公共底座） | business/ai-gateway-resource-application.md | 已实现 |
 | 2026-08-27 | AI 网关·P1 收尾加固（被动停用标记位：AiKey.DisabledByCascade+filterCascadeKeys 纯函数，用户级联停打标/恢复仅清标恢复，管理员手动停与超限停两向不动，UpdateAiKey 手动启停清标；密钥 resync 兜底：ResyncAllKeys 无条件幂等重推投影（/key/info 有缓存不做比对），POST /gateway/ai-key/resync+每日03:37定时任务+密钥列表「重新同步」按钮） | business/ai-gateway-p1-hardening.md | 已实现 |

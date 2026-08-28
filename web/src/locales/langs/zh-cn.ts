@@ -597,6 +597,7 @@ const local: App.I18n.Schema = {
         col: {
           applicant: '申请人',
           resource: '申请资源',
+          resourceType: '申请类型',
           reason: '申请理由',
           status: '状态',
           applyTime: '申请时间',
@@ -606,8 +607,7 @@ const local: App.I18n.Schema = {
       },
       usage: {
         title: '调用日志',
-        startTime: '开始时间',
-        endTime: '结束时间',
+        provider: '供应商',
         userPlaceholder: '按用户筛选',
         modelPlaceholder: '模型名(模糊)',
         providerPlaceholder: '供应商',

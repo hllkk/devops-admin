@@ -601,6 +601,7 @@ const local: App.I18n.Schema = {
         col: {
           applicant: 'Applicant',
           resource: 'Resource',
+          resourceType: 'Type',
           reason: 'Reason',
           status: 'Status',
           applyTime: 'Applied at',
@@ -610,8 +611,7 @@ const local: App.I18n.Schema = {
       },
       usage: {
         title: 'Usage Logs',
-        startTime: 'Start time',
-        endTime: 'End time',
+        provider: 'Provider',
         userPlaceholder: 'Filter by user',
         modelPlaceholder: 'Model (fuzzy)',
         providerPlaceholder: 'Provider',

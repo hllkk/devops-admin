@@ -321,14 +321,14 @@ const resyncing = ref(false);
 
 async function handleResync() {
   resyncing.value = true;
-  const { data, error } = await fetchResyncAiKeys();
+  const { data: res, error } = await fetchResyncAiKeys();
   resyncing.value = false;
   if (error) return;
   window.$message?.success(
     $t('page.gateway.aiKey.resyncSuccess', {
-      pushed: data?.pushed ?? 0,
-      skipped: data?.skipped ?? 0,
-      failed: data?.failed?.length ?? 0
+      pushed: res?.pushed ?? 0,
+      skipped: res?.skipped ?? 0,
+      failed: res?.failed?.length ?? 0
     })
   );
 }

@@ -1,18 +1,15 @@
 <script setup lang="tsx">
 import { onMounted, ref } from 'vue';
 import { NTag, NTime } from 'naive-ui';
-import { fetchGetUserSelect } from '@/service/api/system';
 import { fetchGetUsageLogList, fetchReconcileLLMLogs, fetchSyncLLMLogs } from '@/service/api/gateway';
 import { useAppStore } from '@/store/modules/app';
 import { defaultTransform, useNaivePaginatedTable } from '@/hooks/common/table';
 import { $t } from '@/locales';
+import UsageSearch from './modules/usage-search.vue';
 
 defineOptions({ name: 'GatewayUsage' });
 
 const appStore = useAppStore();
-
-/** 时间范围(ms 时间戳,空=不限)；提交转 RFC3339(后端按 UTC 解析) */
-const dateRange = ref<[number, number] | null>(null);
 
 const searchParams = ref<Api.Gateway.UsageLogSearchParams>({
   pageNum: 1,
@@ -25,46 +22,7 @@ const searchParams = ref<Api.Gateway.UsageLogSearchParams>({
   params: {}
 });
 
-/** 用户下拉(懒加载一次,筛选用) */
-const userOptions = ref<Array<{ label: string; value: CommonType.IdType }>>([]);
-
-async function loadUserOptions() {
-  const { data, error } = await fetchGetUserSelect();
-  if (!error) {
-    userOptions.value = (data ?? []).map(u => ({ label: u.nickName || u.userName, value: u.userId! }));
-  }
-}
-
-function fmtRFC3339(ts: number) {
-  return new Date(ts).toISOString();
-}
-
-/** 应用筛选:时间范围转 RFC3339,其余直传(空值剔除,GET query 不带空串) */
-function applySearch() {
-  const p = searchParams.value;
-  searchParams.value = {
-    ...p,
-    pageNum: 1,
-    startTime: dateRange.value ? fmtRFC3339(dateRange.value[0]) : null,
-    endTime: dateRange.value ? fmtRFC3339(dateRange.value[1]) : null
-  };
-}
-
-function resetSearch() {
-  dateRange.value = null;
-  searchParams.value = {
-    pageNum: 1,
-    pageSize: searchParams.value.pageSize,
-    userId: null,
-    aiKeyId: null,
-    deploymentId: null,
-    model: null,
-    provider: null,
-    params: {}
-  };
-}
-
-const { columns, columnChecks, data, getData, loading, mobilePagination, scrollX } = useNaivePaginatedTable({
+const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagination, scrollX } = useNaivePaginatedTable({
   api: () => {
     const { pageNum, pageSize, userId, model, provider } = searchParams.value;
     const params: Api.Gateway.UsageLogSearchParams = { pageNum, pageSize };
@@ -178,54 +136,13 @@ async function handleReconcile() {
 }
 
 onMounted(() => {
-  loadUserOptions();
   getData();
 });
 </script>
 
 <template>
   <div class="min-h-500px flex-col-stretch gap-16px overflow-hidden flex-shrink-0 lt-sm:overflow-auto">
-    <NCard :bordered="false" size="small" class="card-wrapper">
-      <div class="flex flex-wrap items-center gap-12px">
-        <NDatePicker
-          v-model:value="dateRange"
-          type="datetimerange"
-          size="small"
-          clearable
-          class="w-340px"
-        />
-        <NSelect
-          v-model:value="searchParams.userId"
-          :options="userOptions"
-          size="small"
-          clearable
-          filterable
-          :placeholder="$t('page.gateway.usage.userPlaceholder')"
-          class="w-160px"
-        />
-        <NInput
-          v-model:value="searchParams.model"
-          size="small"
-          clearable
-          :placeholder="$t('page.gateway.usage.modelPlaceholder')"
-          class="w-180px"
-          @keyup.enter="applySearch"
-        />
-        <NInput
-          v-model:value="searchParams.provider"
-          size="small"
-          clearable
-          :placeholder="$t('page.gateway.usage.providerPlaceholder')"
-          class="w-140px"
-          @keyup.enter="applySearch"
-        />
-        <div class="flex-1" />
-        <NSpace size="small">
-          <NButton size="small" type="primary" @click="applySearch">{{ $t('common.search') }}</NButton>
-          <NButton size="small" quaternary @click="resetSearch">{{ $t('common.reset') }}</NButton>
-        </NSpace>
-      </div>
-    </NCard>
+    <UsageSearch v-model:model="searchParams" @search="getDataByPage" />
 
     <NCard :title="$t('page.gateway.usage.title')" :bordered="false" size="small" class="card-wrapper sm:flex-1-hidden">
       <template #header-extra>
