@@ -144,9 +144,16 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       key: 'models',
       title: $t('page.gateway.aiKey.col.models'),
       align: 'center',
-      minWidth: 90,
-      // 资源=授权给该 Key 的可用能力：现阶段仅模型，P2 扩 skill/mcp 后在此叠加计数
-      render: row => $t('page.gateway.aiKey.modelCount', { n: (row.models ?? []).length })
+      minWidth: 110,
+      // 资源=授权给该 Key 的可用能力：模型/MCP/Skill 三类计数，零授权项隐藏保持简洁
+      render: row => {
+        const counts: string[] = [];
+        if ((row.models ?? []).length > 0) counts.push(`${$t('page.gateway.application.typeModel')} ${row.models!.length}`);
+        if ((row.mcps ?? []).length > 0) counts.push(`MCP ${row.mcps!.length}`);
+        if ((row.skills ?? []).length > 0) counts.push(`Skill ${row.skills!.length}`);
+        if (counts.length === 0) return <span class="text-slate-400">-</span>;
+        return <span class="text-13px">{counts.join(' · ')}</span>;
+      }
     },
     {
       key: 'budget',
@@ -267,6 +274,18 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
           />
         );
 
+        // 以此为模板批量建场景 Key：预填该 Key 的授权/预算/限流配置(仅主 Key 行提供)
+        const templateBtn = () =>
+          isMainKeyType(row.keyType) ? (
+            <ButtonIcon
+              text
+              type="info"
+              icon="material-symbols:content-copy"
+              tooltipContent={$t('page.gateway.aiKey.copyTemplate')}
+              onClick={() => handleCopyTemplate(row)}
+            />
+          ) : null;
+
         const deleteBtn = () => (
           <ButtonIcon
             text
@@ -281,6 +300,7 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
         return (
           <div class="flex-center gap-8px">
             {editBtn()}
+            {templateBtn()}
             {rotateBtn()}
             {deleteBtn()}
           </div>
@@ -333,8 +353,16 @@ async function handleResync() {
   );
 }
 
-/** 批量开通个人主 Key 弹窗(管理员创建制的效率件) */
+/** 批量开通/批量建场景 Key 弹窗(管理员效率件；templateRow 非空=复制主 Key 模板模式) */
 const batchVisible = ref(false);
+const batchInitialMode = ref<'main' | 'scene'>('main');
+const batchTemplateRow = ref<Api.Gateway.AiKey | null>(null);
+
+function handleCopyTemplate(row: AiKeyRow) {
+  batchInitialMode.value = 'scene';
+  batchTemplateRow.value = row;
+  batchVisible.value = true;
+}
 
 // 场景管理侧变更(增/改/删场景)会影响密钥列表的场景列展示，由父组件调用 refresh 联动刷新
 defineExpose({
@@ -366,7 +394,18 @@ defineExpose({
               </template>
               {{ $t('page.gateway.aiKey.resyncConfirm') }}
             </NPopconfirm>
-            <NButton size="small" type="primary" ghost @click="batchVisible = true">
+            <NButton
+              size="small"
+              type="primary"
+              ghost
+              @click="
+                () => {
+                  batchInitialMode = 'main';
+                  batchTemplateRow = null;
+                  batchVisible = true;
+                }
+              "
+            >
               {{ $t('page.gateway.aiKey.batchCreate') }}
             </NButton>
           </template>
@@ -392,7 +431,12 @@ defineExpose({
       :row-data="editingData"
       @submitted="getData"
     />
-    <AiKeyBatchModal v-model:visible="batchVisible" @submitted="getData" />
+    <AiKeyBatchModal
+      v-model:visible="batchVisible"
+      :initial-mode="batchInitialMode"
+      :template-row="batchTemplateRow"
+      @submitted="getData"
+    />
   </div>
 </template>
 

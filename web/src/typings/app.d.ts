@@ -751,6 +751,13 @@ declare namespace App {
             applySuccess: string;
             filterModels: string;
             filterMcps: string;
+            filterSkills: string;
+            searchPlaceholderSkill: string;
+            emptySkills: string;
+            skillDownload: string;
+            skillDownloadSuccess: string;
+            skillNoPackage: string;
+            skillNeedApproval: string;
             accessMcpUrl: string;
             accessMcpConfig: string;
             accessMcpConfigTip: string;
@@ -771,6 +778,7 @@ declare namespace App {
             typeAll: string;
             typeModel: string;
             typeMcp: string;
+            typeSkill: string;
             userPlaceholder: string;
             batchApprove: string;
             batchReject: string;
@@ -909,6 +917,76 @@ declare namespace App {
                 description: string;
                 billingType: string;
                 cost: string;
+              };
+            };
+          };
+          skill: {
+            title: string;
+            subtitle: string;
+            add: string;
+            edit: string;
+            actionDownload: string;
+            noPackage: string;
+            packageSize: string;
+            upload: {
+              title: string;
+              tip: string;
+              upload: string;
+              replace: string;
+              current: string;
+              success: string;
+            };
+            col: {
+              name: string;
+              version: string;
+              author: string;
+              category: string;
+              tags: string;
+              iconUrl: string;
+              documentationUrl: string;
+              agentInstallPrompt: string;
+              usageInstructions: string;
+              zipPackage: string;
+              zipOriginName: string;
+              zipSize: string;
+              installCount: string;
+              isPublished: string;
+              isActive: string;
+              description: string;
+            };
+            form: {
+              name: { required: string };
+              version: { placeholder: string; invalid: string };
+              tagsPlaceholder: string;
+              agentInstallPromptPlaceholder: string;
+              usageInstructionsPlaceholder: string;
+            };
+            publish: {
+              short: string;
+              title: string;
+              subtitle: string;
+              isPublished: string;
+              autoGrantTip: string;
+              visibilityType: string;
+              visibilityAll: string;
+              visibilitySelected: string;
+              visibilityUser: string;
+              departmentIds: string;
+              userIds: string;
+              departmentRequired: string;
+              userRequired: string;
+              requiresApproval: string;
+              requiresApprovalTip: string;
+              needPackage: string;
+            };
+            usage: {
+              title: string;
+              tip: string;
+              col: {
+                userName: string;
+                skillName: string;
+                action: string;
+                createTime: string;
               };
             };
           };
@@ -1193,9 +1271,21 @@ declare namespace App {
             batchResultFailed: string;
             batchResultUser: string;
             batchResultReason: string;
+            batchScene: {
+              title: string;
+              nameTemplate: string;
+              nameTemplatePlaceholder: string;
+              nameTemplateTip: string;
+              nameTemplateRequired: string;
+              submit: string;
+              tip: string;
+              result: string;
+            };
             rotate: string;
             rotateConfirm: string;
             rotateSuccess: string;
+            batchSceneCreate: string;
+            copyTemplate: string;
             resync: string;
             resyncConfirm: string;
             resyncSuccess: string;
@@ -1216,6 +1306,7 @@ declare namespace App {
               keyPrefix: string;
               models: string;
               mcps: string;
+              skills: string;
               budget: string;
               budgetLimit: string;
               budgetHardLimit: string;
@@ -1240,6 +1331,7 @@ declare namespace App {
               mainKeyNameFixed: string;
               modelsPlaceholder: string;
               mcpsPlaceholder: string;
+              skillsPlaceholder: string;
               budgetHardLimitDesc: string;
               ownerUserPlaceholder: string;
               ownerDeptPlaceholder: string;

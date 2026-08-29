@@ -16,6 +16,7 @@ type ApiGroup struct {
 	ProviderBalanceApi
 	ResourceApplicationApi
 	MCPApi
+	SkillApi
 }
 
 var (
@@ -32,4 +33,5 @@ var (
 	providerBalanceService = service.ServiceGroupApp.GatewayServiceGroup.ProviderBalanceService
 	applicationService     = service.ServiceGroupApp.GatewayServiceGroup.ResourceApplicationService
 	mcpService             = service.ServiceGroupApp.GatewayServiceGroup.McpService
+	skillService           = service.ServiceGroupApp.GatewayServiceGroup.SkillService
 )

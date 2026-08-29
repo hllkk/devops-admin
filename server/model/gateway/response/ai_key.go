@@ -43,6 +43,8 @@ type MyIdentityView struct {
 	AvailableModels []AvailableModelView `json:"availableModels"` // 可见模型(按发布可见性过滤,home 可用模型卡)
 	Mcps            []string             `json:"mcps"`            // 已授权MCP(serverName列表)
 	AvailableMcps   []AvailableMcpView   `json:"availableMcps"`   // 可见MCP(按发布可见性过滤,home MCP区)
+	Skills          []string             `json:"skills"`          // 已授权Skill(skillId字符串列表)
+	AvailableSkills []AvailableSkillView `json:"availableSkills"` // 可见Skill(按发布可见性过滤,home Skill区)
 	GatewayUrl      string               `json:"gatewayUrl"`      // 网关接入点(litellm public-url,客户端 Base URL)
 }
 
@@ -57,8 +59,9 @@ type AvailableModelView struct {
 	HasAnthropicDeployment bool   `json:"hasAnthropicDeployment"` // 有anthropic活跃部署
 }
 
-// BatchCreateMainKeysResult 批量开通个人主 Key 结果(部分成功语义：走 OkWithDetailed 成功
-// 响应+data 标记，前端按 failed 列表渲染，避免 axios 自动弹错误码造成双提示)。
+// BatchCreateMainKeysResult 批量开通个人主 Key / 批量建场景 Key 结果(部分成功语义：
+// 走 OkWithDetailed 成功响应+data 标记，前端按 failed 列表渲染，避免 axios 自动弹错误码
+// 造成双提示。批量场景 Key 无跳过语义，Skipped 恒 0)。
 type BatchCreateMainKeysResult struct {
 	Total   int                          `json:"total"`   // 目标用户数
 	Created int                          `json:"created"` // 新开通

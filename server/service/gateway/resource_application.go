@@ -28,8 +28,8 @@ type ResourceApplicationService struct{}
 // Create 提交申请(用户侧)：校验资源(模型/MCP)对申请人可见且需审批 → 唯一索引防重
 // (pending 拒/approved 拒/rejected 复用原行重置)。免审批资源不收申请(本来就自动授权)。
 func (s *ResourceApplicationService) Create(ctx context.Context, req gatewayReq.ApplicationCreateParams, userId int64) (gatewayResp.ApplicationView, error) {
-	if req.ResourceType != gateway.ApplicationResourceModel && req.ResourceType != gateway.ApplicationResourceMcp {
-		return gatewayResp.ApplicationView{}, errors.New("暂仅支持模型/MCP 申请(技能市场即将上线)")
+	if req.ResourceType != gateway.ApplicationResourceModel && req.ResourceType != gateway.ApplicationResourceMcp && req.ResourceType != gateway.ApplicationResourceSkill {
+		return gatewayResp.ApplicationView{}, errors.New("暂仅支持模型/MCP/Skill 申请")
 	}
 	resourceName, _, requiresApproval, err := s.validateResourceVisible(ctx, req.ResourceType, req.ResourceId, userId)
 	if err != nil {
@@ -122,6 +122,20 @@ func (s *ResourceApplicationService) validateResourceVisible(ctx context.Context
 			return "", "", false, err
 		}
 		return row.Name, row.ServerName, row.RequiresApproval, nil
+	case gateway.ApplicationResourceSkill:
+		q := visibleSkillScope(
+			db.Model(&gateway.Skill{}).
+				Where("is_active = ? AND is_published = ?", true, true),
+			userId, userDeptIdOf(db, userId),
+		)
+		var row gateway.Skill
+		if err := q.Where("skill_id = ?", resourceId).First(&row).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return "", "", false, errors.New("Skill 不存在或对您不可见")
+			}
+			return "", "", false, err
+		}
+		return row.Name, SkillIdentityOf(row), row.RequiresApproval, nil
 	}
 	return "", "", false, errors.New("未知的资源类型")
 }
@@ -170,6 +184,7 @@ func (s *ResourceApplicationService) fillApplicationViews(ctx context.Context, r
 	userIds := make([]int64, 0, len(rows)*2)
 	modelIds := make([]int64, 0, len(rows))
 	mcpIds := make([]int64, 0, len(rows))
+	skillIds := make([]int64, 0, len(rows))
 	for i := range rows {
 		userIds = append(userIds, rows[i].UserId)
 		if rows[i].ReviewedBy != 0 {
@@ -180,6 +195,8 @@ func (s *ResourceApplicationService) fillApplicationViews(ctx context.Context, r
 			modelIds = append(modelIds, rows[i].ResourceId)
 		case gateway.ApplicationResourceMcp:
 			mcpIds = append(mcpIds, rows[i].ResourceId)
+		case gateway.ApplicationResourceSkill:
+			skillIds = append(skillIds, rows[i].ResourceId)
 		}
 	}
 	userNames := map[int64]string{}
@@ -212,6 +229,16 @@ func (s *ResourceApplicationService) fillApplicationViews(ctx context.Context, r
 			mcpServers[srv.McpServerId] = srv
 		}
 	}
+	skills := map[int64]gateway.Skill{}
+	if len(skillIds) > 0 {
+		var ss []gateway.Skill
+		if err := db.Where("skill_id IN ?", skillIds).Find(&ss).Error; err != nil {
+			return nil, err
+		}
+		for _, sk := range ss {
+			skills[sk.SkillId] = sk
+		}
+	}
 
 	list := make([]gatewayResp.ApplicationView, 0, len(rows))
 	for i := range rows {
@@ -225,6 +252,10 @@ func (s *ResourceApplicationService) fillApplicationViews(ctx context.Context, r
 		case gateway.ApplicationResourceMcp:
 			if srv, ok := mcpServers[r.ResourceId]; ok {
 				name, key = srv.Name, srv.ServerName
+			}
+		case gateway.ApplicationResourceSkill:
+			if sk, ok := skills[r.ResourceId]; ok {
+				name, key = sk.Name, SkillIdentityOf(sk)
 			}
 		}
 		list = append(list, gatewayResp.ApplicationView{
@@ -339,6 +370,20 @@ func (s *ResourceApplicationService) review(ctx context.Context, applicationId i
 			return gatewayResp.ApplicationReviewResult{}, gatewayResp.ReviewNotification{}, errors.New("关联MCP已下架或未发布,请驳回该申请")
 		}
 		resourceName, resourceKey = row.Name, row.ServerName
+	case gateway.ApplicationResourceSkill:
+		var row gateway.Skill
+		err = global.OPS_DB.WithContext(ctx).Where("skill_id = ?", app.ResourceId).First(&row).Error
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			if approve {
+				return gatewayResp.ApplicationReviewResult{}, gatewayResp.ReviewNotification{}, errors.New("关联Skill不存在,请驳回该申请")
+			}
+		case err != nil:
+			return gatewayResp.ApplicationReviewResult{}, gatewayResp.ReviewNotification{}, err
+		case approve && (!row.IsActive || !row.IsPublished): // Skill 仍须可授
+			return gatewayResp.ApplicationReviewResult{}, gatewayResp.ReviewNotification{}, errors.New("关联Skill已下架或未发布,请驳回该申请")
+		}
+		resourceName, resourceKey = row.Name, SkillIdentityOf(row)
 	default:
 		if approve {
 			return gatewayResp.ApplicationReviewResult{}, gatewayResp.ReviewNotification{}, errors.New("未知的资源类型,请驳回该申请")
@@ -369,6 +414,8 @@ func (s *ResourceApplicationService) review(ctx context.Context, applicationId i
 				warnings = syncModelToMainKeys(ctx, tx, resourceKey, scope)
 			case gateway.ApplicationResourceMcp:
 				warnings = syncMcpToMainKeys(ctx, tx, resourceKey, scope)
+			case gateway.ApplicationResourceSkill:
+				warnings = syncSkillToMainKeys(ctx, tx, resourceKey, scope)
 			}
 		}
 		return nil

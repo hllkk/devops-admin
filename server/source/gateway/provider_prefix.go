@@ -42,6 +42,14 @@ func (i *initProviderPrefix) MigrateTable(ctx context.Context) (context.Context,
 		&gatewayModel.SyncState{},
 		&gatewayModel.ResourceApplication{},
 		&gatewayModel.ModelVisibilityUser{},
+		&gatewayModel.MCPServer{},
+		&gatewayModel.MCPTool{},
+		&gatewayModel.MCPVisibility{},
+		&gatewayModel.MCPVisibilityUser{},
+		&gatewayModel.Skill{},
+		&gatewayModel.SkillVisibility{},
+		&gatewayModel.SkillVisibilityUser{},
+		&gatewayModel.SkillUsageLog{},
 	)
 }
 

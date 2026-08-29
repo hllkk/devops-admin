@@ -241,6 +241,31 @@ func (a *AiKeyApi) BatchCreateMainKeys(c *gin.Context) {
 		result.Created, result.Total, result.Skipped, len(result.Failed)), c)
 }
 
+// BatchCreateSceneKeys
+// @Tags      GatewayAiKey
+// @Summary   批量建个人场景 Key(名称模板 {username}/{nickname} 逐用户渲染;资源配置整体作模板;「复制主 Key 模板」后端)
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  body  gatewayReq.AiKeyBatchSceneCreateParams  true  "目标+名称模板+资源配置"
+// @Success   200   {object}  response.Response{data=response.BatchCreateMainKeysResult,msg=string}
+// @Router    /gateway/ai-key/batch-scene [post]
+func (a *AiKeyApi) BatchCreateSceneKeys(c *gin.Context) {
+	var req gatewayReq.AiKeyBatchSceneCreateParams
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	result, err := aiKeyService.BatchCreateSceneKeys(c.Request.Context(), req, utils.GetUserID(c))
+	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("批量建场景 Key 失败")
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	// 部分失败走成功响应+data 标记(前端按 failed 渲染)，避免 axios 自动弹错误造成双提示
+	response.OkWithDetailed(result, fmt.Sprintf("创建 %d/%d(失败 %d)",
+		result.Created, result.Total, len(result.Failed)), c)
+}
+
 // ResyncAiKeys
 // @Tags      GatewayAiKey
 // @Summary   手动重推全部密钥投影到 LiteLLM(改名级联/授权对齐同步失败的漂移兜底)

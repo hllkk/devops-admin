@@ -140,7 +140,8 @@ declare namespace Api {
       modelBudgets: Record<string, number>;
       /** 已授权 MCP(serverName 列表;P2 起生效) */
       mcps: string[];
-      skills: number[];
+      /** 已授权 Skill(skillId 字符串列表;P2 起生效,平台自有资源不经 LiteLLM) */
+      skills: string[];
       budgetLimit: number | null;
       budgetUsed: number;
       budgetHardLimit: boolean;
@@ -193,6 +194,10 @@ declare namespace Api {
       mcps: string[];
       /** 可见 MCP(按发布可见性过滤,home MCP 区) */
       availableMcps: AvailableMcp[];
+      /** 已授权 Skill(skillId 字符串列表) */
+      skills: string[];
+      /** 可见 Skill(按发布可见性过滤,home Skill 区) */
+      availableSkills: AvailableSkill[];
       /** 网关接入点(litellm public-url,客户端 Base URL) */
       gatewayUrl: string;
     };
@@ -363,6 +368,113 @@ declare namespace Api {
       /** 客户端接入配置 JSON */
       config: { mcpServers: Record<string, { url: string; name?: string; headers?: Record<string, string> }> } | null;
     };
+
+    // ───────────────── Skill 技能包(AI 市场 P2 收尾) ─────────────────
+
+    /** 可授权 Skill(精简版,Key 授权下拉与广场卡片共用;锚点=skillId 字符串) */
+    type AvailableSkill = {
+      skillId: CommonType.IdType;
+      name: string;
+      version: string;
+      author: string;
+      description: string;
+      category: string;
+      tags: string[];
+      iconUrl: string;
+      documentationUrl: string;
+      requiresApproval: boolean;
+      /** 是否已上传 zip 包(未上传时广场下载置灰) */
+      hasPackage: boolean;
+      installCount: number;
+    };
+
+    /** Skill 技能包(管理面出网视图;zip 存服务端 uploads/skills,经鉴权端点分发) */
+    type Skill = Common.CommonRecord<{
+      skillId: CommonType.IdType;
+      name: string;
+      version: string;
+      author: string;
+      description: string;
+      category: string;
+      tags: string[];
+      iconUrl: string;
+      documentationUrl: string;
+      /** Agent 安装提示词(接入页展示) */
+      agentInstallPrompt: string;
+      /** 使用说明(接入页展示) */
+      usageInstructions: string;
+      /** zip 存储键(空=未上传) */
+      zipFilename: string;
+      zipOriginName: string;
+      zipSize: number;
+      installCount: number;
+      isActive: boolean;
+      isPublished: boolean;
+      /** 可见范围(all/selected/user) */
+      visibilityType: 'all' | 'selected' | 'user';
+      requiresApproval: boolean;
+    }>;
+
+    /** Skill 搜索参数(name 模糊匹配名称/作者;其余精确) */
+    type SkillSearchParams = CommonType.RecordNullable<
+      Pick<Skill, 'name' | 'category' | 'isActive' | 'isPublished'> & Api.Common.CommonSearchParams
+    >;
+
+    /** Skill 新增/修改参数(zip 包另走上传端点) */
+    type SkillOperateParams = CommonType.RecordNullable<
+      Pick<
+        Skill,
+        | 'skillId'
+        | 'name'
+        | 'version'
+        | 'author'
+        | 'description'
+        | 'category'
+        | 'tags'
+        | 'iconUrl'
+        | 'documentationUrl'
+        | 'agentInstallPrompt'
+        | 'usageInstructions'
+        | 'isActive'
+      >
+    >;
+
+    /** Skill 列表 */
+    type SkillList = Api.Common.PaginatingQueryRecord<Skill>;
+
+    /** Skill 发布设置(三档可见性+需审批,与模型/MCP 发布同构) */
+    type SkillPublishParams = {
+      skillId: CommonType.IdType;
+      isPublished: boolean;
+      visibilityType: 'all' | 'selected' | 'user';
+      requiresApproval: boolean;
+      /** 可见部门(selected 模式) */
+      departmentIds: CommonType.IdType[];
+      /** 可见用户(user 模式) */
+      userIds: CommonType.IdType[];
+    };
+
+    /** Skill 发布设置回显(含 selected/user 模式的可见部门/用户) */
+    type SkillPublishView = SkillPublishParams;
+
+    /** Skill 使用日志(回填用户名/技能名) */
+    type SkillUsage = {
+      id: number;
+      userId: CommonType.IdType;
+      userName: string;
+      skillId: CommonType.IdType;
+      skillName: string;
+      action: string;
+      createTime: string;
+    };
+
+    /** Skill 使用日志搜索参数(skillId/userId/action 精确) */
+    type SkillUsageSearchParams = CommonType.RecordNullable<
+      Pick<SkillUsage, 'skillId' | 'userId' | 'action'> & Api.Common.CommonSearchParams
+    >;
+
+    /** Skill 使用日志列表 */
+    type SkillUsageList = Api.Common.PaginatingQueryRecord<SkillUsage>;
 
     /** 看板总览(按时间范围汇总) */
     type DashboardOverview = {
@@ -638,6 +750,7 @@ declare namespace Api {
         | 'scenarioId'
         | 'models'
         | 'mcps'
+        | 'skills'
         | 'modelBudgets'
         | 'budgetLimit'
         | 'budgetHardLimit'
@@ -656,6 +769,33 @@ declare namespace Api {
       deptId?: CommonType.IdType | null;
       userIds?: CommonType.IdType[] | null;
     };
+
+    /** 批量建个人场景 Key 参数(名称模板 {username}/{nickname} 逐用户渲染;资源配置整体作模板套到每个目标) */
+    type AiKeyBatchSceneCreateParams = CommonType.RecordNullable<
+      Pick<
+        AiKey,
+        | 'models'
+        | 'mcps'
+        | 'skills'
+        | 'modelBudgets'
+        | 'budgetLimit'
+        | 'budgetHardLimit'
+        | 'budgetDuration'
+        | 'rateLimitMode'
+        | 'tpmLimit'
+        | 'rpmLimit'
+        | 'modelLimits'
+        | 'isActive'
+        | 'expiresAt'
+      > & {
+        deptId?: CommonType.IdType | null;
+        userIds?: CommonType.IdType[] | null;
+        /** 名称模板(必填,{username}/{nickname} 占位) */
+        nameTemplate: string;
+        description?: string | null;
+        scenarioId?: CommonType.IdType | null;
+      }
+    >;
 
     /** 批量开通个人主 Key 结果(部分成功语义:failed 空数组=全部成功) */
     type AiKeyBatchCreateResult = {

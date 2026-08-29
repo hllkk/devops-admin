@@ -114,3 +114,54 @@ func userIds(users []system.SysUser) []int64 {
 	}
 	return ids
 }
+
+func TestRenderNameTemplate(t *testing.T) {
+	cases := []struct {
+		template string
+		username string
+		nickname string
+		want     string
+	}{
+		{"{username}-爬虫", "zhangsan", "张三", "zhangsan-爬虫"},
+		{"{nickname}的助手Key", "zhangsan", "张三", "张三的助手Key"},
+		{"{username}-{nickname}", "lisi", "李四", "lisi-李四"},
+		{"固定名称", "wangwu", "王五", "固定名称"}, // 无占位符原样返回
+		{"", "zhangsan", "张三", ""},                // 空模板渲染为空(服务层前置校验拦截)
+		{"{unknown}", "zhangsan", "张三", "{unknown}"}, // 未识别占位符保留
+	}
+	for _, c := range cases {
+		if got := renderNameTemplate(c.template, c.username, c.nickname); got != c.want {
+			t.Errorf("renderNameTemplate(%q,%q,%q) = %q, want %q", c.template, c.username, c.nickname, got, c.want)
+		}
+	}
+}
+
+func TestBatchSceneParamsBinding(t *testing.T) {
+	// 雪花 id 字符串元素 + 指针场景ID 的绑定闭环(与 AiKeyBatchCreateParams 同坑位)
+	body := `{"userIds":["1893","1894"],"deptId":"301","nameTemplate":"{username}-scene","scenarioId":"77","models":["gpt-x"],"skills":["123","456"],"budgetLimit":100.5,"expiresAt":null}`
+	var req gatewayReq.AiKeyBatchSceneCreateParams
+	if err := json.Unmarshal([]byte(body), &req); err != nil {
+		t.Fatalf("绑定失败: %v", err)
+	}
+	if len(req.UserIds) != 2 || req.UserIds[0] != 1893 || req.UserIds[1] != 1894 {
+		t.Fatalf("userIds 绑定异常: %v", req.UserIds)
+	}
+	if req.DeptId == nil || *req.DeptId != 301 {
+		t.Fatalf("deptId 绑定异常: %v", req.DeptId)
+	}
+	if req.NameTemplate != "{username}-scene" {
+		t.Fatalf("nameTemplate 绑定异常: %q", req.NameTemplate)
+	}
+	if req.ScenarioId == nil || *req.ScenarioId != 77 {
+		t.Fatalf("scenarioId 绑定异常: %v", req.ScenarioId)
+	}
+	if len(req.Skills) != 2 || req.Skills[0] != "123" {
+		t.Fatalf("skills 绑定异常: %v", req.Skills)
+	}
+	if req.BudgetLimit == nil || *req.BudgetLimit != 100.5 {
+		t.Fatalf("budgetLimit 绑定异常: %v", req.BudgetLimit)
+	}
+	if req.ExpiresAt != nil {
+		t.Fatalf("expiresAt null 应绑为 nil")
+	}
+}

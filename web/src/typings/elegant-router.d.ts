@@ -37,6 +37,7 @@ declare module "@elegant-router/types" {
     "models_model": "/models/model";
     "models_provider": "/models/provider";
     "server": "/server";
+    "skill": "/skill";
     "social-callback": "/social-callback";
     "system": "/system";
     "system_dept": "/system/dept";
@@ -96,6 +97,7 @@ declare module "@elegant-router/types" {
     | "mcp"
     | "models"
     | "server"
+    | "skill"
     | "social-callback"
     | "system"
     | "timer"
@@ -144,6 +146,7 @@ declare module "@elegant-router/types" {
     | "mcp"
     | "models_model"
     | "models_provider"
+    | "skill"
     | "usage"
     | "server"
     | "home"

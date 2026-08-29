@@ -29,7 +29,8 @@ const STATUS_OPTIONS = [
 const TYPE_OPTIONS = [
   { label: $t('page.gateway.application.typeAll'), value: '' },
   { label: $t('page.gateway.application.typeModel'), value: 'model' },
-  { label: $t('page.gateway.application.typeMcp'), value: 'mcp' }
+  { label: $t('page.gateway.application.typeMcp'), value: 'mcp' },
+  { label: $t('page.gateway.application.typeSkill'), value: 'skill' }
 ];
 
 function resetModel() {

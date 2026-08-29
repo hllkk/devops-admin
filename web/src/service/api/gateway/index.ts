@@ -8,3 +8,4 @@ export * from './key-scenario';
 export * from './usage';
 export * from './application';
 export * from './mcp';
+export * from './skill';

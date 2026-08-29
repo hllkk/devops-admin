@@ -44,6 +44,7 @@ export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<Ro
   mcp: () => import("@/views/_gateway/mcp/index.vue"),
   models_model: () => import("@/views/_gateway/models/model/index.vue"),
   models_provider: () => import("@/views/_gateway/models/provider/index.vue"),
+  skill: () => import("@/views/_gateway/skill/index.vue"),
   usage: () => import("@/views/_gateway/usage/index.vue"),
   server: () => import("@/views/_server/server/index.vue"),
   home: () => import("@/views/home/index.vue"),

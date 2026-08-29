@@ -69,6 +69,16 @@ export function fetchBatchCreateMainKeys(data: Api.Gateway.AiKeyBatchCreateParam
   });
 }
 
+/** 批量建个人场景 Key(名称模板 {username}/{nickname} 逐用户渲染;资源配置整体作模板;「复制主 Key 模板」后端) */
+export function fetchBatchCreateSceneKeys(data: Api.Gateway.AiKeyBatchSceneCreateParams) {
+  return request<Api.Gateway.AiKeyBatchCreateResult>({
+    url: '/gateway/ai-key/batch-scene',
+    method: 'post',
+    data,
+    timeout: 0 // 同批量开通:逐用户串行外呼 LiteLLM,不吃默认 10s 超时
+  });
+}
+
 /** 全量重推密钥投影到 LiteLLM(改名级联/授权对齐同步失败的漂移兜底) */
 export function fetchResyncAiKeys() {
   return request<Api.Gateway.ResyncResult>({

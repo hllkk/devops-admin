@@ -212,3 +212,8 @@ export const MCP_HEALTH_OPTIONS = [
   { label: 'page.gateway.mcp.health.healthy', value: 'healthy' },
   { label: 'page.gateway.mcp.health.unhealthy', value: 'unhealthy' }
 ] as const;
+
+/** Skill 使用日志动作选项(当前仅 download) */
+export const SKILL_USAGE_ACTION_OPTIONS = [
+  { label: 'page.gateway.skill.actionDownload', value: 'download' }
+] as const;

@@ -109,6 +109,11 @@ const visibleMcps = computed(() => identity.value?.availableMcps ?? []);
 const authorizedMcpNames = computed(() => new Set(mainKey.value?.mcps ?? []));
 const authorizedMcpCount = computed(() => visibleMcps.value.filter(m => authorizedMcpNames.value.has(m.serverName)).length);
 
+/** 可见 Skill(未开通也展示)与已授权 skillId 集合(P2) */
+const visibleSkills = computed(() => identity.value?.availableSkills ?? []);
+const authorizedSkillIds = computed(() => new Set(mainKey.value?.skills ?? []));
+const authorizedSkillCount = computed(() => visibleSkills.value.filter(s => authorizedSkillIds.value.has(String(s.skillId))).length);
+
 const fullKey = computed(() => mainKey.value?.keyValue ?? '');
 const maskedKey = computed(() => {
   const value = fullKey.value;
@@ -556,12 +561,36 @@ onMounted(async () => {
               <p v-else class="text-12px text-slate-400">{{ $t('page.home.identity.resEmptyMarket') }}</p>
             </NCard>
 
-            <NCard v-if="mainKey" :bordered="false" size="small" class="card-wrapper shadow-md">
+            <NCard :bordered="false" size="small" class="card-wrapper shadow-md">
               <div class="mb-12px flex items-center gap-8px">
                 <SvgIcon icon="lucide:sparkles" class="text-16px text-amber-500" />
                 <span class="text-14px font-medium">{{ $t('page.home.identity.resSkill') }}</span>
+                <span class="ml-auto text-12px text-slate-400">
+                  {{ $t('page.home.identity.resCount', { authorized: authorizedSkillCount, visible: visibleSkills.length }) }}
+                </span>
               </div>
-              <p class="text-12px text-slate-400">{{ $t('page.gateway.comingSoon') }}</p>
+              <div v-if="visibleSkills.length" class="flex flex-wrap gap-8px">
+                <NTooltip v-for="skill in visibleSkills" :key="skill.skillId" trigger="hover">
+                  <template #trigger>
+                    <NTag
+                      :type="authorizedSkillIds.has(String(skill.skillId)) ? 'primary' : 'default'"
+                      size="small"
+                      round
+                      :bordered="authorizedSkillIds.has(String(skill.skillId))"
+                    >
+                      {{ skill.name }}
+                    </NTag>
+                  </template>
+                  {{
+                    authorizedSkillIds.has(String(skill.skillId))
+                      ? `v${skill.version}`
+                      : skill.requiresApproval
+                        ? $t('page.home.identity.resApproval')
+                        : $t('page.home.identity.resNotAuthorized')
+                  }}
+                </NTooltip>
+              </div>
+              <p v-else class="text-12px text-slate-400">{{ $t('page.home.identity.resEmptyMarket') }}</p>
             </NCard>
           </section>
 

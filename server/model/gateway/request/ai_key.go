@@ -32,6 +32,7 @@ type AiKeyOperateParams struct {
 	ScenarioId       *int64          `json:"scenarioId,string" form:"scenarioId"` // 场景ID(场景Key可填;nil=清空/主Key恒0;须为未软删且启用的场景)
 	Models           []string        `json:"models" form:"models"`           // 授权模型(modelKey列表)
 	Mcps             []string        `json:"mcps" form:"mcps"`               // 授权MCP(serverName列表,nil=不改,空=清空)
+	Skills           []string        `json:"skills"`                         // 授权Skill(skillId字符串列表,nil=不改,空=清空)
 	ModelBudgets     map[string]any   `json:"modelBudgets" form:"modelBudgets"` // 按模型预算
 	BudgetLimit      *float64        `json:"budgetLimit" form:"budgetLimit"`  // 预算上限
 	BudgetHardLimit  *bool           `json:"budgetHardLimit" form:"budgetHardLimit"` // 硬限
@@ -50,4 +51,29 @@ type AiKeyOperateParams struct {
 type AiKeyBatchCreateParams struct {
 	UserIds common.Int64StringSlice `json:"userIds"`              // 目标用户ID列表(与 deptId 至少一项;雪花id字符串/数字元素兼容)
 	DeptId  *int64                  `json:"deptId,string" form:"deptId"` // 按部门开通(优先,取部门下全部用户)
+}
+
+// AiKeyBatchSceneCreateParams 批量建个人场景 Key(管理员效率件)：目标同批量开通(deptId ∪
+// userIds)；nameTemplate 必填、支持 {username}/{nickname} 占位符逐用户渲染；资源配置
+// (models/mcps/skills/预算/限流/过期)整体作为模板套到每个目标用户——前端「复制主 Key 模板」
+// 即以某主 Key 的配置预填本表单。同名/停用用户计入失败明细，部分成功语义。
+type AiKeyBatchSceneCreateParams struct {
+	UserIds          common.Int64StringSlice `json:"userIds"`              // 目标用户ID列表(与 deptId 至少一项)
+	DeptId           *int64                  `json:"deptId,string" form:"deptId"` // 按部门(优先,取部门下全部用户)
+	NameTemplate     string                  `json:"nameTemplate"`         // 名称模板(必填,{username}/{nickname}占位)
+	Description      string                  `json:"description"`          // 描述
+	ScenarioId       *int64                  `json:"scenarioId,string"`    // 场景ID(可选,须为启用中场景)
+	Models           []string                `json:"models"`               // 授权模型(空=场景Key无默认,显式空数组)
+	Mcps             []string                `json:"mcps"`                 // 授权MCP(serverName列表)
+	Skills           []string                `json:"skills"`               // 授权Skill(skillId字符串列表)
+	ModelBudgets     map[string]any          `json:"modelBudgets"`         // 按模型预算
+	BudgetLimit      *float64                `json:"budgetLimit"`          // 预算上限
+	BudgetHardLimit  *bool                   `json:"budgetHardLimit"`      // 硬限
+	BudgetDuration   string                  `json:"budgetDuration"`       // 预算周期
+	RateLimitMode    string                  `json:"rateLimitMode"`        // 限流模式
+	TpmLimit         *int                    `json:"tpmLimit"`             // 全局TPM
+	RpmLimit         *int                    `json:"rpmLimit"`             // 全局RPM
+	ModelLimits      map[string]any          `json:"modelLimits"`          // per-model限流
+	IsActive         *bool                   `json:"isActive"`             // 是否启用(nil=默认启用)
+	ExpiresAt        *time.Time              `json:"expiresAt"`            // 过期时间(nil=永不过期)
 }

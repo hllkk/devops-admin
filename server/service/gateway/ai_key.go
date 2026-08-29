@@ -41,12 +41,14 @@ func (s *AiKeyService) GetMyIdentity(ctx context.Context, userId int64) (gateway
 		SceneKeys:      []gatewayResp.AiKeyView{},
 		Models:         []string{},
 		Mcps:           []string{},
+		Skills:         []string{},
 		ModelBudgets:   jsonToMap(datatypes.JSON(nil)),
 		RateLimitMode:  gateway.RateLimitModeNone,
 		BudgetDuration: gateway.BudgetDuration30d,
 	}
 	view.AvailableModels, _ = s.GetMyVisibleModels(ctx, userId)
 	view.AvailableMcps, _ = McpSvc.GetActiveMcps(ctx, userId)
+	view.AvailableSkills, _ = SkillSvc.GetActiveSkills(ctx, userId)
 	// 网关接入点(litellm public-url)：客户端直连 Base URL，接入信息展示用
 	view.GatewayUrl = global.OPS_CONFIG.Litellm.PublicURL
 	if mainKey == nil {
@@ -60,6 +62,7 @@ func (s *AiKeyService) GetMyIdentity(ctx context.Context, userId int64) (gateway
 	view.ExpiresAt = mainKey.ExpiresAt
 	view.Models = jsonToSlice(mainKey.Models)
 	view.Mcps = jsonToSlice(mainKey.Mcps)
+	view.Skills = jsonToSlice(mainKey.Skills)
 	view.ModelBudgets = jsonToMap(mainKey.ModelBudgets)
 	view.RateLimitMode = mainKey.RateLimitMode
 	view.TpmLimit = mainKey.TpmLimit
@@ -404,6 +407,21 @@ func (s *AiKeyService) CreateSceneKey(ctx context.Context, req gatewayReq.AiKeyO
 			mcps = visibleMcpKeys(db, 0, req.OwnerId)
 		}
 	}
+	// Skill 授权：与 MCP 同口径，锚点=skill ID 字符串(平台自有资源，无 LiteLLM 投影)
+	skills := req.Skills
+	if skills == nil {
+		skills = []string{}
+	}
+	if gateway.MainKeyType(req.KeyType) && len(skills) == 0 {
+		db := global.OPS_DB.WithContext(ctx)
+		if req.OwnerType == gateway.OwnerTypeUser {
+			skills = mergeMissingKeys(nil,
+				visibleSkillKeys(db, req.OwnerId, userDeptIdOf(db, req.OwnerId)),
+				approvedApplicationSkillKeys(db, req.OwnerId))
+		} else {
+			skills = visibleSkillKeys(db, 0, req.OwnerId)
+		}
+	}
 
 	// 场景归属(仅场景 Key；主 Key 恒无场景)
 	scenarioId := int64(0)
@@ -428,7 +446,7 @@ func (s *AiKeyService) CreateSceneKey(ctx context.Context, req gatewayReq.AiKeyO
 		Models:          marshalJSONStringSlice(models),
 		ModelBudgets:    marshalJSONMap(req.ModelBudgets),
 		Mcps:            marshalJSONStringSlice(mcps),
-		Skills:          datatypes.JSON([]byte("[]")),
+		Skills:          marshalJSONStringSlice(skills),
 		BudgetLimit:     req.BudgetLimit,
 		BudgetHardLimit: req.BudgetHardLimit != nil && *req.BudgetHardLimit,
 		BudgetDuration:  normalizeBudgetDuration(req.BudgetDuration),
@@ -499,6 +517,11 @@ func (s *AiKeyService) UpdateAiKey(ctx context.Context, req gatewayReq.AiKeyOper
 	if mcps == nil {
 		mcps = jsonToSlice(k.Mcps)
 	}
+	// Skill 授权(nil=不改；空 slice=清空；锚点=skill ID 字符串)
+	skills := req.Skills
+	if skills == nil {
+		skills = jsonToSlice(k.Skills)
+	}
 
 	// 场景归属(nil=清空为无场景；非空须为启用场景；主 Key 恒清空)
 	if req.ScenarioId != nil && *req.ScenarioId != 0 {
@@ -519,6 +542,7 @@ func (s *AiKeyService) UpdateAiKey(ctx context.Context, req gatewayReq.AiKeyOper
 		"scenario_id":   scenarioId,
 		"models":        marshalJSONStringSlice(models),
 		"mcps":          marshalJSONStringSlice(mcps),
+		"skills":        marshalJSONStringSlice(skills),
 		"model_budgets": marshalJSONMap(req.ModelBudgets),
 		"model_limits":  marshalJSONMap(req.ModelLimits),
 		"expires_at":    req.ExpiresAt, // 过期时间覆盖式更新(nil=改回永不过期)
@@ -566,6 +590,7 @@ func (s *AiKeyService) UpdateAiKey(ctx context.Context, req gatewayReq.AiKeyOper
 	k.ExpiresAt = req.ExpiresAt
 	k.Models = marshalJSONStringSlice(models)
 	k.Mcps = marshalJSONStringSlice(mcps)
+	k.Skills = marshalJSONStringSlice(skills)
 	k.ModelBudgets = marshalJSONMap(req.ModelBudgets)
 	k.ModelLimits = marshalJSONMap(req.ModelLimits)
 
@@ -725,7 +750,8 @@ func classifyBatchTargets(users []system.SysUser, existingSet map[int64]bool) (
 }
 
 // resolveBatchTargets 解析批量开通目标用户：deptId 优先(部门下全部)，userIds 补充，
-// 两者并集按行过滤天然去重。仅取 id/nick_name/status 最小列集。
+// 两者并集按行过滤天然去重。仅取 id/nick_name/user_name/status 最小列集
+// (user_name 供批量场景 Key 名称模板 {username} 渲染)。
 func (s *AiKeyService) resolveBatchTargets(ctx context.Context, req gatewayReq.AiKeyBatchCreateParams) ([]system.SysUser, error) {
 	if req.DeptId == nil && len(req.UserIds) == 0 {
 		return nil, errors.New("请指定目标用户或部门")
@@ -740,10 +766,84 @@ func (s *AiKeyService) resolveBatchTargets(ctx context.Context, req gatewayReq.A
 		q = q.Where("id IN ?", req.UserIds)
 	}
 	var users []system.SysUser
-	if err := q.Select("id, nick_name, status").Order("id ASC").Find(&users).Error; err != nil {
+	if err := q.Select("id, nick_name, user_name, status").Order("id ASC").Find(&users).Error; err != nil {
 		return nil, err
 	}
 	return users, nil
+}
+
+// BatchCreateSceneKeys 批量建个人场景 Key(管理员效率件，「复制主 Key 模板」的后端)：
+// 目标 = deptId 部门下全部用户 ∪ userIds；名称按 nameTemplate 逐用户渲染
+// ({username}/{nickname} 占位)；资源配置(models/mcps/skills/预算/限流/过期)整体
+// 作为模板套到每个目标。停用用户→失败(建了也会被级联停用)；同名等创建错误计入
+// 失败明细(CreateSceneKey 内部查重)；逐用户独立事务部分成功语义(对齐 BatchCreateMainKeys)。
+func (s *AiKeyService) BatchCreateSceneKeys(ctx context.Context, req gatewayReq.AiKeyBatchSceneCreateParams, createBy int64) (gatewayResp.BatchCreateMainKeysResult, error) {
+	if req.NameTemplate == "" {
+		return gatewayResp.BatchCreateMainKeysResult{}, errors.New("名称模板不能为空")
+	}
+	batchReq := gatewayReq.AiKeyBatchCreateParams{UserIds: req.UserIds, DeptId: req.DeptId}
+	users, err := s.resolveBatchTargets(ctx, batchReq)
+	if err != nil {
+		return gatewayResp.BatchCreateMainKeysResult{}, err
+	}
+	result := gatewayResp.BatchCreateMainKeysResult{Total: len(users), Failed: []gatewayResp.BatchCreateMainKeysFailure{}}
+	for i := range users {
+		u := users[i]
+		if u.Status != "0" {
+			result.Failed = append(result.Failed, gatewayResp.BatchCreateMainKeysFailure{
+				UserId: u.UserId, Name: u.NickName, Reason: "用户已停用",
+			})
+			continue
+		}
+		nickname := u.NickName
+		if nickname == "" {
+			nickname = u.UserName
+		}
+		name := renderNameTemplate(req.NameTemplate, u.UserName, nickname)
+		if name == "" {
+			result.Failed = append(result.Failed, gatewayResp.BatchCreateMainKeysFailure{
+				UserId: u.UserId, Name: u.NickName, Reason: "名称模板渲染结果为空",
+			})
+			continue
+		}
+		params := gatewayReq.AiKeyOperateParams{
+			KeyType:         gateway.KeyTypePersonalScene,
+			OwnerType:       gateway.OwnerTypeUser,
+			OwnerId:         u.UserId,
+			Name:            name,
+			Description:     req.Description,
+			ScenarioId:      req.ScenarioId,
+			Models:          req.Models,
+			Mcps:            req.Mcps,
+			Skills:          req.Skills,
+			ModelBudgets:    req.ModelBudgets,
+			BudgetLimit:     req.BudgetLimit,
+			BudgetHardLimit: req.BudgetHardLimit,
+			BudgetDuration:  req.BudgetDuration,
+			RateLimitMode:   req.RateLimitMode,
+			TpmLimit:        req.TpmLimit,
+			RpmLimit:        req.RpmLimit,
+			ModelLimits:     req.ModelLimits,
+			IsActive:        req.IsActive,
+			ExpiresAt:       req.ExpiresAt,
+		}
+		if _, err := s.CreateSceneKey(ctx, params, createBy); err != nil {
+			result.Failed = append(result.Failed, gatewayResp.BatchCreateMainKeysFailure{
+				UserId: u.UserId, Name: u.NickName, Reason: err.Error(),
+			})
+			continue
+		}
+		result.Created++
+	}
+	return result, nil
+}
+
+// renderNameTemplate 批量建 Key 名称模板渲染(纯函数，可单测)：
+// {username}→登录名、{nickname}→昵称；无占位符时原样返回(全体同名，首用户成功余者同名失败)。
+func renderNameTemplate(template, username, nickname string) string {
+	name := strings.ReplaceAll(template, "{username}", username)
+	name = strings.ReplaceAll(name, "{nickname}", nickname)
+	return name
 }
 
 // SyncUserKeysActive 用户启停/删除级联：同步其名下 AiKey(主+场景，软删行除外)的启停状态。
@@ -854,9 +954,10 @@ func loadMainKey(ctx context.Context, userId int64) (*gateway.AiKey, error) {
 		return nil, err
 	}
 
-	// 已有主 Key：补缺失的可见免审批模型/MCP + 本人已批准申请的模型/MCP(幂等自愈；定向
-	// 发布对可见范围内的个人主 Key 同样生效；审批授权不依赖发布档，批准后经此补齐——含
-	// 批准时主 Key 尚未创建/停用的场景，规避 AIHelms"无主 Key 静默 skip 仍 approved"坑)
+	// 已有主 Key：补缺失的可见免审批模型/MCP/Skill + 本人已批准申请的模型/MCP/Skill
+	// (幂等自愈；定向发布对可见范围内的个人主 Key 同样生效；审批授权不依赖发布档，
+	// 批准后经此补齐——含批准时主 Key 尚未创建/停用的场景，规避 AIHelms"无主 Key 静默
+	// skip 仍 approved"坑)
 	kdb := global.OPS_DB.WithContext(ctx)
 	deptId := userDeptIdOf(kdb, userId)
 	current := jsonToSlice(k.Models)
@@ -869,12 +970,18 @@ func loadMainKey(ctx context.Context, userId int64) (*gateway.AiKey, error) {
 		visibleMcpKeys(kdb, userId, deptId),
 		approvedApplicationMcpKeys(kdb, userId))
 	currentMcps = append(currentMcps, missingMcps...)
-	if len(missingModels) > 0 || len(missingMcps) > 0 {
+	currentSkills := jsonToSlice(k.Skills)
+	missingSkills := mergeMissingKeys(currentSkills,
+		visibleSkillKeys(kdb, userId, deptId),
+		approvedApplicationSkillKeys(kdb, userId))
+	currentSkills = append(currentSkills, missingSkills...)
+	if len(missingModels) > 0 || len(missingMcps) > 0 || len(missingSkills) > 0 {
 		cli := litellm.Default()
 		_ = global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 			updates := map[string]any{
 				"models": marshalJSONStringSlice(current),
 				"mcps":   marshalJSONStringSlice(currentMcps),
+				"skills": marshalJSONStringSlice(currentSkills),
 			}
 			if err := tx.Model(&gateway.AiKey{}).Where("ai_key_id = ?", k.AiKeyId).
 				Updates(updates).Error; err != nil {
@@ -882,6 +989,7 @@ func loadMainKey(ctx context.Context, userId int64) (*gateway.AiKey, error) {
 			}
 			k.Models = marshalJSONStringSlice(current)
 			k.Mcps = marshalJSONStringSlice(currentMcps)
+			k.Skills = marshalJSONStringSlice(currentSkills)
 			if cli != nil && k.LitellmKeyId != "" {
 				_ = syncKeyToLitellm(ctx, cli, tx, &k, false)
 			}

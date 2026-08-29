@@ -217,6 +217,20 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			OrderNum:  13,
 			Module:    "gateway",
 		},
+		// Skill 管理(AI 市场 P2 收尾):注册/zip上传/发布/授权/使用日志;用户侧
+		// active 与 download 走 casbin 登录白名单,不经本菜单
+		{
+			ParentId:  0,
+			MenuName:  "route.skill",
+			MenuType:  "C",
+			Path:      "skill",
+			ApiPrefix: "/gateway/skill, /gateway/skill/*",
+			Component: "_gateway/skill/index",
+			Icon:      "lucide:package",
+			Visible:   "0",
+			OrderNum:  14,
+			Module:    "gateway",
+		},
 	}
 
 	// 先创建父级菜单（ParentId = 0 的菜单）

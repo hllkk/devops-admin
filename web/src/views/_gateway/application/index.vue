@@ -77,7 +77,13 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       minWidth: 80,
       render: row => (
         <NTag size="small" bordered={false}>
-          {$t(row.resourceType === 'mcp' ? 'page.gateway.application.typeMcp' : 'page.gateway.application.typeModel')}
+          {$t(
+            row.resourceType === 'mcp'
+              ? 'page.gateway.application.typeMcp'
+              : row.resourceType === 'skill'
+                ? 'page.gateway.application.typeSkill'
+                : 'page.gateway.application.typeModel'
+          )}
         </NTag>
       )
     },

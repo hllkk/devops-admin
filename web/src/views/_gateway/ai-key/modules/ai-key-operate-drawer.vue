@@ -1,7 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { jsonClone } from '@sa/utils';
-import { fetchCreateAiKey, fetchGetAllKeyScenarios, fetchGetAvailableMcps, fetchGetAvailableModels, fetchUpdateAiKey } from '@/service/api/gateway';
+import {
+  fetchCreateAiKey,
+  fetchGetAllKeyScenarios,
+  fetchGetAvailableMcps,
+  fetchGetAvailableModels,
+  fetchGetAvailableSkills,
+  fetchUpdateAiKey
+} from '@/service/api/gateway';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
 import { $t } from '@/locales';
 import UserSelect from '@/components/custom/user-select.vue';
@@ -56,6 +63,7 @@ function createDefaultModel(): Model {
     scenarioId: null,
     models: [],
     mcps: [],
+    skills: [],
     modelBudgets: {},
     budgetLimit: null,
     budgetHardLimit: false,
@@ -71,6 +79,7 @@ function createDefaultModel(): Model {
 
 const modelOptions = ref<{ label: string; value: string }[]>([]);
 const mcpOptions = ref<{ label: string; value: string }[]>([]);
+const skillOptions = ref<{ label: string; value: string }[]>([]);
 const scenarioOptions = ref<{ label: string; value: string }[]>([]);
 
 async function loadModels() {
@@ -88,6 +97,14 @@ async function loadMcps() {
   }
 }
 
+async function loadSkills() {
+  const { data, error } = await fetchGetAvailableSkills();
+  if (!error && data) {
+    // 授权锚点是 skillId 字符串(平台自有资源，与 scenarioId 同款字符串传输闭环)
+    skillOptions.value = data.map(s => ({ label: `${s.name} (v${s.version})`, value: String(s.skillId) }));
+  }
+}
+
 async function loadScenarios() {
   const { data, error } = await fetchGetAllKeyScenarios();
   if (!error && data) {
@@ -98,6 +115,7 @@ async function loadScenarios() {
 
 onMounted(loadModels);
 onMounted(loadMcps);
+onMounted(loadSkills);
 onMounted(loadScenarios);
 
 const keyTypeOptions = computed(() => KEY_TYPE_OPTIONS.map(o => ({ label: $t(o.label), value: o.value })));
@@ -282,6 +300,15 @@ watch(visible, () => {
             filterable
             :options="mcpOptions"
             :placeholder="$t('page.gateway.aiKey.form.mcpsPlaceholder')"
+          />
+        </NFormItem>
+        <NFormItem :label="$t('page.gateway.aiKey.col.skills')" path="skills">
+          <NSelect
+            v-model:value="model.skills"
+            multiple
+            filterable
+            :options="skillOptions"
+            :placeholder="$t('page.gateway.aiKey.form.skillsPlaceholder')"
           />
         </NFormItem>
 

@@ -14,6 +14,7 @@ func (r *AiKeyRouter) InitAiKeyRouter(Router *gin.RouterGroup) {
 		g.GET("identity/available-models", aiKeyApi.GetAvailableModels)   // 可授权模型列表
 		g.GET("list", aiKeyApi.GetAiKeyList)                              // 密钥分页列表(管理员)
 		g.POST("batch", aiKeyApi.BatchCreateMainKeys)                     // 批量开通个人主Key(按部门/按用户)
+		g.POST("batch-scene", aiKeyApi.BatchCreateSceneKeys)              // 批量建个人场景Key(名称模板+资源配置)
 		g.POST("resync", aiKeyApi.ResyncAiKeys)                           // 全量重推密钥投影到LiteLLM(漂移兜底)
 		g.GET("scenario/list", keyScenarioApi.GetKeyScenarioList)         // 使用场景分页列表
 		g.GET("scenario/all", keyScenarioApi.GetAllScenarios)             // 启用中场景全量(建Key下拉)

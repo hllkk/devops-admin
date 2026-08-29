@@ -16,4 +16,5 @@ type ServiceGroup struct {
 	ProviderBalanceService
 	ResourceApplicationService
 	McpService
+	SkillService
 }

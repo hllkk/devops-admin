@@ -229,6 +229,15 @@ export const generatedRoutes: GeneratedRoute[] = [
     }
   },
   {
+    name: 'skill',
+    path: '/skill',
+    component: 'layout.base$view.skill',
+    meta: {
+      title: 'skill',
+      i18nKey: 'route.skill'
+    }
+  },
+  {
     name: 'social-callback',
     path: '/social-callback',
     component: 'layout.base$view.social-callback',

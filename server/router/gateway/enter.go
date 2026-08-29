@@ -14,6 +14,7 @@ type RouterGroup struct {
 	RouterSettingsRouter
 	ResourceApplicationRouter
 	MCPRouter
+	SkillRouter
 }
 
 var (
@@ -29,4 +30,5 @@ var (
 	providerBalanceApi = v1.ApiGroupApp.GatewayApiGroup.ProviderBalanceApi
 	applicationApi    = v1.ApiGroupApp.GatewayApiGroup.ResourceApplicationApi
 	mcpApi            = v1.ApiGroupApp.GatewayApiGroup.MCPApi
+	skillApi          = v1.ApiGroupApp.GatewayApiGroup.SkillApi
 )
