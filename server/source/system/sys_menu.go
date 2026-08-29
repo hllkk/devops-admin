@@ -175,60 +175,28 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			OrderNum:  9,
 			Module:    "gateway",
 		},
-		// 调用日志:管理员视角的用量明细(每笔调用的归因/token/成本),含手动回流/对账入口;
-		// usage 前缀不在 casbin 登录白名单,普通用户经 user 角色未授本菜单即无接口权限
+		// AI审计目录(审批管理/调用日志挂其下,管理端审计视角)
 		{
 			ParentId:  0,
-			MenuName:  "route.usage",
-			MenuType:  "C",
-			Path:      "usage",
-			ApiPrefix: "/gateway/usage, /gateway/usage/*",
-			Component: "_gateway/usage/index",
-			Icon:      "lucide:scroll-text",
+			MenuName:  "route.ai-audit",
+			MenuType:  "M",
+			Path:      "ai-audit",
+			Component: "Layout",
+			Icon:      "lucide:file-search",
 			Visible:   "0",
 			OrderNum:  11,
 			Module:    "gateway",
 		},
-		// 资源申请审批:管理端审批页(用户侧提交/查看走 casbin 登录白名单,不经本菜单);
-		// ApiPrefix 枚举管理接口具体 path(不用 /* 通配,避免把白名单侧 apply/my 也纳入策略语义)
+		// AI能力目录(MCP/Skill 管理挂其下)
 		{
 			ParentId:  0,
-			MenuName:  "route.application",
-			MenuType:  "C",
-			Path:      "application",
-			ApiPrefix: "/gateway/application/list, /gateway/application/approve, /gateway/application/reject, /gateway/application/batch-approve, /gateway/application/batch-reject",
-			Component: "_gateway/application/index",
-			Icon:      "lucide:stamp",
-			Visible:   "0",
-			OrderNum:  12,
-			Module:    "gateway",
-		},
-		// MCP 服务器管理(AI 市场 P2):注册/发布/授权/工具/健康;用户侧
-		// active 与 connect-config 走 casbin 登录白名单,不经本菜单
-		{
-			ParentId:  0,
-			MenuName:  "route.mcp",
-			MenuType:  "C",
-			Path:      "mcp",
-			ApiPrefix: "/gateway/mcp, /gateway/mcp/*",
-			Component: "_gateway/mcp/index",
-			Icon:      "lucide:plug",
+			MenuName:  "route.ai-capability",
+			MenuType:  "M",
+			Path:      "ai-capability",
+			Component: "Layout",
+			Icon:      "lucide:sparkles",
 			Visible:   "0",
 			OrderNum:  13,
-			Module:    "gateway",
-		},
-		// Skill 管理(AI 市场 P2 收尾):注册/zip上传/发布/授权/使用日志;用户侧
-		// active 与 download 走 casbin 登录白名单,不经本菜单
-		{
-			ParentId:  0,
-			MenuName:  "route.skill",
-			MenuType:  "C",
-			Path:      "skill",
-			ApiPrefix: "/gateway/skill, /gateway/skill/*",
-			Component: "_gateway/skill/index",
-			Icon:      "lucide:package",
-			Visible:   "0",
-			OrderNum:  14,
 			Module:    "gateway",
 		},
 	}
@@ -401,6 +369,62 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			ApiPrefix: "/gateway/model, /gateway/model/*",
 			Component: "_gateway/models/model/index",
 			Icon:      "carbon:ml-model-reference",
+			Visible:   "0",
+			OrderNum:  2,
+			Module:    "gateway",
+		},
+		// MCP 管理(AI 市场 P2):注册/发布/授权/工具/健康;用户侧
+		// active 与 connect-config 走 casbin 登录白名单,不经本菜单
+		{
+			ParentId:  menuNameMap["route.ai-capability"],
+			MenuName:  "route.ai-capability_mcp",
+			MenuType:  "C",
+			Path:      "ai-capability/mcp",
+			ApiPrefix: "/gateway/mcp, /gateway/mcp/*",
+			Component: "_gateway/ai-capability/mcp/index",
+			Icon:      "lucide:plug",
+			Visible:   "0",
+			OrderNum:  1,
+			Module:    "gateway",
+		},
+		// Skill 管理(AI 市场 P2 收尾):注册/zip上传/发布/授权/使用日志;用户侧
+		// active 与 download 走 casbin 登录白名单,不经本菜单
+		{
+			ParentId:  menuNameMap["route.ai-capability"],
+			MenuName:  "route.ai-capability_skill",
+			MenuType:  "C",
+			Path:      "ai-capability/skill",
+			ApiPrefix: "/gateway/skill, /gateway/skill/*",
+			Component: "_gateway/ai-capability/skill/index",
+			Icon:      "lucide:package",
+			Visible:   "0",
+			OrderNum:  2,
+			Module:    "gateway",
+		},
+		// 审批管理(原资源申请,更名):管理端审批页(用户侧提交/查看走 casbin 登录白名单,不经本菜单);
+		// ApiPrefix 枚举管理接口具体 path(不用 /* 通配,避免把白名单侧 apply/my 也纳入策略语义)
+		{
+			ParentId:  menuNameMap["route.ai-audit"],
+			MenuName:  "route.ai-audit_approval",
+			MenuType:  "C",
+			Path:      "ai-audit/approval",
+			ApiPrefix: "/gateway/application/list, /gateway/application/approve, /gateway/application/reject, /gateway/application/batch-approve, /gateway/application/batch-reject",
+			Component: "_gateway/ai-audit/approval/index",
+			Icon:      "lucide:stamp",
+			Visible:   "0",
+			OrderNum:  1,
+			Module:    "gateway",
+		},
+		// 调用日志:管理员视角的用量明细(每笔调用的归因/token/成本),含手动回流/对账入口;
+		// usage 前缀不在 casbin 登录白名单,普通用户经 user 角色未授本菜单即无接口权限
+		{
+			ParentId:  menuNameMap["route.ai-audit"],
+			MenuName:  "route.ai-audit_usage",
+			MenuType:  "C",
+			Path:      "ai-audit/usage",
+			ApiPrefix: "/gateway/usage, /gateway/usage/*",
+			Component: "_gateway/ai-audit/usage/index",
+			Icon:      "lucide:scroll-text",
 			Visible:   "0",
 			OrderNum:  2,
 			Module:    "gateway",

@@ -21,8 +21,13 @@ declare module "@elegant-router/types" {
     "404": "/404";
     "500": "/500";
     "admin": "/admin";
+    "ai-audit": "/ai-audit";
+    "ai-audit_approval": "/ai-audit/approval";
+    "ai-audit_usage": "/ai-audit/usage";
+    "ai-capability": "/ai-capability";
+    "ai-capability_mcp": "/ai-capability/mcp";
+    "ai-capability_skill": "/ai-capability/skill";
     "ai-key": "/ai-key";
-    "application": "/application";
     "gateway": "/gateway";
     "home": "/home";
     "iframe-page": "/iframe-page/:url";
@@ -32,12 +37,10 @@ declare module "@elegant-router/types" {
     "log_loginlog": "/log/loginlog";
     "log_operlog": "/log/operlog";
     "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat)?";
-    "mcp": "/mcp";
     "models": "/models";
     "models_model": "/models/model";
     "models_provider": "/models/provider";
     "server": "/server";
-    "skill": "/skill";
     "social-callback": "/social-callback";
     "system": "/system";
     "system_dept": "/system/dept";
@@ -49,7 +52,6 @@ declare module "@elegant-router/types" {
     "system_setting": "/system/setting";
     "system_user": "/system/user";
     "timer": "/timer";
-    "usage": "/usage";
     "user-center": "/user-center";
   };
 
@@ -86,22 +88,20 @@ declare module "@elegant-router/types" {
     | "404"
     | "500"
     | "admin"
+    | "ai-audit"
+    | "ai-capability"
     | "ai-key"
-    | "application"
     | "gateway"
     | "home"
     | "iframe-page"
     | "init"
     | "log"
     | "login"
-    | "mcp"
     | "models"
     | "server"
-    | "skill"
     | "social-callback"
     | "system"
     | "timer"
-    | "usage"
     | "user-center"
   >;
 
@@ -140,14 +140,14 @@ declare module "@elegant-router/types" {
     | "login"
     | "social-callback"
     | "user-center"
+    | "ai-audit_approval"
+    | "ai-audit_usage"
+    | "ai-capability_mcp"
+    | "ai-capability_skill"
     | "ai-key"
-    | "application"
     | "gateway"
-    | "mcp"
     | "models_model"
     | "models_provider"
-    | "skill"
-    | "usage"
     | "server"
     | "home"
   >;

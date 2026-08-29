@@ -52,6 +52,70 @@ export const generatedRoutes: GeneratedRoute[] = [
     }
   },
   {
+    name: 'ai-audit',
+    path: '/ai-audit',
+    component: 'layout.base',
+    meta: {
+      title: 'ai-audit',
+      i18nKey: 'route.ai-audit',
+      icon: 'lucide:file-search',
+      order: 11,
+      module: 'gateway'
+    },
+    children: [
+      {
+        name: 'ai-audit_approval',
+        path: '/ai-audit/approval',
+        component: 'view.ai-audit_approval',
+        meta: {
+          title: 'ai-audit_approval',
+          i18nKey: 'route.ai-audit_approval'
+        }
+      },
+      {
+        name: 'ai-audit_usage',
+        path: '/ai-audit/usage',
+        component: 'view.ai-audit_usage',
+        meta: {
+          title: 'ai-audit_usage',
+          i18nKey: 'route.ai-audit_usage'
+        }
+      }
+    ]
+  },
+  {
+    name: 'ai-capability',
+    path: '/ai-capability',
+    component: 'layout.base',
+    meta: {
+      title: 'ai-capability',
+      i18nKey: 'route.ai-capability',
+      icon: 'lucide:sparkles',
+      order: 13,
+      module: 'gateway'
+    },
+    children: [
+      {
+        name: 'ai-capability_mcp',
+        path: '/ai-capability/mcp',
+        component: 'view.ai-capability_mcp',
+        meta: {
+          title: 'ai-capability_mcp',
+          i18nKey: 'route.ai-capability_mcp'
+        }
+      },
+      {
+        name: 'ai-capability_skill',
+        path: '/ai-capability/skill',
+        component: 'view.ai-capability_skill',
+        meta: {
+          title: 'ai-capability_skill',
+          i18nKey: 'route.ai-capability_skill'
+        }
+      }
+    ]
+  },
+  {
     name: 'ai-key',
     path: '/ai-key',
     component: 'layout.base$view.ai-key',
@@ -61,15 +125,6 @@ export const generatedRoutes: GeneratedRoute[] = [
       icon: 'mdi:key-variant',
       order: 8,
       module: 'gateway'
-    }
-  },
-  {
-    name: 'application',
-    path: '/application',
-    component: 'layout.base$view.application',
-    meta: {
-      title: 'application',
-      i18nKey: 'route.application'
     }
   },
   {
@@ -178,15 +233,6 @@ export const generatedRoutes: GeneratedRoute[] = [
     }
   },
   {
-    name: 'mcp',
-    path: '/mcp',
-    component: 'layout.base$view.mcp',
-    meta: {
-      title: 'mcp',
-      i18nKey: 'route.mcp'
-    }
-  },
-  {
     name: 'models',
     path: '/models',
     component: 'layout.base',
@@ -226,15 +272,6 @@ export const generatedRoutes: GeneratedRoute[] = [
       title: 'server',
       i18nKey: 'route.server',
       module: 'server'
-    }
-  },
-  {
-    name: 'skill',
-    path: '/skill',
-    component: 'layout.base$view.skill',
-    meta: {
-      title: 'skill',
-      i18nKey: 'route.skill'
     }
   },
   {
@@ -359,15 +396,6 @@ export const generatedRoutes: GeneratedRoute[] = [
       icon: 'fluent:clock-24-regular',
       order: 3,
       module: 'admin'
-    }
-  },
-  {
-    name: 'usage',
-    path: '/usage',
-    component: 'layout.base$view.usage',
-    meta: {
-      title: 'usage',
-      i18nKey: 'route.usage'
     }
   },
   {

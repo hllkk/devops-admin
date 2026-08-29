@@ -4,7 +4,7 @@ import "github.com/gin-gonic/gin"
 
 // ResourceApplicationRouter 资源申请审批路由(对齐前端 /gateway/application/* 资源)。
 // apply/my 在 casbin 登录白名单(用户侧,数据范围由 JWT 锁定);list/approve/reject/batch-*
-// 走菜单 ApiPrefix → casbin(管理端,审批管理页菜单 route.application)。
+// 走菜单 ApiPrefix → casbin(管理端,审批管理页菜单 route.ai-audit_approval)。
 type ResourceApplicationRouter struct{}
 
 // InitResourceApplicationRouter 挂在 PrivateGroup，鉴权/操作日志由该组全局中间件统一处理。

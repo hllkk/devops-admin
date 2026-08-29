@@ -47,7 +47,7 @@ server/log/*
 .claude/scheduled_tasks.json
 
 # Temp / local-only
-skill*
+/skill*
 settings.local.json
 .local/
 Soy*

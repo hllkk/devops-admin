@@ -3,6 +3,7 @@
 日期：2026-08-28
 状态：已实现(后端+前端，待用户运行时验证)
 反向链接：[[ai-gateway-mcp-server]]、[[ai-gateway-resource-application]]、[[ai-gateway-overview]]
+（菜单结构后续已变更：本页挂入「AI能力」目录，见 [[ai-gateway-ai-capability-menu]]）
 
 ## 需求
 
