@@ -845,6 +845,7 @@ declare namespace App {
             healthCheck: {
               short: string;
               done: string;
+              failed: string;
             };
             col: {
               name: string;
@@ -879,6 +880,8 @@ declare namespace App {
               valuesTip: string;
               costRequired: string;
               instructions: string;
+              categoryPlaceholder: string;
+              addToolsMissed: string;
             };
             health: {
               unknown: string;
@@ -909,6 +912,8 @@ declare namespace App {
               refresh: string;
               refreshSuccess: string;
               emptyTip: string;
+              schema: string;
+              schemaEmpty: string;
               editBilling: string;
               inheritServer: string;
               col: {
@@ -933,8 +938,15 @@ declare namespace App {
               tip: string;
               upload: string;
               replace: string;
+              pick: string;
               current: string;
               success: string;
+              createdButUploadFailed: string;
+            };
+            download: {
+              current: string;
+              success: string;
+              failed: string;
             };
             col: {
               name: string;
@@ -957,27 +969,17 @@ declare namespace App {
             form: {
               name: { required: string };
               version: { placeholder: string; invalid: string };
+              categoryPlaceholder: string;
               tagsPlaceholder: string;
               agentInstallPromptPlaceholder: string;
               usageInstructionsPlaceholder: string;
             };
             publish: {
               short: string;
-              title: string;
-              subtitle: string;
-              isPublished: string;
-              autoGrantTip: string;
-              visibilityType: string;
-              visibilityAll: string;
-              visibilitySelected: string;
-              visibilityUser: string;
-              departmentIds: string;
-              userIds: string;
-              departmentRequired: string;
-              userRequired: string;
+              toMarket: string;
               requiresApproval: string;
-              requiresApprovalTip: string;
               needPackage: string;
+              createdButPublishFailed: string;
             };
             usage: {
               title: string;

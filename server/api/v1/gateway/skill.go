@@ -228,6 +228,42 @@ func (a *SkillApi) DownloadSkill(c *gin.Context) {
 	c.FileAttachment(filePath, originName)
 }
 
+// AdminDownloadSkill
+// @Tags      GatewaySkill
+// @Summary   下载Skill zip包(管理端;不做发布/授权校验,不计次不留痕;走菜单授权)
+// @Produce   application/octet-stream
+// @Param     id  path  int  true  "技能ID"
+// @Success   200  {file}  binary
+// @Router    /gateway/skill/package/{id} [get]
+func (a *SkillApi) AdminDownloadSkill(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.FailWithMessage("无效的技能ID", c)
+		return
+	}
+	filePath, originName, err := skillService.AdminDownloadSkill(c.Request.Context(), id)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	c.FileAttachment(filePath, originName)
+}
+
+// GetSkillCategories
+// @Tags      GatewaySkill
+// @Summary   Skill分类去重列表(管理端下拉受控数据源)
+// @Produce   application/json
+// @Success   200  {object}  response.Response{data=[]string,msg=string}
+// @Router    /gateway/skill/categories [get]
+func (a *SkillApi) GetSkillCategories(c *gin.Context) {
+	list, err := skillService.GetSkillCategories(c.Request.Context())
+	if err != nil {
+		response.FailWithMessage("获取失败", c)
+		return
+	}
+	response.OkWithDetailed(list, "获取成功", c)
+}
+
 // GetAvailableSkills
 // @Tags      GatewaySkill
 // @Summary   可授权Skill列表(管理端授权下拉,全量启用)

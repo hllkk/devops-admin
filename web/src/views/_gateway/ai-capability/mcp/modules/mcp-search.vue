@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { computed, ref, toRaw } from 'vue';
+import { computed, onMounted, ref, toRaw } from 'vue';
+import type { SelectOption } from 'naive-ui';
 import { jsonClone } from '@sa/utils';
 import { useNaiveForm } from '@/hooks/common/form';
 import { $t } from '@/locales';
+import { fetchGetMCPCategories } from '@/service/api/gateway';
 import { ACTIVE_OPTIONS, MCP_HEALTH_OPTIONS } from '@/constants/business/gateway';
 
 defineOptions({ name: 'McpSearch' });
@@ -18,6 +20,16 @@ const { formRef, validate, restoreValidation } = useNaiveForm();
 const model = defineModel<Api.Gateway.MCPServerSearchParams>('model', { required: true });
 
 const defaultModel = jsonClone(toRaw(model.value));
+
+/** 分类受控选项(distinct)；拉取失败静默退化为可手输过滤 */
+const categoryOptions = ref<SelectOption[]>([]);
+
+onMounted(async () => {
+  const { error, data } = await fetchGetMCPCategories();
+  if (!error && data) {
+    categoryOptions.value = data.map(c => ({ label: c, value: c }));
+  }
+});
 
 /** 启停/发布状态用 1/0 选择(NSelect 不支持 boolean)，提交时转 boolean/null */
 const activeValue = ref<0 | 1 | null>(null);
@@ -71,11 +83,13 @@ async function search() {
               />
             </NFormItemGi>
             <NFormItemGi span="24 s:12 m:8" :label="$t('page.gateway.mcp.col.category')" path="category" class="pr-24px">
-              <NInput
+              <NSelect
                 v-model:value="model.category"
                 clearable
-                :placeholder="$t('common.placeholderInput')"
-                @keyup.enter="search"
+                filterable
+                tag
+                :options="categoryOptions"
+                :placeholder="$t('common.placeholderSelect')"
               />
             </NFormItemGi>
             <NFormItemGi span="24 s:12 m:8" :label="$t('page.gateway.mcp.col.isActive')" class="pr-24px">

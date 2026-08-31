@@ -11,6 +11,7 @@ func (m *MCPRouter) InitMCPRouter(Router *gin.RouterGroup) {
 	r := Router.Group("gateway/mcp")
 	{
 		r.GET("list", mcpApi.GetMCPServerList)                  // 分页获取服务器列表
+		r.GET("categories", mcpApi.GetMCPCategories)            // 分类去重列表(下拉受控;静态段与:id共存,gin静态优先)
 		r.GET(":id", mcpApi.GetMCPServer)                       // 服务器详情(含工具)
 		r.POST("", mcpApi.CreateMCPServer)                      // 注册服务器
 		r.PUT("", mcpApi.UpdateMCPServer)                       // 修改服务器

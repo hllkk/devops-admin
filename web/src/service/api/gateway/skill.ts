@@ -27,6 +27,14 @@ export function fetchGetSkillList(params?: Api.Gateway.SkillSearchParams) {
   });
 }
 
+/** Skill 分类去重列表(下拉受控数据源,新分类经 tag 输入产生) */
+export function fetchGetSkillCategories() {
+  return request<string[]>({
+    url: '/gateway/skill/categories',
+    method: 'get'
+  });
+}
+
 /** 获取 Skill 详情 */
 export function fetchGetSkill(skillId: CommonType.IdType) {
   return request<Api.Gateway.Skill>({
@@ -90,15 +98,9 @@ export function fetchUploadSkillPackage(skillId: CommonType.IdType, file: File) 
   });
 }
 
-/** 下载 Skill zip 包(登录态;需审批 Skill 须已授权;返回 blob 由调用方触发保存) */
-export async function fetchDownloadSkill(skillId: CommonType.IdType): Promise<Blob> {
-  const { data } = await request<Blob, 'blob'>({
-    url: `/gateway/skill/download/${skillId}`,
-    method: 'get',
-    responseType: 'blob'
-  });
+/** blob 响应统一解包:错误响应是 JSON(transform 原样返回 blob),按 type 识别抛可读信息 */
+async function unwrapBlob(data: unknown): Promise<Blob> {
   const blob = data as unknown as Blob;
-  // 错误响应是 JSON(transform 原样返回 blob),按 type 识别抛出可读信息
   if (blob && blob.type.includes('application/json')) {
     const text = await blob.text();
     let msg = '下载失败';
@@ -113,6 +115,28 @@ export async function fetchDownloadSkill(skillId: CommonType.IdType): Promise<Bl
     throw new Error('下载失败');
   }
   return blob;
+}
+
+/** 下载 Skill zip 包(用户侧;需审批 Skill 须已授权;返回 blob 由调用方触发保存) */
+export async function fetchDownloadSkill(skillId: CommonType.IdType): Promise<Blob> {
+  const { data } = await request<Blob, 'blob'>({
+    url: `/gateway/skill/download/${skillId}`,
+    method: 'get',
+    responseType: 'blob',
+    timeout: 0
+  });
+  return unwrapBlob(data);
+}
+
+/** 管理端下载 Skill zip 包(不做发布/授权校验,不计次不留痕;大文件放宽超时) */
+export async function fetchDownloadSkillPackage(skillId: CommonType.IdType): Promise<Blob> {
+  const { data } = await request<Blob, 'blob'>({
+    url: `/gateway/skill/package/${skillId}`,
+    method: 'get',
+    responseType: 'blob',
+    timeout: 0
+  });
+  return unwrapBlob(data);
 }
 
 /** 分页获取 Skill 使用日志(管理端,回填用户名/技能名) */

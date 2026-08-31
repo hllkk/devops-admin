@@ -45,6 +45,21 @@ func (a *MCPApi) GetMCPServerList(c *gin.Context) {
 	}, "获取成功", c)
 }
 
+// GetMCPCategories
+// @Tags      GatewayMCP
+// @Summary   MCP分类去重列表(管理端下拉受控数据源)
+// @Produce   application/json
+// @Success   200  {object}  response.Response{data=[]string,msg=string}
+// @Router    /gateway/mcp/categories [get]
+func (a *MCPApi) GetMCPCategories(c *gin.Context) {
+	list, err := mcpService.GetMCPCategories(c.Request.Context())
+	if err != nil {
+		response.FailWithMessage("获取失败", c)
+		return
+	}
+	response.OkWithDetailed(list, "获取成功", c)
+}
+
 // GetMCPServer
 // @Tags      GatewayMCP
 // @Summary   获取MCP服务器详情(含工具列表)

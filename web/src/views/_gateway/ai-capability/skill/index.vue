@@ -7,7 +7,6 @@ import { defaultTransform, useNaivePaginatedTable } from '@/hooks/common/table';
 import { $t } from '@/locales';
 import SkillSearch from './modules/skill-search.vue';
 import SkillOperateDrawer from './modules/skill-operate-drawer.vue';
-import SkillPublishDialog from './modules/skill-publish-dialog.vue';
 import SkillUsageDrawer from './modules/skill-usage-drawer.vue';
 
 defineOptions({ name: 'GatewaySkill' });
@@ -140,7 +139,7 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
         key: 'actions',
         title: $t('common.action'),
         align: 'center',
-        width: 200,
+        width: 160,
         fixed: 'right',
         render: row => (
           <div class="flex-center gap-6px">
@@ -150,13 +149,6 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
               onClick={() => handleEdit(row)}
             >
               {$t('common.edit')}
-            </button>
-            <button
-              type="button"
-              class="text-12px color-primary hover:opacity-80"
-              onClick={() => handlePublish(row)}
-            >
-              {$t('page.gateway.skill.publish.short')}
             </button>
             <button
               type="button"
@@ -214,19 +206,6 @@ function handleSubmitted() {
   getData();
 }
 
-// 发布设置弹窗
-const publishVisible = ref(false);
-const publishRow = ref<Api.Gateway.Skill | null>(null);
-
-function handlePublish(row: Api.Gateway.Skill) {
-  publishRow.value = row;
-  publishVisible.value = true;
-}
-function handlePublished() {
-  publishVisible.value = false;
-  getData();
-}
-
 // 使用日志抽屉
 const usageVisible = ref(false);
 const usageRow = ref<Api.Gateway.Skill | null>(null);
@@ -281,7 +260,6 @@ onMounted(() => {
       :row-data="editingData"
       @submitted="handleSubmitted"
     />
-    <SkillPublishDialog v-model:visible="publishVisible" :row="publishRow" @submitted="handlePublished" />
     <SkillUsageDrawer v-model:visible="usageVisible" :row="usageRow" />
   </div>
 </template>

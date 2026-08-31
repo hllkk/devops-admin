@@ -105,6 +105,22 @@ function billingLabel(tool: Api.Gateway.MCPTool): string {
 
 const columns = computed(() => [
   {
+    type: 'expand' as const,
+    renderExpand: (row: Api.Gateway.MCPTool) => {
+      if (!row.inputSchema || Object.keys(row.inputSchema).length === 0) {
+        return <div class="px-16px py-8px text-gray-400">{$t('page.gateway.mcp.toolsDrawer.schemaEmpty')}</div>;
+      }
+      return (
+        <div class="px-16px py-8px">
+          <div class="mb-4px">{$t('page.gateway.mcp.toolsDrawer.schema')}：</div>
+          <pre class="max-h-240px overflow-auto break-all whitespace-pre-wrap text-12px">
+            {JSON.stringify(row.inputSchema, null, 2)}
+          </pre>
+        </div>
+      );
+    }
+  },
+  {
     key: 'toolName',
     title: $t('page.gateway.mcp.toolsDrawer.col.toolName'),
     minWidth: 170,

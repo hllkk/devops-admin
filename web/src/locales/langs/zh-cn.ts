@@ -665,7 +665,8 @@ const local: App.I18n.Schema = {
         costPerCall: '单次调用价(¥)',
         healthCheck: {
           short: '健康',
-          done: '健康检查完成'
+          done: '健康检查完成',
+          failed: '健康检查失败'
         },
         col: {
           name: '名称',
@@ -699,7 +700,9 @@ const local: App.I18n.Schema = {
           authValuePlaceholder: '留空=保留旧值；输入新值=覆盖',
           valuesTip: '凭据 AES 加密落库、界面仅回显掩码；掩码回传不变即保留旧值',
           costRequired: '按次计费必须填写单次调用价',
-          instructions: '使用说明(展示在接入信息弹窗)'
+          instructions: '使用说明(展示在接入信息弹窗)',
+          categoryPlaceholder: '选择或输入分类',
+          addToolsMissed: '创建成功，但未同步到工具，请在「工具」面板重试'
         },
         health: {
           unknown: '未检测',
@@ -730,6 +733,8 @@ const local: App.I18n.Schema = {
           refresh: '从远端刷新',
           refreshSuccess: '工具列表已刷新，共 {count} 个工具',
           emptyTip: '暂无工具，请先从远端刷新',
+          schema: '入参 Schema',
+          schemaEmpty: '该工具未提供入参 Schema',
           editBilling: '计费设置',
           inheritServer: '继承服务器',
           col: {
@@ -751,11 +756,18 @@ const local: App.I18n.Schema = {
         packageSize: '{size}',
         upload: {
           title: '上传技能包',
-          tip: '仅支持 .zip，最大 100MB；发布前必须上传，替换包不影响授权',
+          tip: '仅支持 .zip，最大 100MB，包内须含 SKILL.md；发布前必须上传，替换包不影响授权',
           upload: '上传 zip 包',
           replace: '替换 zip 包',
+          pick: '选择 zip 包',
           current: '当前技能包',
-          success: '技能包上传成功'
+          success: '技能包上传成功',
+          createdButUploadFailed: '技能已创建，但技能包上传失败，请在编辑中重新上传'
+        },
+        download: {
+          current: '下载当前包',
+          success: '技能包下载成功',
+          failed: '技能包下载失败'
         },
         col: {
           name: '名称',
@@ -778,27 +790,17 @@ const local: App.I18n.Schema = {
         form: {
           name: { required: '请输入名称' },
           version: { placeholder: '如 1.0.0（留空默认 1.0.0）', invalid: '版本号应为 1 / 1.0 / 1.0.0 形式' },
+          categoryPlaceholder: '选择或输入分类',
           tagsPlaceholder: '输入后回车添加标签',
           agentInstallPromptPlaceholder: '展示在广场技能卡片，指导用户在 Agent 中安装',
           usageInstructionsPlaceholder: '展示在广场技能卡片'
         },
         publish: {
           short: '发布',
-          title: 'Skill 发布设置',
-          subtitle: '设置技能在用户端(模型广场)的可见性与使用审批',
-          isPublished: '发布到用户端',
-          autoGrantTip: '发布免审批会按可见范围自动授权主 Key；取消发布/收紧档位/停用将回收范围外授权',
-          visibilityType: '可见范围',
-          visibilityAll: '全员可见',
-          visibilitySelected: '指定部门可见',
-          visibilityUser: '指定用户可见',
-          departmentIds: '可见部门',
-          userIds: '可见用户',
-          departmentRequired: '指定部门可见时必须选择至少一个部门',
-          userRequired: '指定用户可见时必须选择至少一个用户',
-          requiresApproval: '使用需审批',
-          requiresApprovalTip: '开启后用户需在模型广场申请，审批通过后才能下载',
-          needPackage: '尚未上传技能包(zip)，不能发布'
+          toMarket: '发布到市场',
+          requiresApproval: '领用前需要审批',
+          needPackage: '发布前必须上传技能包',
+          createdButPublishFailed: '技能已创建，但发布失败，请在编辑中重试'
         },
         usage: {
           title: '使用日志',

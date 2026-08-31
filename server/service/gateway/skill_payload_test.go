@@ -1,6 +1,9 @@
 package gateway
 
 import (
+	"archive/zip"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -92,5 +95,59 @@ func TestSkillIdentityOf(t *testing.T) {
 	s := gateway.Skill{SkillId: 42}
 	if got := SkillIdentityOf(s); got != "42" {
 		t.Fatalf("SkillIdentityOf = %q, want 42", got)
+	}
+}
+
+// writeTestZip 构造临时 zip(entries 为 文件名→内容)，返回路径。
+func writeTestZip(t *testing.T, entries map[string]string) string {
+	t.Helper()
+	p := filepath.Join(t.TempDir(), "test.zip")
+	f, err := os.Create(p)
+	if err != nil {
+		t.Fatalf("创建临时 zip 失败: %v", err)
+	}
+	defer f.Close()
+	w := zip.NewWriter(f)
+	for name, body := range entries {
+		fw, err := w.Create(name)
+		if err != nil {
+			t.Fatalf("写 zip 条目 %s 失败: %v", name, err)
+		}
+		if _, err := fw.Write([]byte(body)); err != nil {
+			t.Fatalf("写 zip 条目 %s 失败: %v", name, err)
+		}
+	}
+	if err := w.Close(); err != nil {
+		t.Fatalf("关闭 zip writer 失败: %v", err)
+	}
+	return p
+}
+
+func TestValidateSkillZipStructure(t *testing.T) {
+	if err := ValidateSkillZipStructure(writeTestZip(t, map[string]string{
+		"SKILL.md":    "# demo",
+		"scripts/a.sh": "echo hi",
+	})); err != nil {
+		t.Errorf("根目录 SKILL.md 期望通过, got %v", err)
+	}
+	if err := ValidateSkillZipStructure(writeTestZip(t, map[string]string{
+		"my-skill/skill.md": "# 大小写不敏感",
+		"my-skill/refs.md":  "",
+	})); err != nil {
+		t.Errorf("子目录小写 skill.md 期望通过, got %v", err)
+	}
+	if err := ValidateSkillZipStructure(writeTestZip(t, map[string]string{
+		"README.md": "",
+		"a/b/c.txt": "",
+	})); err == nil {
+		t.Error("无 SKILL.md 期望报错")
+	}
+	// 非 zip 内容(仅后缀伪装)应报"无法解析"
+	fake := filepath.Join(t.TempDir(), "fake.zip")
+	if err := os.WriteFile(fake, []byte("not a zip"), 0o644); err != nil {
+		t.Fatalf("写伪装文件失败: %v", err)
+	}
+	if err := ValidateSkillZipStructure(fake); err == nil {
+		t.Error("伪装 zip 期望报错")
 	}
 }

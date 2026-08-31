@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { fetchCreateMCPServer, fetchUpdateMCPServer } from '@/service/api/gateway';
+import type { SelectOption } from 'naive-ui';
+import { fetchCreateMCPServer, fetchGetMCPCategories, fetchUpdateMCPServer } from '@/service/api/gateway';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
 import { $t } from '@/locales';
 import { MCP_AUTH_TYPE_OPTIONS, MCP_BILLING_OPTIONS, MCP_TRANSPORT_OPTIONS } from '@/constants/business/gateway';
@@ -111,8 +112,29 @@ watch(visible, val => {
   if (val) {
     initModel();
     restoreValidation();
+    loadCategories();
   }
 });
+
+// ── 分类受控下拉(现有值可选,新值经 tag 输入;与 Skill 抽屉同口径) ──
+
+const categoryOptions = ref<SelectOption[]>([]);
+
+/** NSelect 值(空串归一 null 以显示 placeholder；新值经 tag 输入回写 model) */
+const categoryValue = computed<string | null>({
+  get: () => model.value.category || null,
+  set: val => {
+    model.value.category = val ?? '';
+  }
+});
+
+/** 拉取现有分类(distinct)做下拉选项;失败静默(不影响表单可用性,退化为手输) */
+async function loadCategories() {
+  const { error, data } = await fetchGetMCPCategories();
+  if (!error && data) {
+    categoryOptions.value = data.map(c => ({ label: c, value: c }));
+  }
+}
 
 /** 提交前组装凭据:none 显式清空;其余保留掩码回传的旧值并合并新输入的 auth_value */
 function buildCredentials(): Record<string, string> | null {
@@ -131,9 +153,18 @@ async function handleSubmit() {
     credentials: buildCredentials()
   };
   const isAdd = props.operateType === 'add';
-  const { error } = isAdd ? await fetchCreateMCPServer(payload) : await fetchUpdateMCPServer(payload);
+  const { error, data } = isAdd ? await fetchCreateMCPServer(payload) : await fetchUpdateMCPServer(payload);
   if (error) return;
-  window.$message?.success($t(isAdd ? 'common.addSuccess' : 'common.updateSuccess'));
+  // 创建即自动拉取工具(后端串联)：按返回工具数给出反馈，未拉到引导去工具面板重试
+  if (isAdd) {
+    if (data?.toolCount) {
+      window.$message?.success($t('page.gateway.mcp.toolsDrawer.refreshSuccess', { count: data.toolCount }));
+    } else {
+      window.$message?.warning($t('page.gateway.mcp.form.addToolsMissed'));
+    }
+  } else {
+    window.$message?.success($t('common.updateSuccess'));
+  }
   emit('submitted');
 }
 </script>
@@ -189,7 +220,14 @@ async function handleSubmit() {
           <NInputNumber v-model:value="model.externalCostPerCall" :min="0" :precision="6" class="w-full" />
         </NFormItem>
         <NFormItem :label="$t('page.gateway.mcp.col.category')">
-          <NInput v-model:value="model.category" :placeholder="$t('common.placeholderInput')" />
+          <NSelect
+            v-model:value="categoryValue"
+            :options="categoryOptions"
+            :placeholder="$t('page.gateway.mcp.form.categoryPlaceholder')"
+            filterable
+            tag
+            clearable
+          />
         </NFormItem>
         <NFormItem :label="$t('page.gateway.mcp.col.author')">
           <NInput v-model:value="model.author" :placeholder="$t('common.placeholderInput')" />

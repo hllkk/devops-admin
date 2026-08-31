@@ -1,7 +1,9 @@
 package gateway
 
 import (
+	"archive/zip"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"regexp"
@@ -92,6 +94,23 @@ func ValidSkillUploadFilename(name string) bool {
 		return false
 	}
 	return true
+}
+
+// ValidateSkillZipStructure 解包校验技能包结构：zip 内须含 SKILL.md 入口文件
+// (skill 包规范，位于包内任意目录均可，文件名大小写不敏感)。防上传无效包/
+// 非 skill 包——发布前强制有包，包本身不合法会让"发布→下载→安装"链路落空。
+func ValidateSkillZipStructure(p string) error {
+	r, err := zip.OpenReader(p)
+	if err != nil {
+		return fmt.Errorf("zip 包无法解析: %w", err)
+	}
+	defer r.Close()
+	for _, f := range r.File {
+		if !f.FileInfo().IsDir() && strings.EqualFold(filepath.Base(f.Name), "SKILL.md") {
+			return nil
+		}
+	}
+	return errors.New("技能包内未找到 SKILL.md 入口文件，请按 skill 包规范打包")
 }
 
 // SkillIdentityOf skill → 授权锚点字符串（AiKey.skills JSONB 元素）。

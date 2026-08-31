@@ -510,6 +510,13 @@ func (s *SkillService) UploadSkillPackage(ctx context.Context, skillId int64, fi
 		_ = os.Remove(dst)
 		return gatewayResp.SkillView{}, fmt.Errorf("保存技能包失败: %w", err)
 	}
+	out.Close()
+	// 落盘后解包校验结构(须含 SKILL.md)：不合法即删临时文件拒绝入库，
+	// 避免坏包占住 zip_filename 让后续发布/下载拿到无效内容。
+	if err := ValidateSkillZipStructure(dst); err != nil {
+		_ = os.Remove(dst)
+		return gatewayResp.SkillView{}, err
+	}
 	oldZip := row.ZipFilename
 	if err := global.OPS_DB.WithContext(ctx).Model(&gateway.Skill{}).Where("skill_id = ?", skillId).
 		Updates(map[string]any{
@@ -577,6 +584,27 @@ func (s *SkillService) DownloadSkill(ctx context.Context, id, userId int64) (fil
 	return p, name, nil
 }
 
+// AdminDownloadSkill 下载技能包(管理端)：仅校验存在与文件在盘，不做用户侧的
+// 发布/授权校验(管理员常需核对未发布草稿的包)；不计下载次数、不留使用日志。
+func (s *SkillService) AdminDownloadSkill(ctx context.Context, id int64) (filePath, originName string, err error) {
+	var row gateway.Skill
+	if err := global.OPS_DB.WithContext(ctx).Where("skill_id = ?", id).First(&row).Error; err != nil {
+		return "", "", errors.New("Skill 不存在")
+	}
+	if row.ZipFilename == "" {
+		return "", "", errors.New("该技能尚未上传技能包")
+	}
+	p := filepath.Join(skillStoreDir, row.ZipFilename)
+	if _, err := os.Stat(p); err != nil {
+		return "", "", errors.New("技能包文件缺失，请联系管理员")
+	}
+	name := row.ZipOriginName
+	if name == "" {
+		name = row.Name + ".zip"
+	}
+	return p, name, nil
+}
+
 // removeSkillZip 删除 zip 存储文件(尽力而为，失败仅告警)。
 func removeSkillZip(ctx context.Context, filename string) {
 	if filename == "" {
@@ -601,6 +629,18 @@ func removeSkillZip(ctx context.Context, filename string) {
 // 不按可见性过滤(与 GetAvailableModels/GetAvailableMcps 同语义)。
 func (s *SkillService) GetAvailableSkills(ctx context.Context) ([]gatewayResp.AvailableSkillView, error) {
 	return s.listSkillsAsAvailable(ctx, func(q *gorm.DB) *gorm.DB { return q })
+}
+
+// GetSkillCategories 分类去重列表(管理端下拉受控数据源)：非空分类去重升序，
+// 轻量受控——不建分类表，选项随存量数据生长，新分类经 NSelect tag 输入产生。
+func (s *SkillService) GetSkillCategories(ctx context.Context) ([]string, error) {
+	var cats []string
+	if err := global.OPS_DB.WithContext(ctx).Model(&gateway.Skill{}).
+		Where("category <> ''").Distinct("category").
+		Order("category").Pluck("category", &cats).Error; err != nil {
+		return nil, err
+	}
+	return cats, nil
 }
 
 // GetActiveSkills 用户侧可见 Skill(按发布可见性三档过滤)：广场数据源，

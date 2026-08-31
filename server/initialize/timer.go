@@ -49,4 +49,8 @@ func Timer() {
 		_, err := (&gatewayService.AiKeyService{}).ResyncAllKeys(ctx)
 		return err
 	})
+	task.Register("HealthCheckMcps", "MCP服务器定时健康巡检(全量启用经LiteLLM探测,结果落库)", func(ctx context.Context, _ json.RawMessage) error {
+		_, err := (&gatewayService.McpService{}).HealthCheckAllMcps(ctx)
+		return err
+	})
 }

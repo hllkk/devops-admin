@@ -192,6 +192,18 @@ func mcpVisibleUserIds(db *gorm.DB, mcpServerId int64) []int64 {
 // 管理员 CRUD
 // ----------------------------------------------------------------------------
 
+// GetMCPCategories 分类去重列表(管理端下拉受控数据源)：非空分类去重升序，
+// 轻量受控——不建分类表，选项随存量数据生长，新分类经 NSelect tag 输入产生(与 Skill 同口径)。
+func (s *McpService) GetMCPCategories(ctx context.Context) ([]string, error) {
+	var cats []string
+	if err := global.OPS_DB.WithContext(ctx).Model(&gateway.MCPServer{}).
+		Where("category <> ''").Distinct("category").
+		Order("category").Pluck("category", &cats).Error; err != nil {
+		return nil, err
+	}
+	return cats, nil
+}
+
 // GetMCPServerList 分页查 MCP 服务器列表(含掩码凭据视图 + 工具数)。
 func (s *McpService) GetMCPServerList(ctx context.Context, q gatewayReq.MCPServerSearch) (list []gatewayResp.MCPServerView, total int64, err error) {
 	db := global.OPS_DB.WithContext(ctx).Model(&gateway.MCPServer{})
@@ -281,14 +293,25 @@ func (s *McpService) CreateMCPServer(ctx context.Context, req gatewayReq.MCPServ
 		}
 		row.LitellmServerId = serverId
 		row.LitellmSynced = true
+		// 同步态随事务落库(此前只改内存，列表「同步状态」恒 false 失真)
 		return tx.Model(&gateway.MCPServer{}).Where("mcp_server_id = ?", row.McpServerId).
-			Update("litellm_server_id", serverId).Error
+			Updates(map[string]any{
+				"litellm_server_id":  serverId,
+				"litellm_synced":     true,
+				"litellm_sync_error": "",
+			}).Error
 	})
 	if err != nil {
 		return gatewayResp.MCPServerView{}, err
 	}
+	// 创建即拉取工具(对标 AIHelms create→refresh 串联)：失败不阻塞创建，可在工具面板手动重试
+	tools, refreshErr := s.RefreshMCPTools(ctx, row.McpServerId)
+	if refreshErr != nil {
+		logger.WithCtx(ctx).Mod("gateway").Warn(fmt.Sprintf("MCP %s 创建后自动拉取工具失败: %v", row.ServerName, refreshErr))
+	}
 	view := s.toMCPServerView(ctx, row)
 	view.Credentials = MaskCredentialValues(credentials)
+	view.ToolCount = int64(len(tools))
 	return view, nil
 }
 
@@ -369,6 +392,7 @@ func (s *McpService) UpdateMCPServer(ctx context.Context, req gatewayReq.MCPServ
 			if err := cli.UpdateMCPServer(ctx, body); err != nil {
 				return fmt.Errorf("MCP 服务器同步 LiteLLM 失败: %w", err)
 			}
+			markMCPSyncState(ctx, tx, row.McpServerId, nil)
 		}
 		// 启停翻转型联动：停用=全量回收(免得停用的 MCP 还能被已授权 Key 调用)；
 		// 恢复=按当前发布档重授(与 PublishModel 收尾同口径)
@@ -384,6 +408,9 @@ func (s *McpService) UpdateMCPServer(ctx context.Context, req gatewayReq.MCPServ
 	// 回填终态(视图与联动基于最新行)
 	row.LitellmServerId = old.LitellmServerId
 	row.LitellmSynced = old.LitellmSynced
+	if cli != nil && old.LitellmServerId != "" {
+		row.LitellmSynced = true // 本事务已推送成功(markMCPSyncState 同步落库)
+	}
 	row.IsPublished = old.IsPublished
 	row.VisibilityType = old.VisibilityType
 	row.RequiresApproval = old.RequiresApproval
@@ -584,12 +611,14 @@ func (s *McpService) RefreshMCPTools(ctx context.Context, id int64) ([]gatewayRe
 				return err
 			}
 		}
-		// 工具计费可能变化 → 重推 mcp_info 投影
+		// 工具计费可能变化 → 重推 mcp_info 投影(失败仅 Warn 不回滚工具重建，同步态落库供前端展示)
 		if cli != nil && row.LitellmServerId != "" {
 			body := buildMCPLitellmBody(&row, credentials, s.toolCostMapFromRows(tools), true)
-			if err := cli.UpdateMCPServer(ctx, body); err != nil {
-				logger.WithCtx(ctx).Mod("gateway").Warn(fmt.Sprintf("MCP %s 工具计费投影重推失败: %v", row.ServerName, err))
+			pushErr := cli.UpdateMCPServer(ctx, body)
+			if pushErr != nil {
+				logger.WithCtx(ctx).Mod("gateway").Warn(fmt.Sprintf("MCP %s 工具计费投影重推失败: %v", row.ServerName, pushErr))
 			}
+			markMCPSyncState(ctx, tx, row.McpServerId, pushErr)
 		}
 		return nil
 	})
@@ -626,9 +655,11 @@ func (s *McpService) UpdateMCPToolBilling(ctx context.Context, toolId int64, bil
 			if err == nil {
 				tools, _ := s.mcpTools(ctx, row.McpServerId)
 				body := buildMCPLitellmBody(&row, credentials, s.toolCostMapFromRows(tools), true)
-				if err := cli.UpdateMCPServer(ctx, body); err != nil {
-					logger.WithCtx(ctx).Mod("gateway").Warn(fmt.Sprintf("MCP %s 工具计费投影重推失败: %v", row.ServerName, err))
+				pushErr := cli.UpdateMCPServer(ctx, body)
+				if pushErr != nil {
+					logger.WithCtx(ctx).Mod("gateway").Warn(fmt.Sprintf("MCP %s 工具计费投影重推失败: %v", row.ServerName, pushErr))
 				}
+				markMCPSyncState(ctx, global.OPS_DB.WithContext(ctx), row.McpServerId, pushErr)
 			}
 		}
 	}
@@ -673,6 +704,32 @@ func (s *McpService) HealthCheckMCPServer(ctx context.Context, id int64) (gatewa
 	row.LastHealthCheck = &now
 	row.HealthCheckError = checkErr
 	return s.toMCPServerView(ctx, &row), nil
+}
+
+// HealthCheckAllMcps 定时健康巡检：全量启用 MCP 逐个经 LiteLLM 探测落库(对标 AIHelms
+// mcp.health_check_all，规避其定巡漏 transport 归一误判坑——探测统一走 litellmMCPTransport)。
+// 单个失败记 warning 不中断整体；单机模式无探测通道直接跳过。unhealthy 是探测结论非错误，
+// 结果已落库供列表展示，不进任务告警。
+func (s *McpService) HealthCheckAllMcps(ctx context.Context) (int, error) {
+	if litellm.Default() == nil {
+		return 0, nil
+	}
+	var rows []gateway.MCPServer
+	if err := global.OPS_DB.WithContext(ctx).Model(&gateway.MCPServer{}).
+		Where("is_active = ?", true).Order("mcp_server_id").Find(&rows).Error; err != nil {
+		return 0, err
+	}
+	checked := 0
+	for i := range rows {
+		if err := ctx.Err(); err != nil {
+			return checked, err
+		}
+		if _, err := s.HealthCheckMCPServer(ctx, rows[i].McpServerId); err != nil {
+			logger.WithCtx(ctx).Mod("gateway").Warn(fmt.Sprintf("MCP %s 健康巡检失败: %v", rows[i].ServerName, err))
+		}
+		checked++
+	}
+	return checked, nil
 }
 
 // ----------------------------------------------------------------------------
@@ -925,6 +982,19 @@ func (s *McpService) fillToolCounts(ctx context.Context, rows []gateway.MCPServe
 				}
 			}
 		}
+	}
+}
+
+// markMCPSyncState 落 LiteLLM 同步态(推送成功清错误/失败记错误)：
+// Create/Update 事务内强一致路径与 Refresh/计费重推"失败仅 Warn"路径共用；
+// 前端「同步状态」列据此展示，未同步时 tooltip 展示 litellm_sync_error(对标 AIHelms 未同步徽标)。
+func markMCPSyncState(ctx context.Context, db *gorm.DB, id int64, syncErr error) {
+	updates := map[string]any{"litellm_synced": syncErr == nil, "litellm_sync_error": ""}
+	if syncErr != nil {
+		updates["litellm_sync_error"] = syncErr.Error()
+	}
+	if err := db.Model(&gateway.MCPServer{}).Where("mcp_server_id = ?", id).Updates(updates).Error; err != nil {
+		logger.WithCtx(ctx).Mod("gateway").Warn(fmt.Sprintf("MCP %d 同步态落库失败: %v", id, err))
 	}
 }
 

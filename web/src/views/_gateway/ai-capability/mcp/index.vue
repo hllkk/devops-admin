@@ -1,6 +1,6 @@
 <script setup lang="tsx">
 import { onMounted, ref } from 'vue';
-import { NTag } from 'naive-ui';
+import { NTag, NTooltip } from 'naive-ui';
 import {
   fetchBatchDeleteMCPServer,
   fetchGetMCPServerList,
@@ -144,16 +144,25 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
         title: $t('page.gateway.mcp.col.litellmSynced'),
         align: 'center',
         minWidth: 90,
-        render: row =>
-          row.litellmSynced ? (
-            <NTag size="small" type="success">
-              {$t('page.gateway.common.synced')}
+        render: row => {
+          const tag = (
+            <NTag size="small" type={row.litellmSynced ? 'success' : 'warning'}>
+              {$t(row.litellmSynced ? 'page.gateway.common.synced' : 'page.gateway.common.unsynced')}
             </NTag>
-          ) : (
-            <NTag size="small" type="warning">
-              {$t('page.gateway.common.unsynced')}
-            </NTag>
-          )
+          );
+          // 未同步且有错误详情时 hover 可看原因(对标 AIHelms「未同步」徽标)
+          if (!row.litellmSynced && row.litellmSyncError) {
+            return (
+              <NTooltip>
+                {{
+                  trigger: () => tag,
+                  default: () => row.litellmSyncError
+                }}
+              </NTooltip>
+            );
+          }
+          return tag;
+        }
       },
       {
         key: 'actions',
@@ -260,9 +269,15 @@ function handleToolsChanged() {
 
 // 健康检查
 async function handleHealthCheck(row: Api.Gateway.MCPServer) {
-  const { error } = await fetchHealthCheckMCPServer(row.mcpServerId!);
+  const { error, data: healthResult } = await fetchHealthCheckMCPServer(row.mcpServerId!);
   if (error) return;
-  window.$message?.success($t('page.gateway.mcp.healthCheck.done'));
+  if (healthResult?.healthStatus === 'healthy') {
+    window.$message?.success($t('page.gateway.mcp.healthCheck.done'));
+  } else {
+    window.$message?.error(
+      `${$t('page.gateway.mcp.healthCheck.failed')}: ${healthResult?.healthCheckError || $t('page.gateway.mcp.health.unknown')}`
+    );
+  }
   getData();
 }
 

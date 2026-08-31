@@ -18,11 +18,13 @@ func (s *SkillRouter) InitSkillRouter(Router *gin.RouterGroup) {
 		r.PUT("publish", skillApi.PublishSkill)            // 发布设置(三档可见性+审批)
 		r.GET("publish/:id", skillApi.GetSkillPublish)     // 发布设置回显(含可见部门/用户)
 		r.POST(":id/package", skillApi.UploadSkillPackage) // 上传/替换zip包(multipart)
+		r.GET("package/:id", skillApi.AdminDownloadSkill)  // 管理端下载zip包(不走用户侧发布/授权校验,经菜单授权)
 		// 用户侧(广场)：登录白名单，不经菜单授权
 		r.GET("available", skillApi.GetAvailableSkills)  // 管理端授权下拉
 		r.GET("active", skillApi.GetActiveSkills)        // 用户侧可见列表(广场)
 		r.GET("download/:id", skillApi.DownloadSkill)    // 下载zip包(登录态+授权校验;静态段在前,casbin 白名单前缀匹配)
 		// 管理端使用日志
 		r.GET("usage/list", skillApi.GetSkillUsageList) // 使用日志分页
+		r.GET("categories", skillApi.GetSkillCategories) // 分类去重列表(下拉受控;静态段与:id共存,gin静态优先)
 	}
 }

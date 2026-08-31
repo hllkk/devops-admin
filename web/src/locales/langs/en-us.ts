@@ -669,7 +669,8 @@ const local: App.I18n.Schema = {
         costPerCall: 'Cost per Call (¥)',
         healthCheck: {
           short: 'Check',
-          done: 'Health check finished'
+          done: 'Health check finished',
+          failed: 'Health check failed'
         },
         col: {
           name: 'Name',
@@ -703,7 +704,9 @@ const local: App.I18n.Schema = {
           authValuePlaceholder: 'Leave empty to keep the old value; enter a new value to override',
           valuesTip: 'Credentials are AES-encrypted at rest and masked in UI; unchanged mask keeps the old value',
           costRequired: 'Per-call billing requires a cost value',
-          instructions: 'Instructions (shown in the access info dialog)'
+          instructions: 'Instructions (shown in the access info dialog)',
+          categoryPlaceholder: 'Select or type a category',
+          addToolsMissed: 'Created, but no tools synced. Retry in the Tools panel'
         },
         health: {
           unknown: 'Unknown',
@@ -734,6 +737,8 @@ const local: App.I18n.Schema = {
           refresh: 'Refresh from Remote',
           refreshSuccess: 'Tools refreshed: {count} tools',
           emptyTip: 'No tools yet. Refresh from remote first',
+          schema: 'Input Schema',
+          schemaEmpty: 'No input schema provided',
           editBilling: 'Billing',
           inheritServer: 'Inherit Server',
           col: {
@@ -755,11 +760,18 @@ const local: App.I18n.Schema = {
         packageSize: '{size}',
         upload: {
           title: 'Upload Package',
-          tip: 'Only .zip, max 100MB; required before publishing, replacing a package does not affect grants',
+          tip: 'Only .zip up to 100MB, must contain SKILL.md; required before publishing, replacing a package does not affect grants',
           upload: 'Upload zip',
           replace: 'Replace zip',
+          pick: 'Select zip file',
           current: 'Current package',
-          success: 'Package uploaded'
+          success: 'Package uploaded',
+          createdButUploadFailed: 'Skill created, but package upload failed. Please re-upload it in edit'
+        },
+        download: {
+          current: 'Download Package',
+          success: 'Package downloaded',
+          failed: 'Failed to download package'
         },
         col: {
           name: 'Name',
@@ -782,27 +794,17 @@ const local: App.I18n.Schema = {
         form: {
           name: { required: 'Please enter a name' },
           version: { placeholder: 'e.g. 1.0.0 (defaults to 1.0.0)', invalid: 'Version should look like 1 / 1.0 / 1.0.0' },
+          categoryPlaceholder: 'Select or type a category',
           tagsPlaceholder: 'Type and press Enter to add a tag',
           agentInstallPromptPlaceholder: 'Shown on the square card; guides users to install in agents',
           usageInstructionsPlaceholder: 'Shown on the square card'
         },
         publish: {
           short: 'Publish',
-          title: 'Skill Publish Settings',
-          subtitle: 'Set skill visibility (Model Square) and usage approval',
-          isPublished: 'Publish to users',
-          autoGrantTip: 'Publishing without approval auto-grants main keys by visibility; unpublish/tighten/disable revokes out-of-scope grants',
-          visibilityType: 'Visibility',
-          visibilityAll: 'Everyone',
-          visibilitySelected: 'Selected departments',
-          visibilityUser: 'Selected users',
-          departmentIds: 'Visible departments',
-          userIds: 'Visible users',
-          departmentRequired: 'Select at least one department for selected-department visibility',
-          userRequired: 'Select at least one user for selected-user visibility',
-          requiresApproval: 'Usage requires approval',
-          requiresApprovalTip: 'Users must apply in the Model Square and get approved before downloading',
-          needPackage: 'Cannot publish before uploading a zip package'
+          toMarket: 'Publish to market',
+          requiresApproval: 'Approval required before claiming',
+          needPackage: 'Upload a zip package before publishing',
+          createdButPublishFailed: 'Skill created, but publishing failed. Please retry in edit'
         },
         usage: {
           title: 'Usage Logs',

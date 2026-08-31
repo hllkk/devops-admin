@@ -27,6 +27,14 @@ export function fetchGetMCPServerList(params?: Api.Gateway.MCPServerSearchParams
   });
 }
 
+/** 获取 MCP 分类去重列表(下拉受控数据源) */
+export function fetchGetMCPCategories() {
+  return request<string[]>({
+    url: '/gateway/mcp/categories',
+    method: 'get'
+  });
+}
+
 /** 获取 MCP 服务器详情(含工具列表) */
 export function fetchGetMCPServer(mcpServerId: CommonType.IdType) {
   return request<Api.Gateway.MCPServerDetail>({
