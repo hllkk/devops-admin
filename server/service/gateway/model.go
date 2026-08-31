@@ -84,8 +84,8 @@ func (s *ModelService) GetModelList(ctx context.Context, q gatewayReq.ModelSearc
 
 // GetActiveModels 用户侧可见模型列表(active+published+有路由名+按发布可见性过滤，所有用户含
 // 超管统一过滤)：all 档直通/selected 档命中用户归属部门(主部门∪多部门)/user 档命中用户投影。
-// 附 anthropic 变体路由名，模型广场与 home 可用模型的数据源(与 GetMyVisibleModels 口径一致)。
-// model_key <> '' 与 visibleModelKeys 对齐：空路由名模型展示与可调用不一致，不列出(兜存量，
+// 模型广场与 home 可用模型的数据源(与 GetMyVisibleModels 口径一致)。
+// model_key <> ” 与 visibleModelKeys 对齐：空路由名模型展示与可调用不一致，不列出(兜存量，
 // 源头由 PublishModel 校验堵)。管理员建 Key 的授权下拉用 AiKeyService.GetAvailableModels
 // (全量视角)，两者勿混。
 func (s *ModelService) GetActiveModels(ctx context.Context, userId int64) ([]gatewayResp.ActiveModelView, error) {
@@ -98,15 +98,10 @@ func (s *ModelService) GetActiveModels(ctx context.Context, userId int64) ([]gat
 	if err := q.Order("model_id DESC").Find(&models).Error; err != nil {
 		return nil, err
 	}
-	modelIds := make([]int64, 0, len(models))
-	for i := range models {
-		modelIds = append(modelIds, models[i].ModelId)
-	}
-	anthropicModels := annotateAnthropic(ctx, global.OPS_DB, modelIds)
 	list := make([]gatewayResp.ActiveModelView, 0, len(models))
 	for i := range models {
 		m := models[i]
-		view := gatewayResp.ActiveModelView{
+		list = append(list, gatewayResp.ActiveModelView{
 			ModelId:          m.ModelId,
 			ModelKey:         m.ModelKey,
 			Name:             m.Name,
@@ -115,12 +110,7 @@ func (s *ModelService) GetActiveModels(ctx context.Context, userId int64) ([]gat
 			LogoProviderType: m.LogoProviderType,
 			Capabilities:     capabilitiesToList(m.Capabilities),
 			RequiresApproval: m.RequiresApproval,
-		}
-		if anthropicModels[m.ModelId] {
-			view.HasAnthropicDeployment = true
-			view.ModelKeyAnthropic = m.ModelKey + gateway.ModelAnthropicSuffix
-		}
-		list = append(list, view)
+		})
 	}
 	return list, nil
 }
@@ -452,37 +442,6 @@ func visibleModelScope(db *gorm.DB, userId, deptId int64) *gorm.DB {
 	)
 }
 
-// annotateAnthropic 活跃部署 → 模型的 anthropic 标注(存在 active 且绑定 active
-// anthropic 凭证的部署)。GetActiveModels/GetMyVisibleModels/GetAvailableModels 共用。
-func annotateAnthropic(ctx context.Context, db *gorm.DB, modelIds []int64) map[int64]bool {
-	anthropicModels := map[int64]bool{}
-	if len(modelIds) == 0 {
-		return anthropicModels
-	}
-	var deps []gateway.ModelDeployment
-	_ = db.WithContext(ctx).
-		Where("is_active = ? AND credential_id <> 0 AND model_id IN ?", true, modelIds).
-		Find(&deps).Error
-	credIds := make([]int64, 0, len(deps))
-	for i := range deps {
-		credIds = append(credIds, deps[i].CredentialId)
-	}
-	creds := map[int64]*gateway.Credential{}
-	if len(credIds) > 0 {
-		var rows []gateway.Credential
-		_ = db.WithContext(ctx).Where("credential_id IN ?", credIds).Find(&rows).Error
-		for i := range rows {
-			creds[rows[i].CredentialId] = &rows[i]
-		}
-	}
-	for i := range deps {
-		if cred, ok := creds[deps[i].CredentialId]; ok && cred.IsActive && formatOf(cred) == "anthropic" {
-			anthropicModels[deps[i].ModelId] = true
-		}
-	}
-	return anthropicModels
-}
-
 // cascadeRebuildModelDeployments 模型改名/改类后的部署级联重建(尽力而为)：
 // 逐个重建投影并推送(路由名切换到新 model_key/新前缀)，单个失败记 warning 继续。
 // 注意：与凭证启停级联(事务内强一致)不同，本级联是最终一致——LiteLLM 与 DB 可能短暂漂移。
@@ -517,7 +476,7 @@ func cascadeRebuildModelDeployments(ctx context.Context, db *gorm.DB, cli *litel
 		}
 		params, modelInfo := buildDeploymentParams(dep, cred)
 		prefix, needsV1 := resolveDeploymentPrefix(db, cred, format, model.Category)
-		if err := pushDeployment(ctx, cli, dep, model.ModelKey, format, routableOf(dep.IsActive, cred), prefix, needsV1, params, modelInfo); err != nil {
+		if err := pushDeployment(ctx, cli, dep, model.ModelKey, routableOf(dep.IsActive, cred), prefix, needsV1, params, modelInfo); err != nil {
 			warnings = append(warnings, fmt.Sprintf("部署 %q 路由名级联切换失败: %v", dep.DeployName, err))
 			continue
 		}

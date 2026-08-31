@@ -11,7 +11,7 @@ import (
 // key_value 加密存储(偏离 AIHelms 不存的设计：devops-admin home 需明文展示主 Key、
 // LiteLLM /key/generate 只返回一次、已有 AES-GCM 基座)，仅 owner 本人经 identity/my 可查明文。
 // owner_id 纯逻辑关联(sys_users.user_id / sys_departments.dept_id)，不建外键。
-// models 存 modelKey 列表(含 anthropic 变体扩展)；推送 LiteLLM 时经 expandModelsWithAnthropic 补变体。
+// models 存 modelKey 列表；推送 LiteLLM 时原样下发(路由名无协议变体，协议混组由 LiteLLM 按部署前缀处理)。
 type AiKey struct {
 	global.OPS_AUDIT_MODEL
 	AiKeyId           int64          `json:"aiKeyId,string" gorm:"primarykey;comment:密钥ID(雪花)"`                                            // 密钥ID(雪花)

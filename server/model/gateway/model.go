@@ -39,11 +39,10 @@ const (
 	VisibilityTypeUser     = "user"     // 指定用户可见(配 gateway_model_visibility_user)
 )
 
-// 路由池命名后缀(禁用=改名出池+active 双写，litellm_model_id 永不变保归因锚点)
-const (
-	ModelAnthropicSuffix = "(Anthropic)"  // anthropic 格式凭证的部署独立分组(协议隔离，不能与 openai 混组 LB)
-	ModelDisabledSuffix  = "__disabled__" // 不可路由后缀(部署或凭证停用时摘出 LB 组)
-)
+// 路由池命名后缀(禁用=改名出池+active 双写，litellm_model_id 永不变保归因锚点)。
+// 协议差异不再进入路由名：openai/anthropic 部署同名混组 LB，协议只体现在
+// litellm_params.model 的供应商前缀(anthropic/xxx)，调用方一律用纯模型名。
+const ModelDisabledSuffix = "__disabled__" // 不可路由后缀(部署或凭证停用时摘出 LB 组)
 
 func (Model) TableName() string {
 	return "gateway_model"

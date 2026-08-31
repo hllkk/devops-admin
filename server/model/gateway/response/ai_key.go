@@ -50,13 +50,11 @@ type MyIdentityView struct {
 
 // AvailableModelView 可授权模型(精简版，供 Key 授权选择)。
 type AvailableModelView struct {
-	ModelId                int64  `json:"modelId,string"`         // 模型ID
-	ModelKey               string `json:"modelKey"`               // 路由名(openai组)
-	ModelKeyAnthropic      string `json:"modelKeyAnthropic"`      // anthropic变体路由名(无则空)
-	Name                   string `json:"name"`                   // 展示名
-	Category               string `json:"category"`               // 类别
-	RequiresApproval       bool   `json:"requiresApproval"`       // 订阅需审批
-	HasAnthropicDeployment bool   `json:"hasAnthropicDeployment"` // 有anthropic活跃部署
+	ModelId          int64  `json:"modelId,string"`   // 模型ID
+	ModelKey         string `json:"modelKey"`         // 路由名(=modelKey)
+	Name             string `json:"name"`             // 展示名
+	Category         string `json:"category"`         // 类别
+	RequiresApproval bool   `json:"requiresApproval"` // 订阅需审批
 }
 
 // BatchCreateMainKeysResult 批量开通个人主 Key / 批量建场景 Key 结果(部分成功语义：

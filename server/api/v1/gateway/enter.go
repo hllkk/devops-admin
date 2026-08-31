@@ -18,6 +18,7 @@ type ApiGroup struct {
 	ResourceApplicationApi
 	MCPApi
 	SkillApi
+	BudgetRuleApi
 }
 
 var (
@@ -36,4 +37,5 @@ var (
 	applicationService     = service.ServiceGroupApp.GatewayServiceGroup.ResourceApplicationService
 	mcpService             = service.ServiceGroupApp.GatewayServiceGroup.McpService
 	skillService           = service.ServiceGroupApp.GatewayServiceGroup.SkillService
+	budgetRuleService      = service.ServiceGroupApp.GatewayServiceGroup.BudgetRuleService
 )

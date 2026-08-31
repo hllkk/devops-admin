@@ -946,6 +946,40 @@ declare namespace Api {
       failed: { applicationId: CommonType.IdType; reason: string }[];
     };
 
+    // ───────────────── 预算管控 BudgetRule(P3·部门/用户级预算规则+软限预警+硬限停用) ─────────────────
+
+    /** 预算规则(含读时聚合已用+预警状态;scopeName 后端回填) */
+    type BudgetRuleView = Common.CommonRecord<{
+      ruleId: CommonType.IdType;
+      scopeType: 'dept' | 'user';
+      scopeId: CommonType.IdType;
+      scopeName: string;
+      budgetLimit: number;
+      /** 已用(¥,读时聚合) */
+      budgetUsed: number;
+      /** 执行率(%) */
+      budgetUsedPercent: number;
+      budgetHardLimit: boolean;
+      budgetDuration: '1d' | '7d' | '30d';
+      /** 软限预警阈值(%) */
+      softWarnPercent: number;
+      isActive: boolean;
+      /** 本周期是否已触发软限预警 */
+      isSoftWarn: boolean;
+      /** 本周期是否已触发硬限超限 */
+      isHardLimited: boolean;
+    }>;
+
+    /** 预算规则搜索参数(scopeType 空=全部;isActive nil=全部) */
+    type BudgetRuleSearchParams = CommonType.RecordNullable<
+      { scopeType?: string; isActive?: boolean } & Api.Common.CommonSearchParams
+    >;
+
+    /** 预算规则新增/修改参数 */
+    type BudgetRuleOperateParams = CommonType.RecordNullable<
+      Pick<BudgetRuleView, 'ruleId' | 'scopeType' | 'scopeId' | 'budgetLimit' | 'budgetHardLimit' | 'budgetDuration' | 'softWarnPercent' | 'isActive'>
+    >;
+
     // ───────────────── 成本分析 CostAnalysis(P3·多维成本聚合,管理员视角) ─────────────────
 
     /** 成本 KPI(含等长上一期环比;上期无消耗时环比为 0) */

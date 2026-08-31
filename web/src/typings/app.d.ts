@@ -1477,6 +1477,34 @@ declare namespace App {
             hardLimit: string;
             isActive: string;
           };
+          budget: {
+            tabKey: string;
+            tabDept: string;
+            tabUser: string;
+            add: string;
+            edit: string;
+            scopeType: string;
+            scopeDept: string;
+            scopeUser: string;
+            scopeName: string;
+            budgetLimit: string;
+            budgetUsed: string;
+            duration: string;
+            duration1d: string;
+            duration7d: string;
+            duration30d: string;
+            softWarnPercent: string;
+            hardLimit: string;
+            alertStatus: string;
+            normal: string;
+            softWarned: string;
+            hardLimited: string;
+            isActive: string;
+            form: {
+              scopeIdRequired: string;
+              limitRequired: string;
+            };
+          };
         };
         system: {
           user: {

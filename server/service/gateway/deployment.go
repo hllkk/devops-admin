@@ -15,6 +15,7 @@ import (
 	gatewayReq "github.com/hllkk/devops-admin/server/model/gateway/request"
 	gatewayResp "github.com/hllkk/devops-admin/server/model/gateway/response"
 	"github.com/hllkk/devops-admin/server/utils/litellm"
+	"github.com/hllkk/devops-admin/server/utils/logger"
 )
 
 // DeploymentService 模型部署管理(对齐前端 /gateway/model/deployment/* 资源)。
@@ -124,11 +125,11 @@ func resolveDeploymentPrefix(db *gorm.DB, cred *gateway.Credential, format, cate
 	return resolvePrefix(db, providerType, format, category)
 }
 
-// pushDeployment 推送部署投影到 LiteLLM：路由名三态 + 投影层前缀化 + active 双写 + USD/token 换算副本。
+// pushDeployment 推送部署投影到 LiteLLM：路由名两态 + 投影层前缀化 + active 双写 + USD/token 换算副本。
 // litellm_model_id 为空 → AddModel 并写回(dep.LitellmModelId)；否则 UpdateModel(改名+全量)。
 // prefix/needsV1 来自 resolveDeploymentPrefix，经 ApplyPrefixProjection 临时投影(不写回 DB)。
-func pushDeployment(ctx context.Context, cli *litellm.Client, dep *gateway.ModelDeployment, modelKey, format string, routable bool, prefix string, needsV1 bool, params, modelInfo map[string]any) error {
-	routeName := BuildModelRouteName(modelKey, format, routable)
+func pushDeployment(ctx context.Context, cli *litellm.Client, dep *gateway.ModelDeployment, modelKey string, routable bool, prefix string, needsV1 bool, params, modelInfo map[string]any) error {
+	routeName := BuildModelRouteName(modelKey, routable)
 	pushParams := ConvertCostsForLitellm(ApplyPrefixProjection(params, prefix, needsV1), global.OPS_CONFIG.Litellm.UsdToCnyRate)
 	pushInfo := withActive(modelInfo, routable)
 	if dep.LitellmModelId == "" {
@@ -273,7 +274,7 @@ func (s *DeploymentService) CreateDeployment(ctx context.Context, req gatewayReq
 		params, modelInfo := buildDeploymentParams(&dep, cred)
 		if cli != nil && routable {
 			prefix, needsV1 := resolveDeploymentPrefix(tx, cred, format, model.Category)
-			if err := pushDeployment(ctx, cli, &dep, model.ModelKey, format, routable, prefix, needsV1, params, modelInfo); err != nil {
+			if err := pushDeployment(ctx, cli, &dep, model.ModelKey, routable, prefix, needsV1, params, modelInfo); err != nil {
 				return err
 			}
 		}
@@ -378,7 +379,7 @@ func (s *DeploymentService) UpdateDeployment(ctx context.Context, req gatewayReq
 		params, modelInfo := buildDeploymentParams(&dep, cred)
 		if cli != nil && (routable || dep.LitellmModelId != "") {
 			prefix, needsV1 := resolveDeploymentPrefix(tx, cred, format, model.Category)
-			if err := pushDeployment(ctx, cli, &dep, model.ModelKey, format, routable, prefix, needsV1, params, modelInfo); err != nil {
+			if err := pushDeployment(ctx, cli, &dep, model.ModelKey, routable, prefix, needsV1, params, modelInfo); err != nil {
 				return err
 			}
 		}
@@ -433,24 +434,11 @@ func (s *DeploymentService) TestDeployment(ctx context.Context, req gatewayReq.D
 	if err := global.OPS_DB.WithContext(ctx).Where("model_id = ?", dep.ModelId).First(&model).Error; err != nil {
 		return gatewayResp.DeploymentTestResult{}, errors.New("关联模型不存在")
 	}
-	var cred *gateway.Credential
-	if dep.CredentialId != 0 {
-		var c gateway.Credential
-		if err := global.OPS_DB.WithContext(ctx).Where("credential_id = ?", dep.CredentialId).First(&c).Error; err == nil {
-			cred = &c
-		}
-	}
 	cli := litellm.Default()
 	if cli == nil {
 		return gatewayResp.DeploymentTestResult{}, litellm.ErrNotConfigured
 	}
-	format := "openai"
-	if cred != nil {
-		if f := formatOf(cred); f != "" {
-			format = f
-		}
-	}
-	routeName := BuildModelRouteName(model.ModelKey, format, true)
+	routeName := BuildModelRouteName(model.ModelKey, true)
 
 	var path string
 	var body map[string]any
@@ -481,6 +469,70 @@ func (s *DeploymentService) TestDeployment(ctx context.Context, req gatewayReq.D
 	return gatewayResp.DeploymentTestResult{Success: false, LatencyMs: latency,
 		ErrorCategory: category, Message: msg,
 		TechnicalDetail: SanitizeTechnicalDetail(string(respBody))}, nil
+}
+
+// ResyncDeployments 全量重推部署投影到 LiteLLM(漂移兜底 + 存量路由名治理，管理员手动触发)。
+// 路由名协议隔离((Anthropic) 后缀)已下线：存量远端条目经本端点按 litellm_model_id 原位改名
+// (UpdateModel 改 model_name)，anthropic/openai 部署归并同名 LB 组；litellm_model_id 为空的
+// 部署走 AddModel 补建。无条件幂等重推(全量下发)，单条失败记入 Failed 不中断整体。
+func (s *DeploymentService) ResyncDeployments(ctx context.Context) (gatewayResp.ResyncResult, error) {
+	result := gatewayResp.ResyncResult{Failed: []string{}}
+	cli := litellm.Default()
+	if cli == nil {
+		return result, litellm.ErrNotConfigured
+	}
+	db := global.OPS_DB.WithContext(ctx)
+	var deps []gateway.ModelDeployment
+	if err := db.Find(&deps).Error; err != nil {
+		return result, err
+	}
+	// 凭证批量预载(解密一次复用；缺失/停用凭证按 nil 处理，routableOf 自会摘池)
+	credIds := make([]int64, 0, len(deps))
+	for i := range deps {
+		if deps[i].CredentialId != 0 {
+			credIds = append(credIds, deps[i].CredentialId)
+		}
+	}
+	creds := map[int64]*gateway.Credential{}
+	if len(credIds) > 0 {
+		var rows []gateway.Credential
+		if err := db.Where("credential_id IN ?", credIds).Find(&rows).Error; err == nil {
+			for i := range rows {
+				creds[rows[i].CredentialId] = &rows[i]
+			}
+		}
+	}
+	result.Total = len(deps)
+	for i := range deps {
+		dep := deps[i]
+		var model gateway.Model
+		if err := db.Where("model_id = ?", dep.ModelId).First(&model).Error; err != nil {
+			result.Failed = append(result.Failed, dep.DeployName)
+			continue
+		}
+		cred := creds[dep.CredentialId]
+		format := formatOf(cred)
+		if format == "" {
+			format = "openai"
+		}
+		params, modelInfo := buildDeploymentParams(&dep, cred)
+		prefix, needsV1 := resolveDeploymentPrefix(db, cred, format, model.Category)
+		if err := pushDeployment(ctx, cli, &dep, model.ModelKey, routableOf(dep.IsActive, cred), prefix, needsV1, params, modelInfo); err != nil {
+			logger.WithCtx(ctx).Mod("gateway").Err(err).Field("deploymentId", dep.DeploymentId).Error("resync: 部署投影推送失败")
+			result.Failed = append(result.Failed, dep.DeployName)
+			continue
+		}
+		if err := db.Model(&gateway.ModelDeployment{}).Where("deployment_id = ?", dep.DeploymentId).
+			Updates(map[string]any{
+				"litellm_params": marshalJSON(params),
+				"model_info":     marshalJSON(modelInfo),
+			}).Error; err != nil {
+			result.Failed = append(result.Failed, dep.DeployName)
+			continue
+		}
+		result.Pushed++
+	}
+	return result, nil
 }
 
 // classifyUpstreamError 上游 HTTP 状态粗分类(P1 简化版；16 类细模板留前端体验优化)。
@@ -520,7 +572,7 @@ func (s *DeploymentService) toView(ctx context.Context, dep gateway.ModelDeploym
 		}
 	}
 	view.Format = format
-	view.RouteName = BuildModelRouteName(view.ModelKey, format, routableOf(dep.IsActive, cred))
+	view.RouteName = BuildModelRouteName(view.ModelKey, routableOf(dep.IsActive, cred))
 	return view
 }
 

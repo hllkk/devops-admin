@@ -115,27 +115,16 @@ func (s *AiKeyService) listModelsAsAvailable(ctx context.Context, scope func(*go
 		Order("model_id DESC").Find(&models).Error; err != nil {
 		return nil, err
 	}
-	modelIds := make([]int64, 0, len(models))
-	for i := range models {
-		modelIds = append(modelIds, models[i].ModelId)
-	}
-	anthropicKeys := annotateAnthropic(ctx, global.OPS_DB, modelIds)
-
 	list := make([]gatewayResp.AvailableModelView, 0, len(models))
 	for i := range models {
 		m := models[i]
-		v := gatewayResp.AvailableModelView{
+		list = append(list, gatewayResp.AvailableModelView{
 			ModelId:          m.ModelId,
 			ModelKey:         m.ModelKey,
 			Name:             m.Name,
 			Category:         m.Category,
 			RequiresApproval: m.RequiresApproval,
-		}
-		if anthropicKeys[m.ModelId] {
-			v.HasAnthropicDeployment = true
-			v.ModelKeyAnthropic = m.ModelKey + gateway.ModelAnthropicSuffix
-		}
-		list = append(list, v)
+		})
 	}
 	return list, nil
 }
@@ -1209,13 +1198,13 @@ func renameKeyReferences(models []string, budgets, limits map[string]any, oldKey
 }
 
 // syncKeyToLitellm 同步密钥到 LiteLLM：isCreate=true 走 CreateKey(返回明文加密落库)，
-// 否则 UpdateKey(改授权/预算/限流/启停)。models 经 anthropic 扩展；max_budget 按硬限/启停语义，
+// 否则 UpdateKey(改授权/预算/限流/启停)。models 即授权 modelKey 原样下发(路由名无协议变体，
+// 协议混组由 LiteLLM 按部署前缀处理)；max_budget 按硬限/启停语义，
 // ¥ 按汇率换算 USD 下发(LiteLLM spend 记 USD，部署定价推送时已同口径换算)；
 // budget_duration 一并下发，LiteLLM 窗口到期自动重置 spend，与平台 budget_used 滚动窗口对齐
 // (不下发则 LiteLLM 永久累计，第 N+1 周期起误拒且与平台预算看板永不收敛)。
 func syncKeyToLitellm(ctx context.Context, cli *litellm.Client, tx *gorm.DB, k *gateway.AiKey, isCreate bool) error {
-	db := tx
-	expandedModels := expandModelsWithAnthropic(db, jsonToSlice(k.Models))
+	models := jsonToSlice(k.Models)
 
 	// max_budget 语义：停用→0；硬限+有额度→limit(¥→USD)；否则→nil(不限)
 	var maxBudget *float64
@@ -1243,10 +1232,10 @@ func syncKeyToLitellm(ctx context.Context, cli *litellm.Client, tx *gorm.DB, k *
 		"aiKeyId": k.AiKeyId,
 		"keyType": k.KeyType,
 	}
-	// per-model 限流(per_model 模式，含 anthropic 变体复制)
+	// per-model 限流(per_model 模式)
 	if k.RateLimitMode == gateway.RateLimitModePerModel {
 		limits := jsonToMap(k.ModelLimits)
-		if tpmMap, rpmMap := buildPerModelLimitMaps(db, limits, expandedModels); tpmMap != nil || rpmMap != nil {
+		if tpmMap, rpmMap := buildPerModelLimitMaps(limits); tpmMap != nil || rpmMap != nil {
 			if tpmMap != nil {
 				metadata["model_tpm_limit"] = tpmMap
 			}
@@ -1264,7 +1253,7 @@ func syncKeyToLitellm(ctx context.Context, cli *litellm.Client, tx *gorm.DB, k *
 	if isCreate {
 		req := litellm.KeyCreateReq{
 			KeyAlias:          k.LitellmKeyAlias,
-			Models:            expandedModels,
+			Models:            models,
 			MaxBudget:         maxBudget,
 			BudgetDuration:    budgetDuration,
 			Metadata:          metadata,
@@ -1300,7 +1289,7 @@ func syncKeyToLitellm(ctx context.Context, cli *litellm.Client, tx *gorm.DB, k *
 
 	// Update
 	req := litellm.KeyUpdateReq{
-		Models:            expandedModels,
+		Models:            models,
 		MaxBudget:         maxBudget,
 		BudgetDuration:    budgetDuration,
 		Metadata:          metadata,
@@ -1333,78 +1322,9 @@ func buildKeyAlias(keyType, ownerType string, ownerId int64, name string) string
 	return fmt.Sprintf("%s:%d/%s", prefix, ownerId, name)
 }
 
-// queryAnthropicModelKeys 给定 modelKey 列表，查出存在 anthropic 活跃部署的 modelKey 集合。
-func queryAnthropicModelKeys(db *gorm.DB, modelKeys []string) map[string]bool {
-	out := map[string]bool{}
-	if len(modelKeys) == 0 {
-		return out
-	}
-	var models []gateway.Model
-	db.Where("model_key IN ?", modelKeys).Find(&models)
-	if len(models) == 0 {
-		return out
-	}
-	modelIds := make([]int64, 0, len(models))
-	keyById := map[int64]string{}
-	for i := range models {
-		modelIds = append(modelIds, models[i].ModelId)
-		keyById[models[i].ModelId] = models[i].ModelKey
-	}
-	var deps []gateway.ModelDeployment
-	db.Where("is_active = ? AND credential_id <> 0 AND model_id IN ?", true, modelIds).Find(&deps)
-	if len(deps) == 0 {
-		return out
-	}
-	credIds := make([]int64, 0, len(deps))
-	for i := range deps {
-		credIds = append(credIds, deps[i].CredentialId)
-	}
-	creds := map[int64]*gateway.Credential{}
-	var credRows []gateway.Credential
-	db.Where("credential_id IN ?", credIds).Find(&credRows)
-	for i := range credRows {
-		creds[credRows[i].CredentialId] = &credRows[i]
-	}
-	for i := range deps {
-		if cred, ok := creds[deps[i].CredentialId]; ok && cred.IsActive && formatOf(cred) == "anthropic" {
-			if mk, ok := keyById[deps[i].ModelId]; ok {
-				out[mk] = true
-			}
-		}
-	}
-	return out
-}
-
-// expandModelsWithAnthropic 对有 anthropic 活跃部署的模型追加 {modelKey}(Anthropic) 变体。
-func expandModelsWithAnthropic(db *gorm.DB, models []string) []string {
-	anthropicSet := queryAnthropicModelKeys(db, models)
-	out := make([]string, 0, len(models)+len(anthropicSet))
-	out = append(out, models...)
-	seen := map[string]bool{}
-	for _, m := range models {
-		seen[m] = true
-	}
-	for _, m := range models {
-		if anthropicSet[m] {
-			variant := m + gateway.ModelAnthropicSuffix
-			if !seen[variant] {
-				out = append(out, variant)
-				seen[variant] = true
-			}
-		}
-	}
-	return out
-}
-
 // buildPerModelLimitMaps 从 model_limits({modelKey:{tpm,rpm}}) 构建 LiteLLM metadata 的
-// model_tpm_limit/model_rpm_limit map，并对 anthropic 变体复制同额限流。
-func buildPerModelLimitMaps(db *gorm.DB, limits map[string]any, expandedModels []string) (tpmMap, rpmMap map[string]any) {
-	anthropicVariants := map[string]string{} // 变体名 → 原 modelKey
-	for _, m := range expandedModels {
-		if strings.HasSuffix(m, gateway.ModelAnthropicSuffix) {
-			anthropicVariants[m] = strings.TrimSuffix(m, gateway.ModelAnthropicSuffix)
-		}
-	}
+// model_tpm_limit/model_rpm_limit map(路由名无协议变体，modelKey 即最终路由名)。
+func buildPerModelLimitMaps(limits map[string]any) (tpmMap, rpmMap map[string]any) {
 	for mk, v := range limits {
 		tpm, rpm := extractTpmRpm(v)
 		if tpmMap == nil && tpm != nil {
@@ -1418,23 +1338,6 @@ func buildPerModelLimitMaps(db *gorm.DB, limits map[string]any, expandedModels [
 		}
 		if rpm != nil {
 			rpmMap[mk] = *rpm
-		}
-		// 复制到 anthropic 变体
-		for variant, orig := range anthropicVariants {
-			if orig == mk {
-				if tpm != nil {
-					if tpmMap == nil {
-						tpmMap = map[string]any{}
-					}
-					tpmMap[variant] = *tpm
-				}
-				if rpm != nil {
-					if rpmMap == nil {
-						rpmMap = map[string]any{}
-					}
-					rpmMap[variant] = *rpm
-				}
-			}
 		}
 	}
 	return

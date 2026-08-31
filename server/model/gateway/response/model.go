@@ -19,19 +19,16 @@ type ModelDetailView struct {
 	Deployments []DeploymentView `json:"deployments"` // 部署列表
 }
 
-// ActiveModelView 对外激活模型视图(home/AI 身份/模型市场用)：
-// 仅 active+published 模型；hasAnthropicDeployment 时附 anthropic 变体路由名。
+// ActiveModelView 对外激活模型视图(home/AI 身份/模型市场用)：仅 active+published 模型。
 type ActiveModelView struct {
-	ModelId                int64    `json:"modelId,string"`         // 模型ID
-	ModelKey               string   `json:"modelKey"`               // 路由名(openai 格式组)
-	ModelKeyAnthropic      string   `json:"modelKeyAnthropic"`      // anthropic 变体路由名(无 anthropic 部署为空)
-	Name                   string   `json:"name"`                   // 展示名
-	Category               string   `json:"category"`               // 类别
-	Description            string   `json:"description"`            // 描述
-	LogoProviderType       string   `json:"logoProviderType"`       // LOGO供应商类型
-	Capabilities           []string `json:"capabilities"`           // 能力标签
-	RequiresApproval       bool     `json:"requiresApproval"`       // 订阅需审批
-	HasAnthropicDeployment bool     `json:"hasAnthropicDeployment"` // 是否存在 anthropic 格式活跃部署
+	ModelId          int64    `json:"modelId,string"`   // 模型ID
+	ModelKey         string   `json:"modelKey"`         // 路由名(=modelKey，协议差异由 LiteLLM 部署前缀处理)
+	Name             string   `json:"name"`             // 展示名
+	Category         string   `json:"category"`         // 类别
+	Description      string   `json:"description"`      // 描述
+	LogoProviderType string   `json:"logoProviderType"` // LOGO供应商类型
+	Capabilities     []string `json:"capabilities"`     // 能力标签
+	RequiresApproval bool     `json:"requiresApproval"` // 订阅需审批
 }
 
 // DeploymentView 部署出网视图：关联上下文(路由名/凭证名)+掩码后的路由参数。

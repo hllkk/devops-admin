@@ -483,7 +483,11 @@ func parseDevopsUserId(s string) int64 {
 	return id
 }
 
-// attributeDeployment 归因 Deployment：model_id→litellm_model_id 优先，兜底 model_name 剥 (Anthropic)→Model.model_key。
+// legacyAnthropicSuffix 历史路由名后缀：路由名协议隔离已下线(同名混组 LB)，但 LiteLLM
+// 存量日志/账单里 model_name 仍可能带此后缀，usage 归因时剥离保成本回溯正确。
+const legacyAnthropicSuffix = "(Anthropic)"
+
+// attributeDeployment 归因 Deployment：model_id→litellm_model_id 优先，兜底 model_name 剥历史 (Anthropic) 后缀→Model.model_key。
 func attributeDeployment(db *gorm.DB, meta map[string]any, modelId, modelName string, cache map[string]*gateway.ModelDeployment) (int64, *gateway.ModelDeployment) {
 	litellmId := modelId
 	if litellmId == "" {
@@ -510,8 +514,8 @@ func attributeDeployment(db *gorm.DB, meta map[string]any, modelId, modelName st
 		err = db.Where("litellm_model_id = ?", litellmId).First(&dep).Error
 	}
 	if err != nil && modelName != "" {
-		// 兜底按 model_name 剥 (Anthropic) 后缀匹配 Model.model_key → Deployment
-		lookup := strings.TrimSuffix(modelName, gateway.ModelAnthropicSuffix)
+		// 兜底按 model_name 剥历史 (Anthropic) 后缀匹配 Model.model_key → Deployment
+		lookup := strings.TrimSuffix(modelName, legacyAnthropicSuffix)
 		var m gateway.Model
 		if e2 := db.Where("model_key = ?", lookup).First(&m).Error; e2 == nil {
 			err = db.Where("model_id = ?", m.ModelId).First(&dep).Error

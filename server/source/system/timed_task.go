@@ -52,6 +52,7 @@ func (i *initTimedTask) InitializeData(ctx context.Context) (context.Context, er
 		{Name: "ReconcileLLMLogs", Description: "对账回灌LiteLLM用量漏单(近30天NOT EXISTS兜底)", Spec: "0 * * * *", ExecutorType: sysModel.TimedTaskExecutorMethod, MethodName: "ReconcileLLMLogs", Enabled: true},
 		{Name: "SyncMcpLogs", Description: "同步LiteLLM MCP调用日志(工具归因+per_call成本,独立游标)", Spec: "*/5 * * * *", ExecutorType: sysModel.TimedTaskExecutorMethod, MethodName: "SyncMcpLogs", Enabled: true},
 		{Name: "ReconcileMcpLogs", Description: "对账回灌MCP调用漏单(近30天兜底)", Spec: "0 * * * *", ExecutorType: sysModel.TimedTaskExecutorMethod, MethodName: "ReconcileMcpLogs", Enabled: true},
+		{Name: "CheckBudgetAlerts", Description: "预算预警检查(软限通知+硬限停用)", Spec: "*/5 * * * *", ExecutorType: sysModel.TimedTaskExecutorMethod, MethodName: "CheckBudgetAlerts", Enabled: true},
 		{Name: "AggregateUsage", Description: "聚合用量到日桶+重算预算+超限停用闭环", Spec: "*/5 * * * *", ExecutorType: sysModel.TimedTaskExecutorMethod, MethodName: "AggregateUsage", Enabled: true},
 		{Name: "SyncProviderBalances", Description: "同步供应商套餐余量(百炼TokenPlan坐席+共享包,旁路只读,失败不阻断)", Spec: "17 8 * * *", ExecutorType: sysModel.TimedTaskExecutorMethod, MethodName: "SyncProviderBalances", Enabled: true},
 		{Name: "ResyncAiKeys", Description: "全量重推AI密钥投影到LiteLLM(改名级联/授权对齐同步失败的漂移兜底)", Spec: "37 3 * * *", ExecutorType: sysModel.TimedTaskExecutorMethod, MethodName: "ResyncAiKeys", Enabled: true},

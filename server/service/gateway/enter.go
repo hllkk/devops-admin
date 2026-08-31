@@ -18,4 +18,5 @@ type ServiceGroup struct {
 	ResourceApplicationService
 	McpService
 	SkillService
+	BudgetRuleService
 }

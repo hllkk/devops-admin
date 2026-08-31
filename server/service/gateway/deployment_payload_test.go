@@ -9,18 +9,17 @@ import (
 
 func TestBuildModelRouteName(t *testing.T) {
 	cases := []struct {
-		modelKey, format string
-		routable         bool
-		want             string
+		modelKey string
+		routable bool
+		want     string
 	}{
-		{"gpt-4o-mini", "openai", true, "gpt-4o-mini"},
-		{"gpt-4o-mini", "anthropic", true, "gpt-4o-mini(Anthropic)"},     // anthropic 独立分组
-		{"gpt-4o-mini", "openai", false, "gpt-4o-mini__disabled__"},      // 停用出池
-		{"gpt-4o-mini", "anthropic", false, "gpt-4o-mini(Anthropic)__disabled__"}, // 叠加
+		{"gpt-4o-mini", true, "gpt-4o-mini"},                   // 可路由=纯模型名(协议差异在 litellm_params 前缀)
+		{"gpt-4o-mini", false, "gpt-4o-mini__disabled__"},      // 停用出池
+		{"mimo-v2.5-pro", true, "mimo-v2.5-pro"},               // anthropic 部署同名混组，不再加后缀
 	}
 	for _, c := range cases {
-		if got := BuildModelRouteName(c.modelKey, c.format, c.routable); got != c.want {
-			t.Fatalf("BuildModelRouteName(%q,%q,%v) = %q, 期望 %q", c.modelKey, c.format, c.routable, got, c.want)
+		if got := BuildModelRouteName(c.modelKey, c.routable); got != c.want {
+			t.Fatalf("BuildModelRouteName(%q,%v) = %q, 期望 %q", c.modelKey, c.routable, got, c.want)
 		}
 	}
 }

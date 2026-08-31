@@ -16,6 +16,7 @@ type RouterGroup struct {
 	ResourceApplicationRouter
 	MCPRouter
 	SkillRouter
+	BudgetRuleRouter
 }
 
 var (
@@ -33,4 +34,5 @@ var (
 	applicationApi    = v1.ApiGroupApp.GatewayApiGroup.ResourceApplicationApi
 	mcpApi            = v1.ApiGroupApp.GatewayApiGroup.MCPApi
 	skillApi          = v1.ApiGroupApp.GatewayApiGroup.SkillApi
+	budgetRuleApi     = v1.ApiGroupApp.GatewayApiGroup.BudgetRuleApi
 )

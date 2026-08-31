@@ -1301,6 +1301,34 @@ const local: App.I18n.Schema = {
         usageRate: '执行率',
         hardLimit: '硬限',
         isActive: '状态'
+      },
+      budget: {
+        tabKey: 'Key 级预算',
+        tabDept: '部门级预算',
+        tabUser: '用户级预算',
+        add: '新增规则',
+        edit: '编辑规则',
+        scopeType: '维度',
+        scopeDept: '部门',
+        scopeUser: '用户',
+        scopeName: '对象名称',
+        budgetLimit: '预算上限(¥)',
+        budgetUsed: '已用(¥)',
+        duration: '预算周期',
+        duration1d: '每天',
+        duration7d: '每周',
+        duration30d: '每月',
+        softWarnPercent: '预警阈值',
+        hardLimit: '硬限超限',
+        alertStatus: '预警状态',
+        normal: '正常',
+        softWarned: '已预警',
+        hardLimited: '已超限',
+        isActive: '启用状态',
+        form: {
+          scopeIdRequired: '请选择对象',
+          limitRequired: '请设置预算上限'
+        }
       }
     },
     system: {

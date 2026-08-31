@@ -1306,6 +1306,34 @@ const local: App.I18n.Schema = {
         usageRate: 'Usage Rate',
         hardLimit: 'Hard Limit',
         isActive: 'Status'
+      },
+      budget: {
+        tabKey: 'Key Budget',
+        tabDept: 'Department Budget',
+        tabUser: 'User Budget',
+        add: 'Add Rule',
+        edit: 'Edit Rule',
+        scopeType: 'Dimension',
+        scopeDept: 'Department',
+        scopeUser: 'User',
+        scopeName: 'Target Name',
+        budgetLimit: 'Budget Limit (¥)',
+        budgetUsed: 'Used (¥)',
+        duration: 'Period',
+        duration1d: 'Daily',
+        duration7d: 'Weekly',
+        duration30d: 'Monthly',
+        softWarnPercent: 'Warn Threshold',
+        hardLimit: 'Hard Limit',
+        alertStatus: 'Alert Status',
+        normal: 'Normal',
+        softWarned: 'Warned',
+        hardLimited: 'Exceeded',
+        isActive: 'Active',
+        form: {
+          scopeIdRequired: 'Please select a target',
+          limitRequired: 'Please set a budget limit'
+        }
       }
     },
     system: {

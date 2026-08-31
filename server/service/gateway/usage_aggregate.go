@@ -92,12 +92,17 @@ func (s *UsageAggregateService) recomputeBudgetUsed(ctx context.Context, db *gor
 	cnt := 0
 	for i := range keys {
 		window := budgetWindowDuration(keys[i].BudgetDuration)
-		var sum float64
+		since := now.Add(-window)
+		// LLM + MCP 双表 SUM(P3 MCP 回流落地后预算口径含 MCP 调用消耗)
+		var llmSum, mcpSum float64
 		db.Model(&gateway.LlmLog{}).
-			Where("ai_key_id = ? AND ai_key_id <> 0 AND started_at >= ?", keys[i].AiKeyId, now.Add(-window)).
-			Select("COALESCE(SUM(external_cost),0)").Scan(&sum)
+			Where("ai_key_id = ? AND ai_key_id <> 0 AND started_at >= ?", keys[i].AiKeyId, since).
+			Select("COALESCE(SUM(external_cost),0)").Scan(&llmSum)
+		db.Model(&gateway.McpLog{}).
+			Where("ai_key_id = ? AND ai_key_id <> 0 AND started_at >= ?", keys[i].AiKeyId, since).
+			Select("COALESCE(SUM(external_cost),0)").Scan(&mcpSum)
 		if err := db.Model(&gateway.AiKey{}).Where("ai_key_id = ?", keys[i].AiKeyId).
-			Update("budget_used", sum).Error; err != nil {
+			Update("budget_used", llmSum+mcpSum).Error; err != nil {
 			logger.WithCtx(ctx).Mod("gateway").Err(err).Field("aiKeyId", keys[i].AiKeyId).Error("更新 budget_used 失败")
 			continue
 		}

@@ -15,18 +15,15 @@ import (
 // 管线②③(前缀解析/前缀化 model/补 /v1) 在 pushDeployment 经 ApplyPrefixProjection 临时投影，不落库——
 // DB 的 litellm_params.model 始终存用户填的原始厂商模型名(如 glm-5.2)，编辑回显不再带 anthropic/ 前缀。
 
-// BuildModelRouteName 三态路由名唯一入口：
-// base = modelKey；format==anthropic → base+"(Anthropic)"（协议隔离独立分组）；
-// !routable → 追加 "__disabled__" 摘出 LB 组（litellm_model_id 不变，保归因锚点）。
-func BuildModelRouteName(modelKey, format string, routable bool) string {
-	name := modelKey
-	if format == "anthropic" {
-		name += gateway.ModelAnthropicSuffix
-	}
+// BuildModelRouteName 两态路由名唯一入口：
+// routable → modelKey 原名（协议差异只存在于 litellm_params.model 前缀，调用方一律用纯模型名，
+// LiteLLM 同名混组 LB + 入站协议自动翻译）；!routable → 追加 "__disabled__" 摘出 LB 组
+// （litellm_model_id 不变，保归因锚点）。
+func BuildModelRouteName(modelKey string, routable bool) string {
 	if !routable {
-		name += gateway.ModelDisabledSuffix
+		return modelKey + gateway.ModelDisabledSuffix
 	}
-	return name
+	return modelKey
 }
 
 // ApplyCredentialToParams 凭证绑定投影：credentialName 为空（内联部署）→ 原样副本（允许 inline api_key）；
