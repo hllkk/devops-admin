@@ -11,6 +11,7 @@ type RouterGroup struct {
 	AiKeyRouter
 	UsageRouter
 	DashboardRouter
+	CostAnalysisRouter
 	RouterSettingsRouter
 	ResourceApplicationRouter
 	MCPRouter
@@ -26,6 +27,7 @@ var (
 	keyScenarioApi    = v1.ApiGroupApp.GatewayApiGroup.KeyScenarioApi
 	usageApi          = v1.ApiGroupApp.GatewayApiGroup.UsageApi
 	dashboardApi      = v1.ApiGroupApp.GatewayApiGroup.DashboardApi
+	costAnalysisApi   = v1.ApiGroupApp.GatewayApiGroup.CostAnalysisApi
 	routerSettingsApi = v1.ApiGroupApp.GatewayApiGroup.RouterSettingsApi
 	providerBalanceApi = v1.ApiGroupApp.GatewayApiGroup.ProviderBalanceApi
 	applicationApi    = v1.ApiGroupApp.GatewayApiGroup.ResourceApplicationApi

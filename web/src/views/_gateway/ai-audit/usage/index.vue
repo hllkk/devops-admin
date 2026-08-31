@@ -1,5 +1,6 @@
 <script setup lang="tsx">
 import { onMounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
 import { NTag, NTime } from 'naive-ui';
 import { fetchGetUsageLogList, fetchReconcileLLMLogs, fetchSyncLLMLogs } from '@/service/api/gateway';
 import { useAppStore } from '@/store/modules/app';
@@ -8,6 +9,8 @@ import { $t } from '@/locales';
 import UsageSearch from './modules/usage-search.vue';
 
 defineOptions({ name: 'GatewayUsage' });
+
+const route = useRoute();
 
 const appStore = useAppStore();
 
@@ -135,14 +138,36 @@ async function handleReconcile() {
   getData();
 }
 
+/** 成本分析「日志」跳转预填(query: 维度参数 userId/aiKeyId/model/provider + 业务日区间 startDate/endDate) */
+const initialDateRange = ref<[number, number] | null>(null);
+
+function applyRouteQuery() {
+  const q = route.query;
+  const has = (k: string) => typeof q[k] === 'string' && q[k] !== '';
+  if (has('userId')) searchParams.value.userId = q.userId as string;
+  if (has('aiKeyId')) searchParams.value.aiKeyId = q.aiKeyId as string;
+  if (has('model')) searchParams.value.model = q.model as string;
+  if (has('provider')) searchParams.value.provider = q.provider as string;
+  if (has('startDate') && has('endDate')) {
+    const s = new Date(`${q.startDate}T00:00:00`);
+    const e = new Date(`${q.endDate}T23:59:59`);
+    if (!Number.isNaN(s.getTime()) && !Number.isNaN(e.getTime())) {
+      initialDateRange.value = [s.getTime(), e.getTime()];
+      searchParams.value.startTime = s.toISOString();
+      searchParams.value.endTime = e.toISOString();
+    }
+  }
+}
+
 onMounted(() => {
+  applyRouteQuery();
   getData();
 });
 </script>
 
 <template>
   <div class="min-h-500px flex-col-stretch gap-16px overflow-hidden flex-shrink-0 lt-sm:overflow-auto">
-    <UsageSearch v-model:model="searchParams" @search="getDataByPage" />
+    <UsageSearch v-model:model="searchParams" :initial-date-range="initialDateRange" @search="getDataByPage" />
 
     <NCard :title="$t('page.gateway.usage.title')" :bordered="false" size="small" class="card-wrapper sm:flex-1-hidden">
       <template #header-extra>

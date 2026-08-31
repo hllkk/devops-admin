@@ -12,6 +12,7 @@ type ServiceGroup struct {
 	UsageSyncService
 	UsageAggregateService
 	DashboardService
+	CostAnalysisService
 	RouterSettingsService
 	ProviderBalanceService
 	ResourceApplicationService

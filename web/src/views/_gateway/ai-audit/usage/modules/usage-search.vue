@@ -1,11 +1,18 @@
 <script setup lang="ts">
-import { ref, toRaw } from 'vue';
+import { onMounted, ref, toRaw } from 'vue';
 import { jsonClone } from '@sa/utils';
 import { useNaiveForm } from '@/hooks/common/form';
 import { $t } from '@/locales';
 import UserSelect from '@/components/custom/user-select.vue';
 
 defineOptions({ name: 'UsageSearch' });
+
+interface Props {
+  /** 外部跳转预填的时间范围(ms 时间戳,如成本分析「日志」跳转;仅初始化用一次) */
+  initialDateRange?: [number, number] | null;
+}
+
+const props = defineProps<Props>();
 
 interface Emits {
   (e: 'search'): void;
@@ -21,6 +28,10 @@ const defaultModel = jsonClone(toRaw(model.value));
 
 /** 时间范围(ms 时间戳,空=不限)；提交转 RFC3339(后端按 UTC 解析) */
 const dateRange = ref<[number, number] | null>(null);
+
+onMounted(() => {
+  if (props.initialDateRange) dateRange.value = [...props.initialDateRange];
+});
 
 function fmtRFC3339(ts: number) {
   return new Date(ts).toISOString();

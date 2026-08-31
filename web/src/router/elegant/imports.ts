@@ -39,6 +39,7 @@ export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<Ro
   "social-callback": () => import("@/views/_builtin/social-callback/index.vue"),
   "user-center": () => import("@/views/_builtin/user-center/index.vue"),
   "ai-audit_approval": () => import("@/views/_gateway/ai-audit/approval/index.vue"),
+  "ai-audit_cost": () => import("@/views/_gateway/ai-audit/cost/index.vue"),
   "ai-audit_usage": () => import("@/views/_gateway/ai-audit/usage/index.vue"),
   "ai-capability_mcp": () => import("@/views/_gateway/ai-capability/mcp/index.vue"),
   "ai-capability_skill": () => import("@/views/_gateway/ai-capability/skill/index.vue"),

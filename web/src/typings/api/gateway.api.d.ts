@@ -903,5 +903,75 @@ declare namespace Api {
       success: CommonType.IdType[];
       failed: { applicationId: CommonType.IdType; reason: string }[];
     };
+
+    // ───────────────── 成本分析 CostAnalysis(P3·多维成本聚合,管理员视角) ─────────────────
+
+    /** 成本 KPI(含等长上一期环比;上期无消耗时环比为 0) */
+    type CostKpi = {
+      internalCost: number;
+      externalCost: number;
+      costDiff: number;
+      dailyAvgInternal: number;
+      internalChange: number;
+      externalChange: number;
+      totalRequests: number;
+      totalTokens: number;
+      days: number;
+    };
+
+    /** 成本趋势项(按业务日,内/外双线) */
+    type CostTrendItem = {
+      date: string;
+      internalCost: number;
+      externalCost: number;
+      requests: number;
+      tokens: number;
+    };
+
+    /** 成本总览(KPI+趋势) */
+    type CostOverview = {
+      kpi: CostKpi;
+      trend: CostTrendItem[];
+    };
+
+    /** 成本明细行(六维共用;value=维度原始值,下钻/跳日志带参用) */
+    type CostDetailRow = {
+      label: string;
+      value: string;
+      requests: number;
+      promptTokens: number;
+      completionTokens: number;
+      totalTokens: number;
+      internalCost: number;
+      externalCost: number;
+      costDiff: number;
+      activeUsers: number;
+      perCapita: number;
+    };
+
+    /** 部门下钻成员行(userId=0 为该部门「部门Key消耗/未归因」合并行) */
+    type CostScopeUserRow = {
+      userId: CommonType.IdType;
+      userName: string;
+      requests: number;
+      totalTokens: number;
+      internalCost: number;
+      externalCost: number;
+    };
+
+    /** 成本分析查询(时间为业务日 YYYY-MM-DD;departmentId 筛选含子树) */
+    type CostSearchParams = CommonType.RecordNullable<
+      {
+        dimension?: 'department' | 'user' | 'model' | 'aiKey' | 'provider' | 'date';
+        sort?: 'internal' | 'external' | 'requests' | 'tokens';
+        startDate?: string | null;
+        endDate?: string | null;
+        departmentId?: CommonType.IdType | null;
+        userId?: CommonType.IdType | null;
+        aiKeyId?: CommonType.IdType | null;
+        model?: string | null;
+        provider?: string | null;
+      } & Api.Common.CommonSearchParams
+    >;
   }
 }

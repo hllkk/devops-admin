@@ -429,6 +429,20 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			OrderNum:  2,
 			Module:    "gateway",
 		},
+		// 成本分析(P3):多维成本聚合(部门/人员/模型/Key/供应商/日期)+KPI环比+趋势+部门下钻;
+		// 管理员/决策层视角,user 角色不授(同 usage 模式,防普通用户查全公司人员级成本)
+		{
+			ParentId:  menuNameMap["route.ai-audit"],
+			MenuName:  "route.ai-audit_cost",
+			MenuType:  "C",
+			Path:      "ai-audit/cost",
+			ApiPrefix: "/gateway/cost, /gateway/cost/*",
+			Component: "_gateway/ai-audit/cost/index",
+			Icon:      "lucide:calculator",
+			Visible:   "0",
+			OrderNum:  3,
+			Module:    "gateway",
+		},
 	}
 	// 创建子菜单
 	if err = db.Create(&childMenus).Error; err != nil {

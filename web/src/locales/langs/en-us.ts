@@ -280,6 +280,7 @@ const local: App.I18n.Schema = {
     'ai-audit': 'AI Audit',
     'ai-audit_approval': 'Approval Management',
     'ai-audit_usage': 'Usage Logs',
+    'ai-audit_cost': 'Cost Analysis',
     'ai-capability': 'AI Capabilities',
     'ai-capability_mcp': 'MCP Management',
     'ai-capability_skill': 'Skill Management',
@@ -653,6 +654,72 @@ const local: App.I18n.Schema = {
           completionTokens: 'Output Tokens',
           cost: 'Cost (¥)',
           duration: 'Duration'
+        }
+      },
+      cost: {
+        title: 'Cost Analysis',
+        toLogs: 'Logs',
+        preset: {
+          today: 'Today',
+          yesterday: 'Yesterday',
+          month: 'This Month',
+          last7: 'Last 7 Days',
+          last30: 'Last 30 Days'
+        },
+        search: {
+          department: 'Department',
+          user: 'User',
+          model: 'Model',
+          modelPlaceholder: 'Model name (exact)',
+          provider: 'Provider'
+        },
+        kpi: {
+          internal: 'Internal Cost (¥)',
+          external: 'External Cost (¥)',
+          diff: 'Settlement Diff (¥)',
+          dailyAvg: 'Daily Avg Internal (¥)',
+          change: 'MoM',
+          changeTip: 'Compared with the previous period of equal length; shows - when the previous period has no usage',
+          diffTip: 'External cost − internal cost: the gap between customer-facing settlement price and internal cost price',
+          dailyAvgTip: 'Internal cost of the period ÷ number of days'
+        },
+        trend: {
+          title: 'Cost Trend',
+          internal: 'Internal Cost',
+          external: 'External Cost'
+        },
+        top: {
+          title: 'Top 10 Users',
+          rank: '#'
+        },
+        detail: {
+          title: 'Cost Detail',
+          dimension: {
+            department: 'By Department',
+            user: 'By User',
+            model: 'By Model',
+            aiKey: 'By Key',
+            provider: 'By Provider',
+            date: 'By Date'
+          },
+          sort: {
+            internal: 'Internal Cost',
+            external: 'External Cost',
+            requests: 'Requests',
+            tokens: 'Total Tokens'
+          },
+          col: {
+            requests: 'Requests',
+            promptTokens: 'Input Tokens',
+            completionTokens: 'Output Tokens',
+            totalTokens: 'Total Tokens',
+            internalCost: 'Internal Cost (¥)',
+            externalCost: 'External Cost (¥)',
+            costDiff: 'Settlement Diff (¥)',
+            activeUsers: 'Active Users',
+            perCapita: 'Per-capita Internal (¥)',
+            operations: 'Actions'
+          }
         }
       },
       mcp: {

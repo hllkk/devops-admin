@@ -276,6 +276,7 @@ const local: App.I18n.Schema = {
     'ai-audit': 'AI审计',
     'ai-audit_approval': '审批管理',
     'ai-audit_usage': '调用日志',
+    'ai-audit_cost': '成本分析',
     'ai-capability': 'AI能力',
     'ai-capability_mcp': 'MCP 管理',
     'ai-capability_skill': 'Skill 管理',
@@ -649,6 +650,72 @@ const local: App.I18n.Schema = {
           completionTokens: '输出Token',
           cost: '成本(¥)',
           duration: '耗时'
+        }
+      },
+      cost: {
+        title: '成本分析',
+        toLogs: '日志',
+        preset: {
+          today: '今天',
+          yesterday: '昨天',
+          month: '本月',
+          last7: '近7天',
+          last30: '近30天'
+        },
+        search: {
+          department: '部门',
+          user: '用户',
+          model: '模型',
+          modelPlaceholder: '模型名(精确)',
+          provider: '供应商'
+        },
+        kpi: {
+          internal: '内部成本(¥)',
+          external: '外部成本(¥)',
+          diff: '结算差额(¥)',
+          dailyAvg: '日均内部成本(¥)',
+          change: '环比',
+          changeTip: '与等长上一期对比；上期无消耗时显示 -',
+          diffTip: '外部成本 − 内部成本：对客结算价与内部成本价的差额',
+          dailyAvgTip: '期间内部成本合计 ÷ 期间天数'
+        },
+        trend: {
+          title: '成本趋势',
+          internal: '内部成本',
+          external: '外部成本'
+        },
+        top: {
+          title: '人员 Top10',
+          rank: '#'
+        },
+        detail: {
+          title: '成本明细',
+          dimension: {
+            department: '按部门',
+            user: '按人员',
+            model: '按模型',
+            aiKey: '按密钥',
+            provider: '按供应商',
+            date: '按日期'
+          },
+          sort: {
+            internal: '内部成本',
+            external: '外部成本',
+            requests: '请求数',
+            tokens: '总Token'
+          },
+          col: {
+            requests: '请求数',
+            promptTokens: '输入Token',
+            completionTokens: '输出Token',
+            totalTokens: '总Token',
+            internalCost: '内部成本(¥)',
+            externalCost: '外部成本(¥)',
+            costDiff: '结算差额(¥)',
+            activeUsers: '活跃用户',
+            perCapita: '人均内部成本(¥)',
+            operations: '操作'
+          }
         }
       },
       mcp: {

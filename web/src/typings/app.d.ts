@@ -830,6 +830,72 @@ declare namespace App {
               duration: string;
             };
           };
+          cost: {
+            title: string;
+            toLogs: string;
+            preset: {
+              today: string;
+              yesterday: string;
+              month: string;
+              last7: string;
+              last30: string;
+            };
+            search: {
+              department: string;
+              user: string;
+              model: string;
+              modelPlaceholder: string;
+              provider: string;
+            };
+            kpi: {
+              internal: string;
+              external: string;
+              diff: string;
+              dailyAvg: string;
+              change: string;
+              changeTip: string;
+              diffTip: string;
+              dailyAvgTip: string;
+            };
+            trend: {
+              title: string;
+              internal: string;
+              external: string;
+            };
+            top: {
+              title: string;
+              rank: string;
+            };
+            detail: {
+              title: string;
+              dimension: {
+                department: string;
+                user: string;
+                model: string;
+                aiKey: string;
+                provider: string;
+                date: string;
+              };
+              sort: {
+                internal: string;
+                external: string;
+                requests: string;
+                tokens: string;
+              };
+              col: {
+                requests: string;
+                promptTokens: string;
+                completionTokens: string;
+                totalTokens: string;
+                internalCost: string;
+                externalCost: string;
+                costDiff: string;
+                activeUsers: string;
+                perCapita: string;
+                operations: string;
+              };
+            };
+          };
           mcp: {
             title: string;
             add: string;

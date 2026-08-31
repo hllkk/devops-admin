@@ -4,6 +4,7 @@
 
 | 日期 | 需求 | 文件 | 状态 |
 |---|---|---|---|
+| 2026-08-30 | AI 网关·P3 成本分析页（P3 首件：/gateway/cost 三端点读 cost_summary_daily——overview KPI 内外成本/差额/日均+等长环比+按日趋势；detail 六维聚合部门/人员/模型/Key/供应商/日期服务端分页+排序白名单+业务日/部门子树/用户/Key/模型/供应商筛选；scope-users 部门行下钻直挂口径行=子和。部门读时归因锚点=部门Key归部门/个人Key归个人主部门(用户拍板)/皆无未分配,软删Key按历史归属；expandDeptSubtree 内存 BFS 防跨组 import 环。前端 ai-audit/cost 预设时间Tab+KPI4卡环比+趋势双线+Top10+六维明细+部门行内展开+行日志跳 usage 带参(query 预填补齐)。菜单 ai-audit_cost 挂 AI审计目录 user 角色不授。规避 AIHelms 9 坑；不含 MCP 维度/导出/项目维度——P2 全量手动验证同日通过) | business/ai-gateway-cost-analysis.md | 已实现(待运行时验证) |
 | 2026-08-30 | AI 网关·错误日志接入补齐+操作日志归属决策（API 层 11 文件 +60 处 service err 分支补 Mod("gateway").Err(err).Error() 对齐 system 模式、resource_application 4 处 Warn 升 Error 落 sys_error；参数绑定分支不加；操作日志维持集成 sys_oper_log 不另建——PrivateGroup OperationRecord 已自动覆盖网关写操作，AIHelms 另建因其无统一基座不照搬） | business/ai-gateway-error-log-integration.md | 已实现 |
 | 2026-08-30 | Skill·发布能力合并进编辑抽屉（双复选框「发布到市场」+「领用前需要审批」后者依赖前者，取消发布联动清审批；提交串联 Update/Create→PublishSkill 固定 visibilityType=all 部门/个人档 UI 按用户要求移除——删列表发布按钮+skill-publish-dialog.vue，后端三档端点保留；勾发布无包提交前拦截；发布配置与回显快照对比变化才调省幂等请求） | business/skill-publish-into-drawer.md | 已实现 |
 | 2026-08-30 | Skill·对标 AIHelms 借鉴三项（新建一步带 zip：前端串联 CreateSkill→UploadSkillPackage 后端零改动；zip 解包校验 SKILL.md 任意层级大小写不敏感落盘后验失败删文件拒入库含单测；分类受控轻量版 GET categories distinct+NSelect filterable+tag 可选可输，casbin 走 /gateway/skill/* 通配零菜单改动；安全审查/Agent token 下载明确不借留 P3） | business/skill-aihelms-alignment.md | 已实现 |

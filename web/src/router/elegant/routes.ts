@@ -73,6 +73,15 @@ export const generatedRoutes: GeneratedRoute[] = [
         }
       },
       {
+        name: 'ai-audit_cost',
+        path: '/ai-audit/cost',
+        component: 'view.ai-audit_cost',
+        meta: {
+          title: 'ai-audit_cost',
+          i18nKey: 'route.ai-audit_cost'
+        }
+      },
+      {
         name: 'ai-audit_usage',
         path: '/ai-audit/usage',
         component: 'view.ai-audit_usage',

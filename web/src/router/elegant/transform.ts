@@ -169,6 +169,7 @@ const routeMap: RouteMap = {
   "admin": "/admin",
   "ai-audit": "/ai-audit",
   "ai-audit_approval": "/ai-audit/approval",
+  "ai-audit_cost": "/ai-audit/cost",
   "ai-audit_usage": "/ai-audit/usage",
   "ai-capability": "/ai-capability",
   "ai-capability_mcp": "/ai-capability/mcp",
