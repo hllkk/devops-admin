@@ -13,5 +13,8 @@ func (r *UsageRouter) InitUsageRouter(Router *gin.RouterGroup) {
 		g.POST("sync", usageApi.SyncLLMLogs)            // 手动触发用量回流
 		g.POST("reconcile", usageApi.ReconcileLLMLogs)  // 手动触发对账回灌
 		g.GET("list", usageApi.GetUsageLogList)         // 分页查用量日志
+		g.POST("mcp/sync", usageApi.SyncMcpLogs)        // 手动触发 MCP 调用回流
+		g.POST("mcp/reconcile", usageApi.ReconcileMcpLogs) // 手动触发 MCP 漏单对账
+		g.GET("mcp/list", usageApi.GetMcpLogList)       // 分页查 MCP 调用日志
 	}
 }

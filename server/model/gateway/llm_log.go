@@ -72,6 +72,8 @@ type LiteLLMSpendLog struct {
 	CustomLlmProvider   string         `gorm:"column:custom_llm_provider"`
 	ApiBase             string         `gorm:"column:api_base"`
 	User                string         `gorm:"column:user"`
+	McpNamespacedToolName string       `gorm:"column:mcp_namespaced_tool_name"` // 非空=MCP 调用行(回流层与 LLM 行互斥分流)
+	Status              string         `gorm:"column:status"`
 	Metadata            datatypes.JSON `gorm:"column:metadata"`
 	SessionId           string         `gorm:"column:session_id"`
 }

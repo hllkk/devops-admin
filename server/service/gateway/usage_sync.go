@@ -25,6 +25,7 @@ const (
 	defaultMaxBatchesPerRun    = 50
 	defaultReconcileWindowDays = 30
 	syncStateKey               = "llm_logs"
+	syncStateKeyMcp            = "mcp_logs"
 	masterKeyToken             = "litellm_proxy_master_key"
 	defaultUserId              = "default_user_id"
 )
@@ -116,11 +117,12 @@ func (s *UsageSyncService) ReconcileLLMLogs(ctx context.Context) (map[string]int
 	}
 	since := time.Now().UTC().AddDate(0, 0, -window)
 
-	// 1. sdb 查近 N 天 SpendLogs 行（跳过 master key）
+	// 1. sdb 查近 N 天 SpendLogs 行（跳过 master key；排除 MCP 行，与 SyncLLMLogs 互斥分流）
 	var rows []gateway.LiteLLMSpendLog
 	if err := sdb.Table(gateway.LiteLLMSpendLog{}.TableName()).
 		Where(`"startTime" >= ?`, since).
 		Where(`("api_key" IS NULL OR "api_key" = '' OR "api_key" <> ?)`, masterKeyToken).
+		Where(`("mcp_namespaced_tool_name" IS NULL OR "mcp_namespaced_tool_name" = '')`).
 		Order(`COALESCE("endTime","startTime") DESC, request_id DESC`).
 		Limit(defaultSpendBatchSize).
 		Find(&rows).Error; err != nil {
@@ -315,12 +317,13 @@ func cursorLE(a *spendCursor, t time.Time, rid string) bool {
 	return false
 }
 
-// fetchSpendBatch 复合游标 keyset 分页查 LiteLLM_SpendLogs。
+// fetchSpendBatch 复合游标 keyset 分页查 LiteLLM_SpendLogs（仅 LLM 行，MCP 行互斥分流到 SyncMcpLogs）。
 func (s *UsageSyncService) fetchSpendBatch(sdb *gorm.DB, state *gateway.SyncState, limit int) ([]gateway.LiteLLMSpendLog, error) {
 	var rows []gateway.LiteLLMSpendLog
 	q := sdb.Table(gateway.LiteLLMSpendLog{}.TableName()).
 		Where(`("api_key" IS NULL OR "api_key" = '' OR "api_key" <> ?)`, masterKeyToken).
 		Where(`COALESCE("call_type",'') NOT IN ('list_mcp_tools','list_mcp_tool','mcp_list_tools','mcp_list_tool')`).
+		Where(`("mcp_namespaced_tool_name" IS NULL OR "mcp_namespaced_tool_name" = '')`).
 		Order(`COALESCE("endTime","startTime") ASC, request_id ASC`).
 		Limit(limit)
 	if state.LastRequestId != "" {
@@ -634,11 +637,16 @@ func toFloatCost(v any) float64 {
 // ----------------------------------------------------------------------------
 
 func (s *UsageSyncService) loadSyncState(db *gorm.DB) *gateway.SyncState {
+	return loadSyncStateByKey(db, syncStateKey)
+}
+
+// loadSyncStateByKey 按游标键加载同步状态(llm_logs/mcp_logs 各自独立游标,同表 KV)。
+func loadSyncStateByKey(db *gorm.DB, key string) *gateway.SyncState {
 	var state gateway.SyncState
-	if err := db.Where("key = ?", syncStateKey).First(&state).Error; err != nil {
+	if err := db.Where("key = ?", key).First(&state).Error; err != nil {
 		// 首次同步：回退 1 小时启动（对齐 AIHelms）
 		state = gateway.SyncState{
-			Key:        syncStateKey,
+			Key:        key,
 			LastSyncAt: time.Now().UTC().Add(-time.Hour),
 		}
 		db.Create(&state)

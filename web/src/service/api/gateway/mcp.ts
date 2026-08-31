@@ -95,10 +95,10 @@ export function fetchRefreshMCPTools(mcpServerId: CommonType.IdType) {
   });
 }
 
-/** 更新工具级计费(空=继承服务器默认) */
+/** 更新工具级计费(空=继承服务器默认;internalCostPerCall null=继承/同外部价) */
 export function fetchUpdateMCPToolBilling(
   mcpToolId: CommonType.IdType,
-  data: { billingType: string; externalCostPerCall: number | null }
+  data: { billingType: string; externalCostPerCall: number | null; internalCostPerCall: number | null }
 ) {
   return request<Api.Gateway.MCPTool>({
     url: `/gateway/mcp/tool/${mcpToolId}/billing`,

@@ -628,6 +628,8 @@ const local: App.I18n.Schema = {
       },
       usage: {
         title: '调用日志',
+        tabLlm: 'LLM 调用',
+        tabMcp: 'MCP 调用',
         provider: '供应商',
         userPlaceholder: '按用户筛选',
         modelPlaceholder: '模型名(模糊)',
@@ -652,6 +654,19 @@ const local: App.I18n.Schema = {
           duration: '耗时'
         }
       },
+      mcpLog: {
+        title: 'MCP 调用日志',
+        server: 'MCP 服务器',
+        serverPlaceholder: '按服务器筛选',
+        tool: '工具',
+        toolPlaceholder: '工具名(模糊)',
+        status: '状态',
+        statusSuccess: '成功',
+        statusError: '失败',
+        externalCost: '外部成本(¥)',
+        internalCost: '内部成本(¥)',
+        syncConfirm: '手动从 LiteLLM 回流 MCP 调用日志（定时任务每 5 分钟自动执行）。继续？'
+      },
       cost: {
         title: '成本分析',
         toLogs: '日志',
@@ -663,6 +678,8 @@ const local: App.I18n.Schema = {
           last30: '近30天'
         },
         search: {
+          preset: '快捷时间',
+          dateRange: '时间范围',
           department: '部门',
           user: '用户',
           model: '模型',
@@ -696,7 +713,8 @@ const local: App.I18n.Schema = {
             model: '按模型',
             aiKey: '按密钥',
             provider: '按供应商',
-            date: '按日期'
+            date: '按日期',
+            mcp: '按MCP'
           },
           sort: {
             internal: '内部成本',
@@ -730,6 +748,8 @@ const local: App.I18n.Schema = {
         billingFree: '免费',
         billingPerCall: '按次计费',
         costPerCall: '单次调用价(¥)',
+        internalCostPerCall: '内部单价(¥/次)',
+        internalCostPerCallTip: '内部结算价，留空=同外部价',
         healthCheck: {
           short: '健康',
           done: '健康检查完成',
@@ -748,6 +768,7 @@ const local: App.I18n.Schema = {
           documentationUrl: '文档地址',
           billingType: '计费类型',
           toolCount: '工具数',
+          callCount: '调用次数',
           healthStatus: '健康状态',
           isPublished: '发布状态',
           isActive: '状态',

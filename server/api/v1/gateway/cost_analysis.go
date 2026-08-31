@@ -104,3 +104,31 @@ func (a *CostAnalysisApi) GetCostScopeUsers(c *gin.Context) {
 	}
 	response.OkWithDetailed(rows, "获取成功", c)
 }
+
+// GetCostMcpTools
+// @Tags      GatewayCost
+// @Summary   MCP 维工具子表(指定 server 按工具聚合)
+// @Produce   application/json
+// @Param     serverId   query  string  true   "MCP服务器ID"
+// @Param     startDate  query  string  false  "开始业务日"
+// @Param     endDate    query  string  false  "结束业务日"
+// @Param     departmentId query  string  false  "部门筛选(含子树)"
+// @Param     userId     query  string  false  "用户筛选"
+// @Param     aiKeyId    query  string  false  "密钥筛选"
+// @Success   200  {object}  response.Response{data=[]response.CostDetailRow,msg=string}
+// @Router    /gateway/cost/detail/mcp-tools [get]
+func (a *CostAnalysisApi) GetCostMcpTools(c *gin.Context) {
+	serverId, _ := strconv.ParseInt(c.Query("serverId"), 10, 64)
+	var f gatewayReq.CostAnalysisSearch
+	if err := c.ShouldBindQuery(&f); err != nil {
+		response.FailWithMessage("参数错误: "+err.Error(), c)
+		return
+	}
+	rows, err := costAnalysisService.GetCostMcpTools(c.Request.Context(), serverId, &f)
+	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取MCP工具成本失败")
+		response.FailWithMessage("获取失败", c)
+		return
+	}
+	response.OkWithDetailed(rows, "获取成功", c)
+}

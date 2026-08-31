@@ -51,6 +51,7 @@ function createDefaultModel(): Model {
     documentationUrl: '',
     billingType: 'free',
     externalCostPerCall: null,
+    internalCostPerCall: null,
     isActive: true
   };
 }
@@ -99,6 +100,7 @@ function initModel() {
       documentationUrl: row.documentationUrl,
       billingType: row.billingType,
       externalCostPerCall: row.externalCostPerCall,
+      internalCostPerCall: row.internalCostPerCall,
       isActive: row.isActive
     };
     authValue.value = row.credentials?.auth_value ?? '';
@@ -218,6 +220,13 @@ async function handleSubmit() {
         </NFormItem>
         <NFormItem v-if="model.billingType === 'per_call'" :label="$t('page.gateway.mcp.costPerCall')">
           <NInputNumber v-model:value="model.externalCostPerCall" :min="0" :precision="6" class="w-full" />
+        </NFormItem>
+        <NFormItem
+          v-if="model.billingType === 'per_call'"
+          :label="$t('page.gateway.mcp.internalCostPerCall')"
+          :feedback="$t('page.gateway.mcp.internalCostPerCallTip')"
+        >
+          <NInputNumber v-model:value="model.internalCostPerCall" :min="0" :precision="6" class="w-full" />
         </NFormItem>
         <NFormItem :label="$t('page.gateway.mcp.col.category')">
           <NSelect

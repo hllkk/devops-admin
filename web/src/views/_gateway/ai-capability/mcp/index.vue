@@ -77,6 +77,13 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
         minWidth: 80
       },
       {
+        key: 'callCount',
+        title: $t('page.gateway.mcp.col.callCount'),
+        align: 'right',
+        minWidth: 90,
+        render: row => row.callCount?.toLocaleString() ?? '0'
+      },
+      {
         key: 'billingType',
         title: $t('page.gateway.mcp.col.billingType'),
         align: 'center',

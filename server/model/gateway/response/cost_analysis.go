@@ -1,5 +1,7 @@
 package response
 
+import "github.com/hllkk/devops-admin/server/model/gateway"
+
 // CostKpi 成本分析 KPI(随筛选联动，含等长上一期环比)。
 // 成本均为 ¥(库内口径：四键单价 × token / 1e6)。
 type CostKpi struct {
@@ -54,4 +56,11 @@ type CostScopeUserRow struct {
 	TotalTokens      int64   `json:"totalTokens"`      // 总token
 	InternalCost     float64 `json:"internalCost"`     // 内部成本
 	ExternalCost     float64 `json:"externalCost"`     // 外部成本
+}
+
+// McpLogView MCP 调用日志视图(userName/aiKeyName 后端回填;ServerName 落库已冗余无需回填)。
+type McpLogView struct {
+	gateway.McpLog
+	UserName  string `json:"userName"`  // 归因用户昵称
+	AiKeyName string `json:"aiKeyName"` // 归因密钥名
 }

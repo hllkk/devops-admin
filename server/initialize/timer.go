@@ -37,6 +37,14 @@ func Timer() {
 		_, err := (&gatewayService.UsageSyncService{}).ReconcileLLMLogs(ctx)
 		return err
 	})
+	task.Register("SyncMcpLogs", "同步LiteLLM MCP调用日志(工具归因+per_call成本)", func(ctx context.Context, _ json.RawMessage) error {
+		_, err := (&gatewayService.UsageSyncService{}).SyncMcpLogs(ctx)
+		return err
+	})
+	task.Register("ReconcileMcpLogs", "对账回灌MCP调用漏单", func(ctx context.Context, _ json.RawMessage) error {
+		_, err := (&gatewayService.UsageSyncService{}).ReconcileMcpLogs(ctx)
+		return err
+	})
 	task.Register("AggregateUsage", "聚合用量到日桶+重算预算+超限停用闭环", func(ctx context.Context, _ json.RawMessage) error {
 		_, err := (&gatewayService.UsageAggregateService{}).AggregateUsage(ctx)
 		return err

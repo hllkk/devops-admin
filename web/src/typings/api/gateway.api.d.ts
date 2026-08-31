@@ -268,6 +268,10 @@ declare namespace Api {
       billingType: MCPBilling;
       /** 单次调用价(¥,null=免费) */
       externalCostPerCall: number | null;
+      /** 单次调用内部结算价(¥,null=同外部价) */
+      internalCostPerCall: number | null;
+      /** 累计调用次数(回流任务按 server 增量维护) */
+      callCount: number;
       isActive: boolean;
       isPublished: boolean;
       /** 可见范围(all/selected/user) */
@@ -309,6 +313,7 @@ declare namespace Api {
         | 'documentationUrl'
         | 'billingType'
         | 'externalCostPerCall'
+        | 'internalCostPerCall'
         | 'isActive'
       >
     >;
@@ -332,6 +337,8 @@ declare namespace Api {
       billingType: MCPBilling;
       /** 工具级单次调用价(¥,null=继承) */
       externalCostPerCall: number | null;
+      /** 工具级内部结算价(¥,null=继承/同外部价) */
+      internalCostPerCall: number | null;
     }>;
 
     /** MCP 服务器详情(含工具列表) */
@@ -353,6 +360,41 @@ declare namespace Api {
 
     /** MCP 发布设置回显(含 selected/user 模式的可见部门/用户) */
     type MCPPublishView = MCPPublishParams;
+
+    // ───────────────── MCP 调用日志 McpLog(P3·从 LiteLLM SpendLogs 回流) ─────────────────
+
+    /** MCP 调用日志(userName/aiKeyName 后端回填;serverName 落库已冗余) */
+    type McpLog = Common.CommonRecord<{
+      logId: CommonType.IdType;
+      requestId: string;
+      userId: CommonType.IdType;
+      aiKeyId: CommonType.IdType;
+      /** 归因MCP服务器(0=未匹配) */
+      mcpServerId: CommonType.IdType;
+      /** 服务器路由名(未匹配时为原始名) */
+      serverName: string;
+      /** 网关工具全名(LiteLLM 原始锚点) */
+      namespacedName: string;
+      /** 工具名(匹配 MCPTool 后回填) */
+      toolName: string;
+      externalCost: number;
+      internalCost: number;
+      durationMs: number;
+      status: string;
+      startedAt: string;
+      endedAt: string;
+      sessionId: string;
+      userName: string;
+      aiKeyName: string;
+    }>;
+
+    /** MCP 调用日志搜索参数(mcpServerId 0=不限;时间 ISO8601) */
+    type McpLogSearchParams = CommonType.RecordNullable<
+      Pick<McpLog, 'userId' | 'aiKeyId' | 'mcpServerId' | 'toolName' | 'status'> & {
+        startTime?: string | null;
+        endTime?: string | null;
+      } & Api.Common.CommonSearchParams
+    >;
 
     /** MCP 接入配置(用户侧:客户端配置 JSON 含主 Key 明文鉴权头) */
     type MCPConnectConfig = {
@@ -962,7 +1004,7 @@ declare namespace Api {
     /** 成本分析查询(时间为业务日 YYYY-MM-DD;departmentId 筛选含子树) */
     type CostSearchParams = CommonType.RecordNullable<
       {
-        dimension?: 'department' | 'user' | 'model' | 'aiKey' | 'provider' | 'date';
+        dimension?: 'department' | 'user' | 'model' | 'aiKey' | 'provider' | 'date' | 'mcp';
         sort?: 'internal' | 'external' | 'requests' | 'tokens';
         startDate?: string | null;
         endDate?: string | null;

@@ -67,24 +67,28 @@ const billingEditVisible = ref(false);
 const editingTool = ref<Api.Gateway.MCPTool | null>(null);
 const editBillingType = ref('');
 const editCost = ref<number | null>(null);
+const editInternalCost = ref<number | null>(null);
 
 function openBillingEdit(tool: Api.Gateway.MCPTool) {
   editingTool.value = tool;
   editBillingType.value = tool.billingType ?? '';
   editCost.value = tool.externalCostPerCall;
+  editInternalCost.value = tool.internalCostPerCall;
   billingEditVisible.value = true;
 }
 
 async function saveBillingEdit() {
   if (!editingTool.value?.mcpToolId) return;
-  const cost = editBillingType.value === 'per_call' ? editCost.value : null;
-  if (editBillingType.value === 'per_call' && (cost === null || cost === undefined)) {
+  const isPerCall = editBillingType.value === 'per_call';
+  const cost = isPerCall ? editCost.value : null;
+  if (isPerCall && (cost === null || cost === undefined)) {
     window.$message?.warning($t('page.gateway.mcp.form.costRequired'));
     return;
   }
   const { error } = await fetchUpdateMCPToolBilling(editingTool.value.mcpToolId, {
     billingType: editBillingType.value,
-    externalCostPerCall: cost
+    externalCostPerCall: cost,
+    internalCostPerCall: isPerCall ? editInternalCost.value : null
   });
   if (error) return;
   window.$message?.success($t('common.updateSuccess'));
@@ -192,6 +196,9 @@ const columns = computed(() => [
           </NFormItem>
           <NFormItem v-if="editBillingType === 'per_call'" :label="$t('page.gateway.mcp.costPerCall')">
             <NInputNumber v-model:value="editCost" :min="0" :precision="6" class="w-full" />
+          </NFormItem>
+          <NFormItem v-if="editBillingType === 'per_call'" :label="$t('page.gateway.mcp.internalCostPerCall')">
+            <NInputNumber v-model:value="editInternalCost" :min="0" :precision="6" class="w-full" />
           </NFormItem>
         </NForm>
         <template #footer>

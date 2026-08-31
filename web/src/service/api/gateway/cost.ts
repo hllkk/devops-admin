@@ -26,3 +26,12 @@ export function fetchGetCostScopeUsers(deptId: CommonType.IdType, params?: Api.G
     params: { ...params, deptId }
   });
 }
+
+/** MCP 维工具子表(指定 server 按工具聚合) */
+export function fetchGetCostMcpTools(serverId: CommonType.IdType, params?: Api.Gateway.CostSearchParams) {
+  return request<Api.Gateway.CostDetailRow[]>({
+    url: '/gateway/cost/detail/mcp-tools',
+    method: 'get',
+    params: { ...params, serverId }
+  });
+}

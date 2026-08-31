@@ -27,6 +27,9 @@ type PresetKey = (typeof presetKeys)[number] | 'custom';
 
 const preset = ref<PresetKey>('month');
 
+/** 自定义起止(业务日,与预设档互斥);清空回退本月 */
+const dateRange = ref<[number, number] | null>(null);
+
 function fmtDay(d: Date) {
   const y = d.getFullYear();
   const m = `${d.getMonth() + 1}`.padStart(2, '0');
@@ -36,6 +39,7 @@ function fmtDay(d: Date) {
 
 function applyPreset(key: PresetKey) {
   preset.value = key;
+  dateRange.value = null;
   const now = new Date();
   const end = fmtDay(now);
   let start = end;
@@ -63,9 +67,6 @@ function applyPreset(key: PresetKey) {
   model.value.startDate = start;
   model.value.endDate = end;
 }
-
-/** 自定义起止(业务日);清空回退本月 */
-const dateRange = ref<[number, number] | null>(null);
 
 function syncDateRange() {
   if (dateRange.value) {
@@ -100,7 +101,6 @@ onMounted(() => {
 
 async function reset() {
   await restoreValidation();
-  dateRange.value = null;
   Object.assign(model.value, defaultModel);
   applyPreset('month');
   emit('search');
@@ -115,70 +115,79 @@ async function search() {
 
 <template>
   <NCard :bordered="false" size="small" class="card-wrapper">
-    <NForm ref="formRef" :model="model" label-placement="left" :label-width="70" class="flex flex-col gap-12px">
-      <div class="flex flex-wrap items-center gap-12px">
-        <NRadioGroup :value="preset" size="small" @update:value="(v: string) => applyPreset(v as PresetKey)">
-          <NRadioButton v-for="opt in presetOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</NRadioButton>
-        </NRadioGroup>
-        <NDatePicker v-model:value="dateRange" type="daterange" clearable class="w-260px" @update:value="syncDateRange" />
-      </div>
-      <NGrid responsive="screen" item-responsive x-gap="12" y-gap="0">
-        <NFormItemGi
-          span="24 s:12 m:6"
-          :label="$t('page.gateway.cost.search.department')"
-          path="departmentId"
-          class="pr-12px"
-        >
-          <NTreeSelect
-            v-model:value="model.departmentId"
-            clearable
-            filterable
-            key-field="id"
-            label-field="label"
-            :options="deptOptions as []"
-            :placeholder="$t('common.placeholderSelect')"
-          />
-        </NFormItemGi>
-        <NFormItemGi span="24 s:12 m:6" :label="$t('page.gateway.cost.search.user')" path="userId" class="pr-12px">
-          <UserSelect
-            v-model:value="model.userId"
-            clearable
-            filterable
-            :placeholder="$t('page.gateway.usage.userPlaceholder')"
-          />
-        </NFormItemGi>
-        <NFormItemGi span="24 s:12 m:6" :label="$t('page.gateway.cost.search.model')" path="model" class="pr-12px">
-          <NInput
-            v-model:value="model.model"
-            clearable
-            :placeholder="$t('page.gateway.cost.search.modelPlaceholder')"
-            @keyup.enter="search"
-          />
-        </NFormItemGi>
-        <NFormItemGi span="24 s:12 m:6" :label="$t('page.gateway.cost.search.provider')" path="provider" class="pr-12px">
-          <NInput
-            v-model:value="model.provider"
-            clearable
-            :placeholder="$t('page.gateway.usage.providerPlaceholder')"
-            @keyup.enter="search"
-          />
-        </NFormItemGi>
-      </NGrid>
-      <NSpace justify="end">
-        <NButton @click="reset">
-          <template #icon>
-            <icon-ic-round-refresh class="text-icon" />
-          </template>
-          {{ $t('common.reset') }}
-        </NButton>
-        <NButton type="primary" ghost @click="search">
-          <template #icon>
-            <icon-ic-round-search class="text-icon" />
-          </template>
-          {{ $t('common.search') }}
-        </NButton>
-      </NSpace>
-    </NForm>
+    <NCollapse>
+      <NCollapseItem :title="$t('common.search')" name="cost-search">
+        <NForm ref="formRef" :model="model" label-placement="left" :label-width="80">
+          <NGrid responsive="screen" item-responsive>
+            <NFormItemGi span="24 s:12 m:8" :label="$t('page.gateway.cost.search.preset')" path="startDate" class="pr-24px">
+              <NRadioGroup :value="preset" size="small" @update:value="(v: string) => applyPreset(v as PresetKey)">
+                <NRadioButton v-for="opt in presetOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</NRadioButton>
+              </NRadioGroup>
+            </NFormItemGi>
+            <NFormItemGi span="24 s:12 m:8" :label="$t('page.gateway.cost.search.dateRange')" path="endDate" class="pr-24px">
+              <NDatePicker
+                v-model:value="dateRange"
+                type="daterange"
+                clearable
+                class="w-full"
+                @update:value="syncDateRange"
+              />
+            </NFormItemGi>
+            <NFormItemGi span="24 s:12 m:8" :label="$t('page.gateway.cost.search.department')" path="departmentId" class="pr-24px">
+              <NTreeSelect
+                v-model:value="model.departmentId"
+                clearable
+                filterable
+                key-field="id"
+                label-field="label"
+                :options="deptOptions as []"
+                :placeholder="$t('common.placeholderSelect')"
+              />
+            </NFormItemGi>
+            <NFormItemGi span="24 s:12 m:8" :label="$t('page.gateway.cost.search.user')" path="userId" class="pr-24px">
+              <UserSelect
+                v-model:value="model.userId"
+                clearable
+                filterable
+                :placeholder="$t('page.gateway.usage.userPlaceholder')"
+              />
+            </NFormItemGi>
+            <NFormItemGi span="24 s:12 m:8" :label="$t('page.gateway.cost.search.model')" path="model" class="pr-24px">
+              <NInput
+                v-model:value="model.model"
+                clearable
+                :placeholder="$t('page.gateway.cost.search.modelPlaceholder')"
+                @keyup.enter="search"
+              />
+            </NFormItemGi>
+            <NFormItemGi span="24 s:12 m:8" :label="$t('page.gateway.cost.search.provider')" path="provider" class="pr-24px">
+              <NInput
+                v-model:value="model.provider"
+                clearable
+                :placeholder="$t('page.gateway.usage.providerPlaceholder')"
+                @keyup.enter="search"
+              />
+            </NFormItemGi>
+            <NFormItemGi span="24 s:12 m:16" class="pr-24px">
+              <NSpace class="w-full" justify="end">
+                <NButton @click="reset">
+                  <template #icon>
+                    <icon-ic-round-refresh class="text-icon" />
+                  </template>
+                  {{ $t('common.reset') }}
+                </NButton>
+                <NButton type="primary" ghost @click="search">
+                  <template #icon>
+                    <icon-ic-round-search class="text-icon" />
+                  </template>
+                  {{ $t('common.search') }}
+                </NButton>
+              </NSpace>
+            </NFormItemGi>
+          </NGrid>
+        </NForm>
+      </NCollapseItem>
+    </NCollapse>
   </NCard>
 </template>
 

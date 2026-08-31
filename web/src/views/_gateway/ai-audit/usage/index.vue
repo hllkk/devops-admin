@@ -6,11 +6,15 @@ import { fetchGetUsageLogList, fetchReconcileLLMLogs, fetchSyncLLMLogs } from '@
 import { useAppStore } from '@/store/modules/app';
 import { defaultTransform, useNaivePaginatedTable } from '@/hooks/common/table';
 import { $t } from '@/locales';
+import McpLogPanel from './modules/mcp-log-panel.vue';
 import UsageSearch from './modules/usage-search.vue';
 
 defineOptions({ name: 'GatewayUsage' });
 
 const route = useRoute();
+
+/** LLM/MCP 调用日志切换(内容 v-show 保状态,不销毁) */
+const logTab = ref<'llm' | 'mcp'>('llm');
 
 const appStore = useAppStore();
 
@@ -138,8 +142,9 @@ async function handleReconcile() {
   getData();
 }
 
-/** 成本分析「日志」跳转预填(query: 维度参数 userId/aiKeyId/model/provider + 业务日区间 startDate/endDate) */
+/** 成本分析「日志」跳转预填(query: 维度参数 userId/aiKeyId/model/provider/mcpServerId + 业务日区间 startDate/endDate) */
 const initialDateRange = ref<[number, number] | null>(null);
+const initialMcpServerId = ref<CommonType.IdType | null>(null);
 
 function applyRouteQuery() {
   const q = route.query;
@@ -157,6 +162,11 @@ function applyRouteQuery() {
       searchParams.value.endTime = e.toISOString();
     }
   }
+  // MCP 维跳转:切到 MCP tab 并预填服务器筛选
+  if (q.tab === 'mcp') {
+    logTab.value = 'mcp';
+    if (has('mcpServerId')) initialMcpServerId.value = q.mcpServerId as string;
+  }
 }
 
 onMounted(() => {
@@ -167,46 +177,60 @@ onMounted(() => {
 
 <template>
   <div class="min-h-500px flex-col-stretch gap-16px overflow-hidden flex-shrink-0 lt-sm:overflow-auto">
-    <UsageSearch v-model:model="searchParams" :initial-date-range="initialDateRange" @search="getDataByPage" />
+    <NTabs :value="logTab" type="line" size="small" class="flex-shrink-0" @update:value="(v: string) => (logTab = v as 'llm' | 'mcp')">
+      <NTabPane name="llm" :tab="$t('page.gateway.usage.tabLlm')" />
+      <NTabPane name="mcp" :tab="$t('page.gateway.usage.tabMcp')" />
+    </NTabs>
 
-    <NCard :title="$t('page.gateway.usage.title')" :bordered="false" size="small" class="card-wrapper sm:flex-1-hidden">
-      <template #header-extra>
-        <NSpace size="small">
-          <NPopconfirm @positive-click="handleSync">
-            <template #trigger>
-              <NButton size="small" :loading="syncing">{{ $t('page.gateway.usage.syncNow') }}</NButton>
-            </template>
-            {{ $t('page.gateway.usage.syncConfirm') }}
-          </NPopconfirm>
-          <NPopconfirm @positive-click="handleReconcile">
-            <template #trigger>
-              <NButton size="small" :loading="reconciling">{{ $t('page.gateway.usage.reconcileNow') }}</NButton>
-            </template>
-            {{ $t('page.gateway.usage.reconcileConfirm') }}
-          </NPopconfirm>
-          <TableHeaderOperation
-            v-model:columns="columnChecks"
-            :loading="loading"
-            :show-add="false"
-            :show-delete="false"
-            :show-refresh="true"
-            @refresh="getData"
-          />
-        </NSpace>
-      </template>
-      <NDataTable
-        :columns="columns"
-        :data="data"
-        size="small"
-        :flex-height="!appStore.isMobile"
-        :scroll-x="scrollX"
-        :loading="loading"
-        remote
-        :row-key="row => row.logId"
-        :pagination="mobilePagination"
-        class="sm:h-full"
-      />
-    </NCard>
+    <div v-show="logTab === 'llm'" class="flex-col-stretch gap-16px min-h-0 flex-1">
+      <UsageSearch v-model:model="searchParams" :initial-date-range="initialDateRange" @search="getDataByPage" />
+
+      <NCard :title="$t('page.gateway.usage.title')" :bordered="false" size="small" class="card-wrapper sm:flex-1-hidden">
+        <template #header-extra>
+          <NSpace size="small">
+            <NPopconfirm @positive-click="handleSync">
+              <template #trigger>
+                <NButton size="small" :loading="syncing">{{ $t('page.gateway.usage.syncNow') }}</NButton>
+              </template>
+              {{ $t('page.gateway.usage.syncConfirm') }}
+            </NPopconfirm>
+            <NPopconfirm @positive-click="handleReconcile">
+              <template #trigger>
+                <NButton size="small" :loading="reconciling">{{ $t('page.gateway.usage.reconcileNow') }}</NButton>
+              </template>
+              {{ $t('page.gateway.usage.reconcileConfirm') }}
+            </NPopconfirm>
+            <TableHeaderOperation
+              v-model:columns="columnChecks"
+              :loading="loading"
+              :show-add="false"
+              :show-delete="false"
+              :show-refresh="true"
+              @refresh="getData"
+            />
+          </NSpace>
+        </template>
+        <NDataTable
+          :columns="columns"
+          :data="data"
+          size="small"
+          :flex-height="!appStore.isMobile"
+          :scroll-x="scrollX"
+          :loading="loading"
+          remote
+          :row-key="row => row.logId"
+          :pagination="mobilePagination"
+          class="sm:h-full"
+        />
+      </NCard>
+    </div>
+
+    <McpLogPanel
+      v-show="logTab === 'mcp'"
+      :initial-date-range="initialDateRange"
+      :initial-server-id="initialMcpServerId"
+      class="min-h-0 flex-1"
+    />
   </div>
 </template>
 

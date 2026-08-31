@@ -632,6 +632,8 @@ const local: App.I18n.Schema = {
       },
       usage: {
         title: 'Usage Logs',
+        tabLlm: 'LLM Calls',
+        tabMcp: 'MCP Calls',
         provider: 'Provider',
         userPlaceholder: 'Filter by user',
         modelPlaceholder: 'Model (fuzzy)',
@@ -656,6 +658,19 @@ const local: App.I18n.Schema = {
           duration: 'Duration'
         }
       },
+      mcpLog: {
+        title: 'MCP Call Logs',
+        server: 'MCP Server',
+        serverPlaceholder: 'Filter by server',
+        tool: 'Tool',
+        toolPlaceholder: 'Tool name (fuzzy)',
+        status: 'Status',
+        statusSuccess: 'Success',
+        statusError: 'Error',
+        externalCost: 'External Cost (¥)',
+        internalCost: 'Internal Cost (¥)',
+        syncConfirm: 'Manually pull MCP call logs from LiteLLM (a cron job runs this every 5 minutes). Continue?'
+      },
       cost: {
         title: 'Cost Analysis',
         toLogs: 'Logs',
@@ -667,6 +682,8 @@ const local: App.I18n.Schema = {
           last30: 'Last 30 Days'
         },
         search: {
+          preset: 'Preset',
+          dateRange: 'Date Range',
           department: 'Department',
           user: 'User',
           model: 'Model',
@@ -700,7 +717,8 @@ const local: App.I18n.Schema = {
             model: 'By Model',
             aiKey: 'By Key',
             provider: 'By Provider',
-            date: 'By Date'
+            date: 'By Date',
+            mcp: 'By MCP'
           },
           sort: {
             internal: 'Internal Cost',
@@ -734,6 +752,8 @@ const local: App.I18n.Schema = {
         billingFree: 'Free',
         billingPerCall: 'Per Call',
         costPerCall: 'Cost per Call (¥)',
+        internalCostPerCall: 'Internal Price (¥/call)',
+        internalCostPerCallTip: 'Internal settlement price, empty = same as external',
         healthCheck: {
           short: 'Check',
           done: 'Health check finished',
@@ -752,6 +772,7 @@ const local: App.I18n.Schema = {
           documentationUrl: 'Docs URL',
           billingType: 'Billing',
           toolCount: 'Tools',
+          callCount: 'Calls',
           healthStatus: 'Health',
           isPublished: 'Publish',
           isActive: 'Status',

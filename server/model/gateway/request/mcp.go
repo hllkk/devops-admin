@@ -37,6 +37,7 @@ type MCPServerOperateParams struct {
 	DocumentationUrl    string         `json:"documentationUrl" form:"documentationUrl"` // 文档地址
 	BillingType         string         `json:"billingType" form:"billingType"`        // 计费类型(per_call/free)
 	ExternalCostPerCall *float64       `json:"externalCostPerCall"`                   // 单次调用价(¥,nil=免费)
+	InternalCostPerCall *float64       `json:"internalCostPerCall"`                   // 单次调用内部结算价(¥,nil=同外部价)
 	IsActive            *bool          `json:"isActive"`                              // 是否启用(nil=不改)
 }
 
@@ -45,6 +46,7 @@ type MCPServerOperateParams struct {
 type MCPToolBillingParams struct {
 	BillingType         string   `json:"billingType"`                  // 计费类型(per_call/free/空=继承)
 	ExternalCostPerCall *float64 `json:"externalCostPerCall"`          // 单次调用价(¥,nil=继承)
+	InternalCostPerCall *float64 `json:"internalCostPerCall"`          // 单次调用内部价(¥,nil=继承/同外部价)
 }
 
 // MCPPublishParams MCP 发布设置(对齐前端 PUT /gateway/mcp/publish)。

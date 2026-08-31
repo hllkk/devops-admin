@@ -3,6 +3,7 @@ package gateway
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"gorm.io/gorm"
@@ -26,6 +27,7 @@ const (
 	costDimensionDepartment = "department"
 	costDimensionProvider   = "provider"
 	costDimensionDate       = "date"
+	costDimensionMcp        = "mcp"
 )
 
 // costDeptJoins 部门读时归因 JOIN(表别名 s = gateway_cost_summary_daily)。
@@ -38,6 +40,7 @@ const costDeptJoins = `LEFT JOIN sys_users u ON u.id = s.user_id AND s.user_id <
 const costDeptAnchor = `CASE WHEN k.owner_type = 'dept' THEN k.owner_id ELSE COALESCE(u.dept_id, 0) END`
 
 // GetCostOverview KPI(含等长上一期环比)+按日趋势，随筛选联动。
+// 口径为 LLM+MCP 合并(P3·MCP 回流落地)：LLM 读聚合表、MCP 扫日志表实时聚合，Go 层合并。
 func (s *CostAnalysisService) GetCostOverview(ctx context.Context, f *gatewayReq.CostAnalysisSearch) (gatewayResp.CostOverview, error) {
 	now := time.Now()
 	start, end, days := normalizeCostRange(f.StartDate, f.EndDate, now)
@@ -47,11 +50,25 @@ func (s *CostAnalysisService) GetCostOverview(ctx context.Context, f *gatewayReq
 	if err != nil {
 		return ov, err
 	}
+	mInt, mExt, mCalls, err := sumMcpCost(ctx, f, start, end)
+	if err != nil {
+		return ov, err
+	}
+	curInt += mInt
+	curExt += mExt
+	curReq += mCalls
+
 	prevStart, prevEnd := prevCostRange(start, end)
 	prevInt, prevExt, _, _, err := s.sumCost(ctx, f, prevStart, prevEnd)
 	if err != nil {
 		return ov, err
 	}
+	pmInt, pmExt, _, err := sumMcpCost(ctx, f, prevStart, prevEnd)
+	if err != nil {
+		return ov, err
+	}
+	prevInt += pmInt
+	prevExt += pmExt
 
 	kpi := gatewayResp.CostKpi{
 		InternalCost: curInt, ExternalCost: curExt, CostDiff: curExt - curInt,
@@ -63,26 +80,55 @@ func (s *CostAnalysisService) GetCostOverview(ctx context.Context, f *gatewayReq
 	}
 	ov.Kpi = kpi
 
+	// 趋势：LLM 聚合表 + MCP 实时聚合，按业务日 Go 层合并(缺日不补零,前端按日对齐)
 	db := s.costBaseQuery(ctx, f, start, end)
-	var trend []gatewayResp.CostTrendItem
+	var llmTrend []gatewayResp.CostTrendItem
 	if err := db.Select(`to_char(s.summary_date,'YYYY-MM-DD') AS date,
 		COALESCE(SUM(s.internal_cost),0) AS internal_cost,
 		COALESCE(SUM(s.external_cost),0) AS external_cost,
 		COALESCE(SUM(s.request_count),0) AS requests,
 		COALESCE(SUM(s.total_tokens),0) AS tokens`).
-		Group("s.summary_date").Order("s.summary_date ASC").Scan(&trend).Error; err != nil {
+		Group("s.summary_date").Order("s.summary_date ASC").Scan(&llmTrend).Error; err != nil {
 		return ov, err
 	}
+	mcpTrendMap, err := mcpTrend(ctx, f, start, end)
+	if err != nil {
+		return ov, err
+	}
+	merged := map[string]*gatewayResp.CostTrendItem{}
+	for _, item := range llmTrend {
+		v := item
+		merged[v.Date] = &v
+	}
+	for date, item := range mcpTrendMap {
+		if v, ok := merged[date]; ok {
+			v.InternalCost += item.InternalCost
+			v.ExternalCost += item.ExternalCost
+			v.Requests += item.Requests
+		} else {
+			v := item
+			merged[date] = &v
+		}
+	}
+	trend := make([]gatewayResp.CostTrendItem, 0, len(merged))
+	for _, v := range merged {
+		trend = append(trend, *v)
+	}
+	sort.Slice(trend, func(i, j int) bool { return trend[i].Date < trend[j].Date })
 	ov.Trend = trend
 	return ov, nil
 }
 
 // GetCostDetail 多维聚合明细(服务端分页，排序白名单降序)。
-// 维度六选一：department/user/model/aiKey/provider/date。
+// 维度七选一：department/user/model/aiKey/provider/date/mcp(MCP 维扫日志表实时聚合,
+// server 两级的第一级,工具子表走 GetCostMcpTools)。
 func (s *CostAnalysisService) GetCostDetail(ctx context.Context, f *gatewayReq.CostAnalysisSearch) ([]gatewayResp.CostDetailRow, int64, error) {
 	now := time.Now()
 	start, end, _ := normalizeCostRange(f.StartDate, f.EndDate, now)
 	dimension := costDimensionOf(f.Dimension)
+	if dimension == costDimensionMcp {
+		return s.getMcpServerDetail(ctx, f, start, end)
+	}
 	groupExpr, valueExpr := costGroupExpr(dimension)
 
 	db := s.costBaseQuery(ctx, f, start, end)
@@ -201,6 +247,100 @@ func (s *CostAnalysisService) GetCostScopeUsers(ctx context.Context, deptId int6
 	return items, nil
 }
 
+// getMcpServerDetail MCP 维第一级：按 server 聚合 gateway_mcp_log(实时)。
+// label=server 路由名(未匹配 server 的行为原始 namespaced 名)，value=serverId(跳日志带参)；
+// MCP 调用无 token，tokens 排序键回落 requests。
+func (s *CostAnalysisService) getMcpServerDetail(ctx context.Context, f *gatewayReq.CostAnalysisSearch, start, end string) ([]gatewayResp.CostDetailRow, int64, error) {
+	db := mcpCostBaseQuery(ctx, f, start, end, expandDeptSubtree(ctx, f.DepartmentId))
+
+	var total int64
+	if err := db.Session(&gorm.Session{}).
+		Select("COUNT(DISTINCT m.mcp_server_id)").Scan(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	type mcpAgg struct {
+		Label            string
+		Value            string
+		Requests         int
+		InternalCost     float64
+		ExternalCost     float64
+		ActiveUsers      int
+	}
+	var rows []mcpAgg
+	orderCol := map[string]string{
+		"internal_cost": "internal_cost", "external_cost": "external_cost", "requests": "requests", "total_tokens": "requests",
+	}[costSortColumn(f.Sort)]
+	limit, offset := f.LimitOffset()
+	if err := db.Select(`MAX(m.server_name) AS label, CAST(m.mcp_server_id AS TEXT) AS value,
+		COUNT(*) AS requests,
+		COALESCE(SUM(m.internal_cost),0) AS internal_cost,
+		COALESCE(SUM(m.external_cost),0) AS external_cost,
+		COUNT(DISTINCT m.user_id) AS active_users`).
+		Group("m.mcp_server_id").Order(orderCol + " DESC").Limit(limit).Offset(offset).
+		Scan(&rows).Error; err != nil {
+		return nil, 0, err
+	}
+	items := make([]gatewayResp.CostDetailRow, 0, len(rows))
+	for _, r := range rows {
+		if r.Label == "" {
+			r.Label = "未匹配"
+		}
+		items = append(items, gatewayResp.CostDetailRow{
+			Label: r.Label, Value: r.Value, Requests: r.Requests,
+			InternalCost: r.InternalCost, ExternalCost: r.ExternalCost, CostDiff: r.ExternalCost - r.InternalCost,
+			ActiveUsers: r.ActiveUsers,
+			PerCapita:   perCapitaOf(r.InternalCost, r.ActiveUsers),
+		})
+	}
+	return items, total, nil
+}
+
+// GetCostMcpTools MCP 维第二级：指定 server 按工具聚合(工具子表,label=工具名,value 同)。
+func (s *CostAnalysisService) GetCostMcpTools(ctx context.Context, serverId int64, f *gatewayReq.CostAnalysisSearch) ([]gatewayResp.CostDetailRow, error) {
+	now := time.Now()
+	start, end, _ := normalizeCostRange(f.StartDate, f.EndDate, now)
+	if serverId == 0 {
+		return []gatewayResp.CostDetailRow{}, nil
+	}
+	db := mcpCostBaseQuery(ctx, f, start, end, nil).Where("m.mcp_server_id = ?", serverId)
+	type toolAgg struct {
+		Label        string
+		Requests     int
+		InternalCost float64
+		ExternalCost float64
+		ActiveUsers  int
+	}
+	var rows []toolAgg
+	if err := db.Select(`COALESCE(NULLIF(m.tool_name,''), m.namespaced_name) AS label,
+		COUNT(*) AS requests,
+		COALESCE(SUM(m.internal_cost),0) AS internal_cost,
+		COALESCE(SUM(m.external_cost),0) AS external_cost,
+		COUNT(DISTINCT m.user_id) AS active_users`).
+		Group("COALESCE(NULLIF(m.tool_name,''), m.namespaced_name)").
+		Order("internal_cost DESC").Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	items := make([]gatewayResp.CostDetailRow, 0, len(rows))
+	for _, r := range rows {
+		items = append(items, gatewayResp.CostDetailRow{
+			Label: r.Label, Value: r.Label, Requests: r.Requests,
+			InternalCost: r.InternalCost, ExternalCost: r.ExternalCost, CostDiff: r.ExternalCost - r.InternalCost,
+			ActiveUsers: r.ActiveUsers,
+			PerCapita:   perCapitaOf(r.InternalCost, r.ActiveUsers),
+		})
+	}
+	return items, nil
+}
+
+// perCapitaOf 人均内部成本(分母=活跃用户数,0 防除零)。
+func perCapitaOf(internal float64, activeUsers int) float64 {
+	if activeUsers <= 0 {
+		return 0
+	}
+	return internal / float64(activeUsers)
+}
+
 // costBaseQuery 聚合表 + 部门归因 JOIN + 公共筛选(时间/部门子树/用户/Key/模型/供应商)。
 func (s *CostAnalysisService) costBaseQuery(ctx context.Context, f *gatewayReq.CostAnalysisSearch, start, end string) *gorm.DB {
 	db := global.OPS_DB.WithContext(ctx).Table("gateway_cost_summary_daily s").Joins(costDeptJoins)
@@ -251,7 +391,7 @@ func applyCostFilter(db *gorm.DB, f *gatewayReq.CostAnalysisSearch, start, end s
 // costDimensionOf 维度白名单(默认 department)。
 func costDimensionOf(dim string) string {
 	switch dim {
-	case dimensionUser, dimensionModel, dimensionAiKey, costDimensionProvider, costDimensionDate:
+	case dimensionUser, dimensionModel, dimensionAiKey, costDimensionProvider, costDimensionDate, costDimensionMcp:
 		return dim
 	}
 	return costDimensionDepartment

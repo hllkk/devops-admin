@@ -806,6 +806,8 @@ declare namespace App {
           };
           usage: {
             title: string;
+            tabLlm: string;
+            tabMcp: string;
             provider: string;
             userPlaceholder: string;
             modelPlaceholder: string;
@@ -830,6 +832,19 @@ declare namespace App {
               duration: string;
             };
           };
+          mcpLog: {
+            title: string;
+            server: string;
+            serverPlaceholder: string;
+            tool: string;
+            toolPlaceholder: string;
+            status: string;
+            statusSuccess: string;
+            statusError: string;
+            externalCost: string;
+            internalCost: string;
+            syncConfirm: string;
+          };
           cost: {
             title: string;
             toLogs: string;
@@ -841,6 +856,8 @@ declare namespace App {
               last30: string;
             };
             search: {
+              preset: string;
+              dateRange: string;
               department: string;
               user: string;
               model: string;
@@ -875,6 +892,7 @@ declare namespace App {
                 aiKey: string;
                 provider: string;
                 date: string;
+                mcp: string;
               };
               sort: {
                 internal: string;
@@ -908,6 +926,8 @@ declare namespace App {
             billingFree: string;
             billingPerCall: string;
             costPerCall: string;
+            internalCostPerCall: string;
+            internalCostPerCallTip: string;
             healthCheck: {
               short: string;
               done: string;
@@ -926,6 +946,7 @@ declare namespace App {
               documentationUrl: string;
               billingType: string;
               toolCount: string;
+              callCount: string;
               healthStatus: string;
               isPublished: string;
               isActive: string;

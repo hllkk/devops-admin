@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router';
 import { NButton, NDataTable } from 'naive-ui';
 import type { DataTableColumn, DataTableRowKey } from 'naive-ui';
 import { $t } from '@/locales';
-import { fetchGetCostDetail, fetchGetCostScopeUsers } from '@/service/api/gateway';
+import { fetchGetCostDetail, fetchGetCostMcpTools, fetchGetCostScopeUsers } from '@/service/api/gateway';
 
 defineOptions({ name: 'CostDetailTable' });
 
@@ -17,14 +17,14 @@ const props = defineProps<Props>();
 
 const router = useRouter();
 
-type Dimension = 'department' | 'user' | 'model' | 'aiKey' | 'provider' | 'date';
+type Dimension = 'department' | 'user' | 'model' | 'aiKey' | 'provider' | 'date' | 'mcp';
 type SortKey = 'internal' | 'external' | 'requests' | 'tokens';
 
 const dimension = ref<Dimension>('department');
 const sort = ref<SortKey>('internal');
 
 const dimensionOptions = computed(() =>
-  (['department', 'user', 'model', 'aiKey', 'provider', 'date'] as Dimension[]).map(d => ({
+  (['department', 'user', 'model', 'aiKey', 'provider', 'date', 'mcp'] as Dimension[]).map(d => ({
     key: d,
     label: $t(`page.gateway.cost.detail.dimension.${d}`)
   }))
@@ -66,9 +66,14 @@ async function load() {
 const scopeCache = reactive(new Map<string, Api.Gateway.CostScopeUserRow[]>());
 const scopeLoading = reactive(new Set<string>());
 
+/** MCP 维行内工具子表(按 server 懒加载缓存) */
+const mcpToolCache = reactive(new Map<string, Api.Gateway.CostDetailRow[]>());
+const mcpToolLoading = reactive(new Set<string>());
+
 watch(dimension, () => {
   pageNum.value = 1;
   scopeCache.clear();
+  mcpToolCache.clear();
   load();
 });
 
@@ -109,11 +114,25 @@ async function loadScope(deptValue: string) {
 }
 
 function handleExpand(keys: DataTableRowKey[]) {
-  if (dimension.value !== 'department') return;
+  if (dimension.value !== 'department' && dimension.value !== 'mcp') return;
   for (const k of keys) {
     const v = String(k);
-    if (!scopeCache.has(v)) loadScope(v);
+    if (dimension.value === 'department') {
+      if (!scopeCache.has(v)) loadScope(v);
+    } else if (!mcpToolCache.has(v)) {
+      loadMcpTools(v);
+    }
   }
+}
+
+async function loadMcpTools(serverValue: string) {
+  if (serverValue === '0') return; // 未匹配 server 无工具子表
+  if (mcpToolLoading.has(serverValue)) return;
+  mcpToolLoading.add(serverValue);
+  const { data, error } = await fetchGetCostMcpTools(serverValue, props.filters);
+  mcpToolLoading.delete(serverValue);
+  if (error || !data) return;
+  mcpToolCache.set(serverValue, data);
 }
 
 const scopeColumns: DataTableColumn<Api.Gateway.CostScopeUserRow>[] = [
@@ -172,6 +191,10 @@ function goLogs(row: Api.Gateway.CostDetailRow) {
     case 'provider':
       if (row.value) query.provider = row.value;
       break;
+    case 'mcp':
+      query.tab = 'mcp';
+      if (row.value !== '0') query.mcpServerId = row.value;
+      break;
     case 'date':
       query.startDate = row.value;
       query.endDate = row.value;
@@ -181,6 +204,39 @@ function goLogs(row: Api.Gateway.CostDetailRow) {
   }
   router.push({ path: '/gateway/ai-audit/usage', query });
 }
+
+/** MCP 维工具子表列 */
+const mcpToolColumns: DataTableColumn<Api.Gateway.CostDetailRow>[] = [
+  { key: 'label', title: $t('page.gateway.mcpLog.tool'), minWidth: 200 },
+  {
+    key: 'requests',
+    title: $t('page.gateway.cost.detail.col.requests'),
+    align: 'right',
+    minWidth: 90,
+    render: row => row.requests.toLocaleString()
+  },
+  {
+    key: 'internalCost',
+    title: $t('page.gateway.cost.detail.col.internalCost'),
+    align: 'right',
+    minWidth: 110,
+    render: row => <span class="font-mono">¥{row.internalCost.toFixed(4)}</span>
+  },
+  {
+    key: 'externalCost',
+    title: $t('page.gateway.cost.detail.col.externalCost'),
+    align: 'right',
+    minWidth: 110,
+    render: row => <span class="font-mono">¥{row.externalCost.toFixed(4)}</span>
+  },
+  {
+    key: 'activeUsers',
+    title: $t('page.gateway.cost.detail.col.activeUsers'),
+    align: 'right',
+    minWidth: 90,
+    render: row => row.activeUsers.toLocaleString()
+  }
+];
 
 const columns = computed<DataTableColumn<Api.Gateway.CostDetailRow>[]>(() => {
   const cols: DataTableColumn<Api.Gateway.CostDetailRow>[] = [];
@@ -193,6 +249,20 @@ const columns = computed<DataTableColumn<Api.Gateway.CostDetailRow>[]>(() => {
           columns={scopeColumns}
           data={scopeCache.get(row.value) ?? []}
           loading={scopeLoading.has(row.value)}
+          class="pl-24px"
+        />
+      )
+    });
+  }
+  if (dimension.value === 'mcp') {
+    cols.push({
+      type: 'expand',
+      renderExpand: row => (
+        <NDataTable
+          size="small"
+          columns={mcpToolColumns}
+          data={mcpToolCache.get(row.value) ?? []}
+          loading={mcpToolLoading.has(row.value)}
           class="pl-24px"
         />
       )
@@ -211,28 +281,35 @@ const columns = computed<DataTableColumn<Api.Gateway.CostDetailRow>[]>(() => {
       align: 'right',
       minWidth: 90,
       render: row => row.requests.toLocaleString()
-    },
-    {
-      key: 'promptTokens',
-      title: $t('page.gateway.cost.detail.col.promptTokens'),
-      align: 'right',
-      minWidth: 100,
-      render: row => row.promptTokens.toLocaleString()
-    },
-    {
-      key: 'completionTokens',
-      title: $t('page.gateway.cost.detail.col.completionTokens'),
-      align: 'right',
-      minWidth: 100,
-      render: row => row.completionTokens.toLocaleString()
-    },
-    {
-      key: 'totalTokens',
-      title: $t('page.gateway.cost.detail.col.totalTokens'),
-      align: 'right',
-      minWidth: 110,
-      render: row => row.totalTokens.toLocaleString()
-    },
+    }
+  );
+  // MCP 维无 token(LLM 专属度量),token 三列仅非 mcp 维展示
+  if (dimension.value !== 'mcp') {
+    cols.push(
+      {
+        key: 'promptTokens',
+        title: $t('page.gateway.cost.detail.col.promptTokens'),
+        align: 'right',
+        minWidth: 100,
+        render: row => row.promptTokens.toLocaleString()
+      },
+      {
+        key: 'completionTokens',
+        title: $t('page.gateway.cost.detail.col.completionTokens'),
+        align: 'right',
+        minWidth: 100,
+        render: row => row.completionTokens.toLocaleString()
+      },
+      {
+        key: 'totalTokens',
+        title: $t('page.gateway.cost.detail.col.totalTokens'),
+        align: 'right',
+        minWidth: 110,
+        render: row => row.totalTokens.toLocaleString()
+      }
+    );
+  }
+  cols.push(
     {
       key: 'internalCost',
       title: $t('page.gateway.cost.detail.col.internalCost'),

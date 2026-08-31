@@ -242,7 +242,7 @@ func (a *MCPApi) UpdateMCPToolBilling(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	view, err := mcpService.UpdateMCPToolBilling(c.Request.Context(), toolId, req.BillingType, req.ExternalCostPerCall)
+	view, err := mcpService.UpdateMCPToolBilling(c.Request.Context(), toolId, req.BillingType, req.ExternalCostPerCall, req.InternalCostPerCall)
 	if err != nil {
 		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("更新MCP工具计费失败")
 		response.FailWithMessage(err.Error(), c)

@@ -91,6 +91,7 @@ func RegisterTables() {
 		gateway.MCPTool{},
 		gateway.MCPVisibility{},
 		gateway.MCPVisibilityUser{},
+		gateway.McpLog{},
 		gateway.Skill{},
 		gateway.SkillVisibility{},
 		gateway.SkillVisibilityUser{},

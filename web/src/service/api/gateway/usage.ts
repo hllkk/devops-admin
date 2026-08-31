@@ -26,3 +26,30 @@ export function fetchReconcileLLMLogs() {
     timeout: 0
   });
 }
+
+/** 分页获取 MCP 调用日志(管理员视角,按用户/密钥/服务器/工具/状态/时间过滤) */
+export function fetchGetMcpLogList(params?: Api.Gateway.McpLogSearchParams) {
+  return request<Api.Common.PaginatingQueryRecord<Api.Gateway.McpLog>>({
+    url: '/gateway/usage/mcp/list',
+    method: 'get',
+    params
+  });
+}
+
+/** 手动触发 MCP 调用回流(工具归因+per_call 成本,独立游标) */
+export function fetchSyncMcpLogs() {
+  return request<Record<string, number>>({
+    url: '/gateway/usage/mcp/sync',
+    method: 'post',
+    timeout: 0
+  });
+}
+
+/** 手动触发 MCP 漏单对账回灌(近30天兜底) */
+export function fetchReconcileMcpLogs() {
+  return request<Record<string, number>>({
+    url: '/gateway/usage/mcp/reconcile',
+    method: 'post',
+    timeout: 0
+  });
+}

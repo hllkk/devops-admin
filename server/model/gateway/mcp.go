@@ -32,6 +32,8 @@ type MCPServer struct {
 	DocumentationUrl string     `json:"documentationUrl" gorm:"size:500;comment:文档地址"`                                  // 文档地址
 	BillingType      string     `json:"billingType" gorm:"size:20;default:free;comment:计费类型(per_call/free)"`            // 计费类型
 	ExternalCostPerCall *float64 `json:"externalCostPerCall" gorm:"type:numeric(12,6);comment:单次调用外部价(¥,nil=免费)"`        // 单次调用价
+	InternalCostPerCall *float64 `json:"internalCostPerCall" gorm:"type:numeric(12,6);comment:单次调用内部价(¥,nil=同外部价)"`     // 单次调用内部结算价(nil回落external,对齐部署internal_*语义)
+	CallCount        int64      `json:"callCount" gorm:"default:0;comment:累计调用次数(回流任务按server增量维护)"`               // 累计调用次数
 	IsActive         bool       `json:"isActive" gorm:"default:true;comment:是否启用"`                                      // 是否启用
 	IsPublished      bool       `json:"isPublished" gorm:"default:false;comment:是否发布到用户端"`                              // 是否发布
 	VisibilityType   string     `json:"visibilityType" gorm:"size:20;default:all;comment:可见范围(all/selected/user)"`      // 可见范围(与模型三档同口径)
@@ -88,6 +90,7 @@ type MCPTool struct {
 	InputSchema    datatypes.JSON `json:"inputSchema" gorm:"type:jsonb;comment:入参Schema" swaggertype:"object"`             // 入参 Schema
 	BillingType    string  `json:"billingType" gorm:"size:20;comment:计费类型(空=继承服务器)"`                                     // 工具级计费类型
 	ExternalCostPerCall *float64 `json:"externalCostPerCall" gorm:"type:numeric(12,6);comment:单次调用价(¥,nil=继承服务器)"`         // 工具级单次价
+	InternalCostPerCall *float64 `json:"internalCostPerCall" gorm:"type:numeric(12,6);comment:单次调用内部价(¥,nil=继承服务器)"`      // 工具级内部结算价(nil=继承服务器/同外部价)
 }
 
 func (MCPTool) TableName() string {

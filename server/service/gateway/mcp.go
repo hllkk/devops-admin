@@ -381,6 +381,7 @@ func (s *McpService) UpdateMCPServer(ctx context.Context, req gatewayReq.MCPServ
 			"documentation_url":     row.DocumentationUrl,
 			"billing_type":          row.BillingType,
 			"external_cost_per_call": row.ExternalCostPerCall,
+			"internal_cost_per_call": row.InternalCostPerCall,
 			"is_active":             isActive,
 			"update_by":             updateBy,
 		}).Error; err != nil {
@@ -633,7 +634,8 @@ func (s *McpService) RefreshMCPTools(ctx context.Context, id int64) ([]gatewayRe
 }
 
 // UpdateMCPToolBilling 工具级计费覆盖(空 billingType/nil cost=清为继承服务器)并重推 mcp_info。
-func (s *McpService) UpdateMCPToolBilling(ctx context.Context, toolId int64, billingType string, cost *float64) (gatewayResp.MCPToolView, error) {
+// internalCost nil=清为继承(回流成本计算回落 external,同部署 internal_* 语义)。
+func (s *McpService) UpdateMCPToolBilling(ctx context.Context, toolId int64, billingType string, cost, internalCost *float64) (gatewayResp.MCPToolView, error) {
 	var tool gateway.MCPTool
 	if err := global.OPS_DB.WithContext(ctx).Where("mcp_tool_id = ?", toolId).First(&tool).Error; err != nil {
 		return gatewayResp.MCPToolView{}, errors.New("MCP 工具不存在")
@@ -643,8 +645,9 @@ func (s *McpService) UpdateMCPToolBilling(ctx context.Context, toolId int64, bil
 	}
 	tool.BillingType = billingType
 	tool.ExternalCostPerCall = cost
+	tool.InternalCostPerCall = internalCost
 	if err := global.OPS_DB.WithContext(ctx).Model(&gateway.MCPTool{}).Where("mcp_tool_id = ?", toolId).
-		Updates(map[string]any{"billing_type": billingType, "external_cost_per_call": cost}).Error; err != nil {
+		Updates(map[string]any{"billing_type": billingType, "external_cost_per_call": cost, "internal_cost_per_call": internalCost}).Error; err != nil {
 		return gatewayResp.MCPToolView{}, err
 	}
 	// 重推所属服务器 mcp_info(工具计费参与投影)
@@ -893,6 +896,7 @@ func (s *McpService) validateOperate(ctx context.Context, req gatewayReq.MCPServ
 		DocumentationUrl:    req.DocumentationUrl,
 		BillingType:         billing,
 		ExternalCostPerCall: req.ExternalCostPerCall,
+		InternalCostPerCall: req.InternalCostPerCall,
 		IsActive:            req.IsActive == nil || *req.IsActive,
 		HealthStatus:        gateway.MCPHealthUnknown,
 	}
