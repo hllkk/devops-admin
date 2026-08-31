@@ -94,6 +94,7 @@ func (a *AiKeyApi) GetAiKey(c *gin.Context) {
 	}
 	view, err := aiKeyService.GetAiKey(c.Request.Context(), id)
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取密钥详情失败")
 		response.FailWithMessage("获取失败", c)
 		return
 	}
@@ -138,6 +139,7 @@ func (a *AiKeyApi) CreateSceneKey(c *gin.Context) {
 	}
 	view, err := aiKeyService.CreateSceneKey(c.Request.Context(), req, utils.GetUserID(c))
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("创建密钥失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -160,6 +162,7 @@ func (a *AiKeyApi) UpdateAiKey(c *gin.Context) {
 	}
 	view, err := aiKeyService.UpdateAiKey(c.Request.Context(), req, utils.GetUserID(c))
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("修改密钥失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -188,6 +191,7 @@ func (a *AiKeyApi) BatchDeleteAiKeys(c *gin.Context) {
 		ids = append(ids, id)
 	}
 	if err := aiKeyService.DeleteAiKey(c.Request.Context(), ids); err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("删除密钥失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}

@@ -59,6 +59,7 @@ func (a *ProviderBalanceApi) GetBalanceConfig(c *gin.Context) {
 	}
 	cfg, err := providerBalanceService.GetBalanceConfigView(c.Request.Context(), id)
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取余量采集配置失败")
 		response.FailWithMessage("获取失败", c)
 		return
 	}

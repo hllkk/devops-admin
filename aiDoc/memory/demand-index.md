@@ -4,6 +4,7 @@
 
 | 日期 | 需求 | 文件 | 状态 |
 |---|---|---|---|
+| 2026-08-30 | AI 网关·错误日志接入补齐+操作日志归属决策（API 层 11 文件 +60 处 service err 分支补 Mod("gateway").Err(err).Error() 对齐 system 模式、resource_application 4 处 Warn 升 Error 落 sys_error；参数绑定分支不加；操作日志维持集成 sys_oper_log 不另建——PrivateGroup OperationRecord 已自动覆盖网关写操作，AIHelms 另建因其无统一基座不照搬） | business/ai-gateway-error-log-integration.md | 已实现 |
 | 2026-08-30 | Skill·发布能力合并进编辑抽屉（双复选框「发布到市场」+「领用前需要审批」后者依赖前者，取消发布联动清审批；提交串联 Update/Create→PublishSkill 固定 visibilityType=all 部门/个人档 UI 按用户要求移除——删列表发布按钮+skill-publish-dialog.vue，后端三档端点保留；勾发布无包提交前拦截；发布配置与回显快照对比变化才调省幂等请求） | business/skill-publish-into-drawer.md | 已实现 |
 | 2026-08-30 | Skill·对标 AIHelms 借鉴三项（新建一步带 zip：前端串联 CreateSkill→UploadSkillPackage 后端零改动；zip 解包校验 SKILL.md 任意层级大小写不敏感落盘后验失败删文件拒入库含单测；分类受控轻量版 GET categories distinct+NSelect filterable+tag 可选可输，casbin 走 /gateway/skill/* 通配零菜单改动；安全审查/Agent token 下载明确不借留 P3） | business/skill-aihelms-alignment.md | 已实现 |
 | 2026-08-28 | AI 网关·「AI审计」目录收编审批管理/调用日志菜单（资源申请更名审批管理；sys_menu 顶层删 route.usage/route.application 新增 route.ai-audit 目录+两子菜单 OrderNum 1/2,ApiPrefix 沿用 casbin 零改动;前端 _gateway/{application,usage}→_gateway/ai-audit/{approval,usage} git mv+elegant 四件 vite dev 自动重生成+目录 meta 手补;i18n route 段三 key 替换两 key;不生成已有库补丁,重新初始化生效） | business/ai-gateway-ai-audit-menu.md | 已实现 |

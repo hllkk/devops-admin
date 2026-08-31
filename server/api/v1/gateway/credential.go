@@ -60,6 +60,7 @@ func (a *CredentialApi) GetCredential(c *gin.Context) {
 	}
 	view, err := credentialService.GetCredential(c.Request.Context(), id)
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取凭证详情失败")
 		response.FailWithMessage("获取失败", c)
 		return
 	}
@@ -82,6 +83,7 @@ func (a *CredentialApi) CreateCredential(c *gin.Context) {
 	}
 	view, err := credentialService.CreateCredential(c.Request.Context(), req, utils.GetUserID(c))
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("新增凭证失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -104,6 +106,7 @@ func (a *CredentialApi) UpdateCredential(c *gin.Context) {
 	}
 	view, err := credentialService.UpdateCredential(c.Request.Context(), req, utils.GetUserID(c))
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("修改凭证失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -132,6 +135,7 @@ func (a *CredentialApi) BatchDeleteCredential(c *gin.Context) {
 		ids = append(ids, id)
 	}
 	if err := credentialService.DeleteCredential(c.Request.Context(), ids); err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("批量删除凭证失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -163,6 +167,7 @@ func (a *CredentialApi) GetProviderFields(c *gin.Context) {
 func (a *CredentialApi) ResyncCredentials(c *gin.Context) {
 	result, err := credentialService.ResyncCredentials(c.Request.Context())
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("重同步凭证失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}

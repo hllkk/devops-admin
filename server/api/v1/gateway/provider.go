@@ -59,6 +59,7 @@ func (a *ProviderApi) GetProvider(c *gin.Context) {
 	}
 	p, err := providerService.GetProvider(c.Request.Context(), id)
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取供应商详情失败")
 		response.FailWithMessage("获取失败", c)
 		return
 	}
@@ -81,6 +82,7 @@ func (a *ProviderApi) CreateProvider(c *gin.Context) {
 	}
 	p, err := providerService.CreateProvider(c.Request.Context(), req, utils.GetUserID(c))
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("新增供应商失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -102,6 +104,7 @@ func (a *ProviderApi) UpdateProvider(c *gin.Context) {
 		return
 	}
 	if err := providerService.UpdateProvider(c.Request.Context(), req, utils.GetUserID(c)); err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("修改供应商失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -130,6 +133,7 @@ func (a *ProviderApi) BatchDeleteProvider(c *gin.Context) {
 		ids = append(ids, id)
 	}
 	if err := providerService.DeleteProvider(c.Request.Context(), ids); err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("删除供应商失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}

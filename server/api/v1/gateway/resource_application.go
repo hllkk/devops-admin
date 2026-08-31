@@ -33,7 +33,7 @@ func (a *ResourceApplicationApi) CreateApplication(c *gin.Context) {
 	}
 	view, err := applicationService.Create(c.Request.Context(), req, utils.GetUserID(c))
 	if err != nil {
-		logger.WithCtx(c.Request.Context()).Mod("gateway").Warn("提交申请失败: " + err.Error())
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("提交申请失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -110,7 +110,7 @@ func (a *ResourceApplicationApi) ApproveApplication(c *gin.Context) {
 	}
 	result, notice, err := applicationService.Approve(c.Request.Context(), req, utils.GetUserID(c))
 	if err != nil {
-		logger.WithCtx(c.Request.Context()).Mod("gateway").Warn("审批通过失败: " + err.Error())
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("审批通过失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -137,7 +137,7 @@ func (a *ResourceApplicationApi) RejectApplication(c *gin.Context) {
 	}
 	_, notice, err := applicationService.Reject(c.Request.Context(), req, utils.GetUserID(c))
 	if err != nil {
-		logger.WithCtx(c.Request.Context()).Mod("gateway").Warn("审批驳回失败: " + err.Error())
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("审批驳回失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -176,7 +176,7 @@ func batchReview(c *gin.Context, approve bool) {
 	}
 	result, notices, err := applicationService.BatchReview(c.Request.Context(), req, utils.GetUserID(c), approve)
 	if err != nil {
-		logger.WithCtx(c.Request.Context()).Mod("gateway").Warn("批量审批失败: " + err.Error())
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("批量审批失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}

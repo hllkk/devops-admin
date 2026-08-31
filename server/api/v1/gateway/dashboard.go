@@ -75,6 +75,7 @@ func (a *DashboardApi) GetTrend(c *gin.Context) {
 	scope, userId := resolveScope(c)
 	items, err := dashboardService.GetTrend(c.Request.Context(), start, end, scope, userId)
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取成本趋势失败")
 		response.FailWithMessage("获取失败", c)
 		return
 	}
@@ -99,6 +100,7 @@ func (a *DashboardApi) GetTop(c *gin.Context) {
 	sortKey := c.DefaultQuery("sort", "cost")
 	items, err := dashboardService.GetTop(c.Request.Context(), start, end, dimension, sortKey, scope, userId)
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取Top排行失败")
 		response.FailWithMessage("获取失败", c)
 		return
 	}
@@ -116,6 +118,7 @@ func (a *DashboardApi) GetBudget(c *gin.Context) {
 	scope, userId := resolveScope(c)
 	items, err := dashboardService.GetBudget(c.Request.Context(), scope, userId)
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取预算执行率失败")
 		response.FailWithMessage("获取失败", c)
 		return
 	}

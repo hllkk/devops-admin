@@ -61,6 +61,7 @@ func (a *DeploymentApi) CreateDeployment(c *gin.Context) {
 	}
 	view, err := deploymentService.CreateDeployment(c.Request.Context(), req, utils.GetUserID(c))
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("新增部署失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -83,6 +84,7 @@ func (a *DeploymentApi) UpdateDeployment(c *gin.Context) {
 	}
 	view, err := deploymentService.UpdateDeployment(c.Request.Context(), req, utils.GetUserID(c))
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("修改部署失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -111,6 +113,7 @@ func (a *DeploymentApi) BatchDeleteDeployments(c *gin.Context) {
 		ids = append(ids, id)
 	}
 	if err := deploymentService.DeleteDeployments(c.Request.Context(), ids); err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("批量删除部署失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -133,6 +136,7 @@ func (a *DeploymentApi) TestDeployment(c *gin.Context) {
 	}
 	result, err := deploymentService.TestDeployment(c.Request.Context(), req)
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("部署连通性测试失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}

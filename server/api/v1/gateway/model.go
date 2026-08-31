@@ -79,6 +79,7 @@ func (a *ModelApi) GetModel(c *gin.Context) {
 	}
 	detail, err := modelService.GetModel(c.Request.Context(), id)
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取模型详情失败")
 		response.FailWithMessage("获取失败", c)
 		return
 	}
@@ -101,6 +102,7 @@ func (a *ModelApi) CreateModel(c *gin.Context) {
 	}
 	view, err := modelService.CreateModel(c.Request.Context(), req, utils.GetUserID(c))
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("新增模型失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -123,6 +125,7 @@ func (a *ModelApi) UpdateModel(c *gin.Context) {
 	}
 	view, err := modelService.UpdateModel(c.Request.Context(), req, utils.GetUserID(c))
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("修改模型失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -151,6 +154,7 @@ func (a *ModelApi) BatchDeleteModels(c *gin.Context) {
 		ids = append(ids, id)
 	}
 	if err := modelService.DeleteModels(c.Request.Context(), ids); err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("批量删除模型失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -172,6 +176,7 @@ func (a *ModelApi) GetModelPublish(c *gin.Context) {
 	}
 	view, err := modelService.GetModelPublish(c.Request.Context(), id)
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取模型发布设置失败")
 		response.FailWithMessage("获取失败", c)
 		return
 	}
@@ -193,6 +198,7 @@ func (a *ModelApi) PublishModel(c *gin.Context) {
 		return
 	}
 	if err := modelService.PublishModel(c.Request.Context(), req, utils.GetUserID(c)); err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("更新模型发布设置失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}

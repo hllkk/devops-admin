@@ -9,6 +9,7 @@ import (
 	"github.com/hllkk/devops-admin/server/model/common/response"
 	gatewayReq "github.com/hllkk/devops-admin/server/model/gateway/request"
 	"github.com/hllkk/devops-admin/server/utils"
+	"github.com/hllkk/devops-admin/server/utils/logger"
 	"github.com/hllkk/devops-admin/server/utils/request"
 )
 
@@ -37,6 +38,7 @@ func (a *MCPApi) GetMCPServerList(c *gin.Context) {
 	request.NormalizeEmptyBoolQuery(c, &q)
 	list, total, err := mcpService.GetMCPServerList(c.Request.Context(), q)
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取MCP服务器列表失败")
 		response.FailWithMessage("获取失败", c)
 		return
 	}
@@ -54,6 +56,7 @@ func (a *MCPApi) GetMCPServerList(c *gin.Context) {
 func (a *MCPApi) GetMCPCategories(c *gin.Context) {
 	list, err := mcpService.GetMCPCategories(c.Request.Context())
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取MCP分类列表失败")
 		response.FailWithMessage("获取失败", c)
 		return
 	}
@@ -75,6 +78,7 @@ func (a *MCPApi) GetMCPServer(c *gin.Context) {
 	}
 	detail, err := mcpService.GetMCPServer(c.Request.Context(), id)
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取MCP服务器详情失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -96,6 +100,7 @@ func (a *MCPApi) CreateMCPServer(c *gin.Context) {
 	}
 	view, err := mcpService.CreateMCPServer(c.Request.Context(), req, utils.GetUserID(c))
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("创建MCP服务器失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -117,6 +122,7 @@ func (a *MCPApi) UpdateMCPServer(c *gin.Context) {
 	}
 	view, err := mcpService.UpdateMCPServer(c.Request.Context(), req, utils.GetUserID(c))
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("修改MCP服务器失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -145,6 +151,7 @@ func (a *MCPApi) DeleteMCPServers(c *gin.Context) {
 		ids = append(ids, id)
 	}
 	if err := mcpService.DeleteMCPServers(c.Request.Context(), ids); err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("删除MCP服务器失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -166,6 +173,7 @@ func (a *MCPApi) GetMCPPublish(c *gin.Context) {
 	}
 	view, err := mcpService.GetMCPPublish(c.Request.Context(), id)
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取MCP发布设置失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -186,6 +194,7 @@ func (a *MCPApi) PublishMCPServer(c *gin.Context) {
 		return
 	}
 	if err := mcpService.PublishMCPServer(c.Request.Context(), req, utils.GetUserID(c)); err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("更新MCP发布设置失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -207,6 +216,7 @@ func (a *MCPApi) RefreshMCPTools(c *gin.Context) {
 	}
 	tools, err := mcpService.RefreshMCPTools(c.Request.Context(), id)
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("刷新MCP工具列表失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -234,6 +244,7 @@ func (a *MCPApi) UpdateMCPToolBilling(c *gin.Context) {
 	}
 	view, err := mcpService.UpdateMCPToolBilling(c.Request.Context(), toolId, req.BillingType, req.ExternalCostPerCall)
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("更新MCP工具计费失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -255,6 +266,7 @@ func (a *MCPApi) HealthCheckMCPServer(c *gin.Context) {
 	}
 	view, err := mcpService.HealthCheckMCPServer(c.Request.Context(), id)
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("MCP服务器健康检查失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -270,6 +282,7 @@ func (a *MCPApi) HealthCheckMCPServer(c *gin.Context) {
 func (a *MCPApi) GetAvailableMcps(c *gin.Context) {
 	list, err := mcpService.GetAvailableMcps(c.Request.Context())
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取可授权MCP列表失败")
 		response.FailWithMessage("获取失败", c)
 		return
 	}
@@ -285,6 +298,7 @@ func (a *MCPApi) GetAvailableMcps(c *gin.Context) {
 func (a *MCPApi) GetActiveMcps(c *gin.Context) {
 	list, err := mcpService.GetActiveMcps(c.Request.Context(), utils.GetUserID(c))
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取用户侧MCP列表失败")
 		response.FailWithMessage("获取失败", c)
 		return
 	}
@@ -306,6 +320,7 @@ func (a *MCPApi) GetMCPConnectConfig(c *gin.Context) {
 	}
 	view, err := mcpService.GetMCPConnectConfig(c.Request.Context(), id, utils.GetUserID(c))
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取MCP接入配置失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}

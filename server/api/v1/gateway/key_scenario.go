@@ -75,6 +75,7 @@ func (a *KeyScenarioApi) CreateKeyScenario(c *gin.Context) {
 	}
 	sc, err := keyScenarioService.CreateKeyScenario(c.Request.Context(), req, utils.GetUserID(c))
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("新增使用场景失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -97,6 +98,7 @@ func (a *KeyScenarioApi) UpdateKeyScenario(c *gin.Context) {
 	}
 	sc, err := keyScenarioService.UpdateKeyScenario(c.Request.Context(), req, utils.GetUserID(c))
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("修改使用场景失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -125,6 +127,7 @@ func (a *KeyScenarioApi) BatchDeleteKeyScenarios(c *gin.Context) {
 		ids = append(ids, id)
 	}
 	if err := keyScenarioService.DeleteKeyScenario(c.Request.Context(), ids); err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("删除使用场景失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}

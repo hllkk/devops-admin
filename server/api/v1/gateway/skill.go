@@ -9,6 +9,7 @@ import (
 	"github.com/hllkk/devops-admin/server/model/common/response"
 	gatewayReq "github.com/hllkk/devops-admin/server/model/gateway/request"
 	"github.com/hllkk/devops-admin/server/utils"
+	"github.com/hllkk/devops-admin/server/utils/logger"
 	"github.com/hllkk/devops-admin/server/utils/request"
 )
 
@@ -36,6 +37,7 @@ func (a *SkillApi) GetSkillList(c *gin.Context) {
 	request.NormalizeEmptyBoolQuery(c, &q)
 	list, total, err := skillService.GetSkillList(c.Request.Context(), q)
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取Skill列表失败")
 		response.FailWithMessage("获取失败", c)
 		return
 	}
@@ -59,6 +61,7 @@ func (a *SkillApi) GetSkill(c *gin.Context) {
 	}
 	view, err := skillService.GetSkill(c.Request.Context(), id)
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取Skill详情失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -81,6 +84,7 @@ func (a *SkillApi) CreateSkill(c *gin.Context) {
 	}
 	view, err := skillService.CreateSkill(c.Request.Context(), req, utils.GetUserID(c))
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("创建Skill失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -103,6 +107,7 @@ func (a *SkillApi) UpdateSkill(c *gin.Context) {
 	}
 	view, err := skillService.UpdateSkill(c.Request.Context(), req, utils.GetUserID(c))
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("修改Skill失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -131,6 +136,7 @@ func (a *SkillApi) DeleteSkills(c *gin.Context) {
 		ids = append(ids, id)
 	}
 	if err := skillService.DeleteSkills(c.Request.Context(), ids); err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("删除Skill失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -152,6 +158,7 @@ func (a *SkillApi) GetSkillPublish(c *gin.Context) {
 	}
 	view, err := skillService.GetSkillPublish(c.Request.Context(), id)
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取Skill发布设置失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -173,6 +180,7 @@ func (a *SkillApi) PublishSkill(c *gin.Context) {
 		return
 	}
 	if err := skillService.PublishSkill(c.Request.Context(), req, utils.GetUserID(c)); err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("保存Skill发布设置失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -201,6 +209,7 @@ func (a *SkillApi) UploadSkillPackage(c *gin.Context) {
 	}
 	view, err := skillService.UploadSkillPackage(c.Request.Context(), id, fileHeader, utils.GetUserID(c))
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("上传Skill包失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -222,6 +231,7 @@ func (a *SkillApi) DownloadSkill(c *gin.Context) {
 	}
 	filePath, originName, err := skillService.DownloadSkill(c.Request.Context(), id, utils.GetUserID(c))
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("下载Skill包失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -243,6 +253,7 @@ func (a *SkillApi) AdminDownloadSkill(c *gin.Context) {
 	}
 	filePath, originName, err := skillService.AdminDownloadSkill(c.Request.Context(), id)
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("管理端下载Skill包失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
@@ -258,6 +269,7 @@ func (a *SkillApi) AdminDownloadSkill(c *gin.Context) {
 func (a *SkillApi) GetSkillCategories(c *gin.Context) {
 	list, err := skillService.GetSkillCategories(c.Request.Context())
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取Skill分类列表失败")
 		response.FailWithMessage("获取失败", c)
 		return
 	}
@@ -273,6 +285,7 @@ func (a *SkillApi) GetSkillCategories(c *gin.Context) {
 func (a *SkillApi) GetAvailableSkills(c *gin.Context) {
 	list, err := skillService.GetAvailableSkills(c.Request.Context())
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取可授权Skill列表失败")
 		response.FailWithMessage("获取失败", c)
 		return
 	}
@@ -288,6 +301,7 @@ func (a *SkillApi) GetAvailableSkills(c *gin.Context) {
 func (a *SkillApi) GetActiveSkills(c *gin.Context) {
 	list, err := skillService.GetActiveSkills(c.Request.Context(), utils.GetUserID(c))
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取用户侧Skill列表失败")
 		response.FailWithMessage("获取失败", c)
 		return
 	}
@@ -313,6 +327,7 @@ func (a *SkillApi) GetSkillUsageList(c *gin.Context) {
 	}
 	list, total, err := skillService.GetSkillUsageList(c.Request.Context(), q)
 	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取Skill使用日志失败")
 		response.FailWithMessage("获取失败", c)
 		return
 	}
