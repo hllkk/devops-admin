@@ -16,6 +16,7 @@ import (
 // GetMcpLogList MCP 调用日志分页明细(管理员视角,挂 /gateway/usage/mcp/list,
 // 与 LLM 调用日志同菜单 casbin 零改动)。
 func (s *UsageSyncService) GetMcpLogList(ctx context.Context, q *gatewayReq.McpLogSearch) ([]gatewayResp.McpLogView, int64, error) {
+	s.syncThrottled(ctx, syncStateKeyMcp, s.SyncMcpLogs) // 查询驱动回流(30s 节流)，页面打开即见最新调用
 	db := global.OPS_DB.WithContext(ctx).Model(&gateway.McpLog{})
 	if q.UserId != 0 {
 		db = db.Where("user_id = ?", q.UserId)

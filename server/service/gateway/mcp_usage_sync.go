@@ -74,8 +74,8 @@ func (s *UsageSyncService) SyncMcpLogs(ctx context.Context) (map[string]int, err
 			result["inserted"] += len(logs)
 		}
 
-		nextCursor := maxSpendCursor(rows)
-		if nextCursor == nil || cursorLE(nextCursor, state.LastSyncAt, state.LastRequestId) {
+		nextCursor := lastSpendCursor(rows)
+		if nextCursor == nil || cursorStalled(nextCursor, state.LastSyncAt, state.LastRequestId) {
 			logger.WithCtx(ctx).Mod("gateway").Error("MCP回流游标未推进，中止本轮（防无效循环）")
 			break
 		}
@@ -107,6 +107,7 @@ func (s *UsageSyncService) ReconcileMcpLogs(ctx context.Context) (map[string]int
 	// 1. sdb 查近 N 天 SpendLogs 的 MCP 行（跳过 master key）
 	var rows []gateway.LiteLLMSpendLog
 	if err := sdb.Table(gateway.LiteLLMSpendLog{}.TableName()).
+		Select(gateway.LiteLLMSpendLog{}.SelectColumns()).
 		Where(`"startTime" >= ?`, since).
 		Where(`("api_key" IS NULL OR "api_key" = '' OR "api_key" <> ?)`, masterKeyToken).
 		Where(`"mcp_namespaced_tool_name" IS NOT NULL AND "mcp_namespaced_tool_name" <> ''`).
@@ -163,6 +164,7 @@ func (s *UsageSyncService) ReconcileMcpLogs(ctx context.Context) (map[string]int
 func (s *UsageSyncService) fetchMcpSpendBatch(sdb *gorm.DB, state *gateway.SyncState, limit int) ([]gateway.LiteLLMSpendLog, error) {
 	var rows []gateway.LiteLLMSpendLog
 	q := sdb.Table(gateway.LiteLLMSpendLog{}.TableName()).
+		Select(gateway.LiteLLMSpendLog{}.SelectColumns()).
 		Where(`("api_key" IS NULL OR "api_key" = '' OR "api_key" <> ?)`, masterKeyToken).
 		Where(`COALESCE("call_type",'') NOT IN ('list_mcp_tools','list_mcp_tool','mcp_list_tools','mcp_list_tool')`).
 		Where(`"mcp_namespaced_tool_name" IS NOT NULL AND "mcp_namespaced_tool_name" <> ''`).

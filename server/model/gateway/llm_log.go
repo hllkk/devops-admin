@@ -81,3 +81,10 @@ type LiteLLMSpendLog struct {
 func (LiteLLMSpendLog) TableName() string {
 	return `"LiteLLM_SpendLogs"`
 }
+
+// SpendLogSelectColumns SpendLogs 查询显式列清单（与上方模型字段一一对应，模型加列须同步）。
+// 表内 messages/response/proxy_server_request 等巨型 jsonb 不在模型映射内，SELECT * 会把
+// 它们整体拖回（实测行均 ~157KB），单轮千行即 20MB+ IO 放大；查询一律显式选映射列。
+func (LiteLLMSpendLog) SelectColumns() string {
+	return `"request_id","call_type","api_key","spend","total_tokens","prompt_tokens","completion_tokens","startTime","endTime","model","model_id","model_group","custom_llm_provider","api_base","user","mcp_namespaced_tool_name","status","metadata","session_id"`
+}

@@ -30,10 +30,32 @@ const (
 	defaultUserId              = "default_user_id"
 )
 
+// queryDrivenSyncInterval 查询驱动回流节流窗口：距上次回流超过该窗口，列表查询前才真正再回流一次。
+// 取 30s：LiteLLM 落 SpendLogs 本身有秒级延迟，更短窗口只增加空转。
+const queryDrivenSyncInterval = 30 * time.Second
+
 // UsageSyncService 用量回流与成本重算（对齐前端 /gateway/usage/* 与定时任务）。
 // 平台 DB(gateway_llm_log) 是用量事实源，LiteLLM_SpendLogs 是回流数据源；
 // 本地重算成本不信任 LiteLLM 的 spend 列；归因入库时解析（带缓存）。
 type UsageSyncService struct{}
+
+// syncThrottled 查询驱动的节流回流：列表查询前先尝试增量回流，做到"打开页面即可见最新调用"，
+// 免去手动点「立即回流」。节流靠 sync_state.updated_at 原子抢占(UPDATE ... WHERE updated_at <= now-窗口)：
+// 定时任务/手动按钮/查询驱动三方共用同一窗口，天然防并发重入；抢不到窗口或回流失败均静默
+// 降级为查现有数据，绝不阻断列表接口。空转回流实测 ~40ms(LLM)/~2ms(MCP)，查询路径可承受。
+func (s *UsageSyncService) syncThrottled(ctx context.Context, key string, sync func(context.Context) (map[string]int, error)) {
+	mdb := global.OPS_DB.WithContext(ctx)
+	res := mdb.Model(&gateway.SyncState{}).
+		Where("key = ? AND updated_at <= ?", key, time.Now().UTC().Add(-queryDrivenSyncInterval)).
+		Update("updated_at", time.Now().UTC())
+	if res.Error != nil || res.RowsAffected == 0 {
+		return // 窗口内已被其它触发方回流过(或首启游标行未建)，直接查现有数据
+	}
+	if _, err := sync(ctx); err != nil {
+		// Warn 而非 Error：查询驱动是体验增强路径，定时任务每 5 分钟仍会以 Error 级记录同一故障
+		logger.WithCtx(ctx).Mod("gateway").Warn(fmt.Sprintf("查询驱动回流失败(key=%s)，降级返回现有数据: %v", key, err))
+	}
+}
 
 // SyncLLMLogs 从 LiteLLM_SpendLogs 增量回流用量日志：复合游标 keyset 分页 → 归因 →
 // 成本重算 → ON CONFLICT(request_id) DO NOTHING 幂等落库 → 推进游标（不前进告警中止）。
@@ -84,9 +106,10 @@ func (s *UsageSyncService) SyncLLMLogs(ctx context.Context) (map[string]int, err
 			touchAiKeyLastUsed(ctx, mdb, logs)
 		}
 
-		// 游标推进：复合游标 (COALESCE(endTime,startTime), request_id)
-		nextCursor := maxSpendCursor(rows)
-		if nextCursor == nil || cursorLE(nextCursor, state.LastSyncAt, state.LastRequestId) {
+		// 游标推进：复合游标 (COALESCE(endTime,startTime), request_id)，取末行(PG 序最大)，
+		// 仅以新旧值是否相同判停滞，避免 Go/PG 排序语义不一致(collation)误判
+		nextCursor := lastSpendCursor(rows)
+		if nextCursor == nil || cursorStalled(nextCursor, state.LastSyncAt, state.LastRequestId) {
 			logger.WithCtx(ctx).Mod("gateway").Error("用量回流游标未推进，中止本轮（防无效循环）")
 			break
 		}
@@ -120,6 +143,7 @@ func (s *UsageSyncService) ReconcileLLMLogs(ctx context.Context) (map[string]int
 	// 1. sdb 查近 N 天 SpendLogs 行（跳过 master key；排除 MCP 行，与 SyncLLMLogs 互斥分流）
 	var rows []gateway.LiteLLMSpendLog
 	if err := sdb.Table(gateway.LiteLLMSpendLog{}.TableName()).
+		Select(gateway.LiteLLMSpendLog{}.SelectColumns()).
 		Where(`"startTime" >= ?`, since).
 		Where(`("api_key" IS NULL OR "api_key" = '' OR "api_key" <> ?)`, masterKeyToken).
 		Where(`("mcp_namespaced_tool_name" IS NULL OR "mcp_namespaced_tool_name" = '')`).
@@ -180,6 +204,7 @@ func (s *UsageSyncService) ReconcileLLMLogs(ctx context.Context) (map[string]int
 // GetUsageLogList 分页查用量日志(管理员视角，按 用户/密钥/部署/模型/时间过滤)。
 // 返回出网视图：批量回填归因实体可读名(用户昵称/密钥名/部署名)，metadata 不出网。
 func (s *UsageSyncService) GetUsageLogList(ctx context.Context, q gatewayReq.UsageLogSearch) (list []gatewayResp.LlmLogView, total int64, err error) {
+	s.syncThrottled(ctx, syncStateKey, s.SyncLLMLogs) // 查询驱动回流(30s 节流)，页面打开即见最新调用
 	var rows []gateway.LlmLog
 	db := global.OPS_DB.WithContext(ctx).Model(&gateway.LlmLog{})
 	if q.UserId != 0 {
@@ -277,10 +302,12 @@ type spendCursor struct {
 	rid string
 }
 
-// maxSpendCursor 取本批最大的复合游标（COALESCE(endTime,startTime), request_id）。
-func maxSpendCursor(rows []gateway.LiteLLMSpendLog) *spendCursor {
-	var max *spendCursor
-	for i := range rows {
+// lastSpendCursor 取 SQL 返回的末行作复合游标（COALESCE(endTime,startTime), request_id）：
+// 查询按该序 ORDER BY，末行即 PG 排序语义下的本批最大，天然与库 collation 一致；
+// 尾部脏行(时间零/request_id 空)无效则向前取最近有效行。旧实现按 Go 字节序挑最大，
+// 非 C collation 库(en_US.utf8)的 text 排序与 Go 序不一致，会误判"游标未推进"每轮重扫同一片数据。
+func lastSpendCursor(rows []gateway.LiteLLMSpendLog) *spendCursor {
+	for i := len(rows) - 1; i >= 0; i-- {
 		t := rows[i].EndTime
 		if t.IsZero() {
 			t = rows[i].StartTime
@@ -288,39 +315,22 @@ func maxSpendCursor(rows []gateway.LiteLLMSpendLog) *spendCursor {
 		if t.IsZero() || rows[i].RequestId == "" {
 			continue
 		}
-		c := &spendCursor{t: t.UTC(), rid: rows[i].RequestId}
-		if max == nil || cursorGT(c, max) {
-			max = c
-		}
+		return &spendCursor{t: t.UTC(), rid: rows[i].RequestId}
 	}
-	return max
+	return nil
 }
 
-func cursorGT(a, b *spendCursor) bool {
-	if a.t.After(b.t) {
-		return true
-	}
-	if a.t.Equal(b.t) {
-		return a.rid > b.rid
-	}
-	return false
-}
-
-func cursorLE(a *spendCursor, t time.Time, rid string) bool {
-	at := a.t
-	if at.Before(t) {
-		return true
-	}
-	if at.Equal(t) {
-		return a.rid <= rid
-	}
-	return false
+// cursorStalled 防无效循环判定：新游标与旧值完全相同(时刻与 request_id 均等)才视为未推进。
+// 不做 Go 侧序比较：SQL 的严格 > 已按 PG 自洽语义保证返回行大于旧游标，值仍相同说明游标往返异常，须中止。
+func cursorStalled(c *spendCursor, prevT time.Time, prevRid string) bool {
+	return c.t.Equal(prevT) && c.rid == prevRid
 }
 
 // fetchSpendBatch 复合游标 keyset 分页查 LiteLLM_SpendLogs（仅 LLM 行，MCP 行互斥分流到 SyncMcpLogs）。
 func (s *UsageSyncService) fetchSpendBatch(sdb *gorm.DB, state *gateway.SyncState, limit int) ([]gateway.LiteLLMSpendLog, error) {
 	var rows []gateway.LiteLLMSpendLog
 	q := sdb.Table(gateway.LiteLLMSpendLog{}.TableName()).
+		Select(gateway.LiteLLMSpendLog{}.SelectColumns()).
 		Where(`("api_key" IS NULL OR "api_key" = '' OR "api_key" <> ?)`, masterKeyToken).
 		Where(`COALESCE("call_type",'') NOT IN ('list_mcp_tools','list_mcp_tool','mcp_list_tools','mcp_list_tool')`).
 		Where(`("mcp_namespaced_tool_name" IS NULL OR "mcp_namespaced_tool_name" = '')`).

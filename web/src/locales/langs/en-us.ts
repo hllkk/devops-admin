@@ -640,7 +640,7 @@ const local: App.I18n.Schema = {
         providerPlaceholder: 'Provider',
         unattributed: 'Unattributed',
         syncNow: 'Sync Now',
-        syncConfirm: 'Manually pull the latest usage logs from LiteLLM (a cron job runs this every 5 minutes). Continue?',
+        syncConfirm: 'Manually pull the latest usage logs from LiteLLM (auto-synced on page open and by cron; this is a fallback). Continue?',
         syncSuccess: 'Usage sync finished',
         reconcileNow: 'Reconcile',
         reconcileConfirm: 'Scan LiteLLM logs from the last 30 days to backfill missed records (a cron job runs this hourly). Continue?',
@@ -669,7 +669,7 @@ const local: App.I18n.Schema = {
         statusError: 'Error',
         externalCost: 'External Cost (¥)',
         internalCost: 'Internal Cost (¥)',
-        syncConfirm: 'Manually pull MCP call logs from LiteLLM (a cron job runs this every 5 minutes). Continue?'
+        syncConfirm: 'Manually pull MCP call logs from LiteLLM (auto-synced on page open and by cron; this is a fallback). Continue?'
       },
       cost: {
         title: 'Cost Analysis',

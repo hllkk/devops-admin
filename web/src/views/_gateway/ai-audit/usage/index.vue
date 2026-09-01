@@ -119,7 +119,7 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
   ]
 });
 
-/** 手动回流/对账(兜底工具；定时任务 5 分钟/1 小时自动跑) */
+/** 手动回流/对账(兜底工具；打开页面后端自动节流回流 + 定时任务 5 分钟/1 小时自动跑) */
 const syncing = ref(false);
 
 async function handleSync() {

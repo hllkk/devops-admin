@@ -636,7 +636,7 @@ const local: App.I18n.Schema = {
         providerPlaceholder: '供应商',
         unattributed: '未归因',
         syncNow: '立即回流',
-        syncConfirm: '手动触发从 LiteLLM 拉取最新用量日志（定时任务每 5 分钟自动执行）。继续？',
+        syncConfirm: '手动触发从 LiteLLM 拉取最新用量日志（打开页面与定时任务均会自动回流，此处为兜底）。继续？',
         syncSuccess: '用量回流完成',
         reconcileNow: '漏单对账',
         reconcileConfirm: '扫描近 30 天 LiteLLM 日志补灌平台漏单（定时任务每小时自动执行）。继续？',
@@ -665,7 +665,7 @@ const local: App.I18n.Schema = {
         statusError: '失败',
         externalCost: '外部成本(¥)',
         internalCost: '内部成本(¥)',
-        syncConfirm: '手动从 LiteLLM 回流 MCP 调用日志（定时任务每 5 分钟自动执行）。继续？'
+        syncConfirm: '手动从 LiteLLM 回流 MCP 调用日志（打开页面与定时任务均会自动回流，此处为兜底）。继续？'
       },
       cost: {
         title: '成本分析',
