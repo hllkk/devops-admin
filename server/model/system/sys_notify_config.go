@@ -7,6 +7,7 @@ import "github.com/hllkk/devops-admin/server/global"
 // 字段分两段:
 //   - 邮件通知:emailEnabled/emailHost/emailPort/emailUsername/emailPassword/emailFromAddr/emailFromName/emailSSLMode
 //   - Webhook:webhookEnabled/webhookUrl/webhookSecret
+//   - 企微应用消息/群机器人:渠道可用性开关(群机器人多群清单在 sys_wecom_bot_group 表)
 type SysNotifyConfig struct {
 	global.OPS_MODEL
 	// 邮件通知
@@ -27,12 +28,11 @@ type SysNotifyConfig struct {
 	WecomPushEnabled     bool   `json:"wecomPushEnabled" gorm:"default:false;comment:启用企微应用消息推送"`
 	WecomPushRedirectBase string `json:"wecomPushRedirectBase" gorm:"comment:企微消息跳转基础地址(空则textcard降级纯文本)"`
 	WecomPushMaxTargets  int    `json:"wecomPushMaxTargets" gorm:"default:1000;comment:企微推送单次人数上限(超出截断)"`
-	// 企业微信群机器人(webhook,markdown 进群)
-	WecomBotEnabled bool   `json:"wecomBotEnabled" gorm:"default:false;comment:启用企微群机器人"`
-	WecomBotWebhook string `json:"wecomBotWebhook" gorm:"comment:群机器人webhook地址"`
-	// 事件开关(控制该事件是否走外部渠道;站内通知不受控)
-	PushMorningReportEnabled bool `json:"pushMorningReportEnabled" gorm:"default:false;comment:事件开关-TokenPlan晨报外部推送"`
-	PushBudgetAlertEnabled   bool `json:"pushBudgetAlertEnabled" gorm:"default:true;comment:事件开关-预算告警外部推送"`
+	// 企业微信群机器人(webhook,markdown 进群;群清单在 sys_wecom_bot_group 表,渠道是否可用由本开关控制)
+	WecomBotEnabled bool `json:"wecomBotEnabled" gorm:"default:false;comment:启用企微群机器人"`
+	// 事件开关(控制该事件是否走外部渠道;站内通知不受控)。
+	// 晨报渠道选择已移至 sys_notify_policy.params(按场景勾选应用消息/群机器人)
+	PushBudgetAlertEnabled bool `json:"pushBudgetAlertEnabled" gorm:"default:true;comment:事件开关-预算告警外部推送"`
 }
 
 func (SysNotifyConfig) TableName() string {
@@ -58,11 +58,9 @@ func DefaultNotifyConfig() SysNotifyConfig {
 		WecomPushEnabled:      false,
 		WecomPushRedirectBase: "",
 		WecomPushMaxTargets:   1000,
-		// 群机器人
+		// 群机器人(群清单在 sys_wecom_bot_group)
 		WecomBotEnabled: false,
-		WecomBotWebhook: "",
 		// 事件开关
-		PushMorningReportEnabled: false,
-		PushBudgetAlertEnabled:   true,
+		PushBudgetAlertEnabled: true,
 	}
 }

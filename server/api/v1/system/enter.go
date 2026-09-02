@@ -30,6 +30,7 @@ var (
 	ldapConfigService     = service.ServiceGroupApp.SystemServiceGroup.LdapConfigService
 	notifyConfigService   = service.ServiceGroupApp.SystemServiceGroup.NotifyConfigService
 	notifySendService     = service.ServiceGroupApp.SystemServiceGroup.NotifySendService
+	wecomBotGroupService  = service.ServiceGroupApp.SystemServiceGroup.WecomBotGroupService
 	userService           = service.ServiceGroupApp.SystemServiceGroup.UserService
 	loginLogService       = service.ServiceGroupApp.SystemServiceGroup.LoginLogService
 	captchaService        = service.ServiceGroupApp.SystemServiceGroup.CaptchaService

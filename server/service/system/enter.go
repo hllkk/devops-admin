@@ -12,6 +12,7 @@ type ServiceGroup struct {
 	NotifyConfigService
 	NotifySendService
 	NotifyPolicyService
+	WecomBotGroupService
 	AuthConfigService
 	CaptchaService
 	UserService

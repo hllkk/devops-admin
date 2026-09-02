@@ -11,6 +11,7 @@ import (
 	systemReq "github.com/hllkk/devops-admin/server/model/system/request"
 	"github.com/hllkk/devops-admin/server/utils"
 	"github.com/hllkk/devops-admin/server/utils/logger"
+	"gorm.io/gorm"
 )
 
 // NotifySendService 通知三渠道统一发送:站内(复用 NoticeService,SSE+已读跟踪)、
@@ -30,13 +31,14 @@ type SendChannels struct {
 
 // SendRequest 统一发送请求(渠道无关的场景草稿)。
 type SendRequest struct {
-	Title      string  // 标题(站内标题+应用消息 textcard 标题)
-	Content    string  // 正文(站内正文+应用消息 textcard 描述,纯文本)
-	Markdown   string  // 群机器人 markdown 正文(空则降级用 Content)
-	Url        string  // 应用消息跳转地址(以/开头时拼接配置的跳转 base;空则 textcard 降级纯文本)
-	TargetType string  // users/depts(depts 含子部门展开为成员)
-	UserIds    []int64 // TargetType=users 时的目标用户
-	DeptIds    []int64 // TargetType=depts 时的目标部门
+	Title      string   // 标题(站内标题+应用消息 textcard 标题)
+	Content    string   // 正文(站内正文+应用消息 textcard 描述,纯文本)
+	Markdown   string   // 群机器人 markdown 正文(空则降级用 Content)
+	Url        string   // 应用消息跳转地址(以/开头时拼接配置的跳转 base;空则 textcard 降级纯文本)
+	TargetType string   // users/depts(depts 含子部门展开为成员)
+	UserIds    []int64  // TargetType=users 时的目标用户
+	DeptIds    []int64  // TargetType=depts 时的目标部门
+	BotGroupIds []string // 群机器人目标群(sys_wecom_bot_group 主键字符串;Channels.WecomBot 时必填)
 	Channels   SendChannels
 }
 
@@ -73,7 +75,7 @@ func (s *NotifySendService) Send(ctx context.Context, req SendRequest) error {
 		if md == "" {
 			md = req.Content
 		}
-		if err := s.SendWecomBot(ctx, md); err != nil {
+		if err := s.SendWecomBot(ctx, req.BotGroupIds, md); err != nil {
 			logger.WithCtx(ctx).Mod("system").Err(err).Error("企微群机器人发送失败")
 		}
 	}
@@ -145,13 +147,37 @@ func (s *NotifySendService) SendWecomApp(ctx context.Context, userIds []int64, t
 	return nil
 }
 
-// SendWecomBot 企微群机器人 markdown 消息(发送到 sys_notify_config 配置的 webhook)。
-func (s *NotifySendService) SendWecomBot(ctx context.Context, markdown string) error {
-	cfg := (&NotifyConfigService{}).Current(ctx)
-	if !cfg.WecomBotEnabled || cfg.WecomBotWebhook == "" {
+// SendWecomBot 企微群机器人 markdown 消息,发送到指定群列表(sys_wecom_bot_group)。
+// 渠道总开关未启用时静默跳过;单群失败记 Error 不中断其余群(best-effort,返回最后错误供调用方感知)。
+// 企微限流为每机器人 20 条/分钟(各群独立),晨报等场景单群仅数条,无需额外节流。
+func (s *NotifySendService) SendWecomBot(ctx context.Context, groupIds []string, markdown string) error {
+	if !(&NotifyConfigService{}).Current(ctx).WecomBotEnabled {
 		return nil
 	}
-	return (&utils.WecomClient{}).SendBotMessage(ctx, cfg.WecomBotWebhook, markdown)
+	ids := make([]uint, 0, len(groupIds))
+	for _, raw := range groupIds {
+		if id, err := strconv.ParseUint(raw, 10, 64); err == nil && id > 0 {
+			ids = append(ids, uint(id))
+		}
+	}
+	if len(ids) == 0 {
+		return errors.New("群机器人目标群列表为空")
+	}
+	var groups []system.SysWecomBotGroup
+	if err := global.OPS_DB.WithContext(ctx).Where("id IN ?", ids).Find(&groups).Error; err != nil {
+		return err
+	}
+	if len(groups) == 0 {
+		return errors.New("群机器人目标群不存在或已删除")
+	}
+	var lastErr error
+	for _, g := range groups {
+		if err := (&utils.WecomClient{}).SendBotMessage(ctx, g.WebhookUrl, markdown); err != nil {
+			logger.WithCtx(ctx).Mod("system").Err(err).Error("群机器人发送失败: " + g.GroupName)
+			lastErr = err
+		}
+	}
+	return lastErr
 }
 
 // resolveRedirect 应用消息跳转地址:相对路径(以/开头)拼配置 base,空/绝对地址原样返回。
@@ -222,8 +248,16 @@ func (s *NotifySendService) SendTestWecomApp(ctx context.Context, userId int64, 
 	return client.SendMessage(ctx, []string{social.OpenId}, card)
 }
 
-// SendTestWecomBot 用当前表单 webhook 发群机器人测试消息(未保存也可测)。
-func (s *NotifySendService) SendTestWecomBot(ctx context.Context, webhookURL string) error {
-	return (&utils.WecomClient{}).SendBotMessage(ctx, webhookURL,
-		"## devops-admin 测试消息\n收到本条消息说明企业微信群机器人配置正确。")
+// SendTestWecomBot 向指定已录入群发群机器人测试消息(按 sys_wecom_bot_group 主键实测)。
+func (s *NotifySendService) SendTestWecomBot(ctx context.Context, groupId uint) error {
+	var g system.SysWecomBotGroup
+	if err := global.OPS_DB.WithContext(ctx).
+		Where("id = ?", groupId).First(&g).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("目标群不存在或已删除")
+		}
+		return err
+	}
+	return (&utils.WecomClient{}).SendBotMessage(ctx, g.WebhookUrl,
+		"## devops-admin 测试消息\n收到本条消息说明群机器人「"+g.GroupName+"」配置正确。")
 }

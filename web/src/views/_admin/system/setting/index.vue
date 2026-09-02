@@ -53,7 +53,8 @@ const config = ref<{
     enabled: false,
     targetType: 'users',
     targetIds: [],
-    sendTime: '08:33'
+    sendTime: '08:33',
+    params: {}
   },
   auth: {} as Api.System.AuthSettingConfig
 });
@@ -108,7 +109,8 @@ async function loadConfig() {
     ...config.value.notifyPolicy,
     ...data?.notifyPolicy,
     targetIds: data?.notifyPolicy?.targetIds ?? [],
-    sendTime: data?.notifyPolicy?.sendTime || '08:33'
+    sendTime: data?.notifyPolicy?.sendTime || '08:33',
+    params: { ...data?.notifyPolicy?.params }
   };
   config.value.auth = data?.auth ?? config.value.auth;
   loaded.value = true;

@@ -52,11 +52,36 @@ export function fetchTestWecomApp(data: { testUserId: CommonType.IdType; redirec
   });
 }
 
-/** 发送企微群机器人测试（使用当前表单 webhook，无需先保存） */
-export function fetchTestWecomBot(data: { webhookUrl: string }) {
+/** 发送企微群机器人测试（按已录入群实测） */
+export function fetchTestWecomBot(data: { groupId: CommonType.IdType }) {
   return request<boolean>({
     url: '/system/setting/notify/test-wecom-bot',
     method: 'post',
     data
+  });
+}
+
+/** 群机器人群列表（群聊名称+webhook，多群） */
+export function fetchWecomBotGroupList() {
+  return request<Api.System.WecomBotGroup[]>({
+    url: '/system/setting/notify/wecom-bot-group',
+    method: 'get'
+  });
+}
+
+/** 新增群机器人群（群聊名称+webhook 地址） */
+export function fetchWecomBotGroupCreate(data: { groupName: string; webhookUrl: string }) {
+  return request<Api.System.WecomBotGroup>({
+    url: '/system/setting/notify/wecom-bot-group',
+    method: 'post',
+    data
+  });
+}
+
+/** 删除群机器人群（软删，即时生效） */
+export function fetchWecomBotGroupDelete(id: CommonType.IdType) {
+  return request<boolean>({
+    url: `/system/setting/notify/wecom-bot-group/${id}`,
+    method: 'delete'
   });
 }

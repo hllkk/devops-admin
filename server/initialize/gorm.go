@@ -67,6 +67,8 @@ func RegisterTables() {
 		system.SysAuthConfig{},
 		system.SysTimedTask{},
 		system.SysTimedTaskLog{},
+		system.SysNotifyPolicy{},
+		system.SysWecomBotGroup{},
 
 		media.MediaUpload{},
 		media.MediaUploadChunk{},
@@ -117,6 +119,11 @@ func RegisterTables() {
 	if err := sourceGateway.SeedProviderPrefix(db); err != nil {
 		logger.Bg().Mod("gateway").Err(err).Error("seed gateway_provider_prefix failed")
 	}
+	// 群机器人单 webhook 旧配置迁移为群登记表一条记录(sys_notify_config.wecom_bot_webhook
+	// 字段已下线,旧列残留 DB 由本函数原样读取;迁移后清空旧值保证幂等)。
+	if err := migrateWecomBotWebhook(db); err != nil {
+		logger.Bg().Mod("system").Err(err).Error("migrate wecom_bot_webhook failed")
+	}
 	// AiKey 同类归属下名称唯一索引兜底（防 LiteLLM key_alias 撞车；部分索引 WHERE deleted_at IS NULL，
 	// 软删记录不占约束。/initdb 路径由 source/gateway 初始化器链覆盖）。失败仅记日志不阻断启动——
 	// 存量脏数据环境重启不崩，名称查重由 service 层兜底。
@@ -128,4 +135,34 @@ func RegisterTables() {
 		logger.Bg().Mod("gateway").Err(err).Error("ensure gateway_key_scenario unique index failed")
 	}
 	logger.Bg().Mod("system").Info("register table success")
+}
+
+// migrateWecomBotWebhook 旧版单 webhook 群机器人配置 → sys_wecom_bot_group 首条记录。
+// 旧列 wecom_bot_webhook 已从 model 下线(旧库残留列/新库无此列均正常):
+// 列存在且有值且群表为空时迁移一条"默认群",随后清空旧值(幂等,清空后重启直通)。
+func migrateWecomBotWebhook(db *gorm.DB) error {
+	m := db.Migrator()
+	if !m.HasTable(&system.SysNotifyConfig{}) || !m.HasColumn(&system.SysNotifyConfig{}, "wecom_bot_webhook") {
+		return nil
+	}
+	var webhook string
+	if err := db.Raw(`SELECT wecom_bot_webhook FROM sys_notify_config WHERE id = 1`).Scan(&webhook).Error; err != nil {
+		return err
+	}
+	if webhook == "" {
+		return nil
+	}
+	var cnt int64
+	if err := db.Model(&system.SysWecomBotGroup{}).Count(&cnt).Error; err != nil {
+		return err
+	}
+	if cnt > 0 {
+		// 群表已有数据,视为迁移完成,仅清旧值
+		return db.Exec(`UPDATE sys_notify_config SET wecom_bot_webhook = '' WHERE id = 1`).Error
+	}
+	if err := db.Create(&system.SysWecomBotGroup{GroupName: "默认群", WebhookUrl: webhook}).Error; err != nil {
+		return err
+	}
+	logger.Bg().Mod("system").Info("已将旧群机器人 webhook 迁移为群登记表「默认群」记录")
+	return db.Exec(`UPDATE sys_notify_config SET wecom_bot_webhook = '' WHERE id = 1`).Error
 }

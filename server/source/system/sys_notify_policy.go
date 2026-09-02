@@ -23,7 +23,7 @@ func (i *initNotifyPolicy) MigrateTable(ctx context.Context) (context.Context, e
 	if !ok {
 		return ctx, system.ErrMissingDBContext
 	}
-	return ctx, db.AutoMigrate(&sysModel.SysNotifyPolicy{})
+	return ctx, db.AutoMigrate(&sysModel.SysNotifyPolicy{}, &sysModel.SysWecomBotGroup{})
 }
 
 func (i *initNotifyPolicy) TableCreated(ctx context.Context) bool {
@@ -31,7 +31,7 @@ func (i *initNotifyPolicy) TableCreated(ctx context.Context) bool {
 	if !ok {
 		return false
 	}
-	return db.Migrator().HasTable(&sysModel.SysNotifyPolicy{})
+	return db.Migrator().HasTable(&sysModel.SysNotifyPolicy{}) && db.Migrator().HasTable(&sysModel.SysWecomBotGroup{})
 }
 
 func (i *initNotifyPolicy) InitializerName() string {

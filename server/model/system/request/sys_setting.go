@@ -35,7 +35,18 @@ type TestWecomAppReq struct {
 
 // TestWecomBotReq 群机器人测试请求(POST /system/setting/notify/test-wecom-bot)
 type TestWecomBotReq struct {
-	WebhookUrl string `json:"webhookUrl" binding:"required"` // 当前表单 webhook(未保存也可测)
+	GroupId uint `json:"groupId,string" binding:"required"` // 目标群(sys_wecom_bot_group 主键,须已录入)
+}
+
+// WecomBotGroupCreateReq 新增群请求(POST /system/setting/notify/wecom-bot-group)
+type WecomBotGroupCreateReq struct {
+	GroupName  string `json:"groupName" binding:"required"` // 群聊名称
+	WebhookUrl string `json:"webhookUrl" binding:"required"` // 群机器人 webhook 地址
+}
+
+// WecomBotGroupIdReq 群主键参数(DELETE /system/setting/notify/wecom-bot-group/:id)
+type WecomBotGroupIdReq struct {
+	Id uint `uri:"id" binding:"required"` // 群主键
 }
 
 // PublicSetting 公开系统设置(GET /system/setting/public 响应体,登录页用,免鉴权脱敏)。

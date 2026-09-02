@@ -612,14 +612,36 @@ declare namespace Api {
       wecomPushRedirectBase: string;
       /** 企微推送单次人数上限（超出截断） */
       wecomPushMaxTargets: number;
-      /** 启用企微群机器人 */
+      /** 启用企微群机器人（群清单在群表格，见 WecomBotGroup） */
       wecomBotEnabled: boolean;
-      /** 群机器人 webhook 地址 */
-      wecomBotWebhook: string;
-      /** 事件开关：TokenPlan 晨报走外部渠道（企微应用/群机器人） */
-      pushMorningReportEnabled: boolean;
       /** 事件开关：预算告警走企微应用消息 */
       pushBudgetAlertEnabled: boolean;
+    };
+
+    /** 群机器人群登记（群聊名称+webhook，多群；晨报等场景按群勾选接收） */
+    type WecomBotGroup = {
+      /** 主键 */
+      id: CommonType.IdType;
+      /** 群聊名称 */
+      groupName: string;
+      /** 群机器人 webhook 地址 */
+      webhookUrl: string;
+      /** 创建时间 */
+      createTime: string;
+    };
+
+    /** 晨报场景私有参数（sys_notify_policy.params），对齐后端 MorningReportParams */
+    type MorningReportParams = {
+      /** 勾选企微应用消息渠道（勾选后仅发该渠道+站内） */
+      wecomApp?: boolean;
+      /** 勾选企微群机器人渠道 */
+      wecomBot?: boolean;
+      /** 群机器人接收群（WecomBotGroup 主键列表） */
+      botGroupIds?: CommonType.IdType[];
+      /** 纯文本正文自定义模板（Go 模板语法，留空用默认） */
+      contentTemplate?: string;
+      /** Markdown 正文自定义模板（同上） */
+      markdownTemplate?: string;
     };
 
     /** 通知策略（按场景一行，当前场景：TokenPlan 晨报），对齐后端 SysNotifyPolicy */
@@ -634,6 +656,8 @@ declare namespace Api {
       targetIds: CommonType.IdType[];
       /** 发送时间（HH:mm，工作日；保存后同步定时任务调度） */
       sendTime: string;
+      /** 场景私有参数（渠道勾选/接收群/正文模板） */
+      params?: MorningReportParams;
     };
 
     /** 认证配置：第三方登录 OAuth2 + 账号功能，对齐后端 SysAuthConfig */

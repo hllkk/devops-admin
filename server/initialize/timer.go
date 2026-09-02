@@ -131,19 +131,26 @@ func Timer() {
 			}
 			userIds = ids
 		}
+		// 场景渠道勾选(策略 params):勾应用消息只发应用消息,勾群机器人只发群机器人,
+		// 渠道总开关(sys_notify_config)仍是前置条件;群机器人须已选目标群。
+		params, err := sysModel.ParseMorningReportParams(policy.Params)
+		if err != nil {
+			return fmt.Errorf("解析晨报场景参数失败: %w", err)
+		}
 		notifyCfg := (&system.NotifyConfigService{}).Current(ctx)
 		channels := system.SendChannels{
 			InApp:    true,
-			WecomApp: notifyCfg.WecomPushEnabled && notifyCfg.PushMorningReportEnabled,
-			WecomBot: notifyCfg.WecomBotEnabled && notifyCfg.PushMorningReportEnabled,
+			WecomApp: params.WecomApp && notifyCfg.WecomPushEnabled,
+			WecomBot: params.WecomBot && notifyCfg.WecomBotEnabled && len(params.BotGroupIds) > 0,
 		}
 		sendSvc := &system.NotifySendService{}
 		for _, d := range drafts {
 			if err := sendSvc.Send(ctx, system.SendRequest{
 				Title: d.Title, Content: d.Content, Markdown: d.Markdown,
-				Url:        "/gateway",
-				TargetType: policy.TargetType, UserIds: userIds, DeptIds: deptIds,
-				Channels: channels,
+				Url:         "/gateway",
+				TargetType:  policy.TargetType, UserIds: userIds, DeptIds: deptIds,
+				BotGroupIds: params.BotGroupIds,
+				Channels:    channels,
 			}); err != nil {
 				logger.WithCtx(ctx).Mod("gateway").Err(err).Warn(fmt.Sprintf("供应商 %s 晨报发送失败", d.ProviderName))
 			}

@@ -117,10 +117,10 @@ func (s *SettingApi) TestWecomApp(c *gin.Context) {
 
 // TestWecomBot
 // @Tags      SysSetting
-// @Summary   发送企微群机器人测试(使用当前表单webhook,无需先保存)
+// @Summary   发送企微群机器人测试(按群主键实测已录入群的 webhook)
 // @Accept    application/json
 // @Produce   application/json
-// @Param     data  body  systemReq.TestWecomBotReq  true  "群机器人webhook地址"
+// @Param     data  body  systemReq.TestWecomBotReq  true  "目标群主键"
 // @Success   200   {object}  response.Response{data=bool,msg=string}
 // @Router    /system/setting/notify/test-wecom-bot [post]
 func (s *SettingApi) TestWecomBot(c *gin.Context) {
@@ -129,12 +129,72 @@ func (s *SettingApi) TestWecomBot(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	if err := notifySendService.SendTestWecomBot(c.Request.Context(), req.WebhookUrl); err != nil {
+	if err := notifySendService.SendTestWecomBot(c.Request.Context(), req.GroupId); err != nil {
 		logger.WithCtx(c.Request.Context()).Mod("biz").Err(err).Error("企微群机器人测试失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
 	response.OkWithDetailed(true, "测试消息发送成功", c)
+}
+
+// WecomBotGroupList
+// @Tags      SysSetting
+// @Summary   群机器人群列表
+// @Produce   application/json
+// @Success   200  {object}  response.Response{data=[]system.SysWecomBotGroup,msg=string}
+// @Router    /system/setting/notify/wecom-bot-group [get]
+func (s *SettingApi) WecomBotGroupList(c *gin.Context) {
+	groups, err := wecomBotGroupService.List(c.Request.Context())
+	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("biz").Err(err).Error("群机器人群列表查询失败")
+		response.FailWithMessage("查询失败", c)
+		return
+	}
+	response.OkWithDetailed(groups, "获取成功", c)
+}
+
+// WecomBotGroupCreate
+// @Tags      SysSetting
+// @Summary   新增群机器人群(群聊名称+webhook)
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  body  systemReq.WecomBotGroupCreateReq  true  "群聊名称+webhook地址"
+// @Success   200   {object}  response.Response{data=system.SysWecomBotGroup,msg=string}
+// @Router    /system/setting/notify/wecom-bot-group [post]
+func (s *SettingApi) WecomBotGroupCreate(c *gin.Context) {
+	var req systemReq.WecomBotGroupCreateReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	group, err := wecomBotGroupService.Create(c.Request.Context(), req.GroupName, req.WebhookUrl)
+	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("biz").Err(err).Error("群机器人群新增失败")
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	response.OkWithDetailed(group, "新增成功", c)
+}
+
+// WecomBotGroupDelete
+// @Tags      SysSetting
+// @Summary   删除群机器人群(软删,即时生效)
+// @Produce   application/json
+// @Param     id   path  int  true  "群主键"
+// @Success   200  {object}  response.Response{data=bool,msg=string}
+// @Router    /system/setting/notify/wecom-bot-group/{id} [delete]
+func (s *SettingApi) WecomBotGroupDelete(c *gin.Context) {
+	var req systemReq.WecomBotGroupIdReq
+	if err := c.ShouldBindUri(&req); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	if err := wecomBotGroupService.Delete(c.Request.Context(), req.Id); err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("biz").Err(err).Error("群机器人群删除失败")
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	response.OkWithDetailed(true, "删除成功", c)
 }
 
 // WecomDomainVerify 企业微信可信域名校验：响应 /WW_verify_*.txt 请求。
