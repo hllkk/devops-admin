@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { useClipboard } from '@vueuse/core';
 import { $t } from '@/locales';
 import {
   fetchDownloadSkill,
@@ -12,6 +11,8 @@ import {
   fetchSubmitApplication
 } from '@/service/api/gateway';
 import { MODEL_CATEGORY_OPTIONS, getProviderIcon } from '@/constants/business/gateway';
+import { copyTextToClipboard, selectText } from '@/utils/copy';
+import { rewriteGatewayConfig, rewriteGatewayUrl } from '@/utils/gateway';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 
 defineOptions({ name: 'HomeModelSquarePanel' });
@@ -27,8 +28,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   applied: [];
 }>();
-
-const { copy: copyText } = useClipboard({ legacy: true, copiedDuring: 2000 });
 
 const isLoading = ref(true);
 const models = ref<Api.Gateway.ActiveModel[]>([]);
@@ -109,6 +108,12 @@ const accessModel = ref<Api.Gateway.ActiveModel | null>(null);
 const accessMcp = ref<Api.Gateway.MCPConnectConfig | null>(null);
 const showFullKey = ref(false);
 
+/**
+ * Base URL：dev 下后端配置为 127.0.0.1/localhost 占位时按当前访问 host 重写(端口保留)，
+ * 用户从别的机器访问也能拿到可达地址；生产下发正式域名，原样展示。
+ */
+const gatewayUrl = computed(() => rewriteGatewayUrl(props.identity?.gatewayUrl || ''));
+
 const fullKey = computed(() => (props.identity?.opened ? props.identity.keyValue : ''));
 const maskedKey = computed(() => {
   const value = fullKey.value;
@@ -134,7 +139,10 @@ async function handleViewMcpAccess(mcp: Api.Gateway.AvailableMcp) {
 }
 
 function handleCopyConfig() {
-  if (accessMcp.value?.config) handleCopy('mcpConfig', JSON.stringify(accessMcp.value.config, null, 2));
+  if (accessMcp.value?.config) {
+    const config = rewriteGatewayConfig(accessMcp.value.config);
+    handleCopy('mcpConfig', JSON.stringify(config, null, 2));
+  }
 }
 
 // ===== 申请订阅(需审批资源;P2 资源申请审批) =====
@@ -226,17 +234,21 @@ function isCopied(field: string) {
   return copiedField.value === field;
 }
 
-async function handleCopy(field: string, value: string) {
+async function handleCopy(field: string, value: string, evt?: MouseEvent) {
   if (!value) return;
+  // 同行可见 code 作选区载体(copy 事件载体)；apiKey 行显示掩码也不影响——写入值由 copy.ts 显式指定原文
+  const code = (evt?.currentTarget as HTMLElement | null)?.parentElement?.querySelector('code');
   try {
-    await copyText(value);
+    await copyTextToClipboard(value, code);
     copiedField.value = field;
     if (copiedTimer) clearTimeout(copiedTimer);
     copiedTimer = setTimeout(() => {
       copiedField.value = null;
     }, 2000);
   } catch {
-    window.$message?.error($t('common.copyNotSupported'));
+    // 兜底：自动选中文本，引导 Ctrl+C 手动复制(不依赖剪贴板 API，任何环境可用)
+    selectText(code);
+    window.$message?.warning($t('common.copyFailed'));
   }
 }
 
@@ -308,26 +320,21 @@ onMounted(async () => {
           :key="model.modelId"
           :bordered="false"
           size="small"
-          class="card-wrapper shadow-sm transition-shadow hover:shadow-md"
+          class="card-wrapper relative overflow-hidden shadow-sm transition-shadow hover:shadow-md"
         >
+          <!-- 最新上架标识：右上角徽章(渐变 + 呼吸光晕 + 周期扫光) -->
+          <div v-if="model.modelId === newestModelId" class="square-new-badge">
+            {{ $t('page.home.square.isNew') }}
+          </div>
           <div class="flex h-full flex-col gap-8px">
-            <!-- 头部：logo + 名称 + 已授权标记 -->
+            <!-- 头部：logo + 名称 + 已授权标记(最新模型时名称块右侧为徽章留白) -->
             <div class="flex items-start gap-10px">
               <div class="flex size-40px shrink-0 items-center justify-center rounded-12px bg-slate-100 dark:bg-slate-700/60">
                 <SvgIcon :local-icon="getProviderIcon(model.logoProviderType)" class="h-24px w-24px" />
               </div>
-              <div class="min-w-0 flex-1">
+              <div class="min-w-0 flex-1" :class="model.modelId === newestModelId ? 'pr-56px' : ''">
                 <div class="flex items-center gap-4px">
                   <span class="truncate text-14px font-semibold">{{ model.name }}</span>
-                  <NTag
-                    v-if="model.modelId === newestModelId"
-                    size="tiny"
-                    type="primary"
-                    :bordered="false"
-                    class="shrink-0"
-                  >
-                    {{ $t('page.home.square.isNew') }}
-                  </NTag>
                   <SvgIcon
                     v-if="isAuthorized(model)"
                     icon="lucide:circle-check"
@@ -547,7 +554,7 @@ onMounted(async () => {
             <NButton
               size="tiny"
               :type="isCopied('modelKey') ? 'success' : 'default'"
-              @click="handleCopy('modelKey', accessModel.modelKey)"
+              @click="handleCopy('modelKey', accessModel.modelKey, $event)"
             >
               {{ isCopied('modelKey') ? $t('page.home.square.copied') : $t('page.home.square.copy') }}
             </NButton>
@@ -561,12 +568,12 @@ onMounted(async () => {
           <div class="mb-4px text-12px font-medium">{{ $t('page.home.square.accessMcpUrl') }}</div>
           <div class="flex items-center gap-8px">
             <code class="min-w-0 flex-1 truncate rounded-8px bg-slate-100 px-10px py-6px text-13px dark:bg-slate-700/60">
-              {{ accessMcp.mcpUrl }}
+              {{ rewriteGatewayUrl(accessMcp.mcpUrl) }}
             </code>
             <NButton
               size="tiny"
               :type="isCopied('mcpUrl') ? 'success' : 'default'"
-              @click="handleCopy('mcpUrl', accessMcp.mcpUrl)"
+              @click="handleCopy('mcpUrl', rewriteGatewayUrl(accessMcp.mcpUrl), $event)"
             >
               {{ isCopied('mcpUrl') ? $t('page.home.square.copied') : $t('page.home.square.copy') }}
             </NButton>
@@ -608,12 +615,13 @@ onMounted(async () => {
           <div class="mb-4px text-12px font-medium">{{ $t('page.home.square.accessBaseUrl') }}</div>
           <div class="flex items-center gap-8px">
             <code class="min-w-0 flex-1 truncate rounded-8px bg-slate-100 px-10px py-6px text-13px dark:bg-slate-700/60">
-              {{ identity?.gatewayUrl || '-' }}
+              {{ gatewayUrl || '-' }}
             </code>
             <NButton
               size="tiny"
               :type="isCopied('gatewayUrl') ? 'success' : 'default'"
-              @click="handleCopy('gatewayUrl', identity?.gatewayUrl || '')"
+              :disabled="!gatewayUrl"
+              @click="handleCopy('gatewayUrl', gatewayUrl, $event)"
             >
               {{ isCopied('gatewayUrl') ? $t('page.home.square.copied') : $t('page.home.square.copy') }}
             </NButton>
@@ -633,7 +641,7 @@ onMounted(async () => {
             <NButton
               size="tiny"
               :type="isCopied('apiKey') ? 'success' : 'default'"
-              @click="handleCopy('apiKey', fullKey)"
+              @click="handleCopy('apiKey', fullKey, $event)"
             >
               {{ isCopied('apiKey') ? $t('page.home.square.copied') : $t('page.home.square.copy') }}
             </NButton>
@@ -686,3 +694,56 @@ onMounted(async () => {
     </NModal>
   </div>
 </template>
+
+<style scoped>
+/* 模型广场「New」徽章：右上角渐变徽章 + 呼吸光晕 + 周期性扫光 */
+.square-new-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  padding: 1px 8px;
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  letter-spacing: 0.5px;
+  color: #fff;
+  background-image: linear-gradient(135deg, #6366f1 0%, #ec4899 100%);
+  border-radius: 9999px;
+  box-shadow: 0 2px 6px rgb(236 72 153 / 35%);
+  animation: square-new-glow 2.4s ease-in-out infinite;
+}
+
+.square-new-badge::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(105deg, transparent 30%, rgb(255 255 255 / 65%) 50%, transparent 70%);
+  transform: translateX(-120%);
+  animation: square-new-shine 2.4s ease-in-out infinite;
+  animation-delay: 0.3s;
+}
+
+@keyframes square-new-glow {
+  0%,
+  100% {
+    box-shadow: 0 2px 6px rgb(236 72 153 / 35%);
+  }
+
+  50% {
+    box-shadow: 0 2px 6px rgb(236 72 153 / 65%), 0 0 0 5px rgb(236 72 153 / 12%);
+  }
+}
+
+@keyframes square-new-shine {
+  0% {
+    transform: translateX(-120%);
+  }
+
+  60%,
+  100% {
+    transform: translateX(120%);
+  }
+}
+</style>

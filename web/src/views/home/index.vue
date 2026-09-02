@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
-import { useClipboard } from '@vueuse/core';
 import type { LastLevelRouteKey } from '@elegant-router/types';
 import { useAuthStore } from '@/store/modules/auth';
 import { useTabStore } from '@/store/modules/tab';
@@ -11,6 +10,7 @@ import { useSvgIcon } from '@/hooks/common/icon';
 import { getRgb } from '@sa/color';
 import { ALL_MODULES, MODULE_CONFIG, type RouteModule } from '@/constants/module';
 import { $t } from '@/locales';
+import { copyTextToClipboard, selectText } from '@/utils/copy';
 import {
   fetchGetDashboardOverview,
   fetchGetDashboardTrend,
@@ -27,9 +27,10 @@ defineOptions({ name: 'Home' });
 const authStore = useAuthStore();
 const user = computed(() => authStore.userInfo.user);
 const { SvgIconVNode } = useSvgIcon();
-const { copy: copyText, copied } = useClipboard({ legacy: true, copiedDuring: 2000 });
-
 const showFullKey = ref(false);
+/** 主 Key 复制状态：成功才点亮"已复制"，失败弹错误提示(不假亮) */
+const keyCopied = ref(false);
+let keyCopiedTimer: ReturnType<typeof setTimeout> | null = null;
 const isLoading = ref(true);
 
 const tabStore = useTabStore();
@@ -241,9 +242,22 @@ function goSquare() {
   activeTab.value = 'square';
 }
 
-function handleCopy() {
+async function handleCopy(evt?: MouseEvent) {
   if (!fullKey.value) return;
-  copyText(fullKey.value);
+  // 同行可见 code 作选区载体(copy 事件载体)；显示掩码也不影响——写入值由 copy.ts 显式指定原文
+  const code = (evt?.currentTarget as HTMLElement | null)?.parentElement?.querySelector('code');
+  try {
+    await copyTextToClipboard(fullKey.value, code);
+    keyCopied.value = true;
+    if (keyCopiedTimer) clearTimeout(keyCopiedTimer);
+    keyCopiedTimer = setTimeout(() => {
+      keyCopied.value = false;
+    }, 2000);
+  } catch {
+    // 兜底：自动选中文本，引导 Ctrl+C 手动复制(不依赖剪贴板 API，任何环境可用)
+    selectText(code);
+    window.$message?.warning($t('common.copyFailed'));
+  }
 }
 
 async function loadIdentity() {
@@ -457,11 +471,11 @@ onMounted(async () => {
                           <SvgIcon :icon="showFullKey ? 'lucide:eye-off' : 'lucide:eye'" />
                         </template>
                       </NButton>
-                      <NButton size="small" :type="copied ? 'success' : 'primary'" ghost @click="handleCopy">
+                      <NButton size="small" :type="keyCopied ? 'success' : 'primary'" ghost @click="handleCopy($event)">
                         <template #icon>
-                          <SvgIcon :icon="copied ? 'lucide:check' : 'lucide:copy'" />
+                          <SvgIcon :icon="keyCopied ? 'lucide:check' : 'lucide:copy'" />
                         </template>
-                        {{ copied ? $t('page.home.identity.copied') : $t('page.home.identity.copy') }}
+                        {{ keyCopied ? $t('page.home.identity.copied') : $t('page.home.identity.copy') }}
                       </NButton>
                     </div>
                   </div>

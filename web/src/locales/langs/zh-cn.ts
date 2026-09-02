@@ -69,6 +69,7 @@ const local: App.I18n.Schema = {
     noSelectRecord: '未选择任何记录',
     copySuccess: '复制成功',
     copyNotSupported: '您的浏览器不支持 Clipboard API',
+    copyFailed: '自动复制失败，已为你选中文本，请按 Ctrl+C 复制',
     login: '登录',
     yesOrNo: {
       yes: '是',

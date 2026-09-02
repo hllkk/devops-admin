@@ -378,6 +378,7 @@ declare namespace App {
         noSelectRecord: string;
         copySuccess: string;
         copyNotSupported: string;
+        copyFailed: string;
         login: string;
         noChange: string;
         placeholderInput: string;

@@ -69,6 +69,7 @@ const local: App.I18n.Schema = {
     noSelectRecord: 'No record selected',
     copySuccess: 'Copy successfully',
     copyNotSupported: 'Your browser does not support the Clipboard API',
+    copyFailed: 'Auto copy failed, text selected — press Ctrl+C to copy',
     login: 'Login',
     yesOrNo: {
       yes: 'Yes',
