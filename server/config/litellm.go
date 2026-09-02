@@ -15,5 +15,6 @@ type Litellm struct {
 	LogSyncInterval int `mapstructure:"log-sync-interval" json:"log-sync-interval" yaml:"log-sync-interval"` // 用量回流间隔（分钟，默认5，种子调度用）
 	LogSyncBatch int    `mapstructure:"log-sync-batch" json:"log-sync-batch" yaml:"log-sync-batch"` // 用量回流批大小（默认1000）
 	LogReconcileWindow int `mapstructure:"log-reconcile-window" json:"log-reconcile-window" yaml:"log-reconcile-window"` // 对账回灌窗口（天，默认30）
+	LogRetentionDays int `mapstructure:"log-retention-days" json:"log-retention-days" yaml:"log-retention-days"` // 用量日志保留天数（llm+mcp，0=不清理；生效值不低于对账窗口+7，防删了又被对账重灌）
 	SyncEnabled bool   `mapstructure:"sync-enabled" json:"sync-enabled" yaml:"sync-enabled"` // 是否启用与 LiteLLM 的双向同步（关闭则管理面单机运行，不写 LiteLLM 侧）
 }

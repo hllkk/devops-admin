@@ -201,6 +201,81 @@ func (s *UsageSyncService) ReconcileLLMLogs(ctx context.Context) (map[string]int
 	return result, nil
 }
 
+// 用量日志清理常量（对齐 AIHelms llm_log.cleanup，默认关闭）
+const (
+	cleanupBatchSize        = 5000 // 批删行数
+	cleanupMaxBatchesPerRun = 200  // 单表单轮批数上限(200*5000=100万行，残留下轮继续)
+	retentionMarginDays     = 7    // 生效保留期相对对账窗口的安全余量
+)
+
+// effectiveRetentionDays 生效保留天数纯函数(可单测)：配置<=0 清理禁用返回 0；
+// 显式开启时取 max(配置值, 对账窗口+7)——保留期小于对账窗口时，已清行会被
+// ReconcileLLMLogs/ReconcileMcpLogs 从 SpendLogs 重灌回来，形成"删了又灌"的抖动循环。
+func effectiveRetentionDays(cfgRetention, reconcileWindow int) int {
+	if cfgRetention <= 0 {
+		return 0
+	}
+	if reconcileWindow <= 0 {
+		reconcileWindow = defaultReconcileWindowDays
+	}
+	if min := reconcileWindow + retentionMarginDays; cfgRetention < min {
+		return min
+	}
+	return cfgRetention
+}
+
+// CleanupUsageLogs 保留期清理：gateway_llm_log/gateway_mcp_log 物理删 started_at
+// 早于 cutoff 的行(Unscoped，同聚合表派生缓存口径——软删占行白费空间；对账重灌
+// 亦为物理幂等插入，无软删语义)。分批循环防首启大存量单条 DELETE 的长事务/WAL
+// 洪峰；游标在最新端不受影响，cutoff≥对账窗口+7 后对账不可能重灌已清行。
+// 不清 gateway_sync_state(游标)与 gateway_cost_summary_daily(成本长历史，聚合
+// 滚动重建只动近60天，老行是成本分析的长尾数据源)。
+func (s *UsageSyncService) CleanupUsageLogs(ctx context.Context) (map[string]int, error) {
+	result := map[string]int{"retentionDays": 0, "llmDeleted": 0, "mcpDeleted": 0}
+	days := effectiveRetentionDays(global.OPS_CONFIG.Litellm.LogRetentionDays, global.OPS_CONFIG.Litellm.LogReconcileWindow)
+	if days <= 0 {
+		logger.WithCtx(ctx).Mod("gateway").Info("用量日志保留期清理未启用(litellm.log-retention-days<=0)，跳过")
+		return result, nil
+	}
+	result["retentionDays"] = days
+	cutoff := time.Now().UTC().AddDate(0, 0, -days)
+	mdb := global.OPS_DB.WithContext(ctx)
+
+	llm, err := deleteExpiredLogs(mdb, &gateway.LlmLog{}, "gateway_llm_log", cutoff)
+	if err != nil {
+		return result, err
+	}
+	result["llmDeleted"] = llm
+	mcp, err := deleteExpiredLogs(mdb, &gateway.McpLog{}, "gateway_mcp_log", cutoff)
+	if err != nil {
+		return result, err
+	}
+	result["mcpDeleted"] = mcp
+	logger.WithCtx(ctx).Mod("gateway").Info(fmt.Sprintf("用量日志清理完成: retention=%dd cutoff=%s llmDeleted=%d mcpDeleted=%d",
+		days, cutoff.Format(time.RFC3339), llm, mcp))
+	return result, nil
+}
+
+// deleteExpiredLogs 分批物理删单表过期行：DELETE WHERE log_id IN (SELECT ... WHERE
+// started_at < cutoff ORDER BY log_id LIMIT batch) 循环至不足一批(同表自引用子查询，
+// PG 无需 USING)；批数上限防单轮过久。两表 started_at 均有索引，子查询走索引扫描。
+func deleteExpiredLogs(db *gorm.DB, model interface{}, table string, cutoff time.Time) (int, error) {
+	const pk = "log_id"
+	total := 0
+	for batch := 0; batch < cleanupMaxBatchesPerRun; batch++ {
+		sub := fmt.Sprintf("%s IN (SELECT %s FROM %s WHERE started_at < ? ORDER BY %s LIMIT ?)", pk, pk, table, pk)
+		res := db.Unscoped().Where(sub, cutoff, cleanupBatchSize).Delete(model)
+		if res.Error != nil {
+			return total, fmt.Errorf("清理 %s 过期日志失败: %w", table, res.Error)
+		}
+		total += int(res.RowsAffected)
+		if res.RowsAffected < cleanupBatchSize {
+			break // 不足一批，已删空
+		}
+	}
+	return total, nil
+}
+
 // GetUsageLogList 分页查用量日志(管理员视角，按 用户/密钥/部署/模型/时间过滤)。
 // 返回出网视图：批量回填归因实体可读名(用户昵称/密钥名/部署名)，metadata 不出网。
 func (s *UsageSyncService) GetUsageLogList(ctx context.Context, q gatewayReq.UsageLogSearch) (list []gatewayResp.LlmLogView, total int64, err error) {

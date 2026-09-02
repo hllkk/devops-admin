@@ -234,7 +234,8 @@ func (s *ModelService) UpdateModel(ctx context.Context, req gatewayReq.ModelOper
 }
 
 // DeleteModels 批量删除模型(软删三连，任一 LiteLLM 禁用失败整体中止)：
-// ①每个已同步部署先在 LiteLLM 侧禁用(active=false 留痕，不改名不删记录)
+// ①每个已同步部署在 LiteLLM 侧改名加 __disabled__ 后缀摘出路由池(routable=false，
+// litellm_model_id 不变保归因)+model_info.active 双写——与凭证禁用级联同机制
 // ②关联部署全部置 is_active=false ③模型软删(is_active=false+deleted_at)+清发布投影(物理删)
 // ④删后从全部主 Key 回收授权(模型已软删，visibleModelKeys 不再含，自愈不回加)。
 func (s *ModelService) DeleteModels(ctx context.Context, ids []int64) error {
@@ -245,6 +246,11 @@ func (s *ModelService) DeleteModels(ctx context.Context, ids []int64) error {
 	if err := global.OPS_DB.WithContext(ctx).Where("model_id IN ?", ids).Find(&models).Error; err != nil {
 		return err
 	}
+	// modelKey 映射(部署级联改名用)
+	modelKeyMap := make(map[int64]string, len(models))
+	for _, m := range models {
+		modelKeyMap[m.ModelId] = m.ModelKey
+	}
 	var deps []gateway.ModelDeployment
 	if err := global.OPS_DB.WithContext(ctx).Where("model_id IN ?", ids).Find(&deps).Error; err != nil {
 		return err
@@ -254,7 +260,10 @@ func (s *ModelService) DeleteModels(ctx context.Context, ids []int64) error {
 		if deps[i].LitellmModelId == "" || cli == nil {
 			continue
 		}
-		if err := cli.UpdateModel(ctx, deps[i].LitellmModelId, "", nil, withActive(jsonToMap(deps[i].ModelInfo), false)); err != nil {
+		// 改名加 __disabled__ 后缀摘出路由池(与凭证禁用级联同机制)
+		modelKey := modelKeyMap[deps[i].ModelId]
+		disabledName := BuildModelRouteName(modelKey, false) // modelKey + "__disabled__"
+		if err := cli.UpdateModel(ctx, deps[i].LitellmModelId, disabledName, nil, withActive(jsonToMap(deps[i].ModelInfo), false)); err != nil {
 			return fmt.Errorf("部署 %q 在 LiteLLM 侧禁用失败，已中止删除: %w", deps[i].DeployName, err)
 		}
 	}

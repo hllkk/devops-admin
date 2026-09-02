@@ -51,3 +51,47 @@ func TestApplyTokenFallback_TotalOnlyMissing(t *testing.T) {
 		t.Errorf("total 回落失败: prompt=%d completion=%d total=%d, 期望 100/20/120", p, c, tt)
 	}
 }
+
+// effectiveRetentionDays 纯函数单测：保留期与对账窗口联动。
+
+func TestEffectiveRetentionDays_Disabled(t *testing.T) {
+	// 0/负值=清理禁用，无论窗口多大
+	for _, cfg := range []int{0, -1, -30} {
+		if got := effectiveRetentionDays(cfg, 30); got != 0 {
+			t.Errorf("cfg=%d 应禁用返回0, 实际 %d", cfg, got)
+		}
+	}
+}
+
+func TestEffectiveRetentionDays_Normal(t *testing.T) {
+	// 配置值 >= 对账窗口+7 → 原样生效
+	if got := effectiveRetentionDays(90, 30); got != 90 {
+		t.Errorf("90天应原样生效, 实际 %d", got)
+	}
+	// 恰好等于下限(30+7)不抬升
+	if got := effectiveRetentionDays(37, 30); got != 37 {
+		t.Errorf("37=下限边界应原样生效, 实际 %d", got)
+	}
+}
+
+func TestEffectiveRetentionDays_LiftToWindow(t *testing.T) {
+	// 配置值 < 对账窗口+7 → 抬升到下限(防删了又被对账重灌的抖动循环)
+	if got := effectiveRetentionDays(10, 30); got != 37 {
+		t.Errorf("10天应联动抬升至37, 实际 %d", got)
+	}
+	// 自定义更大的对账窗口同样联动
+	if got := effectiveRetentionDays(50, 60); got != 67 {
+		t.Errorf("窗口60时50天应抬升至67, 实际 %d", got)
+	}
+}
+
+func TestEffectiveRetentionDays_WindowFallback(t *testing.T) {
+	// 对账窗口未配(<=0)兜底默认30 → 下限37
+	if got := effectiveRetentionDays(10, 0); got != 37 {
+		t.Errorf("窗口未配应兜底30+7=37, 实际 %d", got)
+	}
+	// 窗口未配但配置值已超下限 → 原样
+	if got := effectiveRetentionDays(90, 0); got != 90 {
+		t.Errorf("窗口未配90天应原样生效, 实际 %d", got)
+	}
+}

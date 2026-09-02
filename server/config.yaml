@@ -90,6 +90,8 @@ litellm:
     log-sync-interval: 5
     log-sync-batch: 1000
     log-reconcile-window: 30
+    # 用量日志保留天数(llm+mcp): 0=不清理;prod建议90(生效值自动不低于对账窗口+7=37)
+    log-retention-days: 0
     sync-enabled: true
 local:
     path: uploads/file

@@ -45,6 +45,10 @@ func Timer() {
 		_, err := (&gatewayService.UsageSyncService{}).ReconcileMcpLogs(ctx)
 		return err
 	})
+	task.Register("CleanupUsageLogs", "清理过期用量日志(llm+mcp按保留天数物理删,log-retention-days<=0禁用)", func(ctx context.Context, _ json.RawMessage) error {
+		_, err := (&gatewayService.UsageSyncService{}).CleanupUsageLogs(ctx)
+		return err
+	})
 	task.Register("CheckBudgetAlerts", "预算预警检查(软限通知+硬限停用)", func(ctx context.Context, _ json.RawMessage) error {
 		_, err := (&gatewayService.BudgetRuleService{}).CheckBudgetAlerts(ctx)
 		return err
