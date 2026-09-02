@@ -21,7 +21,7 @@ type Model struct {
 	LogoProviderType string         `json:"logoProviderType" gorm:"size:50;comment:LOGO取用的供应商类型"`                           // 前端图标归属供应商类型
 	IsActive         bool           `json:"isActive" gorm:"default:true;comment:是否启用"`                                      // 是否启用(软删联动)
 	IsPublished      bool           `json:"isPublished" gorm:"default:false;comment:是否发布到用户端"`                              // 是否发布
-	VisibilityType   string         `json:"visibilityType" gorm:"size:20;default:all;comment:可见范围(all/selected)"`           // 可见范围
+	VisibilityType   string         `json:"visibilityType" gorm:"size:20;default:all;comment:可见范围(all/selected/user/mixed)"`   // 可见范围
 	RequiresApproval bool           `json:"requiresApproval" gorm:"default:false;comment:用户订阅是否需审批"`                        // 订阅需审批
 }
 
@@ -32,11 +32,12 @@ const (
 	ModelCategoryRerank    = "rerank"    // 重排
 )
 
-// 模型可见范围
+// 模型可见范围(模型/MCP/Skill 三资源同口径)
 const (
 	VisibilityTypeAll      = "all"      // 全员可见
 	VisibilityTypeSelected = "selected" // 指定部门可见(配 gateway_model_visibility)
 	VisibilityTypeUser     = "user"     // 指定用户可见(配 gateway_model_visibility_user)
+	VisibilityTypeMixed    = "mixed"    // 部门+用户混合可见(两张投影表并集，部门/用户至少一项)
 )
 
 // 路由池命名后缀(禁用=改名出池+active 双写，litellm_model_id 永不变保归因锚点)。

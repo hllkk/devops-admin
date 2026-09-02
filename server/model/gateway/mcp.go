@@ -36,7 +36,7 @@ type MCPServer struct {
 	CallCount        int64      `json:"callCount" gorm:"default:0;comment:累计调用次数(回流任务按server增量维护)"`               // 累计调用次数
 	IsActive         bool       `json:"isActive" gorm:"default:true;comment:是否启用"`                                      // 是否启用
 	IsPublished      bool       `json:"isPublished" gorm:"default:false;comment:是否发布到用户端"`                              // 是否发布
-	VisibilityType   string     `json:"visibilityType" gorm:"size:20;default:all;comment:可见范围(all/selected/user)"`      // 可见范围(与模型三档同口径)
+	VisibilityType   string     `json:"visibilityType" gorm:"size:20;default:all;comment:可见范围(all/selected/user/mixed)"` // 可见范围(与模型同口径,含部门+用户混合档)
 	RequiresApproval bool       `json:"requiresApproval" gorm:"default:false;comment:接入是否需审批"`                          // 接入需审批
 	HealthStatus     string     `json:"healthStatus" gorm:"size:20;default:unknown;comment:健康状态(unknown/healthy/unhealthy)"` // 健康状态
 	LastHealthCheck  *time.Time `json:"lastHealthCheck" gorm:"comment:最近健康检查(nil=未检查)"`                                 // 最近健康检查

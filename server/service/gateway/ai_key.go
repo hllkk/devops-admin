@@ -988,9 +988,20 @@ func loadMainKey(ctx context.Context, userId int64) (*gateway.AiKey, error) {
 	return &k, nil
 }
 
+// visibilityUsesDept / visibilityUsesUser 可见档要写/读哪张投影表(selected=部门表、
+// user=用户表、mixed=两张)。模型/MCP/Skill 三资源发布重建与授权对齐共用。
+func visibilityUsesDept(visibility string) bool {
+	return visibility == gateway.VisibilityTypeSelected || visibility == gateway.VisibilityTypeMixed
+}
+
+func visibilityUsesUser(visibility string) bool {
+	return visibility == gateway.VisibilityTypeUser || visibility == gateway.VisibilityTypeMixed
+}
+
 // mainKeyScopeOf 按发布可见档构造自动授权的主 Key 目标集合查询(scope 加在密钥查询上)：
 // all=全部主 Key；selected=可见部门成员(sys_users 主部门∪多部门)的个人主 Key+可见部门
-// 的部门主 Key；user=指定用户的个人主 Key。与 visibleModelScope 的可见口径对称。
+// 的部门主 Key；user=指定用户的个人主 Key；mixed=selected∪user 并集(两列表按非空拼接，
+// 双空=空集)。与 visibleModelScope 的可见口径对称(投影表命中即 OR)。
 func mainKeyScopeOf(visibility string, deptIds, userIds []int64) func(*gorm.DB) *gorm.DB {
 	switch visibility {
 	case gateway.VisibilityTypeSelected:
@@ -1008,6 +1019,30 @@ func mainKeyScopeOf(visibility string, deptIds, userIds []int64) func(*gorm.DB) 
 		return func(q *gorm.DB) *gorm.DB {
 			return q.Where("key_type = ? AND owner_type = ? AND owner_id IN ?",
 				gateway.KeyTypePersonalMain, gateway.OwnerTypeUser, userIds)
+		}
+	case gateway.VisibilityTypeMixed:
+		return func(q *gorm.DB) *gorm.DB {
+			conds := make([]string, 0, 2)
+			args := make([]any, 0, 10)
+			if len(deptIds) > 0 {
+				conds = append(conds,
+					`(key_type = ? AND owner_type = ? AND owner_id IN (
+						SELECT u.id FROM sys_users u WHERE u.deleted_at IS NULL AND (
+							u.dept_id IN ?
+							OR u.id IN (SELECT ud.sys_user_id FROM sys_user_departments ud WHERE ud.sys_department_id IN ?))))
+					OR (key_type = ? AND owner_type = ? AND owner_id IN ?)`)
+				args = append(args,
+					gateway.KeyTypePersonalMain, gateway.OwnerTypeUser, deptIds, deptIds,
+					gateway.KeyTypeDeptMain, gateway.OwnerTypeDept, deptIds)
+			}
+			if len(userIds) > 0 {
+				conds = append(conds, "key_type = ? AND owner_type = ? AND owner_id IN ?")
+				args = append(args, gateway.KeyTypePersonalMain, gateway.OwnerTypeUser, userIds)
+			}
+			if len(conds) == 0 {
+				return q.Where("1 = 0") // 双空=应持有空集(发布校验兜底，对齐语义=全量回收)
+			}
+			return q.Where(strings.Join(conds, "\nOR "), args...)
 		}
 	default: // all
 		return func(q *gorm.DB) *gorm.DB {

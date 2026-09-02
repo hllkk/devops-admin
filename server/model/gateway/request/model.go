@@ -29,15 +29,15 @@ type ModelOperateParams struct {
 
 // ModelPublishParams 模型发布设置(对齐前端 PUT /gateway/model/publish)。
 // visibilityType=selected 且 isPublished=true 时 departmentIds 必填(重建部门可见行)；
-// visibilityType=user 且 isPublished=true 时 userIds 必填(重建用户可见行)。
+// =user 时 userIds 必填(重建用户可见行)；=mixed 时两列表合计至少一项(两张投影行并集)。
 // ID 列表用 Int64StringSlice：前端 IdType 混 string/number，元素级兼容反序列化。
 type ModelPublishParams struct {
 	ModelId          int64                   `json:"modelId,string" form:"modelId"`            // 模型ID
 	IsPublished      bool                    `json:"isPublished" form:"isPublished"`           // 是否发布
-	VisibilityType   string                  `json:"visibilityType" form:"visibilityType"`     // 可见范围(all/selected/user)
+	VisibilityType   string                  `json:"visibilityType" form:"visibilityType"`     // 可见范围(all/selected/user/mixed)
 	RequiresApproval bool                    `json:"requiresApproval" form:"requiresApproval"` // 订阅需审批
-	DepartmentIds    common.Int64StringSlice `json:"departmentIds" form:"departmentIds"`       // 可见部门(selected 模式)
-	UserIds          common.Int64StringSlice `json:"userIds" form:"userIds"`                   // 可见用户(user 模式)
+	DepartmentIds    common.Int64StringSlice `json:"departmentIds" form:"departmentIds"`       // 可见部门(selected/mixed 模式)
+	UserIds          common.Int64StringSlice `json:"userIds" form:"userIds"`                   // 可见用户(user/mixed 模式)
 }
 
 // DeploymentSearch 部署分页查询(对齐前端 GET /gateway/model/deployment/list)。

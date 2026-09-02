@@ -327,10 +327,10 @@ func (s *ModelService) GetModelPublish(ctx context.Context, id int64) (gatewayRe
 	return view, nil
 }
 
-// PublishModel 更新发布设置：selected+发布 必须指定可见部门、user+发布 必须指定可见用户
-// (均含存在性校验)；发布必须已设置路由名(空 ModelKey 上架会出现在广场却无法授权/调用——
-// 授权与调用均以 modelKey 为锚)；可见性行重建(物理删+插，投影表不软删)；取消发布或全员
-// 可见时清空可见行。
+// PublishModel 更新发布设置：selected+发布 必须指定可见部门、user+发布 必须指定可见用户、
+// mixed+发布 两列表合计至少一项(均含存在性校验)；发布必须已设置路由名(空 ModelKey 上架会
+// 出现在广场却无法授权/调用——授权与调用均以 modelKey 为锚)；可见性行重建(物理删+插，
+// 投影表不软删)；取消发布或全员可见时清空可见行。
 func (s *ModelService) PublishModel(ctx context.Context, req gatewayReq.ModelPublishParams, updateBy int64) error {
 	if req.ModelId == 0 {
 		return errors.New("模型ID不能为空")
@@ -339,14 +339,17 @@ func (s *ModelService) PublishModel(ctx context.Context, req gatewayReq.ModelPub
 	if visibility == "" {
 		visibility = gateway.VisibilityTypeAll
 	}
-	if visibility != gateway.VisibilityTypeAll && visibility != gateway.VisibilityTypeSelected && visibility != gateway.VisibilityTypeUser {
-		return errors.New("可见范围取值非法(all/selected/user)")
+	if visibility != gateway.VisibilityTypeAll && visibility != gateway.VisibilityTypeSelected && visibility != gateway.VisibilityTypeUser && visibility != gateway.VisibilityTypeMixed {
+		return errors.New("可见范围取值非法(all/selected/user/mixed)")
 	}
 	if req.IsPublished && visibility == gateway.VisibilityTypeSelected && len(req.DepartmentIds) == 0 {
 		return errors.New("指定部门可见时必须选择至少一个部门")
 	}
 	if req.IsPublished && visibility == gateway.VisibilityTypeUser && len(req.UserIds) == 0 {
 		return errors.New("指定用户可见时必须选择至少一个用户")
+	}
+	if req.IsPublished && visibility == gateway.VisibilityTypeMixed && len(req.DepartmentIds) == 0 && len(req.UserIds) == 0 {
+		return errors.New("部门+用户可见时必须选择至少一个部门或用户")
 	}
 	var m gateway.Model
 	if err := global.OPS_DB.WithContext(ctx).Where("model_id = ?", req.ModelId).First(&m).Error; err != nil {
@@ -392,7 +395,9 @@ func (s *ModelService) PublishModel(ctx context.Context, req gatewayReq.ModelPub
 		if err := tx.Unscoped().Where("model_id = ?", req.ModelId).Delete(&gateway.ModelVisibilityUser{}).Error; err != nil {
 			return err
 		}
-		if req.IsPublished && visibility == gateway.VisibilityTypeSelected {
+		// mixed 档两张投影表都写(允许只填一类，空表跳过——gorm Create 空 slice 报错)；
+		// 查询侧 visibleModelScope 为部门∪用户 OR 语义，单侧行同样正确命中
+		if req.IsPublished && visibilityUsesDept(visibility) && len(req.DepartmentIds) > 0 {
 			rows := make([]gateway.ModelVisibility, 0, len(req.DepartmentIds))
 			for _, deptId := range req.DepartmentIds {
 				rows = append(rows, gateway.ModelVisibility{ModelId: req.ModelId, DepartmentId: deptId})
@@ -401,7 +406,7 @@ func (s *ModelService) PublishModel(ctx context.Context, req gatewayReq.ModelPub
 				return err
 			}
 		}
-		if req.IsPublished && visibility == gateway.VisibilityTypeUser {
+		if req.IsPublished && visibilityUsesUser(visibility) && len(req.UserIds) > 0 {
 			userRows := make([]gateway.ModelVisibilityUser, 0, len(req.UserIds))
 			for _, userId := range req.UserIds {
 				userRows = append(userRows, gateway.ModelVisibilityUser{ModelId: req.ModelId, UserId: userId})
@@ -412,8 +417,8 @@ func (s *ModelService) PublishModel(ctx context.Context, req gatewayReq.ModelPub
 		}
 		// 主 Key 授权对齐(有路由名才谈授权；单个失败 warning 不中断)：
 		// 发布免审批 → 按可见档向目标活跃主 Key 追加(all=全部主 Key/selected=可见部门成员
-		// 个人主 Key+可见部门主 Key/user=指定用户个人主 Key,与 visibleModelScope 可见口径对称)
-		// 并回收范围外持有者(收紧档位后广场不可见却能继续调的口径漂移)；
+		// 个人主 Key+可见部门主 Key/user=指定用户个人主 Key/mixed=selected∪user 并集,
+		// 与 visibleModelScope 可见口径对称)并回收范围外持有者(收紧档位后广场不可见却能继续调的口径漂移)；
 		// 取消发布/转需审批 → 应持有为空集，回收全部持有者。需审批模型不自动授权(申请流 P2)。
 		// 仅主 Key(系统自动授权域)，场景 Key 手工授权不动；与 loadMainKey 自愈差集源
 		// (visibleModelKeys)同口径，回收后自愈不回加。

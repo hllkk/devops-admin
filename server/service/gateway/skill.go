@@ -166,10 +166,11 @@ func revokeSkillFromMainKeys(ctx context.Context, tx *gorm.DB, skillKey string, 
 // 发布+免审批+启用 → 按可见档 sync+revoke；否则全量 revoke(未发布/需审批/停用不自动授权)。
 func alignSkillAuthorization(ctx context.Context, tx *gorm.DB, s *gateway.Skill, deptIds, userIds []int64) []string {
 	if s.IsPublished && !s.RequiresApproval && s.IsActive {
-		if deptIds == nil && s.VisibilityType == gateway.VisibilityTypeSelected {
+		// mixed 档两张投影表都读(visibilityUsesDept/User 含 mixed)；其余档行为不变
+		if deptIds == nil && visibilityUsesDept(s.VisibilityType) {
 			deptIds = skillVisibleDeptIds(tx, s.SkillId)
 		}
-		if userIds == nil && s.VisibilityType == gateway.VisibilityTypeUser {
+		if userIds == nil && visibilityUsesUser(s.VisibilityType) {
 			userIds = skillVisibleUserIds(tx, s.SkillId)
 		}
 		scope := mainKeyScopeOf(s.VisibilityType, deptIds, userIds)
@@ -383,7 +384,7 @@ func (s *SkillService) GetSkillPublish(ctx context.Context, id int64) (gatewayRe
 	return view, nil
 }
 
-// PublishSkill 发布设置：三档可见性校验与投影行重建(物理删+插)同 PublishModel/
+// PublishSkill 发布设置：四档可见性校验与投影行重建(物理删+插)同 PublishModel/
 // PublishMCPServer；授权对齐走 alignSkillAuthorization。
 func (s *SkillService) PublishSkill(ctx context.Context, req gatewayReq.SkillPublishParams, updateBy int64) error {
 	if req.SkillId == 0 {
@@ -393,14 +394,17 @@ func (s *SkillService) PublishSkill(ctx context.Context, req gatewayReq.SkillPub
 	if visibility == "" {
 		visibility = gateway.VisibilityTypeAll
 	}
-	if visibility != gateway.VisibilityTypeAll && visibility != gateway.VisibilityTypeSelected && visibility != gateway.VisibilityTypeUser {
-		return errors.New("可见范围取值非法(all/selected/user)")
+	if visibility != gateway.VisibilityTypeAll && visibility != gateway.VisibilityTypeSelected && visibility != gateway.VisibilityTypeUser && visibility != gateway.VisibilityTypeMixed {
+		return errors.New("可见范围取值非法(all/selected/user/mixed)")
 	}
 	if req.IsPublished && visibility == gateway.VisibilityTypeSelected && len(req.DepartmentIds) == 0 {
 		return errors.New("指定部门可见时必须选择至少一个部门")
 	}
 	if req.IsPublished && visibility == gateway.VisibilityTypeUser && len(req.UserIds) == 0 {
 		return errors.New("指定用户可见时必须选择至少一个用户")
+	}
+	if req.IsPublished && visibility == gateway.VisibilityTypeMixed && len(req.DepartmentIds) == 0 && len(req.UserIds) == 0 {
+		return errors.New("部门+用户可见时必须选择至少一个部门或用户")
 	}
 	var row gateway.Skill
 	if err := global.OPS_DB.WithContext(ctx).Where("skill_id = ?", req.SkillId).First(&row).Error; err != nil {
@@ -444,7 +448,8 @@ func (s *SkillService) PublishSkill(ctx context.Context, req gatewayReq.SkillPub
 		if err := tx.Unscoped().Where("skill_id = ?", req.SkillId).Delete(&gateway.SkillVisibilityUser{}).Error; err != nil {
 			return err
 		}
-		if req.IsPublished && visibility == gateway.VisibilityTypeSelected {
+		// mixed 档两张投影表都写(允许只填一类，空表跳过)；查询侧 OR 语义同 PublishModel
+		if req.IsPublished && visibilityUsesDept(visibility) && len(req.DepartmentIds) > 0 {
 			rows := make([]gateway.SkillVisibility, 0, len(req.DepartmentIds))
 			for _, deptId := range req.DepartmentIds {
 				rows = append(rows, gateway.SkillVisibility{SkillId: req.SkillId, DepartmentId: deptId})
@@ -453,7 +458,7 @@ func (s *SkillService) PublishSkill(ctx context.Context, req gatewayReq.SkillPub
 				return err
 			}
 		}
-		if req.IsPublished && visibility == gateway.VisibilityTypeUser {
+		if req.IsPublished && visibilityUsesUser(visibility) && len(req.UserIds) > 0 {
 			userRows := make([]gateway.SkillVisibilityUser, 0, len(req.UserIds))
 			for _, userId := range req.UserIds {
 				userRows = append(userRows, gateway.SkillVisibilityUser{SkillId: req.SkillId, UserId: userId})

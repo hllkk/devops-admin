@@ -985,10 +985,12 @@ declare namespace App {
               visibilityAll: string;
               visibilitySelected: string;
               visibilityUser: string;
+              visibilityMixed: string;
               departmentIds: string;
               userIds: string;
               departmentRequired: string;
               userRequired: string;
+              mixedRequired: string;
               requiresApproval: string;
               requiresApprovalTip: string;
             };
@@ -1236,10 +1238,12 @@ declare namespace App {
               visibilityAll: string;
               visibilitySelected: string;
               visibilityUser: string;
+              visibilityMixed: string;
               departmentIds: string;
               departmentRequired: string;
               userIds: string;
               userRequired: string;
+              mixedRequired: string;
               requiresApproval: string;
               requiresApprovalTip: string;
               autoGrantTip: string;

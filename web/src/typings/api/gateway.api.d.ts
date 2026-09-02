@@ -274,8 +274,8 @@ declare namespace Api {
       callCount: number;
       isActive: boolean;
       isPublished: boolean;
-      /** 可见范围(all/selected/user) */
-      visibilityType: 'all' | 'selected' | 'user';
+      /** 可见范围(all/selected/user/mixed) */
+      visibilityType: 'all' | 'selected' | 'user' | 'mixed';
       /** 接入需审批 */
       requiresApproval: boolean;
       healthStatus: MCPHealthStatus;
@@ -350,9 +350,9 @@ declare namespace Api {
     type MCPPublishParams = {
       mcpServerId: CommonType.IdType;
       isPublished: boolean;
-      visibilityType: 'all' | 'selected' | 'user';
+      visibilityType: 'all' | 'selected' | 'user' | 'mixed';
       requiresApproval: boolean;
-      /** 可见部门(selected 模式) */
+      /** 可见部门(selected/mixed 模式) */
       departmentIds: CommonType.IdType[];
       /** 可见用户(user 模式) */
       userIds: CommonType.IdType[];
@@ -452,8 +452,8 @@ declare namespace Api {
       installCount: number;
       isActive: boolean;
       isPublished: boolean;
-      /** 可见范围(all/selected/user) */
-      visibilityType: 'all' | 'selected' | 'user';
+      /** 可见范围(all/selected/user/mixed) */
+      visibilityType: 'all' | 'selected' | 'user' | 'mixed';
       requiresApproval: boolean;
     }>;
 
@@ -488,9 +488,9 @@ declare namespace Api {
     type SkillPublishParams = {
       skillId: CommonType.IdType;
       isPublished: boolean;
-      visibilityType: 'all' | 'selected' | 'user';
+      visibilityType: 'all' | 'selected' | 'user' | 'mixed';
       requiresApproval: boolean;
-      /** 可见部门(selected 模式) */
+      /** 可见部门(selected/mixed 模式) */
       departmentIds: CommonType.IdType[];
       /** 可见用户(user 模式) */
       userIds: CommonType.IdType[];
@@ -620,7 +620,7 @@ declare namespace Api {
       logoProviderType: string;
       isActive: boolean;
       isPublished: boolean;
-      visibilityType: 'all' | 'selected';
+      visibilityType: 'all' | 'selected' | 'user' | 'mixed';
       requiresApproval: boolean;
       deploymentCount: number;
       activeDeploymentCount: number;
@@ -642,7 +642,7 @@ declare namespace Api {
     type ModelPublishView = {
       modelId: CommonType.IdType;
       isPublished: boolean;
-      visibilityType: 'all' | 'selected' | 'user';
+      visibilityType: 'all' | 'selected' | 'user' | 'mixed';
       requiresApproval: boolean;
       /** 可见部门 ID 列表(selected 模式) */
       departmentIds: CommonType.IdType[];
@@ -654,7 +654,7 @@ declare namespace Api {
     type ModelPublishParams = {
       modelId: CommonType.IdType;
       isPublished: boolean;
-      visibilityType: 'all' | 'selected' | 'user';
+      visibilityType: 'all' | 'selected' | 'user' | 'mixed';
       requiresApproval: boolean;
       departmentIds: CommonType.IdType[];
       userIds: CommonType.IdType[];

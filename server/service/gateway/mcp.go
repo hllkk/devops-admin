@@ -162,10 +162,11 @@ func revokeMcpFromMainKeys(ctx context.Context, tx *gorm.DB, serverName string, 
 // publish 时传本次提交的 deptIds/userIds(投影行同事务重建)；其余场景传 nil(从投影表读现值)。
 func alignMCPAuthorization(ctx context.Context, tx *gorm.DB, s *gateway.MCPServer, deptIds, userIds []int64) []string {
 	if s.IsPublished && !s.RequiresApproval && s.IsActive {
-		if deptIds == nil && s.VisibilityType == gateway.VisibilityTypeSelected {
+		// mixed 档两张投影表都读(visibilityUsesDept/User 含 mixed)；其余档行为不变
+		if deptIds == nil && visibilityUsesDept(s.VisibilityType) {
 			deptIds = mcpVisibleDeptIds(tx, s.McpServerId)
 		}
-		if userIds == nil && s.VisibilityType == gateway.VisibilityTypeUser {
+		if userIds == nil && visibilityUsesUser(s.VisibilityType) {
 			userIds = mcpVisibleUserIds(tx, s.McpServerId)
 		}
 		scope := mainKeyScopeOf(s.VisibilityType, deptIds, userIds)
@@ -480,7 +481,7 @@ func (s *McpService) GetMCPPublish(ctx context.Context, id int64) (gatewayResp.M
 	return view, nil
 }
 
-// PublishMCPServer 发布设置：三档可见性校验与投影行重建(物理删+插)同 PublishModel；
+// PublishMCPServer 发布设置：四档可见性校验与投影行重建(物理删+插)同 PublishModel；
 // serverName 恒非空(创建必填唯一)，授权对齐无"缺路由名"分支。
 func (s *McpService) PublishMCPServer(ctx context.Context, req gatewayReq.MCPPublishParams, updateBy int64) error {
 	if req.McpServerId == 0 {
@@ -490,14 +491,17 @@ func (s *McpService) PublishMCPServer(ctx context.Context, req gatewayReq.MCPPub
 	if visibility == "" {
 		visibility = gateway.VisibilityTypeAll
 	}
-	if visibility != gateway.VisibilityTypeAll && visibility != gateway.VisibilityTypeSelected && visibility != gateway.VisibilityTypeUser {
-		return errors.New("可见范围取值非法(all/selected/user)")
+	if visibility != gateway.VisibilityTypeAll && visibility != gateway.VisibilityTypeSelected && visibility != gateway.VisibilityTypeUser && visibility != gateway.VisibilityTypeMixed {
+		return errors.New("可见范围取值非法(all/selected/user/mixed)")
 	}
 	if req.IsPublished && visibility == gateway.VisibilityTypeSelected && len(req.DepartmentIds) == 0 {
 		return errors.New("指定部门可见时必须选择至少一个部门")
 	}
 	if req.IsPublished && visibility == gateway.VisibilityTypeUser && len(req.UserIds) == 0 {
 		return errors.New("指定用户可见时必须选择至少一个用户")
+	}
+	if req.IsPublished && visibility == gateway.VisibilityTypeMixed && len(req.DepartmentIds) == 0 && len(req.UserIds) == 0 {
+		return errors.New("部门+用户可见时必须选择至少一个部门或用户")
 	}
 	var row gateway.MCPServer
 	if err := global.OPS_DB.WithContext(ctx).Where("mcp_server_id = ?", req.McpServerId).First(&row).Error; err != nil {
@@ -540,7 +544,8 @@ func (s *McpService) PublishMCPServer(ctx context.Context, req gatewayReq.MCPPub
 		if err := tx.Unscoped().Where("mcp_server_id = ?", req.McpServerId).Delete(&gateway.MCPVisibilityUser{}).Error; err != nil {
 			return err
 		}
-		if req.IsPublished && visibility == gateway.VisibilityTypeSelected {
+		// mixed 档两张投影表都写(允许只填一类，空表跳过)；查询侧 OR 语义同 PublishModel
+		if req.IsPublished && visibilityUsesDept(visibility) && len(req.DepartmentIds) > 0 {
 			rows := make([]gateway.MCPVisibility, 0, len(req.DepartmentIds))
 			for _, deptId := range req.DepartmentIds {
 				rows = append(rows, gateway.MCPVisibility{McpServerId: req.McpServerId, DepartmentId: deptId})
@@ -549,7 +554,7 @@ func (s *McpService) PublishMCPServer(ctx context.Context, req gatewayReq.MCPPub
 				return err
 			}
 		}
-		if req.IsPublished && visibility == gateway.VisibilityTypeUser {
+		if req.IsPublished && visibilityUsesUser(visibility) && len(req.UserIds) > 0 {
 			userRows := make([]gateway.MCPVisibilityUser, 0, len(req.UserIds))
 			for _, userId := range req.UserIds {
 				userRows = append(userRows, gateway.MCPVisibilityUser{McpServerId: req.McpServerId, UserId: userId})

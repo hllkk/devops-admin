@@ -167,7 +167,7 @@ func (a *SkillApi) GetSkillPublish(c *gin.Context) {
 
 // PublishSkill
 // @Tags      GatewaySkill
-// @Summary   Skill发布设置(三档可见性+需审批;须先上传zip包)
+// @Summary   Skill发布设置(四档可见性+需审批;须先上传zip包)
 // @Accept    application/json
 // @Produce   application/json
 // @Param     data  body  gatewayReq.SkillPublishParams  true  "发布参数"

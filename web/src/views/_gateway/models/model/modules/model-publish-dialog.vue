@@ -41,13 +41,21 @@ function createDefaultModel(): Model {
   };
 }
 
-/** 指定部门/用户可见 + 发布时，对应列表必填 */
+/** 指定部门/用户可见 + 发布时，对应列表必填；mixed 档两列表合计至少一项 */
 const rules: Record<string, App.Global.FormRule> = {
   departmentIds: {
     trigger: ['change', 'blur'],
     validator: (_rule, value: CommonType.IdType[]) => {
-      if (formModel.value.isPublished && formModel.value.visibilityType === 'selected' && (!value || value.length === 0)) {
+      if (!formModel.value.isPublished) return true;
+      if (formModel.value.visibilityType === 'selected' && (!value || value.length === 0)) {
         return new Error($t('page.gateway.model.publish.departmentRequired'));
+      }
+      if (
+        formModel.value.visibilityType === 'mixed' &&
+        (!value || value.length === 0) &&
+        formModel.value.userIds.length === 0
+      ) {
+        return new Error($t('page.gateway.model.publish.mixedRequired'));
       }
       return true;
     }
@@ -55,8 +63,16 @@ const rules: Record<string, App.Global.FormRule> = {
   userIds: {
     trigger: ['change', 'blur'],
     validator: (_rule, value: CommonType.IdType[]) => {
-      if (formModel.value.isPublished && formModel.value.visibilityType === 'user' && (!value || value.length === 0)) {
+      if (!formModel.value.isPublished) return true;
+      if (formModel.value.visibilityType === 'user' && (!value || value.length === 0)) {
         return new Error($t('page.gateway.model.publish.userRequired'));
+      }
+      if (
+        formModel.value.visibilityType === 'mixed' &&
+        (!value || value.length === 0) &&
+        formModel.value.departmentIds.length === 0
+      ) {
+        return new Error($t('page.gateway.model.publish.mixedRequired'));
       }
       return true;
     }
@@ -113,9 +129,10 @@ async function handleOpen() {
 }
 
 function handleVisibilityChange(val: string) {
-  formModel.value.visibilityType = val as 'all' | 'selected' | 'user';
-  if (val !== 'selected') formModel.value.departmentIds = [];
-  if (val !== 'user') formModel.value.userIds = [];
+  formModel.value.visibilityType = val as 'all' | 'selected' | 'user' | 'mixed';
+  // mixed 保留两侧已选(从单档切 mixed 追加另一侧)；切出档位清对应侧
+  if (val !== 'selected' && val !== 'mixed') formModel.value.departmentIds = [];
+  if (val !== 'user' && val !== 'mixed') formModel.value.userIds = [];
 }
 
 function closeDialog() {
@@ -163,9 +180,14 @@ watch(visible, val => {
             <NRadio value="all">{{ $t('page.gateway.model.publish.visibilityAll') }}</NRadio>
             <NRadio value="selected">{{ $t('page.gateway.model.publish.visibilitySelected') }}</NRadio>
             <NRadio value="user">{{ $t('page.gateway.model.publish.visibilityUser') }}</NRadio>
+            <NRadio value="mixed">{{ $t('page.gateway.model.publish.visibilityMixed') }}</NRadio>
           </NRadioGroup>
         </NFormItem>
-        <NFormItem v-if="formModel.visibilityType === 'selected'" :label="$t('page.gateway.model.publish.departmentIds')" path="departmentIds">
+        <NFormItem
+          v-if="formModel.visibilityType === 'selected' || formModel.visibilityType === 'mixed'"
+          :label="$t('page.gateway.model.publish.departmentIds')"
+          path="departmentIds"
+        >
           <NTreeSelect
             v-model:value="formModel.departmentIds"
             multiple
@@ -178,7 +200,11 @@ watch(visible, val => {
             :placeholder="$t('common.placeholderSelect')"
           />
         </NFormItem>
-        <NFormItem v-if="formModel.visibilityType === 'user'" :label="$t('page.gateway.model.publish.userIds')" path="userIds">
+        <NFormItem
+          v-if="formModel.visibilityType === 'user' || formModel.visibilityType === 'mixed'"
+          :label="$t('page.gateway.model.publish.userIds')"
+          path="userIds"
+        >
           <NSelect
             v-model:value="formModel.userIds"
             multiple

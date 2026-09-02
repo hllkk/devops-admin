@@ -185,7 +185,7 @@ func (a *ModelApi) GetModelPublish(c *gin.Context) {
 
 // PublishModel
 // @Tags      GatewayModel
-// @Summary   更新模型发布设置(可见范围/审批；selected 模式重建部门可见行)
+// @Summary   更新模型发布设置(可见范围/审批；selected/user/mixed 模式重建对应可见行)
 // @Accept    application/json
 // @Produce   application/json
 // @Param     data  body  gatewayReq.ModelPublishParams  true  "发布设置"

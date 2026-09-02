@@ -41,3 +41,4 @@
 
 - 术语与容器决策来源：[[ai-gateway-deployment-dialog-terminology]]
 - 自动授权级联边界：[[ai-gateway-model-rename-cascade]]
+- 第四档 mixed（部门+用户混合可见）：[[ai-gateway-publish-mixed-visibility]]

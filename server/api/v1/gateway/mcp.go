@@ -182,7 +182,7 @@ func (a *MCPApi) GetMCPPublish(c *gin.Context) {
 
 // PublishMCPServer
 // @Tags      GatewayMCP
-// @Summary   更新MCP发布设置(三档可见性+需审批)
+// @Summary   更新MCP发布设置(四档可见性+需审批)
 // @Produce   application/json
 // @Param     data  body  gatewayReq.MCPPublishParams  true  "发布设置"
 // @Success   200  {object}  response.Response{msg=string}

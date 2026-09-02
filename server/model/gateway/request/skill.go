@@ -36,15 +36,16 @@ type SkillOperateParams struct {
 }
 
 // SkillPublishParams Skill 发布设置(对齐前端 PUT /gateway/skill/publish)。
-// visibilityType=selected 且 isPublished=true 时 departmentIds 必填；=user 时 userIds 必填。
+// visibilityType=selected 且 isPublished=true 时 departmentIds 必填；=user 时 userIds 必填；
+// =mixed 时两列表合计至少一项(两张投影行并集)。
 // ID 列表用 Int64StringSlice：前端 IdType 混 string/number，元素级兼容反序列化。
 type SkillPublishParams struct {
 	SkillId          int64                   `json:"skillId,string" form:"skillId"` // 技能ID
 	IsPublished      bool                    `json:"isPublished" form:"isPublished"` // 是否发布
-	VisibilityType   string                  `json:"visibilityType" form:"visibilityType"` // 可见范围(all/selected/user)
+	VisibilityType   string                  `json:"visibilityType" form:"visibilityType"` // 可见范围(all/selected/user/mixed)
 	RequiresApproval bool                    `json:"requiresApproval" form:"requiresApproval"` // 使用需审批
-	DepartmentIds    common.Int64StringSlice `json:"departmentIds" form:"departmentIds"` // 可见部门(selected 模式)
-	UserIds          common.Int64StringSlice `json:"userIds" form:"userIds"`       // 可见用户(user 模式)
+	DepartmentIds    common.Int64StringSlice `json:"departmentIds" form:"departmentIds"` // 可见部门(selected/mixed 模式)
+	UserIds          common.Int64StringSlice `json:"userIds" form:"userIds"`       // 可见用户(user/mixed 模式)
 }
 
 // SkillUsageSearch Skill 使用日志分页查询(对齐前端 GET /gateway/skill/usage/list)。

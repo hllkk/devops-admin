@@ -30,7 +30,7 @@ type Skill struct {
 	InstallCount       int64          `json:"installCount" gorm:"default:0;comment:下载次数"`                               // 下载次数
 	IsActive           bool           `json:"isActive" gorm:"default:true;comment:是否启用"`                               // 是否启用
 	IsPublished        bool           `json:"isPublished" gorm:"default:false;comment:是否发布到用户端"`                        // 是否发布
-	VisibilityType     string         `json:"visibilityType" gorm:"size:20;default:all;comment:可见范围(all/selected/user)"` // 可见范围(与模型/MCP三档同口径)
+	VisibilityType     string         `json:"visibilityType" gorm:"size:20;default:all;comment:可见范围(all/selected/user/mixed)"` // 可见范围(与模型/MCP同口径,含部门+用户混合档)
 	RequiresApproval   bool           `json:"requiresApproval" gorm:"default:false;comment:使用是否需审批"`                      // 使用需审批
 }
 
