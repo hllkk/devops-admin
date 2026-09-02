@@ -29,7 +29,8 @@ P3「成本效能与预算管控」第三件：部门/用户级预算规则 + �
 
 - CRUD：`GetBudgetRuleList`（含读时聚合 budgetUsed + 预警状态）/`CreateBudgetRule`/`UpdateBudgetRule`/`DeleteBudgetRules`。
 - `CheckBudgetAlerts`：遍历活跃规则 → `calcScopeCost` 读时聚合 scope 内总成本（LLM+MCP 双表，复用成本分析归因 JOIN 口径） → 超软限且本周期未告警 → 返回 `BudgetAlertResult`（API 层发通知，规避 service↔gateway import 环） → 超硬限 → 停用 scope 内活跃 Key + SysOperLog 审计。
-- 通知目标：部门规则 → 部门 create_by，用户规则 → 该用户本人，超管兜底。
+- 通知目标：部门规则 → 部门 create_by，用户规则 → 该用户本人，负责人缺失超管兜底；**硬限超限扩为部门直挂全体成员+管理员+超管**（2026-09-01，见 [[notify-wecom-push]]）。
+- 通知渠道（2026-09-01 起三渠道，见 [[notify-wecom-push]]）：站内（原有）+ 企微应用消息（`sys_notify_config.pushBudgetAlertEnabled` 事件开关）；文案组装收敛为 `BudgetAlertNotices` 纯函数，手动 API 与定时任务闭包（initialize/timer.go，补齐定时路径此前不发通知的 gap）共用。
 - 周期去重键：月 `YYYY-MM`、周 `YYYY-Wnn`、日 `YYYY-MM-DD`。
 - 菜单：挂看板 api_prefix（`/gateway/budget`），casbin 零改动。
 

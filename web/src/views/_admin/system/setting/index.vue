@@ -41,12 +41,20 @@ const config = ref<{
   security: Api.System.SecuritySettingConfig;
   ldap: Api.System.LdapSettingConfig;
   notify: Api.System.NotifySettingConfig;
+  notifyPolicy: Api.System.NotifyPolicyConfig;
   auth: Api.System.AuthSettingConfig;
 }>({
   general: {} as Api.System.GeneralSettingConfig,
   security: {} as Api.System.SecuritySettingConfig,
   ldap: {} as Api.System.LdapSettingConfig,
   notify: {} as Api.System.NotifySettingConfig,
+  notifyPolicy: {
+    sceneKey: 'token_plan_morning',
+    enabled: false,
+    targetType: 'users',
+    targetIds: [],
+    sendTime: '08:33'
+  },
   auth: {} as Api.System.AuthSettingConfig
 });
 
@@ -96,6 +104,12 @@ async function loadConfig() {
   config.value.security = data?.security ?? config.value.security;
   config.value.ldap = data?.ldap ?? config.value.ldap;
   config.value.notify = data?.notify ?? config.value.notify;
+  config.value.notifyPolicy = {
+    ...config.value.notifyPolicy,
+    ...data?.notifyPolicy,
+    targetIds: data?.notifyPolicy?.targetIds ?? [],
+    sendTime: data?.notifyPolicy?.sendTime || '08:33'
+  };
   config.value.auth = data?.auth ?? config.value.auth;
   loaded.value = true;
 }
@@ -107,6 +121,7 @@ async function handleSave() {
     security: { ...config.value.security },
     ldap: { ...config.value.ldap },
     notify: { ...config.value.notify },
+    notifyPolicy: { ...config.value.notifyPolicy, targetIds: [...config.value.notifyPolicy.targetIds] },
     auth: { ...config.value.auth }
   });
   if (error) {
@@ -150,7 +165,7 @@ onMounted(() => {
           <GeneralSetting v-if="activeKey === 'general'" v-model:config="config.general" />
           <SecuritySetting v-else-if="activeKey === 'security'" v-model:security-config="config.security" />
           <LdapSetting v-else-if="activeKey === 'ldap'" v-model:config="config.ldap" />
-          <NotifySetting v-else-if="activeKey === 'notify'" v-model:config="config.notify" />
+          <NotifySetting v-else-if="activeKey === 'notify'" v-model:config="config.notify" v-model:policy="config.notifyPolicy" />
           <AuthSetting v-else-if="activeKey === 'auth'" v-model:config="config.auth" />
         </div>
       </NCard>
@@ -180,7 +195,7 @@ onMounted(() => {
             <GeneralSetting v-if="activeKey === 'general'" v-model:config="config.general" />
             <SecuritySetting v-else-if="activeKey === 'security'" v-model:security-config="config.security" />
             <LdapSetting v-else-if="activeKey === 'ldap'" v-model:config="config.ldap" />
-            <NotifySetting v-else-if="activeKey === 'notify'" v-model:config="config.notify" />
+            <NotifySetting v-else-if="activeKey === 'notify'" v-model:config="config.notify" v-model:policy="config.notifyPolicy" />
             <AuthSetting v-else-if="activeKey === 'auth'" v-model:config="config.auth" />
           </div>
         </NCard>

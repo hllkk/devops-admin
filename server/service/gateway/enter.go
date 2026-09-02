@@ -19,4 +19,5 @@ type ServiceGroup struct {
 	McpService
 	SkillService
 	BudgetRuleService
+	MorningReportService
 }

@@ -23,6 +23,16 @@ type SysNotifyConfig struct {
 	WebhookEnabled bool   `json:"webhookEnabled" gorm:"default:false;comment:启用Webhook通知"`
 	WebhookUrl     string `json:"webhookUrl" gorm:"comment:Webhook推送地址"`
 	WebhookSecret  string `json:"webhookSecret" gorm:"comment:Webhook签名密钥(可选)"`
+	// 企业微信应用消息(凭证复用 sys_auth_config 企微段,此处不重复存)
+	WecomPushEnabled     bool   `json:"wecomPushEnabled" gorm:"default:false;comment:启用企微应用消息推送"`
+	WecomPushRedirectBase string `json:"wecomPushRedirectBase" gorm:"comment:企微消息跳转基础地址(空则textcard降级纯文本)"`
+	WecomPushMaxTargets  int    `json:"wecomPushMaxTargets" gorm:"default:1000;comment:企微推送单次人数上限(超出截断)"`
+	// 企业微信群机器人(webhook,markdown 进群)
+	WecomBotEnabled bool   `json:"wecomBotEnabled" gorm:"default:false;comment:启用企微群机器人"`
+	WecomBotWebhook string `json:"wecomBotWebhook" gorm:"comment:群机器人webhook地址"`
+	// 事件开关(控制该事件是否走外部渠道;站内通知不受控)
+	PushMorningReportEnabled bool `json:"pushMorningReportEnabled" gorm:"default:false;comment:事件开关-TokenPlan晨报外部推送"`
+	PushBudgetAlertEnabled   bool `json:"pushBudgetAlertEnabled" gorm:"default:true;comment:事件开关-预算告警外部推送"`
 }
 
 func (SysNotifyConfig) TableName() string {
@@ -44,5 +54,15 @@ func DefaultNotifyConfig() SysNotifyConfig {
 		WebhookEnabled: false,
 		WebhookUrl:     "",
 		WebhookSecret:  "",
+		// 企微应用消息
+		WecomPushEnabled:      false,
+		WecomPushRedirectBase: "",
+		WecomPushMaxTargets:   1000,
+		// 群机器人
+		WecomBotEnabled: false,
+		WecomBotWebhook: "",
+		// 事件开关
+		PushMorningReportEnabled: false,
+		PushBudgetAlertEnabled:   true,
 	}
 }

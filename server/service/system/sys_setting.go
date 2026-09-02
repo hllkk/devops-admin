@@ -31,7 +31,12 @@ func (s *SettingService) Get(ctx context.Context) (systemReq.SettingConfig, erro
 	if err != nil {
 		return systemReq.SettingConfig{}, err
 	}
-	return systemReq.SettingConfig{General: &general, Security: &security, Ldap: &ldap, Notify: &notify, Auth: &auth}, nil
+	// 晨报策略(第一期内置场景;默认骨架随取随建,不落库)
+	policy, err := (&NotifyPolicyService{}).Get(ctx, system.NotifySceneTokenPlanMorning)
+	if err != nil {
+		return systemReq.SettingConfig{}, err
+	}
+	return systemReq.SettingConfig{General: &general, Security: &security, Ldap: &ldap, Notify: &notify, NotifyPolicy: &policy, Auth: &auth}, nil
 }
 
 // Set 聚合保存:按段落非空分发到对应配置表,各自刷内存缓存。
@@ -54,6 +59,13 @@ func (s *SettingService) Set(ctx context.Context, req systemReq.SettingConfig) e
 	}
 	if req.Notify != nil {
 		if err := (&NotifyConfigService{}).Set(ctx, *req.Notify); err != nil {
+			return err
+		}
+	}
+	if req.NotifyPolicy != nil {
+		// 设置页聚合段固定写晨报场景(scene_key 服务端钉死,防前端误传)
+		req.NotifyPolicy.SceneKey = system.NotifySceneTokenPlanMorning
+		if err := (&NotifyPolicyService{}).Upsert(ctx, *req.NotifyPolicy); err != nil {
 			return err
 		}
 	}

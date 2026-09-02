@@ -7,11 +7,12 @@ import "github.com/hllkk/devops-admin/server/model/system"
 // ldap 段落表 sys_ldap_config(连接/属性映射/用户策略);notify 段落表 sys_notify_config(邮件/Webhook 通知)
 // 各段落任一可选:前端聚合页一次性提交多段,后端分发到各配置表
 type SettingConfig struct {
-	General  *system.SysGeneralConfig  `json:"general,omitempty"`
-	Security *system.SysSecurityConfig `json:"security,omitempty"`
-	Ldap     *system.SysLdapConfig     `json:"ldap,omitempty"`
-	Notify   *system.SysNotifyConfig   `json:"notify,omitempty"`
-	Auth     *system.SysAuthConfig     `json:"auth,omitempty"`
+	General      *system.SysGeneralConfig  `json:"general,omitempty"`
+	Security     *system.SysSecurityConfig `json:"security,omitempty"`
+	Ldap         *system.SysLdapConfig     `json:"ldap,omitempty"`
+	Notify       *system.SysNotifyConfig   `json:"notify,omitempty"`
+	NotifyPolicy *system.SysNotifyPolicy   `json:"notifyPolicy,omitempty"`
+	Auth         *system.SysAuthConfig     `json:"auth,omitempty"`
 }
 
 // TestEmailReq 测试邮件发送请求(POST /system/setting/notify/test-email)
@@ -24,6 +25,17 @@ type TestEmailReq struct {
 	EmailFromName string `json:"emailFromName"`
 	EmailSSLMode  string `json:"emailSSLMode"`
 	TestTo        string `json:"testTo"`
+}
+
+// TestWecomAppReq 企微应用消息测试请求(POST /system/setting/notify/test-wecom-app)
+type TestWecomAppReq struct {
+	TestUserId   int64  `json:"testUserId,string" binding:"required"` // 目标用户(须已绑定企微)
+	RedirectBase string `json:"redirectBase"`                        // 当前表单跳转base(未保存也可测;空降级纯文本)
+}
+
+// TestWecomBotReq 群机器人测试请求(POST /system/setting/notify/test-wecom-bot)
+type TestWecomBotReq struct {
+	WebhookUrl string `json:"webhookUrl" binding:"required"` // 当前表单 webhook(未保存也可测)
 }
 
 // PublicSetting 公开系统设置(GET /system/setting/public 响应体,登录页用,免鉴权脱敏)。

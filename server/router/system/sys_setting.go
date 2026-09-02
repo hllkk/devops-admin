@@ -15,7 +15,9 @@ func (s *SettingRouter) InitSettingRouter(Router, PublicRouter *gin.RouterGroup)
 	}
 	notifyRouter := Router.Group("system/setting/notify")
 	{
-		notifyRouter.POST("test-email", settingApi.TestEmail) // 发送测试邮件(使用当前表单值)
+		notifyRouter.POST("test-email", settingApi.TestEmail)             // 发送测试邮件(使用当前表单值)
+		notifyRouter.POST("test-wecom-app", settingApi.TestWecomApp)      // 企微应用消息测试(选人实测)
+		notifyRouter.POST("test-wecom-bot", settingApi.TestWecomBot)      // 企微群机器人测试(表单webhook实测)
 	}
 	publicSetting := PublicRouter.Group("system/setting")
 	{

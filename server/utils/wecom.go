@@ -246,6 +246,112 @@ func (c *WecomClient) ProfileByCode(ctx context.Context, code string) (*WecomPro
 	return prof, nil
 }
 
+// --- 应用消息推送(message/send) ---
+
+// WecomMessageSendBatch 官方 message/send 单次 touser 上限,超出需调用方分批。
+const WecomMessageSendBatch = 1000
+
+// WecomTextCard 文本卡片消息(textcard)。URL 为空时 SendMessage 自动降级为纯文本消息。
+type WecomTextCard struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	URL         string `json:"url"`
+	Btntxt      string `json:"btntxt"`
+}
+
+// WecomMessageResp message/send 响应。errcode=0 即发送成功;invaliduser 非空表示
+// 部分 userid 无效被服务端跳过(常见于不在应用可见范围),不视为整体失败。
+type WecomMessageResp struct {
+	ErrCode      int    `json:"errcode"`
+	ErrMsg       string `json:"errmsg"`
+	InvalidUser  string `json:"invaliduser"`
+	InvalidParty string `json:"invalidparty"`
+}
+
+// SendMessage 向一批企业成员发送应用消息(统一 touser 展开,调用方保证单批 ≤1000)。
+//   - msg.URL 为空 → 降级纯文本(content=Title+Description,适配未配可信域名的部署)
+//   - 开启官方内容去重(enable_duplicate_check,1800s),与业务侧节流双保险防轰炸
+//   - errcode 40014/42001(access_token 失效)清缓存重取重试一次;其余 errcode
+//     (含 81013 userid 无效、60020 非可信 IP)返回带 errcode 的错误,由上层记日志放弃本批
+func (c *WecomClient) SendMessage(ctx context.Context, touser []string, msg WecomTextCard) error {
+	if len(touser) == 0 {
+		return nil
+	}
+	if c.CorpID == "" || c.CorpSecret == "" || c.AgentID == 0 {
+		return errors.New("企业微信 CorpId/AgentId/Secret 未配置")
+	}
+	for attempt := 0; ; attempt++ {
+		accessToken, err := c.AccessToken(ctx)
+		if err != nil {
+			return err
+		}
+		reqURL := fmt.Sprintf("%s/message/send?access_token=%s", wecomQyAPIBase, accessToken)
+		var resp WecomMessageResp
+		if err = wecomPost(ctx, reqURL, c.buildSendBody(touser, msg), &resp); err != nil {
+			return fmt.Errorf("企微 message/send 失败: %w", err)
+		}
+		if resp.ErrCode != 0 && attempt == 0 && (resp.ErrCode == 40014 || resp.ErrCode == 42001) {
+			// token 失效(缓存提前过期兜底失准):清缓存重取重试一次
+			global.OPS_CACHE.Delete(wecomAccessTokenCachePrefix + c.CorpID)
+			continue
+		}
+		if resp.ErrCode != 0 {
+			return fmt.Errorf("企微 message/send 失败: errcode=%d errmsg=%s invaliduser=%s", resp.ErrCode, resp.ErrMsg, resp.InvalidUser)
+		}
+		return nil
+	}
+}
+
+// buildSendBody 组装 message/send 请求体:textcard(URL 非空)或降级 text(URL 空)。
+func (c *WecomClient) buildSendBody(touser []string, msg WecomTextCard) map[string]any {
+	body := map[string]any{
+		"touser":                   strings.Join(touser, "|"),
+		"agentid":                  c.AgentID,
+		"enable_duplicate_check":   true,
+		"duplicate_check_interval": 1800,
+	}
+	if msg.URL != "" {
+		body["msgtype"] = "textcard"
+		body["textcard"] = msg
+	} else {
+		body["msgtype"] = "text"
+		content := msg.Title
+		if msg.Description != "" {
+			if content != "" {
+				content += "\n"
+			}
+			content += msg.Description
+		}
+		body["text"] = map[string]string{"content": content}
+	}
+	return body
+}
+
+// SendBotMessage 向企微群机器人 webhook 发送 markdown 消息(每机器人限 20 条/分钟,调用方节流)。
+// webhook URL 形如 https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxx,由群内添加机器人获得。
+func (c *WecomClient) SendBotMessage(ctx context.Context, webhookURL, markdown string) error {
+	if webhookURL == "" {
+		return errors.New("群机器人 webhook 未配置")
+	}
+	if markdown == "" {
+		return errors.New("消息内容不能为空")
+	}
+	var resp struct {
+		ErrCode int    `json:"errcode"`
+		ErrMsg  string `json:"errmsg"`
+	}
+	if err := wecomPost(ctx, webhookURL, map[string]any{
+		"msgtype":  "markdown",
+		"markdown": map[string]string{"content": markdown},
+	}, &resp); err != nil {
+		return fmt.Errorf("企微群机器人发送失败: %w", err)
+	}
+	if resp.ErrCode != 0 {
+		return fmt.Errorf("企微群机器人发送失败: errcode=%d errmsg=%s", resp.ErrCode, resp.ErrMsg)
+	}
+	return nil
+}
+
 // --- 通用 HTTP ---
 
 func wecomGet(ctx context.Context, rawURL string, out interface{}) error {

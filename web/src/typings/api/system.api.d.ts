@@ -582,7 +582,7 @@ declare namespace Api {
       autoCreate: boolean;
     };
 
-    /** 通知配置：邮件通知 + Webhook，对齐后端 SysNotifyConfig */
+    /** 通知配置：邮件通知 + Webhook + 企微应用消息/群机器人 + 事件开关，对齐后端 SysNotifyConfig */
     type NotifySettingConfig = {
       /** 启用邮件通知 */
       emailEnabled: boolean;
@@ -606,6 +606,34 @@ declare namespace Api {
       webhookUrl: string;
       /** Webhook 签名密钥（可选） */
       webhookSecret: string;
+      /** 启用企微应用消息推送（凭证复用认证配置企微段） */
+      wecomPushEnabled: boolean;
+      /** 企微消息跳转基础地址（空则 textcard 降级纯文本） */
+      wecomPushRedirectBase: string;
+      /** 企微推送单次人数上限（超出截断） */
+      wecomPushMaxTargets: number;
+      /** 启用企微群机器人 */
+      wecomBotEnabled: boolean;
+      /** 群机器人 webhook 地址 */
+      wecomBotWebhook: string;
+      /** 事件开关：TokenPlan 晨报走外部渠道（企微应用/群机器人） */
+      pushMorningReportEnabled: boolean;
+      /** 事件开关：预算告警走企微应用消息 */
+      pushBudgetAlertEnabled: boolean;
+    };
+
+    /** 通知策略（按场景一行，当前场景：TokenPlan 晨报），对齐后端 SysNotifyPolicy */
+    type NotifyPolicyConfig = {
+      /** 场景标识（服务端钉死 token_plan_morning） */
+      sceneKey: string;
+      /** 启用该场景通知 */
+      enabled: boolean;
+      /** 目标类型：all / depts(含子部门) / users */
+      targetType: string;
+      /** 目标 ID 列表（部门 ID 或用户 ID，targetType=all 时忽略） */
+      targetIds: CommonType.IdType[];
+      /** 发送时间（HH:mm，工作日；保存后同步定时任务调度） */
+      sendTime: string;
     };
 
     /** 认证配置：第三方登录 OAuth2 + 账号功能，对齐后端 SysAuthConfig */
@@ -646,6 +674,8 @@ declare namespace Api {
       security?: SecuritySettingConfig;
       ldap?: LdapSettingConfig;
       notify?: NotifySettingConfig;
+      /** 晨报等定时内容型通知策略（当前固定 token_plan_morning 场景） */
+      notifyPolicy?: NotifyPolicyConfig;
       auth?: AuthSettingConfig;
     };
 

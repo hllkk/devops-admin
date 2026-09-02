@@ -93,6 +93,50 @@ func (s *SettingApi) TestEmail(c *gin.Context) {
 	response.OkWithDetailed(true, "测试邮件发送成功", c)
 }
 
+// TestWecomApp
+// @Tags      SysSetting
+// @Summary   发送企微应用消息测试(用已保存企微凭证,表单跳转地址未保存也可测)
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  body  systemReq.TestWecomAppReq  true  "目标用户+跳转base"
+// @Success   200   {object}  response.Response{data=bool,msg=string}
+// @Router    /system/setting/notify/test-wecom-app [post]
+func (s *SettingApi) TestWecomApp(c *gin.Context) {
+	var req systemReq.TestWecomAppReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	if err := notifySendService.SendTestWecomApp(c.Request.Context(), req.TestUserId, req.RedirectBase); err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("biz").Err(err).Error("企微应用消息测试失败")
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	response.OkWithDetailed(true, "测试消息发送成功", c)
+}
+
+// TestWecomBot
+// @Tags      SysSetting
+// @Summary   发送企微群机器人测试(使用当前表单webhook,无需先保存)
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  body  systemReq.TestWecomBotReq  true  "群机器人webhook地址"
+// @Success   200   {object}  response.Response{data=bool,msg=string}
+// @Router    /system/setting/notify/test-wecom-bot [post]
+func (s *SettingApi) TestWecomBot(c *gin.Context) {
+	var req systemReq.TestWecomBotReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	if err := notifySendService.SendTestWecomBot(c.Request.Context(), req.WebhookUrl); err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("biz").Err(err).Error("企微群机器人测试失败")
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	response.OkWithDetailed(true, "测试消息发送成功", c)
+}
+
 // WecomDomainVerify 企业微信可信域名校验：响应 /WW_verify_*.txt 请求。
 // 企业微信会请求 http://your-domain/WW_verify_xxxx.txt 验证域名所有权，
 // 文件名与内容由管理员在认证配置中填写，系统从 DB 读取并自动响应，无需手动放置文件。

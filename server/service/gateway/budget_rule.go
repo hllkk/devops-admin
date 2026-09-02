@@ -144,7 +144,7 @@ func (s *BudgetRuleService) CheckBudgetAlerts(ctx context.Context) ([]BudgetAler
 			results = append(results, BudgetAlertResult{
 				Rule: r, Used: used, Percent: percent, PeriodKey: periodKey,
 				AlertType:  gateway.BudgetAlertSoftWarn,
-				TargetIds:  s.resolveNotifyTargets(ctx, db, r),
+				TargetIds:  s.resolveNotifyTargets(ctx, db, r, gateway.BudgetAlertSoftWarn),
 				ScopeLabel: s.scopeLabel(ctx, db, r),
 			})
 		}
@@ -181,7 +181,7 @@ func (s *BudgetRuleService) CheckBudgetAlerts(ctx context.Context) ([]BudgetAler
 			results = append(results, BudgetAlertResult{
 				Rule: r, Used: used, Percent: percent, PeriodKey: periodKey,
 				AlertType:      gateway.BudgetAlertHardLimit,
-				TargetIds:      s.resolveNotifyTargets(ctx, db, r),
+				TargetIds:      s.resolveNotifyTargets(ctx, db, r, gateway.BudgetAlertHardLimit),
 				ScopeLabel:     s.scopeLabel(ctx, db, r),
 				DisabledKeyIds: keyIds,
 			})
@@ -253,25 +253,79 @@ func (s *BudgetRuleService) scopeActiveKeyIds(ctx context.Context, db *gorm.DB, 
 }
 
 // resolveNotifyTargets 预算通知目标：部门规则→部门管理员(sys_departments.create_by)，
-// 用户规则→该用户本人，超管兜底。
-func (s *BudgetRuleService) resolveNotifyTargets(ctx context.Context, db *gorm.DB, r *gateway.BudgetRule) []int64 {
+// 用户规则→该用户本人，负责人缺失时超管兜底。
+// 硬限超限(alertType=hard_limit)影响面是全体受管成员：部门规则扩为部门直挂全体成员+管理员+超管
+// (成员口径与 calcScopeUsed 直挂一致，不含子部门)；用户规则硬限影响面即本人，维持不变。
+func (s *BudgetRuleService) resolveNotifyTargets(ctx context.Context, db *gorm.DB, r *gateway.BudgetRule, alertType string) []int64 {
 	var targets []int64
+	seen := make(map[int64]struct{})
+	add := func(ids ...int64) {
+		for _, id := range ids {
+			if id == 0 {
+				continue
+			}
+			if _, ok := seen[id]; ok {
+				continue
+			}
+			seen[id] = struct{}{}
+			targets = append(targets, id)
+		}
+	}
 	switch r.ScopeType {
 	case gateway.BudgetScopeDept:
-		var dept system.SysDepartment
-		if err := db.Select("create_by").Where("dept_id = ?", r.ScopeId).First(&dept).Error; err == nil && dept.CreateBy != 0 {
-			targets = append(targets, dept.CreateBy)
+		if alertType == gateway.BudgetAlertHardLimit {
+			// 硬限已停用部门直挂全体成员的 Key，全员知晓；超管必达(管控动作留痕通知)
+			var memberIds []int64
+			db.Model(&system.SysUser{}).Where("dept_id = ?", r.ScopeId).Pluck("id", &memberIds)
+			add(memberIds...)
 		}
-		// 兜底超管
-		if len(targets) == 0 {
+		var dept system.SysDepartment
+		if err := db.Select("create_by").Where("dept_id = ?", r.ScopeId).First(&dept).Error; err == nil {
+			add(dept.CreateBy)
+		}
+		if alertType == gateway.BudgetAlertHardLimit || len(targets) == 0 {
 			var superIds []int64
 			db.Model(&system.SysUser{}).Where("is_superadmin = true").Pluck("id", &superIds)
-			targets = append(targets, superIds...)
+			add(superIds...)
 		}
 	case gateway.BudgetScopeUser:
-		targets = append(targets, r.ScopeId)
+		add(r.ScopeId)
 	}
 	return targets
+}
+
+// BudgetNoticeDraft 预算告警通知草稿(纯数据)。发送由调用方(API 层/timer 闭包)映射
+// system.SendRequest 完成三渠道投递，规避 gateway service→system service 反向 import 环。
+type BudgetNoticeDraft struct {
+	RuleId        int64
+	AlertType     string // soft_warn / hard_limit
+	Title         string
+	Content       string
+	TargetUserIds []int64
+}
+
+// BudgetAlertNotices 告警结果→通知草稿(纯函数，文案组装修自原 API 层实现，两处调用方共用)。
+func BudgetAlertNotices(results []BudgetAlertResult) []BudgetNoticeDraft {
+	drafts := make([]BudgetNoticeDraft, 0, len(results))
+	for i := range results {
+		r := &results[i]
+		var title, content string
+		if r.AlertType == gateway.BudgetAlertHardLimit {
+			title = fmt.Sprintf("AI 预算超限：%s", r.ScopeLabel)
+			content = fmt.Sprintf("「%s」预算已超限（已用 ¥%.2f / 限额 ¥%.2f，%.1f%%），已停用该范围内所有活跃 Key。", r.ScopeLabel, r.Used, r.Rule.BudgetLimit, r.Percent)
+		} else {
+			title = fmt.Sprintf("AI 预算预警：%s", r.ScopeLabel)
+			content = fmt.Sprintf("「%s」预算已用 %.1f%%（¥%.2f / ¥%.2f），达到预警阈值 %d%%。", r.ScopeLabel, r.Percent, r.Used, r.Rule.BudgetLimit, r.Rule.SoftWarnPercent)
+		}
+		drafts = append(drafts, BudgetNoticeDraft{
+			RuleId:        r.Rule.RuleId,
+			AlertType:     r.AlertType,
+			Title:         title,
+			Content:       content,
+			TargetUserIds: r.TargetIds,
+		})
+	}
+	return drafts
 }
 
 // scopeLabel scope 可读名(部门名/用户名)。

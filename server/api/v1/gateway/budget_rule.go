@@ -8,9 +8,9 @@ import (
 	"github.com/hllkk/devops-admin/server/model/common/response"
 	gatewayReq "github.com/hllkk/devops-admin/server/model/gateway/request"
 	gatewayResp "github.com/hllkk/devops-admin/server/model/gateway/response"
-	sysReq "github.com/hllkk/devops-admin/server/model/system/request"
 	"github.com/hllkk/devops-admin/server/service"
 	gatewayService "github.com/hllkk/devops-admin/server/service/gateway"
+	systemService "github.com/hllkk/devops-admin/server/service/system"
 	"github.com/hllkk/devops-admin/server/utils"
 	"github.com/hllkk/devops-admin/server/utils/logger"
 )
@@ -166,28 +166,29 @@ func (a *BudgetRuleApi) GetBudgetSummary(c *gin.Context) {
 	}, "获取成功", c)
 }
 
-// sendBudgetNotifications 发送预算通知(规避 service↔gateway import 环,与审批通知同模式)。
+// sendBudgetNotifications 发送预算通知(站内+企微应用消息;文案组装复用 gateway.BudgetAlertNotices
+// 纯函数,与定时任务路径同源;发送走 system.NotifySendService,规避 service↔gateway import 环)。
 func (a *BudgetRuleApi) sendBudgetNotifications(c *gin.Context, results []gatewayService.BudgetAlertResult) (softCnt, hardCnt int) {
-	noticeSvc := service.ServiceGroupApp.SystemServiceGroup.NoticeService
-	for i := range results {
-		r := &results[i]
-		var title, content string
-		if r.AlertType == "hard_limit" {
+	notifyCfg := service.ServiceGroupApp.SystemServiceGroup.NotifyConfigService.Current(c.Request.Context())
+	sendSvc := &service.ServiceGroupApp.SystemServiceGroup.NotifySendService
+	for _, d := range gatewayService.BudgetAlertNotices(results) {
+		if d.AlertType == "hard_limit" {
 			hardCnt++
-			title = fmt.Sprintf("AI 预算超限：%s", r.ScopeLabel)
-			content = fmt.Sprintf("「%s」预算已超限（已用 ¥%.2f / 限额 ¥%.2f，%.1f%%），已停用该范围内所有活跃 Key。", r.ScopeLabel, r.Used, r.Rule.BudgetLimit, r.Percent)
 		} else {
 			softCnt++
-			title = fmt.Sprintf("AI 预算预警：%s", r.ScopeLabel)
-			content = fmt.Sprintf("「%s」预算已用 %.1f%%（¥%.2f / ¥%.2f），达到预警阈值 %d%%。", r.ScopeLabel, r.Percent, r.Used, r.Rule.BudgetLimit, r.Rule.SoftWarnPercent)
 		}
-		if len(r.TargetIds) > 0 {
-			if err := noticeSvc.CreateNotice(c.Request.Context(), sysReq.NoticeOperateParams{
-				NoticeTitle: title, NoticeType: "1", NoticeContent: content,
-				Status: "0", TargetType: "users", TargetUserIds: r.TargetIds,
-			}, 0); err != nil {
-				logger.WithCtx(c.Request.Context()).Mod("gateway").Warn(fmt.Sprintf("预算规则 %d 通知发送失败: %v", r.Rule.RuleId, err))
-			}
+		if len(d.TargetUserIds) == 0 {
+			continue
+		}
+		if err := sendSvc.Send(c.Request.Context(), systemService.SendRequest{
+			Title: d.Title, Content: d.Content,
+			TargetType: "users", UserIds: d.TargetUserIds,
+			Channels: systemService.SendChannels{
+				InApp:    true,
+				WecomApp: notifyCfg.WecomPushEnabled && notifyCfg.PushBudgetAlertEnabled,
+			},
+		}); err != nil {
+			logger.WithCtx(c.Request.Context()).Mod("gateway").Warn(fmt.Sprintf("预算规则 %d 通知发送失败: %v", d.RuleId, err))
 		}
 	}
 	return

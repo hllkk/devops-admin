@@ -3,12 +3,15 @@ package initialize
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/hllkk/devops-admin/server/global"
+	sysModel "github.com/hllkk/devops-admin/server/model/system"
 	gatewayService "github.com/hllkk/devops-admin/server/service/gateway"
 	mediaService "github.com/hllkk/devops-admin/server/service/media"
 	"github.com/hllkk/devops-admin/server/service/system"
 	"github.com/hllkk/devops-admin/server/task"
+	"github.com/hllkk/devops-admin/server/utils/logger"
 )
 
 // Timer 注册可供定时任务面板选用的命名方法。
@@ -49,9 +52,30 @@ func Timer() {
 		_, err := (&gatewayService.UsageSyncService{}).CleanupUsageLogs(ctx)
 		return err
 	})
-	task.Register("CheckBudgetAlerts", "预算预警检查(软限通知+硬限停用)", func(ctx context.Context, _ json.RawMessage) error {
-		_, err := (&gatewayService.BudgetRuleService{}).CheckBudgetAlerts(ctx)
-		return err
+	task.Register("CheckBudgetAlerts", "预算预警检查(软限预警/硬限停用+站内与企微通知;此前仅手动触发才发通知,本任务补齐定时路径)", func(ctx context.Context, _ json.RawMessage) error {
+		results, err := (&gatewayService.BudgetRuleService{}).CheckBudgetAlerts(ctx)
+		if err != nil {
+			return err
+		}
+		if len(results) == 0 {
+			return nil
+		}
+		// 告警→草稿(gateway 纯函数)→三渠道发送(system 服务);闭包注入规避 import 环
+		notifyCfg := (&system.NotifyConfigService{}).Current(ctx)
+		sendSvc := &system.NotifySendService{}
+		for _, d := range gatewayService.BudgetAlertNotices(results) {
+			if err := sendSvc.Send(ctx, system.SendRequest{
+				Title: d.Title, Content: d.Content,
+				TargetType: sysModel.NotifyPolicyTargetUsers, UserIds: d.TargetUserIds,
+				Channels: system.SendChannels{
+					InApp:    true,
+					WecomApp: notifyCfg.WecomPushEnabled && notifyCfg.PushBudgetAlertEnabled,
+				},
+			}); err != nil {
+				logger.WithCtx(ctx).Mod("gateway").Err(err).Warn(fmt.Sprintf("预算规则 %d 告警通知发送失败", d.RuleId))
+			}
+		}
+		return nil
 	})
 	task.Register("AggregateUsage", "聚合用量到日桶+重算预算+超限停用闭环", func(ctx context.Context, _ json.RawMessage) error {
 		_, err := (&gatewayService.UsageAggregateService{}).AggregateUsage(ctx)
@@ -68,5 +92,47 @@ func Timer() {
 	task.Register("HealthCheckMcps", "MCP服务器定时健康巡检(全量启用经LiteLLM探测,结果落库)", func(ctx context.Context, _ json.RawMessage) error {
 		_, err := (&gatewayService.McpService{}).HealthCheckAllMcps(ctx)
 		return err
+	})
+	task.Register("TokenPlanMorningReport", "TokenPlan晨报推送(工作日,汇总坐席+共享包余量与重置日,按策略发目标部门/用户:站内+企微应用+群机器人;策略未启用时不发)", func(ctx context.Context, _ json.RawMessage) error {
+		policy, err := (&system.NotifyPolicyService{}).Get(ctx, sysModel.NotifySceneTokenPlanMorning)
+		if err != nil {
+			return err
+		}
+		if !policy.Enabled {
+			return nil // 策略未启用,静默跳过(任务开着,配置可控)
+		}
+		drafts, err := (&gatewayService.MorningReportService{}).BuildMorningReport(ctx)
+		if err != nil {
+			return err
+		}
+		if len(drafts) == 0 {
+			return nil // 无 token_plan 余量快照(未配置同步或尚未跑),跳过
+		}
+		// 策略目标(depts/users/all)解析为发送参数
+		var userIds, deptIds []int64
+		switch policy.TargetType {
+		case sysModel.NotifyPolicyTargetDepts:
+			_ = json.Unmarshal(policy.TargetIds, &deptIds)
+		case sysModel.NotifyPolicyTargetUsers:
+			_ = json.Unmarshal(policy.TargetIds, &userIds)
+		}
+		notifyCfg := (&system.NotifyConfigService{}).Current(ctx)
+		channels := system.SendChannels{
+			InApp:    true,
+			WecomApp: notifyCfg.WecomPushEnabled && notifyCfg.PushMorningReportEnabled,
+			WecomBot: notifyCfg.WecomBotEnabled && notifyCfg.PushMorningReportEnabled,
+		}
+		sendSvc := &system.NotifySendService{}
+		for _, d := range drafts {
+			if err := sendSvc.Send(ctx, system.SendRequest{
+				Title: d.Title, Content: d.Content, Markdown: d.Markdown,
+				Url:        "/gateway",
+				TargetType: policy.TargetType, UserIds: userIds, DeptIds: deptIds,
+				Channels: channels,
+			}); err != nil {
+				logger.WithCtx(ctx).Mod("gateway").Err(err).Warn(fmt.Sprintf("供应商 %s 晨报发送失败", d.ProviderName))
+			}
+		}
+		return nil
 	})
 }

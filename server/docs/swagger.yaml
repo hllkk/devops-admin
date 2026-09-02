@@ -1169,6 +1169,8 @@ definitions:
         $ref: '#/definitions/system.SysLdapConfig'
       notify:
         $ref: '#/definitions/system.SysNotifyConfig'
+      notifyPolicy:
+        $ref: '#/definitions/system.SysNotifyPolicy'
       security:
         $ref: '#/definitions/system.SysSecurityConfig'
     type: object
@@ -1276,6 +1278,26 @@ definitions:
         type: string
       testTo:
         type: string
+    type: object
+  request.TestWecomAppReq:
+    properties:
+      redirectBase:
+        description: 当前表单跳转base(未保存也可测;空降级纯文本)
+        type: string
+      testUserId:
+        description: 目标用户(须已绑定企微)
+        example: "0"
+        type: string
+    required:
+    - testUserId
+    type: object
+  request.TestWecomBotReq:
+    properties:
+      webhookUrl:
+        description: 当前表单 webhook(未保存也可测)
+        type: string
+    required:
+    - webhookUrl
     type: object
   request.ToggleTimedTask:
     properties:
@@ -3750,6 +3772,11 @@ definitions:
         description: 主键(过渡保留,未改造系统表用)
         example: "0"
         type: string
+      pushBudgetAlertEnabled:
+        type: boolean
+      pushMorningReportEnabled:
+        description: 事件开关(控制该事件是否走外部渠道;站内通知不受控)
+        type: boolean
       updateTime:
         type: string
       webhookEnabled:
@@ -3758,6 +3785,49 @@ definitions:
       webhookSecret:
         type: string
       webhookUrl:
+        type: string
+      wecomBotEnabled:
+        description: 企业微信群机器人(webhook,markdown 进群)
+        type: boolean
+      wecomBotWebhook:
+        type: string
+      wecomPushEnabled:
+        description: 企业微信应用消息(凭证复用 sys_auth_config 企微段,此处不重复存)
+        type: boolean
+      wecomPushMaxTargets:
+        type: integer
+      wecomPushRedirectBase:
+        type: string
+    type: object
+  system.SysNotifyPolicy:
+    properties:
+      createTime:
+        description: |-
+          字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);
+          column 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;
+          json 仍叫 createTime/updateTime 对齐前端 CommonRecord。
+        type: string
+      enabled:
+        type: boolean
+      id:
+        description: 主键(过渡保留,未改造系统表用)
+        example: "0"
+        type: string
+      params:
+        items:
+          type: integer
+        type: array
+      sceneKey:
+        type: string
+      sendTime:
+        type: string
+      targetIds:
+        items:
+          type: integer
+        type: array
+      targetType:
+        type: string
+      updateTime:
         type: string
     type: object
   system.SysOperLog:
@@ -9724,6 +9794,62 @@ paths:
                   type: string
               type: object
       summary: 发送测试邮件(使用当前表单值,无需先保存)
+      tags:
+      - SysSetting
+  /system/setting/notify/test-wecom-app:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 目标用户+跳转base
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.TestWecomAppReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  type: boolean
+                msg:
+                  type: string
+              type: object
+      summary: 发送企微应用消息测试(用已保存企微凭证,表单跳转地址未保存也可测)
+      tags:
+      - SysSetting
+  /system/setting/notify/test-wecom-bot:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 群机器人webhook地址
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.TestWecomBotReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  type: boolean
+                msg:
+                  type: string
+              type: object
+      summary: 发送企微群机器人测试(使用当前表单webhook,无需先保存)
       tags:
       - SysSetting
   /system/setting/public:

@@ -42,3 +42,21 @@ export function fetchTestEmail(data: {
     data
   });
 }
+
+/** 发送企微应用消息测试（凭证取已保存的认证配置企微段，目标用户须已绑定企微） */
+export function fetchTestWecomApp(data: { testUserId: CommonType.IdType; redirectBase: string }) {
+  return request<boolean>({
+    url: '/system/setting/notify/test-wecom-app',
+    method: 'post',
+    data
+  });
+}
+
+/** 发送企微群机器人测试（使用当前表单 webhook，无需先保存） */
+export function fetchTestWecomBot(data: { webhookUrl: string }) {
+  return request<boolean>({
+    url: '/system/setting/notify/test-wecom-bot',
+    method: 'post',
+    data
+  });
+}

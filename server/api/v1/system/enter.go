@@ -28,6 +28,7 @@ var (
 	securityConfigService = service.ServiceGroupApp.SystemServiceGroup.SecurityConfigService
 	ldapConfigService     = service.ServiceGroupApp.SystemServiceGroup.LdapConfigService
 	notifyConfigService   = service.ServiceGroupApp.SystemServiceGroup.NotifyConfigService
+	notifySendService     = service.ServiceGroupApp.SystemServiceGroup.NotifySendService
 	userService           = service.ServiceGroupApp.SystemServiceGroup.UserService
 	loginLogService       = service.ServiceGroupApp.SystemServiceGroup.LoginLogService
 	captchaService        = service.ServiceGroupApp.SystemServiceGroup.CaptchaService
