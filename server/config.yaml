@@ -75,7 +75,7 @@ hua-wei-obs:
     access-key: you-access-key
     secret-key: you-secret-key
 jwt:
-    signing-key: 7bbb567b-56c1-4206-a32d-4974e4507a30
+    signing-key: df0d4836-5479-4d92-a463-b09fcb08c7e2
     expires-time: 7d
     buffer-time: 1d
     issuer: devops-admin
@@ -90,7 +90,6 @@ litellm:
     log-sync-interval: 5
     log-sync-batch: 1000
     log-reconcile-window: 30
-    # 用量日志保留天数(llm+mcp): 0=不清理;prod建议90(生效值自动不低于对账窗口+7=37)
     log-retention-days: 0
     sync-enabled: true
 local:

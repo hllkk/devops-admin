@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/hllkk/devops-admin/server/global"
+	"github.com/hllkk/devops-admin/server/model/common"
 	sysModel "github.com/hllkk/devops-admin/server/model/system"
 	gatewayService "github.com/hllkk/devops-admin/server/service/gateway"
 	mediaService "github.com/hllkk/devops-admin/server/service/media"
@@ -93,6 +94,10 @@ func Timer() {
 		_, err := (&gatewayService.McpService{}).HealthCheckAllMcps(ctx)
 		return err
 	})
+	task.Register("SyncWecomContact", "同步企业微信通讯录(部门/用户/岗位单向拉取,含复职恢复与离职停用;手动触发走部门管理页按钮)", func(ctx context.Context, _ json.RawMessage) error {
+		_, err := (&system.WecomContactService{}).SyncStructure(ctx)
+		return err
+	})
 	task.Register("TokenPlanMorningReport", "TokenPlan晨报推送(工作日,汇总坐席+共享包余量与重置日,按策略发目标部门/用户:站内+企微应用+群机器人;策略未启用时不发)", func(ctx context.Context, _ json.RawMessage) error {
 		policy, err := (&system.NotifyPolicyService{}).Get(ctx, sysModel.NotifySceneTokenPlanMorning)
 		if err != nil {
@@ -108,13 +113,23 @@ func Timer() {
 		if len(drafts) == 0 {
 			return nil // 无 token_plan 余量快照(未配置同步或尚未跑),跳过
 		}
-		// 策略目标(depts/users/all)解析为发送参数
+		// 策略目标(depts/users/all)解析为发送参数。target_ids 由前端部门树/用户选择器
+		// 写入,是字符串 id 数组(雪花 id 统一 string 序列化),须用 Int64StringSlice 兼容解析;
+		// 裸 []int64 unmarshal 必失败,若吞错继续会目标为空、静默不发。
 		var userIds, deptIds []int64
 		switch policy.TargetType {
 		case sysModel.NotifyPolicyTargetDepts:
-			_ = json.Unmarshal(policy.TargetIds, &deptIds)
+			var ids common.Int64StringSlice
+			if err := json.Unmarshal(policy.TargetIds, &ids); err != nil {
+				return fmt.Errorf("解析晨报目标部门失败: %w", err)
+			}
+			deptIds = ids
 		case sysModel.NotifyPolicyTargetUsers:
-			_ = json.Unmarshal(policy.TargetIds, &userIds)
+			var ids common.Int64StringSlice
+			if err := json.Unmarshal(policy.TargetIds, &ids); err != nil {
+				return fmt.Errorf("解析晨报目标用户失败: %w", err)
+			}
+			userIds = ids
 		}
 		notifyCfg := (&system.NotifyConfigService{}).Current(ctx)
 		channels := system.SendChannels{

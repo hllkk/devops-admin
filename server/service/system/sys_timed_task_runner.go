@@ -231,7 +231,7 @@ func (s *TimedTaskService) alertFailure(t system.SysTimedTask, errMsg string) {
 		return
 	}
 	payload, _ := json.Marshal(map[string]interface{}{
-		"type":  alertEventName,
+		"type":   alertEventName,
 		"taskId": t.ID,
 		"name":   t.Name,
 		"error":  errMsg,

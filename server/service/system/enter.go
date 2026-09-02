@@ -29,4 +29,5 @@ type ServiceGroup struct {
 	TimedTaskService
 	SocialService
 	OnlineService
+	WecomContactService
 }

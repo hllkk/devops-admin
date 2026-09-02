@@ -841,5 +841,47 @@ declare namespace Api {
     type RegisteredMethodList = {
       methods: RegisteredMethod[];
     };
+
+    /** 企业微信通讯录同步结果统计(对齐后端 system.WecomSyncResult) */
+    type WecomSyncResult = {
+      /** 企微拉取的部门总数 */
+      deptTotal: number;
+      /** 新建部门数 */
+      deptCreated: number;
+      /** 更新部门数 */
+      deptUpdated: number;
+      /** 跳过(无变化)部门数 */
+      deptSkipped: number;
+      /** 企微拉取的成员总数(去重后) */
+      userTotal: number;
+      /** 新建用户数 */
+      userCreated: number;
+      /** 更新用户数 */
+      userUpdated: number;
+      /** 复职恢复用户数(曾因离职被同步停用,本期回到企微返回集) */
+      userRestored: number;
+      /** 离职停用用户数(本地有、企微无) */
+      userDisabled: number;
+      /** 跳过(无变化)用户数 */
+      userSkipped: number;
+      /** 同步派生的岗位总数(去重后) */
+      postTotal: number;
+      /** 新建岗位数 */
+      postCreated: number;
+    };
+
+    /** 企业微信通讯录同步状态(POST syncStructure 启动返回 + GET syncStatus 轮询返回) */
+    type WecomSyncStatus = {
+      /** 本次请求是否成功启动新同步(仅 POST 有意义;false=已有同步进行中) */
+      started: boolean;
+      /** 是否正在同步 */
+      inProgress: boolean;
+      /** 最近一次同步结果(进行中=上次结果) */
+      result?: WecomSyncResult;
+      /** 最近一次同步错误(空=成功/未发生) */
+      error?: string;
+      /** 最近一次完成时间 */
+      finishedAt?: string;
+    };
   }
 }

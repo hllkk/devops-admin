@@ -27,6 +27,8 @@ type SysSocial struct {
 	AccessToken  string `gorm:"size:2048;comment:访问令牌(AES加密)" json:"-"` // 加密存储,不返回前端
 	RefreshToken string `gorm:"size:2048;comment:刷新令牌(AES加密)" json:"-"` // 加密存储,不返回前端
 	ExpireIn     int64  `gorm:"comment:令牌有效期(秒,0=无信息)" json:"expireIn"`
+	InSyncScope  bool   `gorm:"default:false;comment:企微通讯录同步在册标记(曾出现在同步返回集,离职差集停用的作用域)" json:"inSyncScope"` // 仅 wecom 有意义:通讯录同步建号/命中返回集置 true;扫码登录建号保持 false,不受同步停用影响
+	DisabledBySync bool `gorm:"default:false;comment:企微通讯录同步停用标记(离职差集停用时置位,复职恢复仅清此标)" json:"disabledBySync"` // 仅 wecom 有意义:区分"同步停用"与"管理员手动停用",复职只恢复前者
 	// 以下 gorm:"-" 瞬态字段:对齐前端 Api.System.Social 的 JustAuth 全平台风格字段,
 	// 本项目只用 wechat_open/gitee/github 三平台,这些字段不落库,序列化输出空串(见设计 9.3)
 	UserName         string `gorm:"-" json:"userName"`         // 与 nickName 重复,不落库

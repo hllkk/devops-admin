@@ -69,6 +69,9 @@ func (i *initSetting) InitializeData(ctx context.Context) (context.Context, erro
 
 	general := sysModel.DefaultGeneralConfig()
 	general.ID = 1
+	// 默认角色指向内置「普通用户」(role_key=user),企微扫码等自动建号开箱即用;
+	// 角色初始化(order 12)先于本初始化器(order 110)执行,此处必能查到
+	system.FillDefaultRoleId(db, &general)
 	if err := ensureConfigRow(db, &sysModel.SysGeneralConfig{}, &general); err != nil {
 		return ctx, errors.Wrap(err, "sys_general_config 默认配置初始化失败")
 	}

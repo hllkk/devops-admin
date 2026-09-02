@@ -1,12 +1,22 @@
 package main
 
 import (
+	"time"
+
 	"go.uber.org/zap"
 
 	"github.com/hllkk/devops-admin/server/core"
 	"github.com/hllkk/devops-admin/server/global"
 	"github.com/hllkk/devops-admin/server/initialize"
 )
+
+// init 钉死服务时区为北京时间(UTC+8)。定时任务 cron(robfig/cron 默认 time.Local)与
+// 晨报重置日计算均按北京时间;部署容器已设 TZ=Asia/Shanghai,此处兜底开发机/裸机
+// 本地时区漂移(如 EDT 机器上 19 13 * * 1-5 要到北京时间次日凌晨才触发)。
+// FixedZone 无需系统 tzdata,与 Asia/Shanghai 等价(中国无夏令时)。
+func init() {
+	time.Local = time.FixedZone("CST", 8*3600)
+}
 
 //go:generate go env -w GO111MODULE=on
 //go:generate go env -w GOPROXY=https://goproxy.cn,direct

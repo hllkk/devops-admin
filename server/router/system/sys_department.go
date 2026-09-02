@@ -11,11 +11,11 @@ type DeptRouter struct{}
 func (d *DeptRouter) InitDeptRouter(Router *gin.RouterGroup) {
 	deptRouter := Router.Group("system/dept")
 	{
-		deptRouter.GET("list", deptApi.GetDeptList)                       // 部门列表(平表,前端组装树)
+		deptRouter.GET("list", deptApi.GetDeptList)                        // 部门列表(平表,前端组装树)
 		deptRouter.GET("list/exclude/:deptId", deptApi.GetExcludeDeptList) // 排除指定部门及子部门(选父级)
-		deptRouter.GET("optionselect", deptApi.GetDeptOption)             // 部门下拉
-		deptRouter.POST("", deptApi.CreateDept)                           // 新增部门
-		deptRouter.PUT("", deptApi.UpdateDept)                            // 修改部门
-		deptRouter.DELETE(":ids", deptApi.BatchDeleteDept)                // 批量删除部门
+		deptRouter.GET("optionselect", deptApi.GetDeptOption)              // 部门下拉
+		deptRouter.POST("", deptApi.CreateDept)                            // 新增部门
+		deptRouter.PUT("", deptApi.UpdateDept)                             // 修改部门
+		deptRouter.DELETE(":ids", deptApi.BatchDeleteDept)                 // 批量删除部门
 	}
 }

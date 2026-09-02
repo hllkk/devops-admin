@@ -1871,6 +1871,12 @@ declare namespace App {
             orderNum: string;
             expandAll: string;
             collapseAll: string;
+            syncWecom: string;
+            syncInProgress: string;
+            syncStarted: string;
+            syncTimeout: string;
+            syncPollFailed: string;
+            syncDone: string;
             empty: string;
             addDept: string;
             editDept: string;

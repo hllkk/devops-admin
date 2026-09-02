@@ -246,6 +246,94 @@ func (c *WecomClient) ProfileByCode(ctx context.Context, code string) (*WecomPro
 	return prof, nil
 }
 
+// --- 通讯录同步(部门/成员拉取) ---
+
+// WecomDepartment 企业微信部门(department/list 返回项)。
+type WecomDepartment struct {
+	Id       int64  `json:"id"`
+	Name     string `json:"name"`
+	ParentId int64  `json:"parentid"`
+	Order    int64  `json:"order"`
+}
+
+// WecomContactUser 企业微信通讯录成员(user/list 返回项)。
+// status:1=已激活 2=已禁用 4=未激活 5=退出企业; enable:1=启用 0=禁用;
+// department 为该成员所属部门 id 列表(企微一成员可属多部门)。
+type WecomContactUser struct {
+	UserID     string  `json:"userid"`
+	Name       string  `json:"name"`
+	Mobile     string  `json:"mobile"`
+	Email      string  `json:"email"`
+	Avatar     string  `json:"avatar"`
+	Department []int64 `json:"department"`
+	Position   string  `json:"position"`
+	Gender     string  `json:"gender"` // 企微性别(string,"0"未定义/"1"男/"2"女;真实值需 snsapi_privateinfo 授权,通讯录接口可能仅返回"0"或缺失),由 service 层 WecomGenderToSex 转换为项目 Sex 字典值(0男1女2未知)
+	Status     int     `json:"status"`
+	Enable     int     `json:"enable"`
+}
+
+// DepartmentList 拉取全量部门列表(需应用有通讯录读取权限,返回含根部门)。
+// errcode 40014/42001(access_token 失效)清缓存重取重试一次(与 SendMessage 同口径)。
+func (c *WecomClient) DepartmentList(ctx context.Context) ([]WecomDepartment, error) {
+	for attempt := 0; ; attempt++ {
+		accessToken, err := c.AccessToken(ctx)
+		if err != nil {
+			return nil, err
+		}
+		reqURL := fmt.Sprintf("%s/department/list?access_token=%s", wecomQyAPIBase, accessToken)
+		var resp struct {
+			ErrCode    int               `json:"errcode"`
+			ErrMsg     string            `json:"errmsg"`
+			Department []WecomDepartment `json:"department"`
+		}
+		if err = wecomGet(ctx, reqURL, &resp); err != nil {
+			return nil, fmt.Errorf("企微 department/list 失败: %w", err)
+		}
+		if resp.ErrCode != 0 && attempt == 0 && (resp.ErrCode == 40014 || resp.ErrCode == 42001) {
+			// token 失效(缓存提前过期兜底失准):清缓存重取重试一次
+			global.OPS_CACHE.Delete(wecomAccessTokenCachePrefix + c.CorpID)
+			continue
+		}
+		if resp.ErrCode != 0 {
+			return nil, fmt.Errorf("企微 department/list 失败: errcode=%d errmsg=%s", resp.ErrCode, resp.ErrMsg)
+		}
+		return resp.Department, nil
+	}
+}
+
+// DepartmentUsers 拉取指定部门成员详情列表。
+// fetchChild=true 时递归子部门;逐部门拉取时建议 false,以便限速与去重可控。
+// errcode 40014/42001(access_token 失效)清缓存重取重试一次(与 SendMessage 同口径)。
+func (c *WecomClient) DepartmentUsers(ctx context.Context, deptId int64, fetchChild bool) ([]WecomContactUser, error) {
+	fetch := 0
+	if fetchChild {
+		fetch = 1
+	}
+	for attempt := 0; ; attempt++ {
+		accessToken, err := c.AccessToken(ctx)
+		if err != nil {
+			return nil, err
+		}
+		reqURL := fmt.Sprintf("%s/user/list?access_token=%s&department_id=%d&fetch_child=%d", wecomQyAPIBase, accessToken, deptId, fetch)
+		var resp struct {
+			ErrCode  int                `json:"errcode"`
+			ErrMsg   string             `json:"errmsg"`
+			UserList []WecomContactUser `json:"userlist"`
+		}
+		if err = wecomGet(ctx, reqURL, &resp); err != nil {
+			return nil, fmt.Errorf("企微 user/list 失败: %w", err)
+		}
+		if resp.ErrCode != 0 && attempt == 0 && (resp.ErrCode == 40014 || resp.ErrCode == 42001) {
+			global.OPS_CACHE.Delete(wecomAccessTokenCachePrefix + c.CorpID)
+			continue
+		}
+		if resp.ErrCode != 0 {
+			return nil, fmt.Errorf("企微 user/list 失败: errcode=%d errmsg=%s", resp.ErrCode, resp.ErrMsg)
+		}
+		return resp.UserList, nil
+	}
+}
+
 // --- 应用消息推送(message/send) ---
 
 // WecomMessageSendBatch 官方 message/send 单次 touser 上限,超出需调用方分批。

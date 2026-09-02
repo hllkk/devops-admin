@@ -30,13 +30,13 @@ type SendChannels struct {
 
 // SendRequest 统一发送请求(渠道无关的场景草稿)。
 type SendRequest struct {
-	Title      string   // 标题(站内标题+应用消息 textcard 标题)
-	Content    string   // 正文(站内正文+应用消息 textcard 描述,纯文本)
-	Markdown   string   // 群机器人 markdown 正文(空则降级用 Content)
-	Url        string   // 应用消息跳转地址(以/开头时拼接配置的跳转 base;空则 textcard 降级纯文本)
-	TargetType string   // users/depts(depts 含子部门展开为成员)
-	UserIds    []int64  // TargetType=users 时的目标用户
-	DeptIds    []int64  // TargetType=depts 时的目标部门
+	Title      string  // 标题(站内标题+应用消息 textcard 标题)
+	Content    string  // 正文(站内正文+应用消息 textcard 描述,纯文本)
+	Markdown   string  // 群机器人 markdown 正文(空则降级用 Content)
+	Url        string  // 应用消息跳转地址(以/开头时拼接配置的跳转 base;空则 textcard 降级纯文本)
+	TargetType string  // users/depts(depts 含子部门展开为成员)
+	UserIds    []int64 // TargetType=users 时的目标用户
+	DeptIds    []int64 // TargetType=depts 时的目标部门
 	Channels   SendChannels
 }
 

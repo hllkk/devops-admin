@@ -10,6 +10,7 @@ import { $t } from '@/locales';
 import { useRouteStore } from '../route';
 import { useTabStore } from '../tab';
 import { useNoticeStore } from '../notice';
+import { useSystemStore } from '../system';
 import { clearAuthStorage, getToken } from './shared';
 import { clearProactiveRefreshTimer, scheduleProactiveRefresh } from '@/service/request/shared';
 
@@ -51,6 +52,10 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   /** Reset auth store */
   async function resetStore() {
     recordUserId();
+
+    // 失效公开配置缓存:登录页的第三方登录开关(企微等)取自 systemStore 会话级缓存,
+    // 不失效则退出后登录页仍按旧配置渲染,需刷新页面才能看到新开启的登录方式
+    useSystemStore().invalidate();
 
     clearProactiveRefreshTimer();
     localStg.remove('tokenExpiresAt');

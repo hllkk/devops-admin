@@ -25,6 +25,7 @@ type SysDepartment struct {
 	Phone        string          `json:"phone" gorm:"comment:联系电话"`                          // 联系电话(部门独立)
 	Email        string          `json:"email" gorm:"comment:邮箱"`                            // 邮箱(部门独立)
 	Status       string          `json:"status" gorm:"default:0;size:1;comment:部门状态 0正常1停用"` // 部门状态(对齐前端 '0'/'1')
+	WecomDeptId  int64           `json:"wecomDeptId,string" gorm:"index;default:0;comment:企业微信部门ID(0=非企微同步部门)"` // 企微通讯录同步锚点(0=手动创建,>0 与企微部门一一对应)
 	Children     []SysDepartment `json:"children" gorm:"-"`                                  // 子部门(内存组装,不建列)
 	NamePath     string          `json:"namePath" gorm:"-"`                                  // 公司/部门全路径名(内存组装,不建列)
 }

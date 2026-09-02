@@ -511,9 +511,13 @@ func (s CaptchaService) getFailCount(scope string) int {
 	return 0
 }
 
-func (s CaptchaService) answerKey(captchaId string) string  { return captchaKeyPrefix + "answer:" + captchaId }
-func (s CaptchaService) attemptKey(captchaId string) string { return captchaKeyPrefix + "attempt:" + captchaId }
-func (s CaptchaService) failKey(scope string) string        { return captchaKeyPrefix + "fail:" + scope }
+func (s CaptchaService) answerKey(captchaId string) string {
+	return captchaKeyPrefix + "answer:" + captchaId
+}
+func (s CaptchaService) attemptKey(captchaId string) string {
+	return captchaKeyPrefix + "attempt:" + captchaId
+}
+func (s CaptchaService) failKey(scope string) string { return captchaKeyPrefix + "fail:" + scope }
 
 func orPositive(v, def int) int {
 	if v > 0 {

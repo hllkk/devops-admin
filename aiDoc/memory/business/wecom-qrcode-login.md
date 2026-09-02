@@ -33,3 +33,7 @@
 - `AutoMigrate` 启动自动加列:`sys_social.mobile`、`sys_general_config.default_role_id`
 - typecheck 有 2 个**预先存在**错误(`route` i18n 缺 `test` key、`vite.config.ts` 的 `allowedHosts` 类型),与企微无关
 - `WecomWebviewLoginView` 返回 `{oauthUrl}` JSON 由前端 `location.replace`(非服务端 302):fetch 跟随跨域 302 到企微域名会触发 CORS
+
+## 修复记录
+
+- 2026-09-01:修复"开启企微登录后,已登录用户退出到登录页看不到企微按钮、须刷新页面才出现"。根因:`useSystemStore.init()` 会话级幂等(`loaded` 模块级标记),登录期间拉过一次后退出不再重拉。修法:system store 加 `invalidate()`(只置 `loaded=false`,不清 `setting`,旧值兜底渲染、新值到达自动更新),在 auth store `resetStore()`(主动退出/401 被动登出/refresh 失效所有登出路径的汇合点)调用;失效后跳登录页时路由守卫里的 `init()` 重新拉取,登录按钮随之响应式更新

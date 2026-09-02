@@ -126,6 +126,7 @@ func Routers() *gin.Engine {
 		systemRouter.InitSysErrorRouter(PrivateGroup, PublicGroup) // 错误日志(/log/sysError/* + 前端上报)
 		systemRouter.InitSocialRouter(PrivateGroup, PublicGroup)   // 第三方绑定/社交登录(/auth/binding|/auth/social/callback 公开;/system/social/list|/auth/unlock 私有)
 		systemRouter.InitWecomRouter(PublicGroup)                  // 企业微信扫码登录(/auth/wecomLogin|/auth/qrCodeStatus|/wecomCallback|/auth/wecomWebviewLogin 全公开)
+		systemRouter.InitWecomContactRouter(PrivateGroup)          // 企业微信通讯录同步(/system/wecom/syncStructure|/syncStatus 管理操作,私有)
 		systemRouter.InitTimedTaskRouter(PrivateGroup)             // 定时任务(/timedTask/*)
 		systemRouter.InitOnlineRouter(PrivateGroup)                // 在线设备(/monitor/online,个人中心视角:仅当前用户自己)
 		gatewayRouter.InitProviderRouter(PrivateGroup)            // AI 网关·供应商管理(/gateway/provider/*)

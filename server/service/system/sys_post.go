@@ -150,4 +150,3 @@ func (s *PostService) ExportPostList(ctx context.Context, q systemReq.PostSearch
 	err = db.Order(postOrder).Limit(ExportMaxRows).Find(&list).Error
 	return
 }
-

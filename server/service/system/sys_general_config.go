@@ -27,6 +27,20 @@ func getGeneralConfigCache() system.SysGeneralConfig {
 	return system.SysGeneralConfig{}
 }
 
+// FillDefaultRoleId 将 DefaultRoleId=0(未配置)的常规配置回填为内置「普通用户」角色(role_key=user)的ID。
+// 0 会让企微扫码等自动建号必然失败,视为未配置而非合法取值;管理员显式配置过(非0)不覆盖;
+// 角色查不到(初始化顺序异常/角色被删)时保持 0,由建号路径报「默认角色未配置」兜底。
+// db 由调用方传入: init 向导传 ctx db,运行期传 global.OPS_DB。
+func FillDefaultRoleId(db *gorm.DB, cfg *system.SysGeneralConfig) {
+	if cfg.DefaultRoleId != 0 {
+		return
+	}
+	var role system.SysRole
+	if err := db.Where("role_key = ?", "user").First(&role).Error; err == nil {
+		cfg.DefaultRoleId = role.RoleId
+	}
+}
+
 // Get 读取单行配置 不存在则按默认创建并返回
 func (s *GeneralConfigService) Get(ctx context.Context) (system.SysGeneralConfig, error) {
 	var cfg system.SysGeneralConfig
@@ -36,16 +50,31 @@ func (s *GeneralConfigService) Get(ctx context.Context) (system.SysGeneralConfig
 	if global.OPS_DB == nil {
 		return system.DefaultGeneralConfig(), errors.New("数据库未初始化")
 	}
-	err := global.OPS_DB.WithContext(ctx).Where("id = ?", 1).First(&cfg).Error
+	db := global.OPS_DB.WithContext(ctx)
+	err := db.Where("id = ?", 1).First(&cfg).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		cfg = system.DefaultGeneralConfig()
 		cfg.ID = 1
-		if err = global.OPS_DB.WithContext(ctx).Create(&cfg).Error; err != nil {
+		FillDefaultRoleId(db, &cfg)
+		if err = db.Create(&cfg).Error; err != nil {
 			return cfg, err
 		}
 		return cfg, nil
 	}
-	return cfg, err
+	if err != nil {
+		return cfg, err
+	}
+	// 存量库自愈: 初始化早于本逻辑的库 default_role_id=0,读时回填一次落库
+	// CAS 条件限定仍为 0,避免与并发的管理员保存互踩;失败仅记日志,返回值已回填不影响本次使用
+	FillDefaultRoleId(db, &cfg)
+	if cfg.DefaultRoleId != 0 {
+		if e := db.Model(&system.SysGeneralConfig{}).
+			Where("id = ? AND default_role_id = 0", 1).
+			Update("default_role_id", cfg.DefaultRoleId).Error; e != nil {
+			logger.WithCtx(ctx).Mod("biz").Error("默认角色回填失败: " + e.Error())
+		}
+	}
+	return cfg, nil
 }
 
 // Set 持久化配置 刷新内存缓存(常规配置无副作用,仅保留 OPS_MODEL 基座字段)

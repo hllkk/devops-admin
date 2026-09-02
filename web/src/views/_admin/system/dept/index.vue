@@ -1,13 +1,15 @@
 <script setup lang="tsx">
-import { ref } from 'vue';
-import { NButton, NDivider, NTime } from 'naive-ui';
+import { onUnmounted, ref } from 'vue';
+import { NButton, NDivider, NTime, useMessage } from 'naive-ui';
 import { jsonClone } from '@sa/utils';
 import { fetchBatchDeleteDept, fetchGetDeptList } from '@/service/api/system/dept';
+import { fetchSyncWecomStructure, fetchWecomSyncStatus } from '@/service/api/system/wecom';
 import { useAppStore } from '@/store/modules/app';
 import { useAuth } from '@/hooks/business/auth';
 import { treeTransform, useNaiveTreeTable, useTableOperate } from '@/hooks/common/table';
 import { useDict } from '@/hooks/business/dict';
 import DictTag from '@/components/custom/dict-tag.vue';
+import SvgIcon from '@/components/custom/svg-icon.vue';
 import { $t } from '@/locales';
 import ButtonIcon from '@/components/custom/button-icon.vue';
 import DeptOperateDrawer from './modules/dept-operate-drawer.vue';
@@ -164,6 +166,84 @@ function addInRow(row: Api.System.Dept) {
   editingData.value = jsonClone(row);
   handleAdd();
 }
+
+// ── 企微通讯录同步(异步):全量首同步含逐用户新建(bcrypt+事务),后端 goroutine 执行,
+//    前端启动后轮询 syncStatus,完成(或失败/超时)后给提示并刷新列表 ──
+const message = useMessage();
+const syncLoading = ref(false);
+let syncPollTimer: ReturnType<typeof setInterval> | null = null;
+
+async function handleSyncWecom() {
+  syncLoading.value = true;
+  const { error, data: startRes } = await fetchSyncWecomStructure();
+  if (error || !startRes) {
+    syncLoading.value = false;
+    return;
+  }
+  if (!startRes.started) {
+    message.info($t('page.system.dept.syncInProgress'));
+  } else {
+    message.success($t('page.system.dept.syncStarted'));
+  }
+  startSyncPoll();
+}
+
+function stopSyncPoll() {
+  if (syncPollTimer) {
+    clearInterval(syncPollTimer);
+    syncPollTimer = null;
+  }
+  syncLoading.value = false;
+}
+
+function startSyncPoll() {
+  stopSyncPoll();
+  const MAX_MS = 10 * 60 * 1000; // 兜底 10 分钟(锁 TTL 5 分钟 + 余量)
+  let elapsed = 0;
+  let errStreak = 0; // 连续查询失败计数(403/网络),3 次即放弃避免无限轮询弹 toast
+  syncPollTimer = setInterval(async () => {
+    elapsed += 3000;
+    if (elapsed > MAX_MS) {
+      stopSyncPoll();
+      message.error($t('page.system.dept.syncTimeout'));
+      return;
+    }
+    const { error: pollErr, data: status } = await fetchWecomSyncStatus();
+    if (pollErr || !status) {
+      errStreak += 1;
+      if (errStreak >= 3) {
+        stopSyncPoll();
+        message.error($t('page.system.dept.syncPollFailed'));
+      }
+      return;
+    }
+    errStreak = 0;
+    if (!status.inProgress) {
+      stopSyncPoll();
+      if (status.error) {
+        message.error(status.error);
+        return;
+      }
+      const r = status.result;
+      if (r) {
+        message.success(
+          $t('page.system.dept.syncDone', {
+            deptCreated: r.deptCreated,
+            deptUpdated: r.deptUpdated,
+            userCreated: r.userCreated,
+            userUpdated: r.userUpdated,
+            userRestored: r.userRestored,
+            userDisabled: r.userDisabled,
+            postCreated: r.postCreated
+          })
+        );
+      }
+      getData();
+    }
+  }, 3000);
+}
+
+onUnmounted(stopSyncPoll);
 </script>
 
 <template>
@@ -191,6 +271,12 @@ function addInRow(row: Api.System.Dept) {
                 <icon-quill-collapse />
               </template>
               {{ $t('page.system.dept.collapseAll') }}
+            </NButton>
+            <NButton v-if="hasAuth('system:wecom:sync')" size="small" :loading="syncLoading" @click="handleSyncWecom">
+              <template #icon>
+                <SvgIcon icon="ic:round-refresh" />
+              </template>
+              {{ $t('page.system.dept.syncWecom') }}
             </NButton>
           </template>
         </TableHeaderOperation>

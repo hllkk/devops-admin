@@ -41,6 +41,11 @@ export const useSystemStore = defineStore(SetupStoreId.System, () => {
     }
   }
 
+  /** 失效会话级缓存(不清空 setting,旧值兜底渲染,重拉后自动更新)。退出登录时调用,保证登录页拿到最新的第三方登录开关 */
+  function invalidate() {
+    loaded = false;
+  }
+
   /** 是否有任意第三方登录已启用 */
   const hasAnyThirdPartyLogin = computed(() =>
     Boolean(
@@ -57,5 +62,5 @@ export const useSystemStore = defineStore(SetupStoreId.System, () => {
   /** 是否开放找回密码 */
   const isResetPwdEnabled = computed(() => Boolean(setting.value?.resetPwdEnabled));
 
-  return { setting, init, hasAnyThirdPartyLogin, isRegisterEnabled, isResetPwdEnabled };
+  return { setting, init, invalidate, hasAnyThirdPartyLogin, isRegisterEnabled, isResetPwdEnabled };
 });

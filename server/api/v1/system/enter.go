@@ -20,6 +20,7 @@ type ApiGroup struct {
 	TimedTaskApi
 	SocialApi
 	WecomAuthApi
+	WecomContactApi
 	OnlineApi
 }
 
@@ -45,5 +46,6 @@ var (
 	sysErrorService       = service.ServiceGroupApp.SystemServiceGroup.SysErrorService
 	timedTaskService      = service.ServiceGroupApp.SystemServiceGroup.TimedTaskService
 	socialService         = service.ServiceGroupApp.SystemServiceGroup.SocialService
+	wecomContactService   = service.ServiceGroupApp.SystemServiceGroup.WecomContactService
 	onlineService         = service.ServiceGroupApp.SystemServiceGroup.OnlineService
 )

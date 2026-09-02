@@ -10,8 +10,8 @@ type AuthRouter struct{}
 func (s *AuthRouter) InitAuthRouter(Router *gin.RouterGroup) {
 	authRouter := Router.Group("auth")
 	{
-		authRouter.GET("getUserInfo", baseApi.GetUserInfo)   // 当前登录用户信息(roles/permissions)
-		authRouter.POST("logout", baseApi.Logout)            // 退出登录
+		authRouter.GET("getUserInfo", baseApi.GetUserInfo)    // 当前登录用户信息(roles/permissions)
+		authRouter.POST("logout", baseApi.Logout)             // 退出登录
 		authRouter.POST("refreshToken", baseApi.RefreshToken) // 刷新 token
 	}
 }

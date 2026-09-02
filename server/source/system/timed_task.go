@@ -59,6 +59,7 @@ func (i *initTimedTask) InitializeData(ctx context.Context) (context.Context, er
 		{Name: "ResyncAiKeys", Description: "全量重推AI密钥投影到LiteLLM(改名级联/授权对齐同步失败的漂移兜底)", Spec: "37 3 * * *", ExecutorType: sysModel.TimedTaskExecutorMethod, MethodName: "ResyncAiKeys", Enabled: true},
 		{Name: "HealthCheckMcps", Description: "MCP服务器健康巡检(全量启用经LiteLLM探测落库,仅新库生效;已有库请在定时任务面板手动创建)", Spec: "23 * * * *", ExecutorType: sysModel.TimedTaskExecutorMethod, MethodName: "HealthCheckMcps", Enabled: true},
 		{Name: "TokenPlanMorningReport", Description: "TokenPlan晨报推送(工作日,排在8:17余量同步后用当天快照;策略未启用时不发,仅新库生效;已有库请在定时任务面板手动创建)", Spec: "33 8 * * 1-5", ExecutorType: sysModel.TimedTaskExecutorMethod, MethodName: "TokenPlanMorningReport", Enabled: true},
+		{Name: "SyncWecomContact", Description: "同步企业微信通讯录(部门/用户/岗位,默认关闭按需启用;仅新库生效,已有库请在定时任务面板手动创建)", Spec: "@daily", ExecutorType: sysModel.TimedTaskExecutorMethod, MethodName: "SyncWecomContact", Enabled: false},
 	}
 	if err := db.Create(&entities).Error; err != nil {
 		return ctx, errors.Wrap(err, sysModel.SysTimedTask{}.TableName()+"表数据初始化失败!")

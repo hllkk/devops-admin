@@ -480,6 +480,8 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 		{ParentId: menuNameMap["route.system_dept"], MenuName: "部门新增", MenuType: "F", Perms: "system:dept:add", Icon: "#", Visible: "0", OrderNum: 2},
 		{ParentId: menuNameMap["route.system_dept"], MenuName: "部门修改", MenuType: "F", Perms: "system:dept:edit", Icon: "#", Visible: "0", OrderNum: 3},
 		{ParentId: menuNameMap["route.system_dept"], MenuName: "部门删除", MenuType: "F", Perms: "system:dept:remove", Icon: "#", Visible: "0", OrderNum: 4},
+		// 企微通讯录同步按钮:ApiPrefix 显式枚举两条接口(不用 /* 通配),角色勾选本按钮即获得 casbin 策略
+		{ParentId: menuNameMap["route.system_dept"], MenuName: "企微通讯录同步", MenuType: "F", Perms: "system:wecom:sync", Icon: "#", Visible: "0", OrderNum: 5, ApiPrefix: "/system/wecom/syncStructure, /system/wecom/syncStatus"},
 		// ── 岗位管理 ──
 		{ParentId: menuNameMap["route.system_post"], MenuName: "岗位查询", MenuType: "F", Perms: "system:post:query", Icon: "#", Visible: "0", OrderNum: 1},
 		{ParentId: menuNameMap["route.system_post"], MenuName: "岗位新增", MenuType: "F", Perms: "system:post:add", Icon: "#", Visible: "0", OrderNum: 2},

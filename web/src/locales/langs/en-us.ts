@@ -1710,6 +1710,13 @@ const local: App.I18n.Schema = {
         orderNum: 'Display Order',
         expandAll: 'Expand All',
         collapseAll: 'Collapse All',
+        syncWecom: 'Sync WeCom Directory',
+        syncInProgress: 'Directory sync is already in progress, please wait',
+        syncStarted: 'Directory sync started, the list will refresh on completion',
+        syncTimeout: 'Directory sync timed out, please check the result later or retry',
+        syncPollFailed: 'Failed to query sync status, please check permissions and retry',
+        syncDone:
+          'Sync completed: departments created {deptCreated}, updated {deptUpdated}; users created {userCreated}, updated {userUpdated}, restored {userRestored}, disabled {userDisabled}; posts created {postCreated}',
         empty: 'No department data',
         addDept: 'Add Department',
         editDept: 'Edit Department',
