@@ -125,18 +125,34 @@ func (a *DashboardApi) GetBudget(c *gin.Context) {
 	response.OkWithDetailed(items, "获取成功", c)
 }
 
-// AggregateUsage 手动触发聚合(管理员)
+// AggregateUsage 手动触发聚合(管理员)：先回流 LLM+MCP 日志再聚合，保证点了就是最新数据。
+// 回流失败不阻断聚合(Warn 继续用已有原始日志)；聚合失败才整体失败。
 // @Tags      GatewayDashboard
-// @Summary   手动触发用量聚合(滚动重建+budget重算+超限停用闭环)
+// @Summary   手动触发用量聚合(先回流LLM+MCP日志再滚动重建+budget重算+超限停用闭环)
 // @Produce   application/json
 // @Success   200  {object}  response.Response{data=object,msg=string}
 // @Router    /gateway/dashboard/aggregate [post]
 func (a *DashboardApi) AggregateUsage(c *gin.Context) {
-	result, err := usageAggregateService.AggregateUsage(c.Request.Context())
+	ctx := c.Request.Context()
+	// 联动回流：LLM+MCP 各自独立游标管线，失败只 Warn(定时回流仍在，聚合基于已有日志继续)
+	synced := 0
+	if r, err := usageService.SyncLLMLogs(ctx); err != nil {
+		logger.WithCtx(ctx).Mod("gateway").Err(err).Warn("手动聚合前 LLM 回流失败,基于已有日志继续聚合")
+	} else {
+		synced += r["inserted"]
+	}
+	if r, err := usageService.SyncMcpLogs(ctx); err != nil {
+		logger.WithCtx(ctx).Mod("gateway").Err(err).Warn("手动聚合前 MCP 回流失败,基于已有日志继续聚合")
+	} else {
+		synced += r["inserted"]
+	}
+
+	result, err := usageAggregateService.AggregateUsage(ctx)
 	if err != nil {
-		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("用量聚合失败")
+		logger.WithCtx(ctx).Mod("gateway").Err(err).Error("用量聚合失败")
 		response.FailWithMessage("聚合失败: "+err.Error(), c)
 		return
 	}
+	result["synced"] = synced
 	response.OkWithDetailed(result, "聚合完成", c)
 }

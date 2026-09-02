@@ -1281,7 +1281,7 @@ const local: App.I18n.Schema = {
       },
       dashboard: {
         aggregate: 'Aggregate',
-        aggregateSuccess: 'Aggregated: rebuilt {rebuilt}, disabled {disabled} over-limit keys',
+        aggregateSuccess: 'Aggregated: synced {synced} logs, rebuilt {rebuilt}, disabled {disabled} over-limit keys',
         customRange: 'Custom',
         scopeAll: 'All',
         scopeSelf: 'Mine',

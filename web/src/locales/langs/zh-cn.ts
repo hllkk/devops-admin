@@ -1276,7 +1276,7 @@ const local: App.I18n.Schema = {
       },
       dashboard: {
         aggregate: '手动聚合',
-        aggregateSuccess: '聚合完成：重建 {rebuilt}，停用 {disabled} 个超限Key',
+        aggregateSuccess: '聚合完成：回流 {synced} 条，重建 {rebuilt}，停用 {disabled} 个超限Key',
         customRange: '自定义',
         scopeAll: '全部',
         scopeSelf: '我的',

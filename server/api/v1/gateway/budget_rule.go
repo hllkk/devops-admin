@@ -132,29 +132,6 @@ func (a *BudgetRuleApi) CheckBudgetAlerts(c *gin.Context) {
 	response.OkWithDetailed(map[string]int{"softWarn": softCnt, "hardLimit": hardCnt}, fmt.Sprintf("检查完成: 软限预警 %d 条,硬限超限 %d 条", softCnt, hardCnt), c)
 }
 
-// AggregateUsage 手动触发用量聚合(含MCP纳入预算+软限预警+硬限停用)
-// @Tags      GatewayBudget
-// @Summary   手动触发用量聚合(含MCP纳入预算+软限预警+硬限停用)
-// @Produce   application/json
-// @Success   200  {object}  response.Response{data=object,msg=string}
-// @Router    /gateway/budget/aggregate [post]
-func (a *BudgetRuleApi) AggregateUsage(c *gin.Context) {
-	result, err := usageAggregateService.AggregateUsage(c.Request.Context())
-	if err != nil {
-		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("用量聚合失败")
-		response.FailWithMessage("聚合失败: "+err.Error(), c)
-		return
-	}
-	alertResults, alertErr := budgetRuleService.CheckBudgetAlerts(c.Request.Context())
-	if alertErr != nil {
-		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(alertErr).Warn("预算预警检查失败(聚合已完成)")
-	} else {
-		softCnt, _ := a.sendBudgetNotifications(c, alertResults)
-		result["budgetAlerts"] = softCnt
-	}
-	response.OkWithDetailed(result, "聚合完成", c)
-}
-
 // GetBudgetSummary 预算汇总(按维度:Key/部门/用户)
 // @Tags      GatewayBudget
 // @Summary   预算汇总(按维度:Key/部门/用户)

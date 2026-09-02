@@ -45,11 +45,13 @@ export function fetchGetDashboardBudget(params?: { scope?: 'all' | 'self' }) {
   });
 }
 
-/** 手动触发用量聚合(滚动重建 + budget 重算 + 超限停用闭环) */
+/** 手动触发用量聚合(先回流 LLM+MCP 日志再滚动重建 + budget 重算 + 超限停用闭环) */
 export function fetchAggregateUsage() {
-  return request<{ rebuilt: number; keysRecomputed: number; keysDisabled: number }>({
+  return request<{ synced: number; rebuilt: number; keysRecomputed: number; keysDisabled: number }>({
     url: '/gateway/dashboard/aggregate',
-    method: 'post'
+    method: 'post',
+    // 聚合含回流+60天滚动重建,耗时可能超过 axios 默认 10s,单独放开超时
+    timeout: 0
   });
 }
 

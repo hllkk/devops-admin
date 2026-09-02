@@ -35,7 +35,7 @@ P3「成本效能与预算管控」第三件：部门/用户级预算规则 + �
 
 ### API 层（api/v1/gateway/budget_rule.go）
 
-- `GET /gateway/budget/list`、`POST/PUT/DELETE /gateway/budget`、`GET /gateway/budget/summary`（三维度汇总：Key 级复用现有 GetBudget + 部门/用户级规则列表）、`POST /gateway/budget/check`（手动触发预警检查 + 发通知）、`POST /gateway/budget/aggregate`（手动聚合 + 预算检查）。
+- `GET /gateway/budget/list`、`POST/PUT/DELETE /gateway/budget`、`GET /gateway/budget/summary`（三维度汇总：Key 级复用现有 GetBudget + 部门/用户级规则列表）、`POST /gateway/budget/check`（手动触发预警检查 + 发通知）。~~`POST /gateway/budget/aggregate`~~（2026-09-01 收敛删除：与 `/gateway/dashboard/aggregate` 重复，手动聚合唯一入口收敛到 dashboard 端点，且该端点已升级为先回流 LLM+MCP 再聚合、前端 timeout:0）。
 - 定时任务：`CheckBudgetAlerts` 每 5 分钟（与 AggregateUsage 同频，聚合后检查）；`AggregateUsage` 已含 MCP 纳入预算。
 
 ### 前端

@@ -103,7 +103,13 @@ async function loadAll() {
 async function handleAggregate() {
   const { data, error } = await fetchAggregateUsage();
   if (error) return;
-  window.$message?.success($t('page.gateway.dashboard.aggregateSuccess', { rebuilt: data?.rebuilt ?? 0, disabled: data?.keysDisabled ?? 0 }));
+  window.$message?.success(
+    $t('page.gateway.dashboard.aggregateSuccess', {
+      synced: data?.synced ?? 0,
+      rebuilt: data?.rebuilt ?? 0,
+      disabled: data?.keysDisabled ?? 0
+    })
+  );
   await loadAll();
 }
 
