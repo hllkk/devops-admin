@@ -28,13 +28,16 @@ const emit = defineEmits<{
   applied: [];
 }>();
 
-const { copy: copyText, copied } = useClipboard({ legacy: true, copiedDuring: 2000 });
+const { copy: copyText } = useClipboard({ legacy: true, copiedDuring: 2000 });
 
 const isLoading = ref(true);
 const models = ref<Api.Gateway.ActiveModel[]>([]);
 const mcps = ref<Api.Gateway.AvailableMcp[]>([]);
 const skills = ref<Api.Gateway.AvailableSkill[]>([]);
 const keyword = ref('');
+
+/** 最新上架模型(接口按 model_id 倒序,首个即最新;再有新模型上架时 New 标识随之转移) */
+const newestModelId = computed(() => models.value[0]?.modelId);
 
 /** 广场资源类型切换(模型/MCP/Skill) */
 const resourceKind = ref<'model' | 'mcp' | 'skill'>('model');
@@ -131,7 +134,7 @@ async function handleViewMcpAccess(mcp: Api.Gateway.AvailableMcp) {
 }
 
 function handleCopyConfig() {
-  if (accessMcp.value?.config) copyText(JSON.stringify(accessMcp.value.config, null, 2));
+  if (accessMcp.value?.config) handleCopy('mcpConfig', JSON.stringify(accessMcp.value.config, null, 2));
 }
 
 // ===== 申请订阅(需审批资源;P2 资源申请审批) =====
@@ -215,8 +218,26 @@ async function handleDownloadSkill(skill: Api.Gateway.AvailableSkill) {
   }
 }
 
-function handleCopy(value: string) {
-  if (value) copyText(value);
+// ===== 接入弹窗复制(按字段隔离已复制标记,避免一处复制全部按钮亮"已复制") =====
+const copiedField = ref<string | null>(null);
+let copiedTimer: ReturnType<typeof setTimeout> | null = null;
+
+function isCopied(field: string) {
+  return copiedField.value === field;
+}
+
+async function handleCopy(field: string, value: string) {
+  if (!value) return;
+  try {
+    await copyText(value);
+    copiedField.value = field;
+    if (copiedTimer) clearTimeout(copiedTimer);
+    copiedTimer = setTimeout(() => {
+      copiedField.value = null;
+    }, 2000);
+  } catch {
+    window.$message?.error($t('common.copyNotSupported'));
+  }
 }
 
 onMounted(async () => {
@@ -298,6 +319,15 @@ onMounted(async () => {
               <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-4px">
                   <span class="truncate text-14px font-semibold">{{ model.name }}</span>
+                  <NTag
+                    v-if="model.modelId === newestModelId"
+                    size="tiny"
+                    type="primary"
+                    :bordered="false"
+                    class="shrink-0"
+                  >
+                    {{ $t('page.home.square.isNew') }}
+                  </NTag>
                   <SvgIcon
                     v-if="isAuthorized(model)"
                     icon="lucide:circle-check"
@@ -514,22 +544,12 @@ onMounted(async () => {
             <code class="min-w-0 flex-1 truncate rounded-8px bg-slate-100 px-10px py-6px text-13px dark:bg-slate-700/60">
               {{ accessModel.modelKey }}
             </code>
-            <NButton size="tiny" :type="copied ? 'success' : 'default'" @click="handleCopy(accessModel.modelKey)">
-              {{ copied ? $t('page.home.square.copied') : $t('page.home.square.copy') }}
-            </NButton>
-          </div>
-        </div>
-        <div v-if="accessModel.hasAnthropicDeployment">
-          <div class="mb-4px text-12px font-medium">
-            {{ $t('page.home.square.accessModelKeyAnthropic') }}
-            <span class="font-normal text-slate-400">({{ $t('page.home.square.accessAnthropicTip') }})</span>
-          </div>
-          <div class="flex items-center gap-8px">
-            <code class="min-w-0 flex-1 truncate rounded-8px bg-slate-100 px-10px py-6px text-13px dark:bg-slate-700/60">
-              {{ accessModel.modelKeyAnthropic }}
-            </code>
-            <NButton size="tiny" :type="copied ? 'success' : 'default'" @click="handleCopy(accessModel.modelKeyAnthropic)">
-              {{ copied ? $t('page.home.square.copied') : $t('page.home.square.copy') }}
+            <NButton
+              size="tiny"
+              :type="isCopied('modelKey') ? 'success' : 'default'"
+              @click="handleCopy('modelKey', accessModel.modelKey)"
+            >
+              {{ isCopied('modelKey') ? $t('page.home.square.copied') : $t('page.home.square.copy') }}
             </NButton>
           </div>
         </div>
@@ -543,8 +563,12 @@ onMounted(async () => {
             <code class="min-w-0 flex-1 truncate rounded-8px bg-slate-100 px-10px py-6px text-13px dark:bg-slate-700/60">
               {{ accessMcp.mcpUrl }}
             </code>
-            <NButton size="tiny" :type="copied ? 'success' : 'default'" @click="handleCopy(accessMcp.mcpUrl)">
-              {{ copied ? $t('page.home.square.copied') : $t('page.home.square.copy') }}
+            <NButton
+              size="tiny"
+              :type="isCopied('mcpUrl') ? 'success' : 'default'"
+              @click="handleCopy('mcpUrl', accessMcp.mcpUrl)"
+            >
+              {{ isCopied('mcpUrl') ? $t('page.home.square.copied') : $t('page.home.square.copy') }}
             </NButton>
           </div>
         </div>
@@ -567,8 +591,13 @@ onMounted(async () => {
             {{ $t('page.home.square.accessMcpConfig') }}
             <span class="font-normal text-slate-400">({{ $t('page.home.square.accessMcpConfigTip') }})</span>
           </div>
-          <NButton size="tiny" :type="copied ? 'success' : 'default'" :disabled="!accessMcp.config" @click="handleCopyConfig">
-            {{ copied ? $t('page.home.square.copied') : $t('page.home.square.copyConfig') }}
+          <NButton
+            size="tiny"
+            :type="isCopied('mcpConfig') ? 'success' : 'default'"
+            :disabled="!accessMcp.config"
+            @click="handleCopyConfig"
+          >
+            {{ isCopied('mcpConfig') ? $t('page.home.square.copied') : $t('page.home.square.copyConfig') }}
           </NButton>
         </div>
       </div>
@@ -583,10 +612,10 @@ onMounted(async () => {
             </code>
             <NButton
               size="tiny"
-              :type="copied ? 'success' : 'default'"
-              @click="handleCopy(identity?.gatewayUrl || '')"
+              :type="isCopied('gatewayUrl') ? 'success' : 'default'"
+              @click="handleCopy('gatewayUrl', identity?.gatewayUrl || '')"
             >
-              {{ copied ? $t('page.home.square.copied') : $t('page.home.square.copy') }}
+              {{ isCopied('gatewayUrl') ? $t('page.home.square.copied') : $t('page.home.square.copy') }}
             </NButton>
           </div>
         </div>
@@ -601,8 +630,12 @@ onMounted(async () => {
                 <SvgIcon :icon="showFullKey ? 'lucide:eye-off' : 'lucide:eye'" />
               </template>
             </NButton>
-            <NButton size="tiny" :type="copied ? 'success' : 'default'" @click="handleCopy(fullKey)">
-              {{ copied ? $t('page.home.square.copied') : $t('page.home.square.copy') }}
+            <NButton
+              size="tiny"
+              :type="isCopied('apiKey') ? 'success' : 'default'"
+              @click="handleCopy('apiKey', fullKey)"
+            >
+              {{ isCopied('apiKey') ? $t('page.home.square.copied') : $t('page.home.square.copy') }}
             </NButton>
           </div>
         </div>

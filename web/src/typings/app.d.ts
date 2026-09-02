@@ -729,6 +729,7 @@ declare namespace App {
             empty: string;
             authorized: string;
             notAuthorized: string;
+            isNew: string;
             requiresApproval: string;
             viewAccess: string;
             copy: string;
@@ -736,8 +737,6 @@ declare namespace App {
             accessTitle: string;
             accessModelKey: string;
             accessModelKeyTip: string;
-            accessModelKeyAnthropic: string;
-            accessAnthropicTip: string;
             accessBaseUrl: string;
             accessApiKey: string;
             noIdentity: string;

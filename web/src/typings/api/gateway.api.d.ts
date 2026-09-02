@@ -162,15 +162,13 @@ declare namespace Api {
       keyValue: string;
     };
 
-    /** 可授权模型(发布+激活，含 anthropic 变体标注) */
+    /** 可授权模型(发布+激活) */
     type AvailableModel = {
       modelId: CommonType.IdType;
       modelKey: string;
-      modelKeyAnthropic: string;
       name: string;
       category: string;
       requiresApproval: boolean;
-      hasAnthropicDeployment: boolean;
     };
 
     /** 我的 AI 身份(home 契约：主 Key 明文 + 场景 Key 列表 + 可见模型；管理员创建制，未开通 opened=false) */
@@ -202,18 +200,16 @@ declare namespace Api {
       gatewayUrl: string;
     };
 
-    /** 用户侧可见模型(模型广场契约:active+published+按发布可见性过滤,含 anthropic 变体标注) */
+    /** 用户侧可见模型(模型广场契约:active+published+按发布可见性过滤) */
     type ActiveModel = {
       modelId: CommonType.IdType;
       modelKey: string;
-      modelKeyAnthropic: string;
       name: string;
       category: string;
       description: string;
       logoProviderType: string;
       capabilities: string[];
       requiresApproval: boolean;
-      hasAnthropicDeployment: boolean;
     };
 
     // ───────────────── MCP 服务器 MCPServer(AI 市场 P2) ─────────────────

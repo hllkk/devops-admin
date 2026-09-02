@@ -1,5 +1,5 @@
 <script setup lang="tsx">
-import { onMounted, ref } from 'vue';
+import { onActivated, onMounted, ref } from 'vue';
 import { NButton, NTag, NTime } from 'naive-ui';
 import type { DataTableRowKey } from 'naive-ui';
 import {
@@ -200,8 +200,18 @@ async function handleReviewSubmit() {
   getData();
 }
 
+// 菜单 IsCache=0 → 页面被 KeepAlive 缓存,切回标签页不会重挂载,须在 activated 时
+// 重拉列表(如用户刚在模型广场提交了申请);首次挂载后紧随的 activated 与 onMounted
+// 同帧,跳过避免双请求。未缓存场景 activated 不触发,仍走 onMounted 兜底。
+let mountedLoaded = false;
 onMounted(() => {
+  mountedLoaded = true;
   getData();
+});
+
+onActivated(() => {
+  if (!mountedLoaded) getData();
+  mountedLoaded = false;
 });
 </script>
 
