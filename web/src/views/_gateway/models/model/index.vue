@@ -135,63 +135,70 @@ function openRouterSettings() {
         @update:value="getModelData"
       />
       <NSpin :show="modelLoading" size="small">
-        <div class="flex flex-col gap-4px overflow-y-auto" style="max-height: calc(100vh - 300px)">
-          <template v-for="group in groupedModels" :key="group.label">
-            <div class="sticky top-0 z-1 bg-white py-4px text-11px font-500 text-slate-400 dark:bg-[#18181c]">
-              {{ group.label }} · {{ group.models.length }}
-            </div>
-            <div
-              v-for="row in group.models"
-              :key="row.modelId"
-              class="model-item"
-              :class="{ 'is-selected': selectedModel?.modelId === row.modelId }"
-              :data-model-id="row.modelId"
-              @click="selectedModel = row"
-            >
-              <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
-                <SvgIcon :local-icon="getProviderIcon(row.logoProviderType)" class="h-24px w-24px" />
+        <NScrollbar style="max-height: calc(100vh - 300px)">
+          <div class="flex flex-col gap-4px py-4px">
+            <template v-for="group in groupedModels" :key="group.label">
+              <div class="sticky top-0 z-1 bg-white py-4px text-11px font-500 text-slate-400 dark:bg-[#18181c]">
+                {{ group.label }} · {{ group.models.length }}
               </div>
-              <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-6px">
-                  <span class="truncate text-13px font-500">{{ row.name }}</span>
-                  <span v-if="!row.isActive" class="shrink-0 rounded bg-slate-100 px-4px text-10px text-slate-400 dark:bg-slate-800">
-                    {{ $t('page.gateway.common.inactive') }}
-                  </span>
-                  <span
-                    v-else-if="!row.isPublished"
-                    class="shrink-0 rounded bg-slate-100 px-4px text-10px text-slate-400 dark:bg-slate-800"
-                  >
-                    {{ $t('page.gateway.common.unpublished') }}
-                  </span>
+              <div
+                v-for="row in group.models"
+                :key="row.modelId"
+                class="model-item"
+                :class="{ 'is-selected': selectedModel?.modelId === row.modelId }"
+                :data-model-id="row.modelId"
+                @click="selectedModel = row"
+              >
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
+                  <SvgIcon :local-icon="getProviderIcon(row.logoProviderType)" class="h-24px w-24px" />
                 </div>
-                <span class="text-11px text-slate-400">
-                  {{ row.modelKey || $t('page.gateway.model.modelKeyUnset') }} · {{ row.activeDeploymentCount ?? 0 }}/{{ row.deploymentCount ?? 0 }}
-                  {{ $t('page.gateway.deployment.manageTitle') }}
-                </span>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-6px">
+                    <NEllipsis class="min-w-0 flex-1 text-13px font-500">{{ row.name }}</NEllipsis>
+                    <span v-if="!row.isActive" class="shrink-0 rounded bg-slate-100 px-4px text-10px text-slate-400 dark:bg-slate-800">
+                      {{ $t('page.gateway.common.inactive') }}
+                    </span>
+                    <span
+                      v-else-if="!row.isPublished"
+                      class="shrink-0 rounded bg-slate-100 px-4px text-10px text-slate-400 dark:bg-slate-800"
+                    >
+                      {{ $t('page.gateway.common.unpublished') }}
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-4px text-11px text-slate-400">
+                    <NEllipsis class="min-w-0 flex-1">
+                      {{ row.modelKey || $t('page.gateway.model.modelKeyUnset') }}
+                    </NEllipsis>
+                    <span class="shrink-0">
+                      · {{ row.activeDeploymentCount ?? 0 }}/{{ row.deploymentCount ?? 0 }}
+                      {{ $t('page.gateway.deployment.manageTitle') }}
+                    </span>
+                  </div>
+                </div>
+                <div class="flex-center gap-12px" @click.stop>
+                  <ButtonIcon
+                    text
+                    type="primary"
+                    size="small"
+                    icon="material-symbols:drive-file-rename-outline-outline"
+                    :tooltip-content="$t('common.edit')"
+                    @click="handleEdit(row)"
+                  />
+                  <ButtonIcon
+                    text
+                    type="error"
+                    size="small"
+                    icon="material-symbols:delete-outline"
+                    :tooltip-content="$t('common.delete')"
+                    :popconfirm-content="$t('common.confirmDelete')"
+                    @positive-click="handleDelete(row)"
+                  />
+                </div>
               </div>
-              <div class="flex-center gap-12px" @click.stop>
-                <ButtonIcon
-                  text
-                  type="primary"
-                  size="small"
-                  icon="material-symbols:drive-file-rename-outline-outline"
-                  :tooltip-content="$t('common.edit')"
-                  @click="handleEdit(row)"
-                />
-                <ButtonIcon
-                  text
-                  type="error"
-                  size="small"
-                  icon="material-symbols:delete-outline"
-                  :tooltip-content="$t('common.delete')"
-                  :popconfirm-content="$t('common.confirmDelete')"
-                  @positive-click="handleDelete(row)"
-                />
-              </div>
-            </div>
-          </template>
-          <NEmpty v-if="!modelLoading && !modelList.length" :description="$t('common.noData')" class="py-24px" />
-        </div>
+            </template>
+            <NEmpty v-if="!modelLoading && !modelList.length" :description="$t('common.noData')" class="py-24px" />
+          </div>
+        </NScrollbar>
       </NSpin>
     </template>
     <div class="h-full flex-col-stretch overflow-hidden">

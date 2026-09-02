@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"gorm.io/datatypes"
@@ -423,6 +424,33 @@ func (s *DeploymentService) DeleteDeployments(ctx context.Context, ids []int64) 
 	return global.OPS_DB.WithContext(ctx).Where("deployment_id IN ?", ids).Delete(&gateway.ModelDeployment{}).Error
 }
 
+// asrProbeAudio 语音识别连通性探测用的极小静音 wav(data URL 形态，0.1s 8kHz 单声道 16bit)。
+const asrProbeAudio = "data:audio/wav;base64,UklGRmQGAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YUAGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+
+// speechRecognitionKeywords 语音识别类能力标签关键词(小写包含匹配，覆盖中英文常见写法)。
+// 语音识别模型不可用纯文本 ping 探测：上游业务校验要求消息含 input_audio part。
+var speechRecognitionKeywords = []string{"语音识别", "语音转", "语音听", "语音输入", "asr", "stt", "transcri", "speech"}
+
+// isSpeechRecognitionModel 能力标签含语音识别类关键词(标签为用户自由输入，按启发式识别)。
+func isSpeechRecognitionModel(capabilitiesJSON datatypes.JSON) bool {
+	if len(capabilitiesJSON) == 0 {
+		return false
+	}
+	var caps []string
+	if err := json.Unmarshal(capabilitiesJSON, &caps); err != nil {
+		return false
+	}
+	for _, capability := range caps {
+		s := strings.ToLower(capability)
+		for _, kw := range speechRecognitionKeywords {
+			if strings.Contains(s, kw) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // TestDeployment 部署连通性测试(管理员视角)：master key 经 LiteLLM 数据面按 category 分流，
 // 测 routable 形态路由名；错误分类+技术详情脱敏。
 func (s *DeploymentService) TestDeployment(ctx context.Context, req gatewayReq.DeploymentTestParams) (gatewayResp.DeploymentTestResult, error) {
@@ -439,6 +467,7 @@ func (s *DeploymentService) TestDeployment(ctx context.Context, req gatewayReq.D
 		return gatewayResp.DeploymentTestResult{}, litellm.ErrNotConfigured
 	}
 	routeName := BuildModelRouteName(model.ModelKey, true)
+	isASR := isSpeechRecognitionModel(model.Capabilities)
 
 	var path string
 	var body map[string]any
@@ -451,7 +480,22 @@ func (s *DeploymentService) TestDeployment(ctx context.Context, req gatewayReq.D
 		body = map[string]any{"model": routeName, "query": "test", "documents": []string{"test"}}
 	default: // chat 及其余类别按对话端点探测
 		path = "/v1/chat/completions"
-		body = map[string]any{"model": routeName, "messages": []map[string]any{{"role": "user", "content": "ping"}}, "max_tokens": 1}
+		if isASR {
+			// 语音识别模型：消息须含 input_audio part(OpenAI 兼容格式)，纯文本 ping 被上游 400
+			body = map[string]any{
+				"model":      routeName,
+				"max_tokens": 16,
+				"messages": []map[string]any{{
+					"role": "user",
+					"content": []map[string]any{{
+						"type":        "input_audio",
+						"input_audio": map[string]any{"data": asrProbeAudio, "format": "wav"},
+					}},
+				}},
+			}
+		} else {
+			body = map[string]any{"model": routeName, "messages": []map[string]any{{"role": "user", "content": "ping"}}, "max_tokens": 1}
+		}
 	}
 
 	start := time.Now()
@@ -466,6 +510,10 @@ func (s *DeploymentService) TestDeployment(ctx context.Context, req gatewayReq.D
 		return gatewayResp.DeploymentTestResult{Success: true, LatencyMs: latency}, nil
 	}
 	category, msg := classifyUpstreamError(status)
+	if isASR && status == 400 {
+		// anthropic 协议通道会丢弃 input_audio part，语音识别部署必须走 OpenAI 兼容端点
+		msg += "；语音识别部署须走 OpenAI 兼容端点，请核对该部署凭证的 api_base 与格式(openai)"
+	}
 	return gatewayResp.DeploymentTestResult{Success: false, LatencyMs: latency,
 		ErrorCategory: category, Message: msg,
 		TechnicalDetail: SanitizeTechnicalDetail(string(respBody))}, nil

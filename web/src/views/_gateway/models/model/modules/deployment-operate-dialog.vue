@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { jsonClone } from '@sa/utils';
 import {
   fetchCreateDeployment,
@@ -117,11 +117,6 @@ async function loadCredentials(pid: CommonType.IdType | null) {
   }
 }
 
-onMounted(() => {
-  loadProviders();
-  loadCredentials(null);
-});
-
 function handleProviderChange(val: CommonType.IdType | null) {
   formModel.value.credentialId = null;
   loadCredentials(val);
@@ -138,6 +133,9 @@ async function handleUpdateModelWhenEdit() {
   vendorModel.value = '';
   routeKey.value = '';
   providerId.value = null;
+
+  // 每次打开都拉最新供应商/凭证列表(此前只在挂载时拉一次，新增供应商后不刷新页面看不到)
+  await loadProviders();
 
   if (props.operateType === 'edit' && props.rowData) {
     Object.assign(formModel.value, jsonClone(props.rowData));
@@ -157,6 +155,7 @@ async function handleUpdateModelWhenEdit() {
     expandedNames.value = computeExpandedNames();
   } else {
     expandedNames.value = [];
+    await loadCredentials(null);
   }
 }
 

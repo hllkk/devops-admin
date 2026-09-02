@@ -241,7 +241,7 @@ function handleDrawerSubmitted() {
     </template>
     <template #header-extra>
       <NSpace :size="8">
-        <NButton size="small" @click="publishVisible = true">
+        <NButton v-if="deploymentList.length" size="small" @click="publishVisible = true">
           <template #icon>
             <icon-material-symbols-publish class="text-icon" />
           </template>
