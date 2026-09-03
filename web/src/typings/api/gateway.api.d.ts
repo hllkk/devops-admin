@@ -1045,5 +1045,176 @@ declare namespace Api {
         provider?: string | null;
       } & Api.Common.CommonSearchParams
     >;
+
+    // ───────────────── 覆盖率/采用度 Adoption(P3·决策层视角) ─────────────────
+
+    /** 采用度查询(与成本分析同筛选面,仅用时间/部门字段;dimension/sort 在本域无意义) */
+    type AdoptionSearchParams = CostSearchParams;
+
+    /** 采用度 KPI(口径:激活=期内有 LLM/MCP 调用的启用用户;分母=全部启用用户) */
+    type AdoptionKpi = {
+      totalUsers: number;
+      activeUsers: number;
+      coverage: number;
+      coverageChange: number;
+      newActiveUsers: number;
+      prevActiveUsers: number;
+      totalRequests: number;
+      dailyRequests: number;
+      perCapitaTokens: number;
+      days: number;
+    };
+
+    /** DAU 趋势项(按业务日,活跃为 LLM∪MCP 去重) */
+    type AdoptionTrendItem = {
+      date: string;
+      activeUsers: number;
+      requests: number;
+    };
+
+    /** 采用度总览(KPI+DAU 趋势) */
+    type AdoptionOverview = {
+      kpi: AdoptionKpi;
+      trend: AdoptionTrendItem[];
+    };
+
+    /** 部门覆盖率行(含零调用部门;消耗含部门 Key,直挂口径) */
+    type AdoptionDeptRow = {
+      deptId: CommonType.IdType;
+      deptName: string;
+      memberCount: number;
+      activeCount: number;
+      coverage: number;
+      requests: number;
+      totalTokens: number;
+      internalCost: number;
+    };
+
+    /** 部门成员行(含未激活成员,兼未使用人员清单) */
+    type AdoptionUserRow = {
+      userId: CommonType.IdType;
+      userName: string;
+      active: boolean;
+      requests: number;
+      totalTokens: number;
+      internalCost: number;
+      lastActiveAt: string;
+    };
+
+    /** 模型分布行(LLM 维) */
+    type AdoptionModelRow = {
+      model: string;
+      requests: number;
+      requestShare: number;
+      totalTokens: number;
+      internalCost: number;
+      costShare: number;
+      activeUsers: number;
+    };
+
+    // ───────────────── 健康检查 Health(P3·管理员/运维视角) ─────────────────
+
+    /** 状态卡(MCP 上游/模型部署;分母=启用实体数) */
+    type HealthCard = {
+      total: number;
+      healthy: number;
+      unhealthy: number;
+      unknown: number;
+    };
+
+    /** 基础组件状态项(litellm/postgresql/redis) */
+    type HealthComponentItem = {
+      name: string;
+      status: string;
+      latencyMs: number;
+      message: string;
+    };
+
+    /** 数据回流新鲜度(游标 updated_at 判定) */
+    type HealthFreshness = {
+      status: string;
+      llmSyncAt: string;
+      mcpSyncAt: string;
+      lastSyncAt: string;
+      thresholdMinutes: number;
+      staleWarnMinutes: number;
+    };
+
+    /** MCP 上游明细行(读巡检落库) */
+    type HealthMcpItem = {
+      mcpServerId: CommonType.IdType;
+      name: string;
+      serverName: string;
+      healthStatus: string;
+      lastHealthCheck: string;
+      healthCheckError: string;
+    };
+
+    /** 模型部署明细行(路由组级结论,同组部署状态一致) */
+    type HealthDeploymentItem = {
+      deploymentId: CommonType.IdType;
+      modelName: string;
+      modelKey: string;
+      deployName: string;
+      healthStatus: string;
+      lastHealthCheck: string;
+      healthCheckError: string;
+    };
+
+    /** 健康检查汇总(四卡+三块明细) */
+    type HealthSummary = {
+      mcp: HealthCard;
+      deployment: HealthCard;
+      components: HealthComponentItem[];
+      freshness: HealthFreshness;
+      mcpItems: HealthMcpItem[];
+      deploymentItems: HealthDeploymentItem[];
+      checkedAt: string;
+    };
+
+    // ───────────────── 效能报告 EfficiencyReport(P3·管理员/决策层视角) ─────────────────
+
+    /** 报告 KPI = 采用度 KPI + 成本三数(平铺) */
+    type ReportKpi = AdoptionKpi & {
+      internalCost: number;
+      externalCost: number;
+      costDiff: number;
+    };
+
+    /** 报告结构化内容(content 列 JSON 形态) */
+    type ReportContent = {
+      kpi: ReportKpi;
+      deptRows: AdoptionDeptRow[];
+      modelRows: AdoptionModelRow[];
+      topUsers: CostDetailRow[];
+    };
+
+    /** 报告视图(列表不带 content/contentMd,详情才带) */
+    type EfficiencyReportView = {
+      reportId: CommonType.IdType;
+      reportType: 'weekly' | 'monthly' | 'custom';
+      periodStart: string;
+      periodEnd: string;
+      summary: string;
+      content?: ReportContent;
+      contentMd?: string;
+      createdBy: CommonType.IdType;
+      creatorName: string;
+      createdAt: string;
+    };
+
+    /** 报告列表查询 */
+    type ReportSearchParams = CommonType.RecordNullable<
+      {
+        reportType?: 'weekly' | 'monthly' | 'custom' | null;
+      } & Api.Common.CommonSearchParams
+    >;
+
+    /** 手动生成报告参数 */
+    type ReportGenerateParams = {
+      reportType: 'weekly' | 'monthly' | 'custom';
+      startDate?: string | null;
+      endDate?: string | null;
+    };
   }
 }

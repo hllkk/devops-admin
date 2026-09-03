@@ -1,6 +1,8 @@
 package gateway
 
 import (
+	"time"
+
 	"github.com/hllkk/devops-admin/server/global"
 	"gorm.io/datatypes"
 )
@@ -40,6 +42,13 @@ const (
 	VisibilityTypeMixed    = "mixed"    // 部门+用户混合可见(两张投影表并集，部门/用户至少一项)
 )
 
+// 模型部署健康状态(巡检按模型路由组探测,结论写组内全部启用部署;常量口径与 MCP 三态对齐)
+const (
+	DeploymentHealthUnknown   = "unknown"   // 未检测(从未巡检)
+	DeploymentHealthHealthy   = "healthy"   // 路由组探测连通
+	DeploymentHealthUnhealthy = "unhealthy" // 路由组探测失败
+)
+
 // 路由池命名后缀(禁用=改名出池+active 双写，litellm_model_id 永不变保归因锚点)。
 // 协议差异不再进入路由名：openai/anthropic 部署同名混组 LB，协议只体现在
 // litellm_params.model 的供应商前缀(anthropic/xxx)，调用方一律用纯模型名。
@@ -67,6 +76,9 @@ type ModelDeployment struct {
 	MonthlyCallQuota *int           `json:"monthlyCallQuota" gorm:"comment:月调用配额(nil=不限)"`                                           // 月配额
 	MonthlyCallUsed  int            `json:"monthlyCallUsed" gorm:"default:0;comment:月已用次数"`                                          // 月已用
 	IsActive         bool           `json:"isActive" gorm:"default:true;comment:是否启用"`                                               // 是否启用
+	HealthStatus     string         `json:"healthStatus" gorm:"size:20;default:unknown;comment:健康状态(unknown/healthy/unhealthy,按模型路由组巡检)"` // 健康状态(路由组级结论,见 HealthService)
+	LastHealthCheck  *time.Time     `json:"lastHealthCheck" gorm:"comment:最后健康检查时间"`                                                 // 最后巡检时间
+	HealthCheckError string         `json:"healthCheckError" gorm:"type:text;comment:健康检查错误信息"`                                          // 巡检失败信息(脱敏)
 }
 
 func (ModelDeployment) TableName() string {

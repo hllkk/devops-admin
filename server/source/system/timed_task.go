@@ -58,6 +58,9 @@ func (i *initTimedTask) InitializeData(ctx context.Context) (context.Context, er
 		{Name: "SyncProviderBalances", Description: "同步供应商套餐余量(百炼TokenPlan坐席+共享包,旁路只读,失败不阻断)", Spec: "17 8 * * *", ExecutorType: sysModel.TimedTaskExecutorMethod, MethodName: "SyncProviderBalances", Enabled: true},
 		{Name: "ResyncAiKeys", Description: "全量重推AI密钥投影到LiteLLM(改名级联/授权对齐同步失败的漂移兜底)", Spec: "37 3 * * *", ExecutorType: sysModel.TimedTaskExecutorMethod, MethodName: "ResyncAiKeys", Enabled: true},
 		{Name: "HealthCheckMcps", Description: "MCP服务器健康巡检(全量启用经LiteLLM探测落库,仅新库生效;已有库请在定时任务面板手动创建)", Spec: "23 * * * *", ExecutorType: sysModel.TimedTaskExecutorMethod, MethodName: "HealthCheckMcps", Enabled: true},
+		{Name: "HealthCheckDeployments", Description: "模型部署健康巡检(按模型路由组经LiteLLM数据面ping落库,与MCP巡检错峰;仅新库生效,已有库请在定时任务面板手动创建)", Spec: "43 * * * *", ExecutorType: sysModel.TimedTaskExecutorMethod, MethodName: "HealthCheckDeployments", Enabled: true},
+		{Name: "GenerateWeeklyEfficiencyReport", Description: "生成上周效能周报(模板化数据报告,同周幂等,生成后站内通知管理员;仅新库生效,已有库请在定时任务面板手动创建)", Spec: "13 8 * * 1", ExecutorType: sysModel.TimedTaskExecutorMethod, MethodName: "GenerateWeeklyEfficiencyReport", Enabled: true},
+		{Name: "GenerateMonthlyEfficiencyReport", Description: "生成上月效能月报(模板化数据报告,同月幂等,生成后站内通知管理员;仅新库生效,已有库请在定时任务面板手动创建)", Spec: "23 8 1 * *", ExecutorType: sysModel.TimedTaskExecutorMethod, MethodName: "GenerateMonthlyEfficiencyReport", Enabled: true},
 		{Name: "TokenPlanMorningReport", Description: "TokenPlan晨报推送(工作日,排在8:17余量同步后用当天快照;策略未启用时不发,仅新库生效;已有库请在定时任务面板手动创建)", Spec: "33 8 * * 1-5", ExecutorType: sysModel.TimedTaskExecutorMethod, MethodName: "TokenPlanMorningReport", Enabled: true},
 		{Name: "SyncWecomContact", Description: "同步企业微信通讯录(部门/用户/岗位,默认关闭按需启用;仅新库生效,已有库请在定时任务面板手动创建)", Spec: "@daily", ExecutorType: sysModel.TimedTaskExecutorMethod, MethodName: "SyncWecomContact", Enabled: false},
 	}

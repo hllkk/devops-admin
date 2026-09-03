@@ -9,5 +9,6 @@
 见 `business/`（按需求一文件）+ `demand-index.md` 索引。
 
 ## 当前状态
-- 业务记忆持续积累中（见 `business/` 与 `demand-index.md`，截至 2026-07-15 已 11 条）；`long-term/` 暂空，待偏好沉淀后再提炼。
-- 当前主线：**system 权限管理基座**（用户/角色/菜单/部门/岗位/字典/系统设置/初始化向导/httpOnly cookie 认证/go-captcha 验证码）。服务器管理、AI 网关等业务模块为未来规划，尚未启动（见 `aiDoc/modules/business-modules.md`）。
+- 业务记忆持续积累中（见 `business/` 与 `demand-index.md`）；`long-term/` 暂空，待偏好沉淀后再提炼。
+- 当前主线：**AI 网关**（LiteLLM 底座 + Go 管理面）。P1 核心五件套、P2 AI 市场（MCP/Skill/资源审批）、P3 成本效能与预算管控（成本分析/多维预算/MCP 回流/覆盖率/健康检查/效能报告）已全部实现（2026-09-02，P3 各件多待运行时验证）；P4 安全策略与智能体为可选扩展未启动。system 权限基座此前已完成。
+- 其它待办：httpOnly 双 cookie 认证完整重构（设计已批准待实现，当前为单 x-token 简化实现）；企微公网回调 DMZ 部署（方案定稿待实施）；RustFS 私有文件预签名（上私有文件前硬性前置）。

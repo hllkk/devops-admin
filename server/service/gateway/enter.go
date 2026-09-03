@@ -13,6 +13,9 @@ type ServiceGroup struct {
 	UsageAggregateService
 	DashboardService
 	CostAnalysisService
+	AdoptionService
+	HealthService
+	ReportService
 	RouterSettingsService
 	ProviderBalanceService
 	ResourceApplicationService

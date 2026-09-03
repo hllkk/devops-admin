@@ -12,6 +12,9 @@ type RouterGroup struct {
 	UsageRouter
 	DashboardRouter
 	CostAnalysisRouter
+	AdoptionRouter
+	HealthRouter
+	ReportRouter
 	RouterSettingsRouter
 	ResourceApplicationRouter
 	MCPRouter
@@ -29,6 +32,9 @@ var (
 	usageApi          = v1.ApiGroupApp.GatewayApiGroup.UsageApi
 	dashboardApi      = v1.ApiGroupApp.GatewayApiGroup.DashboardApi
 	costAnalysisApi   = v1.ApiGroupApp.GatewayApiGroup.CostAnalysisApi
+	adoptionApi       = v1.ApiGroupApp.GatewayApiGroup.AdoptionApi
+	healthApi         = v1.ApiGroupApp.GatewayApiGroup.HealthApi
+	reportApi         = v1.ApiGroupApp.GatewayApiGroup.ReportApi
 	routerSettingsApi = v1.ApiGroupApp.GatewayApiGroup.RouterSettingsApi
 	providerBalanceApi = v1.ApiGroupApp.GatewayApiGroup.ProviderBalanceApi
 	applicationApi    = v1.ApiGroupApp.GatewayApiGroup.ResourceApplicationApi

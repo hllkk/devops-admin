@@ -100,6 +100,7 @@ func RegisterTables() {
 		gateway.SkillVisibility{},
 		gateway.SkillVisibilityUser{},
 		gateway.SkillUsageLog{},
+		gateway.EfficiencyReport{},
 	)
 
 	if err != nil {

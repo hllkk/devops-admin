@@ -278,6 +278,9 @@ const local: App.I18n.Schema = {
     'ai-audit_approval': '审批管理',
     'ai-audit_usage': '调用日志',
     'ai-audit_cost': '成本分析',
+    'ai-audit_adoption': '采用度',
+    'ai-audit_health': '健康检查',
+    'ai-audit_report': '效能报告',
     'ai-capability': 'AI能力',
     'ai-capability_mcp': 'MCP 管理',
     'ai-capability_skill': 'Skill 管理',
@@ -734,6 +737,150 @@ const local: App.I18n.Schema = {
             perCapita: '人均内部成本(¥)',
             operations: '操作'
           }
+        }
+      },
+      adoption: {
+        search: {
+          preset: '快捷时间',
+          dateRange: '时间范围',
+          department: '部门'
+        },
+        kpi: {
+          coverage: '总覆盖率',
+          coverageSubTip: '激活用户数 / 启用用户总数',
+          coverageTip: '激活用户 = 期间内有 LLM 或 MCP 调用的启用用户；分母 = 全部启用用户(含从未使用者)',
+          change: '环比',
+          newActive: '新增活跃',
+          newActiveTip: '本期激活且上一等长期间未激活的用户数',
+          prevActive: '上期活跃',
+          dailyRequests: '日均调用',
+          dailyRequestsTip: '期间总调用(LLM+MCP) ÷ 期间天数',
+          totalRequests: '期间总调用',
+          totalRequestsTip: 'LLM 与 MCP 调用数合计',
+          perCapitaTokens: '人均 Token',
+          perCapitaTokensTip: '期间总 token ÷ 激活用户数(活跃人均)'
+        },
+        trend: {
+          title: '活跃用户趋势',
+          active: '活跃用户',
+          requests: '调用数'
+        },
+        dept: {
+          title: '部门覆盖率',
+          expandTip: '展开行查看成员明细(含未使用人员)',
+          col: {
+            name: '部门',
+            member: '成员数',
+            active: '激活/成员',
+            coverage: '覆盖率',
+            requests: '调用数',
+            totalTokens: '总Token',
+            internalCost: '内部成本(¥)'
+          },
+          user: {
+            name: '成员',
+            status: '状态',
+            activeYes: '已激活',
+            activeNo: '未激活',
+            lastActive: '最后活跃'
+          }
+        },
+        model: {
+          title: '模型分布',
+          tip: '仅统计 LLM 调用(MCP 调用无模型概念)',
+          col: {
+            model: '模型',
+            requestShare: '调用占比',
+            costShare: '成本占比',
+            activeUsers: '活跃用户'
+          }
+        }
+      },
+      health: {
+        checkNow: '立即巡检',
+        checked: '巡检完成，共检查 {n} 个模型路由组',
+        checkedAt: '汇总时间',
+        card: {
+          mcp: 'MCP 上游',
+          deployment: '模型部署',
+          components: '基础组件',
+          freshness: '数据回流新鲜度',
+          total: '启用共 {n}'
+        },
+        status: {
+          healthy: '健康',
+          unhealthy: '异常',
+          unknown: '未检测'
+        },
+        freshness: {
+          warning: '迟滞',
+          danger: '停滞',
+          unknown: '无记录',
+          llm: 'LLM 回流游标',
+          mcp: 'MCP 回流游标',
+          lastSync: '最近推进',
+          tip: '按回流游标推进时间判定(任务每5分钟一跑,静默时段无日志不算停滞);≤10分钟=健康,≤60分钟=迟滞,更久=停滞'
+        },
+        tab: {
+          mcp: 'MCP 上游',
+          deployment: '模型部署',
+          component: '基础组件'
+        },
+        col: {
+          name: '名称',
+          serverName: '路由名',
+          model: '模型',
+          deployName: '部署名',
+          modelKey: '模型 ID',
+          status: '状态',
+          lastCheck: '最后检查',
+          error: '错误信息',
+          component: '组件',
+          latency: '耗时',
+          message: '信息'
+        }
+      },
+      report: {
+        listTitle: '效能报告',
+        detailTitle: '报告详情',
+        view: '查看',
+        timer: '定时任务',
+        copyMd: '复制 Markdown',
+        copySuccess: '已复制到剪贴板',
+        export: '导出 Excel',
+        emptyDetail: '点击列表行查看报告详情',
+        type: {
+          all: '全部',
+          weekly: '周报',
+          monthly: '月报',
+          custom: '自定义'
+        },
+        col: {
+          type: '类型',
+          period: '统计期',
+          summary: '摘要',
+          creator: '生成人',
+          operations: '操作'
+        },
+        kpi: {
+          internal: '内部成本(¥)',
+          external: '外部成本(¥)',
+          diff: '结算差额(¥)',
+          days: '统计天数'
+        },
+        tab: {
+          dept: '部门覆盖率',
+          model: '模型分布',
+          user: '用户 Top10'
+        },
+        generate: {
+          title: '生成报告',
+          weeklyTip: '统计上周一至上周日的完整周期',
+          monthlyTip: '统计上月 1 号至月末的完整周期',
+          rangeRequired: '自定义报告必须选择时间范围',
+          dateRange: '时间范围',
+          confirm: '生成',
+          success: '报告生成成功'
         }
       },
       mcp: {

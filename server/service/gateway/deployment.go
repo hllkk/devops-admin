@@ -451,6 +451,36 @@ func isSpeechRecognitionModel(capabilitiesJSON datatypes.JSON) bool {
 	return false
 }
 
+// buildModelProbe 模型路由组探测请求构造(TestDeployment 即时测试与 HealthService 定时巡检共用)。
+// 按模型类别分流端点；ASR 模型须带 input_audio part(纯文本 ping 被上游 400)。
+func buildModelProbe(model gateway.Model) (path string, body map[string]any) {
+	routeName := BuildModelRouteName(model.ModelKey, true)
+	switch model.Category {
+	case gateway.ModelCategoryEmbedding:
+		return "/v1/embeddings", map[string]any{"model": routeName, "input": "connectivity-test"}
+	case gateway.ModelCategoryRerank:
+		return "/v1/rerank", map[string]any{"model": routeName, "query": "test", "documents": []string{"test"}}
+	default: // chat 及其余类别按对话端点探测
+		if isSpeechRecognitionModel(model.Capabilities) {
+			// 语音识别模型：消息须含 input_audio part(OpenAI 兼容格式)，纯文本 ping 被上游 400
+			return "/v1/chat/completions", map[string]any{
+				"model":      routeName,
+				"max_tokens": 16,
+				"messages": []map[string]any{{
+					"role": "user",
+					"content": []map[string]any{{
+						"type":        "input_audio",
+						"input_audio": map[string]any{"data": asrProbeAudio, "format": "wav"},
+					}},
+				}},
+			}
+		}
+		return "/v1/chat/completions", map[string]any{
+			"model": routeName, "messages": []map[string]any{{"role": "user", "content": "ping"}}, "max_tokens": 1,
+		}
+	}
+}
+
 // TestDeployment 部署连通性测试(管理员视角)：master key 经 LiteLLM 数据面按 category 分流，
 // 测 routable 形态路由名；错误分类+技术详情脱敏。
 func (s *DeploymentService) TestDeployment(ctx context.Context, req gatewayReq.DeploymentTestParams) (gatewayResp.DeploymentTestResult, error) {
@@ -466,37 +496,8 @@ func (s *DeploymentService) TestDeployment(ctx context.Context, req gatewayReq.D
 	if cli == nil {
 		return gatewayResp.DeploymentTestResult{}, litellm.ErrNotConfigured
 	}
-	routeName := BuildModelRouteName(model.ModelKey, true)
+	path, body := buildModelProbe(model)
 	isASR := isSpeechRecognitionModel(model.Capabilities)
-
-	var path string
-	var body map[string]any
-	switch model.Category {
-	case gateway.ModelCategoryEmbedding:
-		path = "/v1/embeddings"
-		body = map[string]any{"model": routeName, "input": "connectivity-test"}
-	case gateway.ModelCategoryRerank:
-		path = "/v1/rerank"
-		body = map[string]any{"model": routeName, "query": "test", "documents": []string{"test"}}
-	default: // chat 及其余类别按对话端点探测
-		path = "/v1/chat/completions"
-		if isASR {
-			// 语音识别模型：消息须含 input_audio part(OpenAI 兼容格式)，纯文本 ping 被上游 400
-			body = map[string]any{
-				"model":      routeName,
-				"max_tokens": 16,
-				"messages": []map[string]any{{
-					"role": "user",
-					"content": []map[string]any{{
-						"type":        "input_audio",
-						"input_audio": map[string]any{"data": asrProbeAudio, "format": "wav"},
-					}},
-				}},
-			}
-		} else {
-			body = map[string]any{"model": routeName, "messages": []map[string]any{{"role": "user", "content": "ping"}}, "max_tokens": 1}
-		}
-	}
 
 	start := time.Now()
 	status, respBody, err := cli.RawPost(ctx, path, body)

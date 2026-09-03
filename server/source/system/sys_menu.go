@@ -443,6 +443,48 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			OrderNum:  3,
 			Module:    "gateway",
 		},
+		// 覆盖率/采用度(P3):总覆盖率/新增活跃/DAU/人均token+部门覆盖率明细(含零调用部门与未使用人员下钻)+模型分布;
+		// 决策层/管理员视角,user 角色不授(防普通用户拉全员使用名单)
+		{
+			ParentId:  menuNameMap["route.ai-audit"],
+			MenuName:  "route.ai-audit_adoption",
+			MenuType:  "C",
+			Path:      "ai-audit/adoption",
+			ApiPrefix: "/gateway/adoption, /gateway/adoption/*",
+			Component: "_gateway/ai-audit/adoption/index",
+			Icon:      "lucide:trending-up",
+			Visible:   "0",
+			OrderNum:  4,
+			Module:    "gateway",
+		},
+		// 健康检查(P3):MCP上游/模型部署探测落库+基础组件(LiteLLM/PG/Redis)+数据回流新鲜度四卡与明细;
+		// 管理员/运维视角,user 角色不授
+		{
+			ParentId:  menuNameMap["route.ai-audit"],
+			MenuName:  "route.ai-audit_health",
+			MenuType:  "C",
+			Path:      "ai-audit/health",
+			ApiPrefix: "/gateway/health, /gateway/health/*",
+			Component: "_gateway/ai-audit/health/index",
+			Icon:      "lucide:heart-pulse",
+			Visible:   "0",
+			OrderNum:  5,
+			Module:    "gateway",
+		},
+		// 效能报告(P3):周/月自动+手动生成的模板化数据报告(KPI/部门排行/Top用户/模型分布/环比),Excel 导出;
+		// 管理员/决策层视角,user 角色不授
+		{
+			ParentId:  menuNameMap["route.ai-audit"],
+			MenuName:  "route.ai-audit_report",
+			MenuType:  "C",
+			Path:      "ai-audit/report",
+			ApiPrefix: "/gateway/report, /gateway/report/*",
+			Component: "_gateway/ai-audit/report/index",
+			Icon:      "lucide:file-text",
+			Visible:   "0",
+			OrderNum:  6,
+			Module:    "gateway",
+		},
 	}
 	// 创建子菜单
 	if err = db.Create(&childMenus).Error; err != nil {

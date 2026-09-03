@@ -13,6 +13,9 @@ type ApiGroup struct {
 	UsageApi
 	DashboardApi
 	CostAnalysisApi
+	AdoptionApi
+	HealthApi
+	ReportApi
 	RouterSettingsApi
 	ProviderBalanceApi
 	ResourceApplicationApi
@@ -32,6 +35,9 @@ var (
 	usageAggregateService  = service.ServiceGroupApp.GatewayServiceGroup.UsageAggregateService
 	dashboardService       = service.ServiceGroupApp.GatewayServiceGroup.DashboardService
 	costAnalysisService    = service.ServiceGroupApp.GatewayServiceGroup.CostAnalysisService
+	adoptionService        = service.ServiceGroupApp.GatewayServiceGroup.AdoptionService
+	healthService          = service.ServiceGroupApp.GatewayServiceGroup.HealthService
+	reportService          = service.ServiceGroupApp.GatewayServiceGroup.ReportService
 	routerSettingsService  = service.ServiceGroupApp.GatewayServiceGroup.RouterSettingsService
 	providerBalanceService = service.ServiceGroupApp.GatewayServiceGroup.ProviderBalanceService
 	applicationService     = service.ServiceGroupApp.GatewayServiceGroup.ResourceApplicationService

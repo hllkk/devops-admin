@@ -64,6 +64,15 @@ export const generatedRoutes: GeneratedRoute[] = [
     },
     children: [
       {
+        name: 'ai-audit_adoption',
+        path: '/ai-audit/adoption',
+        component: 'view.ai-audit_adoption',
+        meta: {
+          title: 'ai-audit_adoption',
+          i18nKey: 'route.ai-audit_adoption'
+        }
+      },
+      {
         name: 'ai-audit_approval',
         path: '/ai-audit/approval',
         component: 'view.ai-audit_approval',
@@ -79,6 +88,24 @@ export const generatedRoutes: GeneratedRoute[] = [
         meta: {
           title: 'ai-audit_cost',
           i18nKey: 'route.ai-audit_cost'
+        }
+      },
+      {
+        name: 'ai-audit_health',
+        path: '/ai-audit/health',
+        component: 'view.ai-audit_health',
+        meta: {
+          title: 'ai-audit_health',
+          i18nKey: 'route.ai-audit_health'
+        }
+      },
+      {
+        name: 'ai-audit_report',
+        path: '/ai-audit/report',
+        component: 'view.ai-audit_report',
+        meta: {
+          title: 'ai-audit_report',
+          i18nKey: 'route.ai-audit_report'
         }
       },
       {

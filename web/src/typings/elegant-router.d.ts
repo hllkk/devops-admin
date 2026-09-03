@@ -22,8 +22,11 @@ declare module "@elegant-router/types" {
     "500": "/500";
     "admin": "/admin";
     "ai-audit": "/ai-audit";
+    "ai-audit_adoption": "/ai-audit/adoption";
     "ai-audit_approval": "/ai-audit/approval";
     "ai-audit_cost": "/ai-audit/cost";
+    "ai-audit_health": "/ai-audit/health";
+    "ai-audit_report": "/ai-audit/report";
     "ai-audit_usage": "/ai-audit/usage";
     "ai-capability": "/ai-capability";
     "ai-capability_mcp": "/ai-capability/mcp";
@@ -141,8 +144,11 @@ declare module "@elegant-router/types" {
     | "login"
     | "social-callback"
     | "user-center"
+    | "ai-audit_adoption"
     | "ai-audit_approval"
     | "ai-audit_cost"
+    | "ai-audit_health"
+    | "ai-audit_report"
     | "ai-audit_usage"
     | "ai-capability_mcp"
     | "ai-capability_skill"

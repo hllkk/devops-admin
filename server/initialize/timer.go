@@ -94,6 +94,16 @@ func Timer() {
 		_, err := (&gatewayService.McpService{}).HealthCheckAllMcps(ctx)
 		return err
 	})
+	task.Register("HealthCheckDeployments", "模型部署定时健康巡检(按模型路由组经LiteLLM数据面ping,结论写组内全部启用部署)", func(ctx context.Context, _ json.RawMessage) error {
+		_, err := (&gatewayService.HealthService{}).HealthCheckAllDeployments(ctx)
+		return err
+	})
+	task.Register("GenerateWeeklyEfficiencyReport", "生成上周效能周报(模板化数据报告,同周幂等;生成后站内通知管理员)", func(ctx context.Context, _ json.RawMessage) error {
+		return generateEfficiencyReport(ctx, "weekly")
+	})
+	task.Register("GenerateMonthlyEfficiencyReport", "生成上月效能月报(模板化数据报告,同月幂等;生成后站内通知管理员)", func(ctx context.Context, _ json.RawMessage) error {
+		return generateEfficiencyReport(ctx, "monthly")
+	})
 	task.Register("SyncWecomContact", "同步企业微信通讯录(部门/用户/岗位单向拉取,含复职恢复与离职停用;手动触发走部门管理页按钮)", func(ctx context.Context, _ json.RawMessage) error {
 		_, err := (&system.WecomContactService{}).SyncStructure(ctx)
 		return err
@@ -157,4 +167,26 @@ func Timer() {
 		}
 		return nil
 	})
+}
+
+// generateEfficiencyReport 定时报告路径：生成 + 站内通知管理员。
+// 发送在 initialize 闭包执行(service/gateway 不得引 service/system 防环,草稿模式同预算告警)。
+func generateEfficiencyReport(ctx context.Context, reportType string) error {
+	svc := &gatewayService.ReportService{}
+	view, err := svc.GenerateReport(ctx, reportType, "", "", 0)
+	if err != nil {
+		return err
+	}
+	draft := svc.BuildReportNotice(ctx, view)
+	if draft == nil {
+		return nil
+	}
+	if err := (&system.NotifySendService{}).Send(ctx, system.SendRequest{
+		Title: draft.Title, Content: draft.Content, Url: draft.Url,
+		TargetType: sysModel.NotifyPolicyTargetUsers, UserIds: draft.UserIds,
+		Channels: system.SendChannels{InApp: true},
+	}); err != nil {
+		logger.WithCtx(ctx).Mod("gateway").Err(err).Warn(fmt.Sprintf("效能报告 %d 通知发送失败", view.ReportId))
+	}
+	return nil
 }

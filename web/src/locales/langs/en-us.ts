@@ -282,6 +282,9 @@ const local: App.I18n.Schema = {
     'ai-audit_approval': 'Approval Management',
     'ai-audit_usage': 'Usage Logs',
     'ai-audit_cost': 'Cost Analysis',
+    'ai-audit_adoption': 'Adoption',
+    'ai-audit_health': 'Health Check',
+    'ai-audit_report': 'Efficiency Report',
     'ai-capability': 'AI Capabilities',
     'ai-capability_mcp': 'MCP Management',
     'ai-capability_skill': 'Skill Management',
@@ -738,6 +741,151 @@ const local: App.I18n.Schema = {
             perCapita: 'Per-capita Internal (¥)',
             operations: 'Actions'
           }
+        }
+      },
+      adoption: {
+        search: {
+          preset: 'Preset',
+          dateRange: 'Date Range',
+          department: 'Department'
+        },
+        kpi: {
+          coverage: 'Coverage Rate',
+          coverageSubTip: 'Active users / total enabled users',
+          coverageTip:
+            'Active user = an enabled user with at least one LLM or MCP call in the period; denominator = all enabled users (including never-used)',
+          change: 'MoM',
+          newActive: 'New Active Users',
+          newActiveTip: 'Users active this period but not in the previous period of equal length',
+          prevActive: 'Prev Active',
+          dailyRequests: 'Daily Avg Calls',
+          dailyRequestsTip: 'Total calls (LLM+MCP) of the period ÷ number of days',
+          totalRequests: 'Total Calls',
+          totalRequestsTip: 'Sum of LLM and MCP calls',
+          perCapitaTokens: 'Tokens per Capita',
+          perCapitaTokensTip: 'Total tokens ÷ active users (per active user)'
+        },
+        trend: {
+          title: 'Active Users Trend',
+          active: 'Active Users',
+          requests: 'Calls'
+        },
+        dept: {
+          title: 'Department Coverage',
+          expandTip: 'Expand a row to view members (including never-used)',
+          col: {
+            name: 'Department',
+            member: 'Members',
+            active: 'Active/Members',
+            coverage: 'Coverage',
+            requests: 'Calls',
+            totalTokens: 'Total Tokens',
+            internalCost: 'Internal Cost (¥)'
+          },
+          user: {
+            name: 'Member',
+            status: 'Status',
+            activeYes: 'Active',
+            activeNo: 'Inactive',
+            lastActive: 'Last Active'
+          }
+        },
+        model: {
+          title: 'Model Distribution',
+          tip: 'LLM calls only (MCP calls have no model concept)',
+          col: {
+            model: 'Model',
+            requestShare: 'Call Share',
+            costShare: 'Cost Share',
+            activeUsers: 'Active Users'
+          }
+        }
+      },
+      health: {
+        checkNow: 'Check Now',
+        checked: 'Health check completed, {n} model route groups checked',
+        checkedAt: 'Checked At',
+        card: {
+          mcp: 'MCP Upstream',
+          deployment: 'Model Deployments',
+          components: 'Core Components',
+          freshness: 'Data Sync Freshness',
+          total: '{n} enabled'
+        },
+        status: {
+          healthy: 'Healthy',
+          unhealthy: 'Unhealthy',
+          unknown: 'Unchecked'
+        },
+        freshness: {
+          warning: 'Stale',
+          danger: 'Stalled',
+          unknown: 'No Record',
+          llm: 'LLM Sync Cursor',
+          mcp: 'MCP Sync Cursor',
+          lastSync: 'Last Advanced',
+          tip: 'Judged by sync cursor advance time (task runs every 5 minutes; silent periods without logs do not count as stalled); ≤10min=healthy, ≤60min=stale, longer=stalled'
+        },
+        tab: {
+          mcp: 'MCP Upstream',
+          deployment: 'Model Deployments',
+          component: 'Core Components'
+        },
+        col: {
+          name: 'Name',
+          serverName: 'Route Name',
+          model: 'Model',
+          deployName: 'Deployment',
+          modelKey: 'Model ID',
+          status: 'Status',
+          lastCheck: 'Last Check',
+          error: 'Error',
+          component: 'Component',
+          latency: 'Latency',
+          message: 'Message'
+        }
+      },
+      report: {
+        listTitle: 'Efficiency Reports',
+        detailTitle: 'Report Detail',
+        view: 'View',
+        timer: 'Scheduled',
+        copyMd: 'Copy Markdown',
+        copySuccess: 'Copied to clipboard',
+        export: 'Export Excel',
+        emptyDetail: 'Click a list row to view report detail',
+        type: {
+          all: 'All',
+          weekly: 'Weekly',
+          monthly: 'Monthly',
+          custom: 'Custom'
+        },
+        col: {
+          type: 'Type',
+          period: 'Period',
+          summary: 'Summary',
+          creator: 'Creator',
+          operations: 'Actions'
+        },
+        kpi: {
+          internal: 'Internal Cost (¥)',
+          external: 'External Cost (¥)',
+          diff: 'Settlement Diff (¥)',
+          days: 'Days'
+        },
+        tab: {
+          dept: 'Department Coverage',
+          model: 'Model Distribution',
+          user: 'Top 10 Users'
+        },
+        generate: {
+          title: 'Generate Report',
+          weeklyTip: 'Covers the last full week (Monday to Sunday)',
+          monthlyTip: 'Covers the last full calendar month',
+          rangeRequired: 'Custom report requires a date range',
+          dateRange: 'Date Range',
+          confirm: 'Generate',
+          success: 'Report generated'
         }
       },
       mcp: {

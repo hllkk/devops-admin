@@ -914,6 +914,150 @@ declare namespace App {
               };
             };
           };
+          adoption: {
+            search: {
+              preset: string;
+              dateRange: string;
+              department: string;
+            };
+            kpi: {
+              coverage: string;
+              coverageSubTip: string;
+              coverageTip: string;
+              change: string;
+              newActive: string;
+              newActiveTip: string;
+              prevActive: string;
+              dailyRequests: string;
+              dailyRequestsTip: string;
+              totalRequests: string;
+              totalRequestsTip: string;
+              perCapitaTokens: string;
+              perCapitaTokensTip: string;
+            };
+            trend: {
+              title: string;
+              active: string;
+              requests: string;
+            };
+            dept: {
+              title: string;
+              expandTip: string;
+              col: {
+                name: string;
+                member: string;
+                active: string;
+                coverage: string;
+                requests: string;
+                totalTokens: string;
+                internalCost: string;
+              };
+              user: {
+                name: string;
+                status: string;
+                activeYes: string;
+                activeNo: string;
+                lastActive: string;
+              };
+            };
+            model: {
+              title: string;
+              tip: string;
+              col: {
+                model: string;
+                requestShare: string;
+                costShare: string;
+                activeUsers: string;
+              };
+            };
+          };
+          health: {
+            checkNow: string;
+            checked: string;
+            checkedAt: string;
+            card: {
+              mcp: string;
+              deployment: string;
+              components: string;
+              freshness: string;
+              total: string;
+            };
+            status: {
+              healthy: string;
+              unhealthy: string;
+              unknown: string;
+            };
+            freshness: {
+              warning: string;
+              danger: string;
+              unknown: string;
+              llm: string;
+              mcp: string;
+              lastSync: string;
+              tip: string;
+            };
+            tab: {
+              mcp: string;
+              deployment: string;
+              component: string;
+            };
+            col: {
+              name: string;
+              serverName: string;
+              model: string;
+              deployName: string;
+              modelKey: string;
+              status: string;
+              lastCheck: string;
+              error: string;
+              component: string;
+              latency: string;
+              message: string;
+            };
+          };
+          report: {
+            listTitle: string;
+            detailTitle: string;
+            view: string;
+            timer: string;
+            copyMd: string;
+            copySuccess: string;
+            export: string;
+            emptyDetail: string;
+            type: {
+              all: string;
+              weekly: string;
+              monthly: string;
+              custom: string;
+            };
+            col: {
+              type: string;
+              period: string;
+              summary: string;
+              creator: string;
+              operations: string;
+            };
+            kpi: {
+              internal: string;
+              external: string;
+              diff: string;
+              days: string;
+            };
+            tab: {
+              dept: string;
+              model: string;
+              user: string;
+            };
+            generate: {
+              title: string;
+              weeklyTip: string;
+              monthlyTip: string;
+              rangeRequired: string;
+              dateRange: string;
+              confirm: string;
+              success: string;
+            };
+          };
           mcp: {
             title: string;
             add: string;
