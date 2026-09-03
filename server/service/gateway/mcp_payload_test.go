@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	"gorm.io/datatypes"
+
 	"github.com/hllkk/devops-admin/server/model/gateway"
 )
 
@@ -41,6 +43,7 @@ func TestNormalizeMCPTransport(t *testing.T) {
 		{"streamable_http", "streamable_http", false},
 		{"streamableHttp", "streamable_http", false}, // AIHelms 风格归一
 		{"http", "streamable_http", false},
+		{"stdio", "stdio", false},
 		{"websocket", "", true},
 	}
 	for _, c := range cases {
@@ -53,8 +56,46 @@ func TestNormalizeMCPTransport(t *testing.T) {
 			t.Errorf("NormalizeMCPTransport(%q) = %q, want %q", c.in, got, c.want)
 		}
 	}
-	if litellmMCPTransport("sse") != "sse" || litellmMCPTransport("streamable_http") != "http" {
+	if litellmMCPTransport("sse") != "sse" || litellmMCPTransport("streamable_http") != "http" ||
+		litellmMCPTransport("stdio") != "stdio" {
 		t.Error("litellmMCPTransport 映射错误")
+	}
+}
+
+func TestValidMCPStdioCommand(t *testing.T) {
+	for _, ok := range []string{"deno", "docker", "node", "npx", "python", "python3", "uvx"} {
+		if !ValidMCPStdioCommand(ok) {
+			t.Errorf("ValidMCPStdioCommand(%q) = false, want true", ok)
+		}
+	}
+	// 任意二进制/带路径写法拒绝(与 LiteLLM 上游校验同清单同口径)
+	for _, bad := range []string{"", "/bin/echo", "bash", "./server", "python3.13", "Npx"} {
+		if ValidMCPStdioCommand(bad) {
+			t.Errorf("ValidMCPStdioCommand(%q) = true, want false", bad)
+		}
+	}
+}
+
+func TestBuildMCPEndpointSpec(t *testing.T) {
+	// http 型：url+鉴权照旧
+	row := gateway.MCPServer{Transport: gateway.MCPTransportStreamableHttp, Url: "https://h/mcp",
+		AuthType: gateway.MCPAuthBearerToken}
+	spec := BuildMCPEndpointSpec(&row, map[string]any{"auth_value": "t"})
+	if spec.Transport != "http" || spec.Url != "https://h/mcp" || spec.Command != "" || spec.Env != nil {
+		t.Errorf("http 型 spec 组装错误: %+v", spec)
+	}
+	// stdio 型：command/args/env，无 url/凭据
+	stdioRow := gateway.MCPServer{Transport: gateway.MCPTransportStdio, Command: "uvx",
+		Args: datatypes.JSON(`["mcp-server-fetch"]`)}
+	spec = BuildMCPEndpointSpec(&stdioRow, map[string]any{"TOKEN": "x"})
+	if spec.Transport != "stdio" || spec.Command != "uvx" || spec.Url != "" || spec.Credentials != nil {
+		t.Errorf("stdio 型 spec 组装错误: %+v", spec)
+	}
+	if len(spec.Args) != 1 || spec.Args[0] != "mcp-server-fetch" {
+		t.Errorf("stdio args 解析错误: %v", spec.Args)
+	}
+	if spec.Env["TOKEN"] != "x" {
+		t.Errorf("stdio env 组装错误: %v", spec.Env)
 	}
 }
 

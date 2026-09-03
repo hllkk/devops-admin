@@ -453,16 +453,45 @@ type MCPProbeResult struct {
 	Tools   json.RawMessage `json:"tools"`
 }
 
+// MCPEndpointSpec MCP 上游端点描述(test/connection、test/tools/list 探测共用)：
+// http/sse 型填 Url+AuthType+Credentials；stdio 型填 Command+Args+Env(子进程由
+// LiteLLM 容器托管)。Transport 为 LiteLLM 侧传输名(sse/http/stdio)。
+type MCPEndpointSpec struct {
+	Transport   string         // sse/http/stdio
+	Url         string         // http/sse 端点
+	AuthType    string         // http/sse 鉴权方式(none 不带凭据)
+	Credentials map[string]any // http/sse 凭据
+	Command     string         // stdio 启动命令(白名单运行时)
+	Args        []string       // stdio 启动参数
+	Env         map[string]any // stdio 环境变量(含敏感值)
+}
+
+// probeBody 组装探测请求体(stdio 不发 url，http/sse 不发 command)。
+func (s MCPEndpointSpec) probeBody() map[string]any {
+	body := map[string]any{"transport": s.Transport}
+	if s.Transport == "stdio" {
+		body["command"] = s.Command
+		if len(s.Args) > 0 {
+			body["args"] = s.Args
+		}
+		if len(s.Env) > 0 {
+			body["env"] = s.Env
+		}
+		return body
+	}
+	body["url"] = s.Url
+	if s.AuthType != "" && s.AuthType != "none" {
+		body["auth_type"] = s.AuthType
+		body["credentials"] = s.Credentials
+	}
+	return body
+}
+
 // TestMCPConnection MCP 服务器连通性测试（POST /mcp-rest/test/connection，LiteLLM
 // 服务端代理探测，平台不直连 MCP 端点、凭据不出管理面）。传输层错误返回 err；
 // 业务失败（status=error）返回 message 供健康检查落库。
-func (c *Client) TestMCPConnection(ctx context.Context, url, transport, authType string, credentials map[string]any) (message string, err error) {
-	body := map[string]any{"url": url, "transport": transport}
-	if authType != "" && authType != "none" {
-		body["auth_type"] = authType
-		body["credentials"] = credentials
-	}
-	status, respBody, err := c.RawPost(ctx, "/mcp-rest/test/connection", body)
+func (c *Client) TestMCPConnection(ctx context.Context, spec MCPEndpointSpec) (message string, err error) {
+	status, respBody, err := c.RawPost(ctx, "/mcp-rest/test/connection", spec.probeBody())
 	if err != nil {
 		return "", err
 	}
@@ -475,13 +504,8 @@ func (c *Client) TestMCPConnection(ctx context.Context, url, transport, authType
 
 // ListMCPToolsFromServer 拉取 MCP 服务器工具列表（POST /mcp-rest/test/tools/list，
 // 经 LiteLLM 服务端代理）。返回原始工具项（name/description/inputSchema...）。
-func (c *Client) ListMCPToolsFromServer(ctx context.Context, url, transport, authType string, credentials map[string]any) (tools []map[string]any, err error) {
-	body := map[string]any{"url": url, "transport": transport}
-	if authType != "" && authType != "none" {
-		body["auth_type"] = authType
-		body["credentials"] = credentials
-	}
-	status, respBody, err := c.RawPost(ctx, "/mcp-rest/test/tools/list", body)
+func (c *Client) ListMCPToolsFromServer(ctx context.Context, spec MCPEndpointSpec) (tools []map[string]any, err error) {
+	status, respBody, err := c.RawPost(ctx, "/mcp-rest/test/tools/list", spec.probeBody())
 	if err != nil {
 		return nil, err
 	}

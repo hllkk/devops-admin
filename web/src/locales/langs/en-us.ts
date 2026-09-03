@@ -74,6 +74,11 @@ const local: App.I18n.Schema = {
     yesOrNo: {
       yes: 'Yes',
       no: 'No'
+    },
+    iconPicker: {
+      searchPlaceholder: 'Search icon',
+      noMatch: 'No matching icon',
+      unset: 'Not set, click the icon to pick one'
     }
   },
   request: {
@@ -894,6 +899,7 @@ const local: App.I18n.Schema = {
         edit: 'Edit MCP Server',
         transportSse: 'SSE',
         transportHttp: 'Streamable HTTP',
+        transportStdio: 'Standard I/O (stdio)',
         authNone: 'No Auth',
         authApiKey: 'API Key',
         authBearer: 'Bearer Token',
@@ -912,6 +918,9 @@ const local: App.I18n.Schema = {
           serverName: 'Route Name',
           url: 'Endpoint URL',
           transport: 'Transport',
+          command: 'Command',
+          args: 'Args',
+          env: 'Env Vars',
           authType: 'Auth Type',
           authValue: 'Credentials',
           category: 'Category',
@@ -936,6 +945,12 @@ const local: App.I18n.Schema = {
             renameTip: 'Route name cannot be changed (client config and grant anchor are based on it)'
           },
           url: { required: 'Please enter the MCP endpoint URL' },
+          command: { required: 'Please select the stdio command' },
+          commandTip: 'The subprocess is hosted inside the LiteLLM container; only standard runtimes are allowed (whitelist aligned with upstream)',
+          argsPlaceholder: "e.g. -y {'@'}modelcontextprotocol/server-xxx",
+          envKeyPlaceholder: 'Variable name',
+          envValuePlaceholder: 'Value (empty = keep old)',
+          envTip: 'Env vars are credentials: AES-encrypted at rest and masked in UI; unchanged mask keeps the old value',
           authValue: 'Credential Value',
           authValuePlaceholder: 'Leave empty to keep the old value; enter a new value to override',
           valuesTip: 'Credentials are AES-encrypted at rest and masked in UI; unchanged mask keeps the old value',

@@ -1,6 +1,7 @@
 <script setup lang="tsx">
 import { onMounted, ref } from 'vue';
 import { NTag, NTooltip } from 'naive-ui';
+import IconUrl from '@/components/custom/icon-url.vue';
 import {
   fetchBatchDeleteMCPServer,
   fetchGetMCPServerList,
@@ -57,9 +58,12 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
         align: 'center',
         minWidth: 140,
         render: row => (
-          <div class="flex flex-col items-start">
-            <span class="font-500">{row.name}</span>
-            <span class="font-mono text-12px text-slate-400">{row.serverName}</span>
+          <div class="flex items-center justify-center gap-8px">
+            <IconUrl value={row.iconUrl} size={24} />
+            <div class="flex flex-col items-start">
+              <span class="font-500">{row.name}</span>
+              <span class="font-mono text-12px text-slate-400">{row.serverName}</span>
+            </div>
           </div>
         )
       },

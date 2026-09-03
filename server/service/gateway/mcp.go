@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"gorm.io/datatypes"
 	"gorm.io/gorm"
 
 	"github.com/hllkk/devops-admin/server/global"
@@ -334,13 +335,21 @@ func (s *McpService) UpdateMCPServer(ctx context.Context, req gatewayReq.MCPServ
 	if err != nil {
 		return gatewayResp.MCPServerView{}, err
 	}
-	// 凭据合并语义：none=清空；nil=未提交凭据域(保留旧值)；掩码回传=保留旧明文，新值=覆盖
+	// 凭据合并语义：none=清空；nil=未提交凭据域(保留旧值)；掩码回传=保留旧明文，新值=覆盖。
+	// stdio 例外：credentials 承载 env 变量(authType 恒 none)，不存在"切 none 清空"通道，
+	// nil=保留旧 env，否则掩码合并(同浅 merge 语义，env 键删除暂不支持，与凭据键一致)。
 	oldCredentials, err := s.decryptCredentials(old.Credentials)
 	if err != nil {
 		return gatewayResp.MCPServerView{}, err
 	}
 	var credentials map[string]any
 	switch {
+	case row.Transport == gateway.MCPTransportStdio:
+		if incomingCredentials == nil {
+			credentials = oldCredentials
+		} else {
+			credentials = MergeMCPCredentials(oldCredentials, incomingCredentials)
+		}
 	case row.AuthType == gateway.MCPAuthNone:
 		credentials = nil
 	case incomingCredentials == nil:
@@ -372,6 +381,8 @@ func (s *McpService) UpdateMCPServer(ctx context.Context, req gatewayReq.MCPServ
 			"name":                  row.Name,
 			"url":                   row.Url,
 			"transport":             row.Transport,
+			"command":               row.Command,
+			"args":                  row.Args,
 			"auth_type":             row.AuthType,
 			"credentials":           row.Credentials,
 			"description":           row.Description,
@@ -592,7 +603,7 @@ func (s *McpService) RefreshMCPTools(ctx context.Context, id int64) ([]gatewayRe
 	if err != nil {
 		return nil, err
 	}
-	remote, err := cli.ListMCPToolsFromServer(ctx, row.Url, litellmMCPTransport(row.Transport), row.AuthType, credentials)
+	remote, err := cli.ListMCPToolsFromServer(ctx, BuildMCPEndpointSpec(&row, credentials))
 	if err != nil {
 		return nil, fmt.Errorf("拉取工具列表失败: %w", err)
 	}
@@ -690,7 +701,7 @@ func (s *McpService) HealthCheckMCPServer(ctx context.Context, id int64) (gatewa
 		credentials, err := s.decryptCredentials(row.Credentials)
 		if err != nil {
 			checkErr = err.Error()
-		} else if message, err := cli.TestMCPConnection(ctx, row.Url, litellmMCPTransport(row.Transport), row.AuthType, credentials); err != nil {
+		} else if message, err := cli.TestMCPConnection(ctx, BuildMCPEndpointSpec(&row, credentials)); err != nil {
 			checkErr = err.Error()
 		} else if strings.HasPrefix(message, "success") {
 			status = gateway.MCPHealthHealthy
@@ -841,11 +852,47 @@ func (s *McpService) GetMCPConnectConfig(ctx context.Context, id int64, userId i
 // 内部工具
 // ----------------------------------------------------------------------------
 
-// validateOperate 操作参数校验与归一：名称/路由名/URL 必填，路由名合法+唯一(排除自身)，
-// 传输/鉴权/计费归一，凭据加密。返回待落库行与解密后凭据明文(投影用)。
+// validateOperate 操作参数校验与归一：名称/路由名必填，http/sse 型 URL 必填、stdio 型
+// command 必填且须过白名单(authType 恒 none，credentials 承载 env 变量)，路由名合法+唯一
+// (排除自身)，传输/鉴权/计费归一，凭据加密。返回待落库行与解密后凭据明文(投影用)。
 func (s *McpService) validateOperate(ctx context.Context, req gatewayReq.MCPServerOperateParams, excludeId int64) (*gateway.MCPServer, map[string]any, error) {
-	if req.Name == "" || req.ServerName == "" || req.Url == "" {
-		return nil, nil, errors.New("名称/路由名/端点URL不能为空")
+	if req.Name == "" || req.ServerName == "" {
+		return nil, nil, errors.New("名称/路由名不能为空")
+	}
+	transport, err := NormalizeMCPTransport(req.Transport)
+	if err != nil {
+		return nil, nil, err
+	}
+	var command string
+	var args datatypes.JSON
+	authType := req.AuthType
+	if authType == "" {
+		authType = gateway.MCPAuthNone
+	}
+	if transport == gateway.MCPTransportStdio {
+		// stdio：command 白名单前置拦截(子进程跑 LiteLLM 容器内，上游同清单)；
+		// authType 恒 none(env 即凭据通道，走 credentials 列同套加密/掩码/合并)
+		if req.Command == "" {
+			return nil, nil, errors.New("stdio 传输必须填写启动命令")
+		}
+		if !ValidMCPStdioCommand(req.Command) {
+			return nil, nil, errors.New("stdio 启动命令仅允许 deno/docker/node/npx/python/python3/uvx(LiteLLM 白名单)")
+		}
+		command = req.Command
+		args = marshalJSONStringSlice(req.Args)
+		authType = gateway.MCPAuthNone
+		req.Url = "" // 切换形态时清旧 url，不留脏数据
+	} else {
+		if req.Url == "" {
+			return nil, nil, errors.New("端点URL不能为空")
+		}
+		command = "" // 反向同理，清旧 stdio 字段
+	}
+	if !ValidMCPAuthType(authType) {
+		return nil, nil, errors.New("鉴权方式仅支持 none/api_key/bearer_token")
+	}
+	if authType != gateway.MCPAuthNone && len(req.Credentials) == 0 && excludeId == 0 {
+		return nil, nil, errors.New("启用鉴权时必须提供凭据")
 	}
 	if !ValidMCPServerName(req.ServerName) {
 		return nil, nil, errors.New("路由名仅允许字母/数字/下划线(LiteLLM 路由限制)")
@@ -860,20 +907,6 @@ func (s *McpService) validateOperate(ctx context.Context, req gatewayReq.MCPServ
 	}
 	if cnt > 0 {
 		return nil, nil, errors.New("该路由名已存在")
-	}
-	transport, err := NormalizeMCPTransport(req.Transport)
-	if err != nil {
-		return nil, nil, err
-	}
-	authType := req.AuthType
-	if authType == "" {
-		authType = gateway.MCPAuthNone
-	}
-	if !ValidMCPAuthType(authType) {
-		return nil, nil, errors.New("鉴权方式仅支持 none/api_key/bearer_token")
-	}
-	if authType != gateway.MCPAuthNone && len(req.Credentials) == 0 && excludeId == 0 {
-		return nil, nil, errors.New("启用鉴权时必须提供凭据")
 	}
 	billing := req.BillingType
 	if billing == "" {
@@ -892,6 +925,8 @@ func (s *McpService) validateOperate(ctx context.Context, req gatewayReq.MCPServ
 		ServerName:          req.ServerName,
 		Url:                 req.Url,
 		Transport:           transport,
+		Command:             command,
+		Args:                args,
 		AuthType:            authType,
 		Description:         req.Description,
 		Instructions:        req.Instructions,
@@ -1011,17 +1046,32 @@ func markMCPSyncState(ctx context.Context, db *gorm.DB, id int64, syncErr error)
 // allow_all_keys 恒 false——平台侧 Key.allowed_mcp_servers 是唯一授权凭证(AIHelms 坑规避)；
 // update 时 server_id 必带；create 时用自定义 server_id=gw_mcp_{雪花} 作归因锚点；
 // 无鉴权时显式下发 credentials:null 清残留；mcp_info 为 nil 时下发 null 清空计费投影。
+// stdio 型发 command/args/env(credentials 列此时存 env 键值对)，url/auth_type/credentials
+// 显式 null 清残留(transport 可编辑切换，不留旧形态字段)；http/sse 型反向同理(command:null)。
 func buildMCPLitellmBody(row *gateway.MCPServer, credentials map[string]any, toolCosts map[string]*float64, update bool) map[string]any {
 	body := map[string]any{
 		"server_name":    row.ServerName,
-		"url":            row.Url,
 		"transport":      litellmMCPTransport(row.Transport),
 		"allow_all_keys": false,
-		"auth_type":      row.AuthType,
-		"credentials":    nil, // 无鉴权/无凭据 → null 清残留
 	}
-	if row.AuthType != gateway.MCPAuthNone && len(credentials) > 0 {
-		body["credentials"] = credentials
+	if row.Transport == gateway.MCPTransportStdio {
+		body["url"] = nil
+		body["auth_type"] = nil
+		body["credentials"] = nil
+		body["command"] = row.Command
+		body["args"] = jsonToSlice(row.Args)
+		body["env"] = nil
+		if len(credentials) > 0 {
+			body["env"] = credentials
+		}
+	} else {
+		body["url"] = row.Url
+		body["auth_type"] = row.AuthType
+		body["credentials"] = nil // 无鉴权/无凭据 → null 清残留
+		body["command"] = nil
+		if row.AuthType != gateway.MCPAuthNone && len(credentials) > 0 {
+			body["credentials"] = credentials
+		}
 	}
 	if row.Description != "" {
 		body["description"] = row.Description

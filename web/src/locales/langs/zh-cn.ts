@@ -74,6 +74,11 @@ const local: App.I18n.Schema = {
     yesOrNo: {
       yes: '是',
       no: '否'
+    },
+    iconPicker: {
+      searchPlaceholder: '搜索图标',
+      noMatch: '无匹配图标',
+      unset: '未设置，点击左侧图标选择'
     }
   },
   request: {
@@ -889,6 +894,7 @@ const local: App.I18n.Schema = {
         edit: '编辑 MCP 服务器',
         transportSse: 'SSE',
         transportHttp: 'Streamable HTTP',
+        transportStdio: '标准 I/O (stdio)',
         authNone: '无鉴权',
         authApiKey: 'API Key',
         authBearer: 'Bearer Token',
@@ -907,6 +913,9 @@ const local: App.I18n.Schema = {
           serverName: '路由名',
           url: '端点 URL',
           transport: '传输协议',
+          command: '启动命令',
+          args: '启动参数',
+          env: '环境变量',
           authType: '鉴权方式',
           authValue: '鉴权凭据',
           category: '分类',
@@ -931,6 +940,12 @@ const local: App.I18n.Schema = {
             renameTip: '路由名不可修改(客户端接入配置与授权锚点均基于它)'
           },
           url: { required: '请输入 MCP 端点 URL' },
+          command: { required: '请选择 stdio 启动命令' },
+          commandTip: '子进程由 LiteLLM 容器托管，仅允许标准运行时(白名单与上游一致)',
+          argsPlaceholder: "如 -y {'@'}modelcontextprotocol/server-xxx",
+          envKeyPlaceholder: '变量名',
+          envValuePlaceholder: '值(留空=保留旧值)',
+          envTip: 'env 即凭据：AES 加密落库、界面仅回显掩码；掩码回传不变即保留旧值',
           authValue: '凭据值',
           authValuePlaceholder: '留空=保留旧值；输入新值=覆盖',
           valuesTip: '凭据 AES 加密落库、界面仅回显掩码；掩码回传不变即保留旧值',

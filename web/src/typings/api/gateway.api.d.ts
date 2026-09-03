@@ -215,7 +215,7 @@ declare namespace Api {
     // ───────────────── MCP 服务器 MCPServer(AI 市场 P2) ─────────────────
 
     /** MCP 传输协议(sse/streamable_http,下发 LiteLLM 时后者映射 http) */
-    type MCPTransport = 'sse' | 'streamable_http';
+    type MCPTransport = 'sse' | 'streamable_http' | 'stdio';
 
     /** MCP 鉴权方式(none 无凭据;api_key/bearer_token 凭据存 credentials.auth_value 密文) */
     type MCPAuthType = 'none' | 'api_key' | 'bearer_token';
@@ -248,11 +248,15 @@ declare namespace Api {
       name: string;
       /** LiteLLM 路由名(唯一,禁 '-',不可修改) */
       serverName: string;
-      /** MCP 端点 URL */
+      /** MCP 端点 URL(stdio 型为空) */
       url: string;
       transport: MCPTransport;
+      /** stdio 启动命令(白名单运行时;http/sse 型为空) */
+      command: string;
+      /** stdio 启动参数 */
+      args: string[] | null;
       authType: MCPAuthType;
-      /** 鉴权凭据(敏感值已掩码;auth_value 键) */
+      /** 鉴权凭据(敏感值已掩码;stdio 型承载 env 变量) */
       credentials: Record<string, string> | null;
       description: string;
       /** 使用说明(接入页展示) */
@@ -299,6 +303,8 @@ declare namespace Api {
         | 'serverName'
         | 'url'
         | 'transport'
+        | 'command'
+        | 'args'
         | 'authType'
         | 'credentials'
         | 'description'

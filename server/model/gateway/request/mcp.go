@@ -20,15 +20,19 @@ type MCPServerSearch struct {
 
 // MCPServerOperateParams MCP 服务器新增/修改(对齐前端 POST/PUT /gateway/mcp)。
 // create 时 mcpServerId 为空(雪花主键回调填充)；update 时必填。serverName 拒绝改名
-// (LiteLLM 路由键)；credentials 明文入网、密文落库——编辑回传掩码值=保留旧明文。
+// (LiteLLM 路由键)；credentials 明文入网、密文落库——编辑回传掩码值=保留旧明文；
+// http/sse 型 url 必填，stdio 型 command 必填(白名单运行时)、url 留空、authType 恒 none，
+// credentials 此时承载 env 变量(env 即凭据，同套加密/掩码/合并语义)。
 type MCPServerOperateParams struct {
 	McpServerId         int64          `json:"mcpServerId,string" form:"mcpServerId"` // 服务器ID(新增为空)
 	Name                string         `json:"name" form:"name"`                      // 展示名称
 	ServerName          string         `json:"serverName" form:"serverName"`          // LiteLLM 路由名(唯一,禁-)
-	Url                 string         `json:"url" form:"url"`                        // MCP 端点
-	Transport           string         `json:"transport" form:"transport"`            // 传输协议(sse/streamable_http)
-	AuthType            string         `json:"authType" form:"authType"`              // 鉴权方式(none/api_key/bearer_token)
-	Credentials         map[string]any `json:"credentials"`                           // 鉴权凭据(明文入网,掩码回传=保留旧值)
+	Url                 string         `json:"url" form:"url"`                        // MCP 端点(stdio 型留空)
+	Transport           string         `json:"transport" form:"transport"`            // 传输协议(sse/streamable_http/stdio)
+	Command             string         `json:"command" form:"command"`                // stdio 启动命令(白名单运行时)
+	Args                []string       `json:"args"`                                  // stdio 启动参数
+	AuthType            string         `json:"authType" form:"authType"`              // 鉴权方式(none/api_key/bearer_token;stdio 恒 none)
+	Credentials         map[string]any `json:"credentials"`                           // 鉴权凭据/stdio env变量(明文入网,掩码回传=保留旧值)
 	Description         string         `json:"description" form:"description"`        // 描述
 	Instructions        string         `json:"instructions" form:"instructions"`      // 使用说明
 	Category            string         `json:"category" form:"category"`              // 分类

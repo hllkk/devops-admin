@@ -13,6 +13,7 @@ import (
 // 本表存管理元数据。server_name 是 LiteLLM 路由键（唯一、禁 '-'，拒绝改名，对齐
 // credential_name）；litellm_server_id 是 LiteLLM 侧 server_id（归因锚点，永不重置）。
 // credentials 为 AES-256-GCM 密文 JSON（json:"-" 不出网，规避 AIHelms 明文落库+回显坑）；
+// http/sse 型存 {"auth_value":...}，stdio 型直接存 env 键值对（env 即凭据，同套加密/掩码/合并）；
 // 计费口径与模型部署一致：平台存 ¥，推送 LiteLLM 时按汇率换算 USD 写入
 // mcp_info.mcp_server_cost_info（usage 回流的 MCP 成本统计留 P3）。
 type MCPServer struct {
@@ -20,8 +21,10 @@ type MCPServer struct {
 	McpServerId      int64      `json:"mcpServerId,string" gorm:"primarykey;comment:MCP服务器ID(雪花)"`                     // MCP服务器ID(雪花)
 	Name             string     `json:"name" gorm:"size:128;comment:展示名称"`                                              // 展示名称
 	ServerName       string     `json:"serverName" gorm:"size:128;comment:LiteLLM路由名(唯一,禁-)"`                          // LiteLLM 路由名/键
-	Url              string     `json:"url" gorm:"type:text;comment:MCP端点URL"`                                          // MCP 端点
-	Transport        string     `json:"transport" gorm:"size:20;default:streamable_http;comment:传输协议(sse/streamable_http)"` // 传输协议
+	Url              string     `json:"url" gorm:"type:text;comment:MCP端点URL(stdio型为空)"`                               // MCP 端点
+	Transport        string     `json:"transport" gorm:"size:20;default:streamable_http;comment:传输协议(sse/streamable_http/stdio)"` // 传输协议
+	Command          string     `json:"command" gorm:"size:200;comment:stdio启动命令(白名单运行时,http型为空)"`                   // stdio 启动命令
+	Args             datatypes.JSON `json:"args" gorm:"type:jsonb;comment:stdio启动参数(JSON字符串数组)"`                       // stdio 启动参数
 	AuthType         string     `json:"authType" gorm:"size:20;default:none;comment:鉴权方式(none/api_key/bearer_token)"`       // 鉴权方式
 	Credentials      string     `json:"-" gorm:"type:text;comment:鉴权凭据(AES-256-GCM密文JSON,不序列化出网)"`                    // 鉴权凭据(密文)
 	Description      string     `json:"description" gorm:"type:text;comment:描述"`                                        // 描述
@@ -47,10 +50,13 @@ type MCPServer struct {
 	ToolCount        int64      `json:"toolCount" gorm:"-"`                                                             // 工具数(service填充,不入库)
 }
 
-// MCP 传输协议(LiteLLM 只支持 sse/http，streamable_http 归一映射 http 下发)
+// MCP 传输协议(LiteLLM 传输名：sse/http/stdio，streamable_http 归一映射 http 下发)。
+// stdio 型子进程由 LiteLLM 容器托管(命令白名单)，对外仍暴露 /{server_name}/mcp 统一端点，
+// 对授权/接入配置/日志回流完全透明；凭据走 env 变量(存 Credentials 列)。
 const (
 	MCPTransportSse            = "sse"             // SSE(服务端推送)
 	MCPTransportStreamableHttp = "streamable_http" // Streamable HTTP(默认)
+	MCPTransportStdio          = "stdio"           // 本地子进程(LiteLLM 容器内托管)
 )
 
 // MCP 鉴权方式(LiteLLM MCPAuth 枚举的常用子集，credentials 存 {"auth_value": "..."})

@@ -187,11 +187,15 @@ export const ROUTING_STRATEGY_OPTIONS = [
   { label: 'page.gateway.router.strategyUsageBased', value: 'usage-based-routing' }
 ] as const;
 
-/** MCP 传输协议选项(LiteLLM 侧 streamable_http 映射 http) */
+/** MCP 传输协议选项(LiteLLM 侧 streamable_http 映射 http;stdio 子进程由 LiteLLM 容器托管) */
 export const MCP_TRANSPORT_OPTIONS = [
   { label: 'page.gateway.mcp.transportSse', value: 'sse' },
-  { label: 'page.gateway.mcp.transportHttp', value: 'streamable_http' }
+  { label: 'page.gateway.mcp.transportHttp', value: 'streamable_http' },
+  { label: 'page.gateway.mcp.transportStdio', value: 'stdio' }
 ] as const;
+
+/** MCP stdio 启动命令白名单(与 LiteLLM 上游校验同清单:仅标准运行时,任意二进制拒绝) */
+export const MCP_STDIO_COMMAND_OPTIONS = ['deno', 'docker', 'node', 'npx', 'python', 'python3', 'uvx'] as const;
 
 /** MCP 鉴权方式选项 */
 export const MCP_AUTH_TYPE_OPTIONS = [

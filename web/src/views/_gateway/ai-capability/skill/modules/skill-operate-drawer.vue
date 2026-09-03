@@ -323,7 +323,7 @@ async function handleDownload() {
           />
         </NFormItem>
         <NFormItem :label="$t('page.gateway.skill.col.iconUrl')">
-          <NInput v-model:value="model.iconUrl" placeholder="https://..." />
+          <IconPicker v-model:value="model.iconUrl" />
         </NFormItem>
         <NFormItem :label="$t('page.gateway.skill.col.documentationUrl')">
           <NInput v-model:value="model.documentationUrl" placeholder="https://..." />

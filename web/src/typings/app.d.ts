@@ -387,6 +387,11 @@ declare namespace App {
           yes: string;
           no: string;
         };
+        iconPicker: {
+          searchPlaceholder: string;
+          noMatch: string;
+          unset: string;
+        };
       };
       request: {
         logout: string;
@@ -1064,6 +1069,7 @@ declare namespace App {
             edit: string;
             transportSse: string;
             transportHttp: string;
+            transportStdio: string;
             authNone: string;
             authApiKey: string;
             authBearer: string;
@@ -1082,6 +1088,9 @@ declare namespace App {
               serverName: string;
               url: string;
               transport: string;
+              command: string;
+              args: string;
+              env: string;
               authType: string;
               authValue: string;
               category: string;
@@ -1106,6 +1115,12 @@ declare namespace App {
                 renameTip: string;
               };
               url: { required: string };
+              command: { required: string };
+              commandTip: string;
+              argsPlaceholder: string;
+              envKeyPlaceholder: string;
+              envValuePlaceholder: string;
+              envTip: string;
               authValue: string;
               authValuePlaceholder: string;
               valuesTip: string;

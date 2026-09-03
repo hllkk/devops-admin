@@ -4,7 +4,7 @@ import type { SelectOption } from 'naive-ui';
 import { fetchCreateMCPServer, fetchGetMCPCategories, fetchUpdateMCPServer } from '@/service/api/gateway';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
 import { $t } from '@/locales';
-import { MCP_AUTH_TYPE_OPTIONS, MCP_BILLING_OPTIONS, MCP_TRANSPORT_OPTIONS } from '@/constants/business/gateway';
+import { MCP_AUTH_TYPE_OPTIONS, MCP_BILLING_OPTIONS, MCP_STDIO_COMMAND_OPTIONS, MCP_TRANSPORT_OPTIONS } from '@/constants/business/gateway';
 
 defineOptions({ name: 'MCPOperateDrawer' });
 
@@ -41,6 +41,8 @@ function createDefaultModel(): Model {
     serverName: '',
     url: '',
     transport: 'streamable_http',
+    command: '',
+    args: [],
     authType: 'none',
     credentials: {},
     description: '',
@@ -57,15 +59,21 @@ function createDefaultModel(): Model {
 }
 
 const transportOptions = MCP_TRANSPORT_OPTIONS.map(o => ({ label: $t(o.label), value: o.value }));
+const commandOptions = MCP_STDIO_COMMAND_OPTIONS.map(c => ({ label: c, value: c }));
 const authTypeOptions = MCP_AUTH_TYPE_OPTIONS.map(o => ({ label: $t(o.label), value: o.value }));
 const billingOptions = MCP_BILLING_OPTIONS.map(o => ({ label: $t(o.label), value: o.value }));
 
-/** 是否需要凭据(api_key/bearer_token)；none 无凭据 */
-const needsCredentials = computed(() => model.value.authType && model.value.authType !== 'none');
+/** stdio 型：本地子进程由 LiteLLM 容器托管，凭据走 env 变量 */
+const isStdio = computed(() => model.value.transport === 'stdio');
 
-const rules: Record<string, App.Global.FormRule> = {
+/** 是否需要凭据(api_key/bearer_token)；none 无凭据；stdio 恒 none */
+const needsCredentials = computed(() => !isStdio.value && model.value.authType && model.value.authType !== 'none');
+
+// computed：url/command 的必填星号随 transport 形态切换显隐(校验逻辑本身在 validator 内响应)
+const rules = computed<Record<string, App.Global.FormRule>>(() => ({
   name: createRequiredRule($t('page.gateway.mcp.form.name.required')),
   serverName: {
+    required: true,
     trigger: ['blur', 'change'],
     validator: (_rule: unknown, value: string) => {
       if (!value) return new Error($t('page.gateway.mcp.form.serverName.required'));
@@ -75,8 +83,41 @@ const rules: Record<string, App.Global.FormRule> = {
       return true;
     }
   },
-  url: createRequiredRule($t('page.gateway.mcp.form.url.required'))
-};
+  url: {
+    required: !isStdio.value,
+    trigger: ['blur', 'change'],
+    validator: (_rule: unknown, value: string) => {
+      if (isStdio.value) return true;
+      if (!value) return new Error($t('page.gateway.mcp.form.url.required'));
+      return true;
+    }
+  },
+  command: {
+    required: isStdio.value,
+    trigger: ['blur', 'change'],
+    validator: (_rule: unknown, value: string) => {
+      if (!isStdio.value) return true;
+      if (!value) return new Error($t('page.gateway.mcp.form.command.required'));
+      return true;
+    }
+  }
+}));
+
+/** stdio env 编辑行(从掩码凭据视图初始化；掩码原样回传=后端保留旧明文) */
+interface EnvRow {
+  key: string;
+  value: string;
+}
+
+const envRows = ref<EnvRow[]>([]);
+
+/** NDynamicInput 需可变数组(null 容忍双向收窄) */
+const argsInput = computed<string[]>({
+  get: () => model.value.args ?? [],
+  set: val => {
+    model.value.args = val;
+  }
+});
 
 /** 编辑态:凭据掩码回传=保留旧明文;填新值覆盖;清空切换 none 时置 null 清残留 */
 const authValue = ref('');
@@ -90,6 +131,8 @@ function initModel() {
       serverName: row.serverName,
       url: row.url,
       transport: row.transport,
+      command: row.command ?? '',
+      args: row.args ?? [],
       authType: row.authType,
       credentials: row.credentials ? { ...row.credentials } : {},
       description: row.description,
@@ -104,9 +147,12 @@ function initModel() {
       isActive: row.isActive
     };
     authValue.value = row.credentials?.auth_value ?? '';
+    // stdio:env 行从掩码凭据视图初始化(掩码回传=保留旧明文)
+    envRows.value = Object.entries(row.credentials ?? {}).map(([key, value]) => ({ key, value: String(value) }));
   } else {
     model.value = createDefaultModel();
     authValue.value = '';
+    envRows.value = [];
   }
 }
 
@@ -138,8 +184,17 @@ async function loadCategories() {
   }
 }
 
-/** 提交前组装凭据:none 显式清空;其余保留掩码回传的旧值并合并新输入的 auth_value */
+/** 提交前组装凭据:http 型 none 显式清空,其余保留掩码回传旧值并合并新输入 auth_value；
+ *  stdio 型组装 env 键值对(空=未提交保留旧值,掩码原样回传=保留旧明文) */
 function buildCredentials(): Record<string, string> | null {
+  if (isStdio.value) {
+    const credentials: Record<string, string> = {};
+    for (const item of envRows.value) {
+      const key = item.key.trim();
+      if (key) credentials[key] = item.value;
+    }
+    return Object.keys(credentials).length ? credentials : null;
+  }
   if (!needsCredentials.value) return null;
   const credentials: Record<string, string> = { ...model.value.credentials };
   if (authValue.value && !authValue.value.includes('****')) {
@@ -191,27 +246,51 @@ async function handleSubmit() {
         <p v-else class="mb-12px ml-110px text-12px text-slate-400">
           {{ $t('page.gateway.mcp.form.serverName.renameTip') }}
         </p>
-        <NFormItem :label="$t('page.gateway.mcp.col.url')" path="url">
-          <NInput v-model:value="model.url" placeholder="https://host/mcp" />
-        </NFormItem>
         <NFormItem :label="$t('page.gateway.mcp.col.transport')">
           <NRadioGroup v-model:value="model.transport">
             <NRadio v-for="opt in transportOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</NRadio>
           </NRadioGroup>
         </NFormItem>
-        <NFormItem :label="$t('page.gateway.mcp.col.authType')">
-          <NSelect v-model:value="model.authType" :options="authTypeOptions" />
-        </NFormItem>
-        <template v-if="needsCredentials">
-          <NFormItem :label="$t('page.gateway.mcp.form.authValue')">
-            <NInput
-              v-model:value="authValue"
-              type="password"
-              show-password-on="click"
-              :placeholder="$t('page.gateway.mcp.form.authValuePlaceholder')"
-            />
+        <template v-if="!isStdio">
+          <NFormItem :label="$t('page.gateway.mcp.col.url')" path="url">
+            <NInput v-model:value="model.url" placeholder="https://host/mcp" />
           </NFormItem>
-          <p class="mb-12px ml-110px text-12px text-slate-400">{{ $t('page.gateway.mcp.form.valuesTip') }}</p>
+          <NFormItem :label="$t('page.gateway.mcp.col.authType')">
+            <NSelect v-model:value="model.authType" :options="authTypeOptions" />
+          </NFormItem>
+          <template v-if="needsCredentials">
+            <NFormItem :label="$t('page.gateway.mcp.form.authValue')">
+              <NInput
+                v-model:value="authValue"
+                type="password"
+                show-password-on="click"
+                :placeholder="$t('page.gateway.mcp.form.authValuePlaceholder')"
+              />
+            </NFormItem>
+            <p class="mb-12px ml-110px text-12px text-slate-400">{{ $t('page.gateway.mcp.form.valuesTip') }}</p>
+          </template>
+        </template>
+        <template v-else>
+          <NFormItem :label="$t('page.gateway.mcp.col.command')" path="command">
+            <NSelect v-model:value="model.command" :options="commandOptions" :placeholder="$t('common.placeholderSelect')" />
+          </NFormItem>
+          <p class="mb-12px ml-110px text-12px text-slate-400">{{ $t('page.gateway.mcp.form.commandTip') }}</p>
+          <NFormItem :label="$t('page.gateway.mcp.col.args')">
+            <NDynamicInput v-model:value="argsInput" :placeholder="$t('page.gateway.mcp.form.argsPlaceholder')" />
+          </NFormItem>
+          <NFormItem :label="$t('page.gateway.mcp.col.env')">
+            <div class="w-full">
+              <NDynamicInput v-model:value="envRows" :on-create="() => ({ key: '', value: '' })">
+                <template #default="{ value }">
+                  <div class="flex w-full items-center gap-8px">
+                    <NInput v-model:value="value.key" :placeholder="$t('page.gateway.mcp.form.envKeyPlaceholder')" />
+                    <NInput v-model:value="value.value" :placeholder="$t('page.gateway.mcp.form.envValuePlaceholder')" />
+                  </div>
+                </template>
+              </NDynamicInput>
+              <p class="mt-4px text-12px text-slate-400">{{ $t('page.gateway.mcp.form.envTip') }}</p>
+            </div>
+          </NFormItem>
         </template>
         <NFormItem :label="$t('page.gateway.mcp.col.billingType')">
           <NRadioGroup v-model:value="model.billingType">
@@ -242,7 +321,7 @@ async function handleSubmit() {
           <NInput v-model:value="model.author" :placeholder="$t('common.placeholderInput')" />
         </NFormItem>
         <NFormItem :label="$t('page.gateway.mcp.col.iconUrl')">
-          <NInput v-model:value="model.iconUrl" placeholder="https://..." />
+          <IconPicker v-model:value="model.iconUrl" />
         </NFormItem>
         <NFormItem :label="$t('page.gateway.mcp.col.documentationUrl')">
           <NInput v-model:value="model.documentationUrl" placeholder="https://..." />

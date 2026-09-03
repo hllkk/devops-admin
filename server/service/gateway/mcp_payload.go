@@ -8,6 +8,7 @@ import (
 	"gorm.io/datatypes"
 
 	"github.com/hllkk/devops-admin/server/model/gateway"
+	"github.com/hllkk/devops-admin/server/utils/litellm"
 )
 
 // 本文件是 MCP 服务器的投影与校验纯函数层（零 DB/配置依赖，可单测）。
@@ -25,26 +26,41 @@ func ValidMCPServerName(name string) bool {
 }
 
 // NormalizeMCPTransport 传输协议归一：空→默认 streamable_http；兼容 AIHelms 风格的
-// streamableHttp 写法。返回值仅在 (sse|streamable_http) 二选一，非法报错。
+// streamableHttp 写法。返回值在 (sse|streamable_http|stdio) 三选一，非法报错。
 func NormalizeMCPTransport(t string) (string, error) {
 	switch t {
 	case "":
 		return gateway.MCPTransportStreamableHttp, nil
-	case gateway.MCPTransportSse, gateway.MCPTransportStreamableHttp:
+	case gateway.MCPTransportSse, gateway.MCPTransportStreamableHttp, gateway.MCPTransportStdio:
 		return t, nil
 	case "streamableHttp", "http":
-		// AIHelms/旧版写法与 LiteLLM 侧传输名归一到平台两枚举
+		// AIHelms/旧版写法与 LiteLLM 侧传输名归一到平台枚举
 		return gateway.MCPTransportStreamableHttp, nil
 	}
-	return "", fmt.Errorf("传输协议仅支持 sse 或 streamable_http")
+	return "", fmt.Errorf("传输协议仅支持 sse、streamable_http 或 stdio")
 }
 
-// litellmMCPTransport 平台协议 → LiteLLM 传输名（LiteLLM 只支持 sse/http）。
+// litellmMCPTransport 平台协议 → LiteLLM 传输名（sse/http/stdio，stdio 同名透传）。
 func litellmMCPTransport(t string) string {
-	if t == gateway.MCPTransportSse {
-		return gateway.MCPTransportSse
+	switch t {
+	case gateway.MCPTransportSse, gateway.MCPTransportStdio:
+		return t
 	}
 	return "http"
+}
+
+// mcpStdioCommands LiteLLM stdio 命令白名单(与上游校验同清单)：仅放行标准运行时，
+// 任意二进制拒绝——子进程跑在 LiteLLM 容器内，这是上游的安全边界，平台侧前置拦截，
+// 错误提示不依赖 LiteLLM 报错。
+var mcpStdioCommands = map[string]bool{
+	"deno": true, "docker": true, "node": true, "npx": true,
+	"python": true, "python3": true, "uvx": true,
+}
+
+// ValidMCPStdioCommand stdio 启动命令白名单校验(命令名精确比对、不带路径——
+// LiteLLM 在容器内按 PATH 解析，带路径的写法上游同样拒绝)。
+func ValidMCPStdioCommand(command string) bool {
+	return mcpStdioCommands[command]
 }
 
 // ValidMCPAuthType 校验鉴权方式（LiteLLM MCPAuth 常用子集，none 无凭据）。
@@ -54,6 +70,23 @@ func ValidMCPAuthType(t string) bool {
 		return true
 	}
 	return false
+}
+
+// BuildMCPEndpointSpec 组装 LiteLLM MCP 探测端点描述(test/connection、test/tools/list
+// 共用)：http/sse 型带 url+鉴权；stdio 型带 command/args/env——credentials 列在 stdio 时
+// 存 env 键值对(env 即凭据)。纯函数，不落库。
+func BuildMCPEndpointSpec(row *gateway.MCPServer, credentials map[string]any) litellm.MCPEndpointSpec {
+	spec := litellm.MCPEndpointSpec{Transport: litellmMCPTransport(row.Transport)}
+	if row.Transport == gateway.MCPTransportStdio {
+		spec.Command = row.Command
+		spec.Args = jsonToSlice(row.Args)
+		spec.Env = credentials
+		return spec
+	}
+	spec.Url = row.Url
+	spec.AuthType = row.AuthType
+	spec.Credentials = credentials
+	return spec
 }
 
 // mcpCostToUsd ¥→USD 换算（LiteLLM mcp_server_cost_info 记 USD；rate<=0 兜底 7.0，

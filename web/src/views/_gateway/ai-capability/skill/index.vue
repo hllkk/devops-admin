@@ -1,6 +1,7 @@
 <script setup lang="tsx">
 import { onMounted, ref } from 'vue';
 import { NTag } from 'naive-ui';
+import IconUrl from '@/components/custom/icon-url.vue';
 import { fetchBatchDeleteSkills, fetchGetSkillList } from '@/service/api/gateway';
 import { useAppStore } from '@/store/modules/app';
 import { defaultTransform, useNaivePaginatedTable } from '@/hooks/common/table';
@@ -50,11 +51,14 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
         align: 'center',
         minWidth: 150,
         render: row => (
-          <div class="flex flex-col items-start">
-            <span class="font-500">{row.name}</span>
-            <span class="text-12px text-slate-400">
-              v{row.version} · {row.author || '-'}
-            </span>
+          <div class="flex items-center justify-center gap-8px">
+            <IconUrl value={row.iconUrl} size={24} />
+            <div class="flex flex-col items-start">
+              <span class="font-500">{row.name}</span>
+              <span class="text-12px text-slate-400">
+                v{row.version} · {row.author || '-'}
+              </span>
+            </div>
           </div>
         )
       },

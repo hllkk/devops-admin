@@ -53,6 +53,7 @@ func (i *initProviderPrefix) MigrateTable(ctx context.Context) (context.Context,
 		&gatewayModel.SkillVisibility{},
 		&gatewayModel.SkillVisibilityUser{},
 		&gatewayModel.SkillUsageLog{},
+		&gatewayModel.EfficiencyReport{},
 	)
 }
 
