@@ -73,6 +73,7 @@
 - AK/SK 存 `gateway_provider.balance_sync_config`（AES-256-GCM 密文，密钥复用 `litellm.credential-key`；出网掩码、保存掩码占位保留旧明文）。
 - 展示双层：供应商管理页余量面板（配置+明细+手动同步，仅 dashscope 类型显示）+ 看板汇总卡（非超管后端返回空数组）。
 - 定时任务 `SyncProviderBalances`（每日 08:17，失败不阻断）。
+- **同步时间与快照解耦 + 进面板自动同步**（2026-09-03）：`gateway_provider.balance_synced_at` 列记录最近同步时间（厂商侧返回空也落，快照表无行不再导致"从未同步"假象）；`balance-sync?auto=true` 静默模式供面板挂载自动触发（未配置/5min 节流/失败均不报错返当前快照），明细见 `aiDoc/memory/business/ai-gateway-provider-balance-sync-display.md`。
 
 ## 口径与风险
 
