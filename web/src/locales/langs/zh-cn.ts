@@ -427,6 +427,11 @@ const local: App.I18n.Schema = {
       noticeTitle: '初始化须知',
       noticeDesc:
         '初始化将创建数据库、自动建表并写入基础数据（角色、菜单、管理员账号等）。请确保数据库服务可用；MySQL 请使用 innoDB 引擎。',
+      autoTitle: '检测到自动初始化配置',
+      autoDesc:
+        '已从部署环境读取数据库与 Redis 连接配置，点击下方按钮即可完成初始化（管理员账号 admin，密码为部署时设置的 INIT_ADMIN_PASSWORD），无需手动填写。',
+      autoSuccess: '自动初始化完成',
+      manualConfig: '手动填写配置',
       confirm: '我已确认，开始配置',
       back: '返回登录',
       form: {

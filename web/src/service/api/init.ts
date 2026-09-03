@@ -3,11 +3,24 @@ import { request } from '../request';
 /**
  * 检查数据库是否需要初始化
  *
- * 对应后端 POST /init/checkdb，返回 { needInit }
+ * 对应后端 POST /init/checkdb，返回 { needInit, autoInit, configReady }
  */
 export function fetchCheckDB() {
   return request<Api.Init.CheckDBResult>({
     url: '/init/checkdb',
+    method: 'post'
+  });
+}
+
+/**
+ * Docker 环境一键自动初始化
+ *
+ * 对应后端 POST /init/autoInitDB；用挂载 config + INIT_ADMIN_PASSWORD 建库建管理员，
+ * 耗时操作，调用方需自行控制 loading。
+ */
+export function fetchAutoInitDB() {
+  return request<string>({
+    url: '/init/autoInitDB',
     method: 'post'
   });
 }

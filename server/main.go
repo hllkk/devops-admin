@@ -58,6 +58,9 @@ func initializeSystem() {
 	global.OPS_LOG = core.Zap() // 初始化zap日志库
 	zap.ReplaceGlobals(global.OPS_LOG)
 	global.OPS_DB = initialize.Gorm() // gorm连接数据库
+	// Docker 环境启动期自动初始化（未初始化且 config/INIT_ADMIN_PASSWORD 就绪时，
+	// 让 compose up 即系统就绪；须在 Gorm 之后、建表回调链之前，初始化成功后走下方 if 块）
+	initialize.DockerAutoInit()
 	global.OPS_SPEND_DB = initialize.GormSpend() // litellm spend logs 只读连接(用量回流)
 	initialize.Timer()
 	initialize.DBList()

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { fetchInitDB, fetchPingDB, fetchPingRedis } from '@/service/api';
+import { fetchAutoInitDB, fetchCheckDB, fetchInitDB, fetchPingDB, fetchPingRedis } from '@/service/api';
 import { resetSystemInitCheck } from '@/router/guard/route';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
 import { useAppStore } from '@/store/modules/app';
@@ -18,11 +18,37 @@ const appStore = useAppStore();
 const themeStore = useThemeStore();
 const { createRequiredRule } = useFormRules();
 
-/** stage: notice=须知屏；wizard=三步向导 */
-const stage = ref<'notice' | 'wizard'>('notice');
+/** stage: notice=须知屏；auto=Docker 一键自动初始化；wizard=三步向导 */
+const stage = ref<'notice' | 'auto' | 'wizard'>('notice');
+/** 进入页面时探测 checkdb（区分 Docker 一键初始化与手动向导） */
+const checking = ref(true);
+/** 一键自动初始化执行中 */
+const autoIniting = ref(false);
 /** 当前向导步骤：1=DB 2=Redis 3=Admin */
 const currentStep = ref(1);
 const submitting = ref(false);
+
+// Docker 配置完整（autoInit+configReady）时直达一键初始化屏；
+// 自动初始化依赖部署侧 INIT_ADMIN_PASSWORD，未就绪则维持须知屏 → 手动向导
+onMounted(async () => {
+  const { error, data } = await fetchCheckDB();
+  checking.value = false;
+  if (!error && data?.autoInit && data?.configReady) {
+    stage.value = 'auto';
+  }
+});
+
+/** Docker 一键自动初始化：密码来自部署环境变量 INIT_ADMIN_PASSWORD */
+async function handleAutoInit() {
+  autoIniting.value = true;
+  const { error } = await fetchAutoInitDB();
+  autoIniting.value = false;
+  if (error) return; // 错误信息已由请求层统一展示
+  resetSystemInitCheck(); // 刷新守卫缓存，避免被重新拦回 /init
+  window.$message?.success($t('page.init.autoSuccess'));
+  // 后端初始化后热接入 DB + Redis，免 reload，直接去登录页
+  router.replace({ name: 'login' });
+}
 
 // 三个独立表单 ref，分步校验（互不干扰）
 const { formRef: dbFormRef, validate: validateDB } = useNaiveForm();
@@ -237,8 +263,32 @@ function handleBack() {
       </header>
 
       <main class="m-auto w-full max-w-560px px-24px">
+        <!-- 探测初始化方式（checkdb） -->
+        <div v-if="checking" class="flex flex-col items-center gap-16px py-80px">
+          <NSpin :size="36" />
+        </div>
+
+        <!-- Docker 一键自动初始化屏 -->
+        <div v-else-if="stage === 'auto'" class="rounded-8px p-16px text-center">
+          <h2 class="mb-12px text-22px font-600">{{ $t('page.init.autoTitle') }}</h2>
+          <p class="mb-24px text-15px leading-relaxed color-gray-600 dark:color-gray-300">
+            {{ $t('page.init.autoDesc') }}
+          </p>
+          <NSpace vertical :size="12">
+            <NButton type="primary" size="large" block :loading="autoIniting" @click="handleAutoInit">
+              {{ $t('page.init.submit') }}
+            </NButton>
+            <NButton quaternary size="large" block :disabled="autoIniting" @click="stage = 'wizard'">
+              {{ $t('page.init.manualConfig') }}
+            </NButton>
+            <NButton quaternary size="large" block :disabled="autoIniting" @click="handleBack">
+              {{ $t('page.init.back') }}
+            </NButton>
+          </NSpace>
+        </div>
+
         <!-- 须知屏 -->
-        <div v-if="stage === 'notice'" class="rounded-8px p-16px text-center">
+        <div v-else-if="stage === 'notice'" class="rounded-8px p-16px text-center">
           <h2 class="mb-12px text-22px font-600">{{ $t('page.init.noticeTitle') }}</h2>
           <p class="mb-24px text-15px leading-relaxed color-gray-600 dark:color-gray-300">
             {{ $t('page.init.noticeDesc') }}
@@ -437,7 +487,7 @@ function handleBack() {
     <!-- 全屏 loading（单文案） -->
     <Teleport to="body">
       <div
-        v-if="submitting"
+        v-if="submitting || autoIniting"
         class="fixed inset-0 z-9999 flex flex-col items-center justify-center gap-16px bg-black/70"
       >
         <NSpin :size="48" />

@@ -235,6 +235,92 @@ func createTables(ctx context.Context, inits initSlice) error {
 	return MigrateExtraTables(db)
 }
 
+// AutoInitDBFromDockerConfig Docker 环境自动初始化（用挂载 config + 环境变量，无需向导手填）。
+// 供 /init/autoInitDB 接口与启动期自动初始化（initialize.DockerAutoInit）共用：
+//   - skipReason 非空：未执行初始化的原因（非 Docker / 已初始化 / 配置不完整 / 未设密码），调用方据此提示
+//   - err 非空：执行了初始化但失败
+//   - 两者皆空：初始化成功执行
+func (initDBService *InitDBService) AutoInitDBFromDockerConfig() (skipReason string, err error) {
+	if os.Getenv("DOCKER_ENV") != "true" {
+		return "非 Docker 环境，不支持自动初始化", nil
+	}
+
+	// 已初始化（有用户数据）则跳过（AutoMigrate 会建空表，库连上不等于已初始化）
+	if global.OPS_DB != nil {
+		var count int64
+		if e := global.OPS_DB.Model(&sysModel.SysUser{}).Count(&count).Error; e == nil && count > 0 {
+			return "已存在数据库配置，无需初始化", nil
+		}
+	}
+
+	if !initDBService.CheckDockerConfigReady() {
+		return "Docker 环境配置不完整，无法自动初始化", nil
+	}
+
+	// 管理员密码（从环境变量）：生产必须显式设置，禁止默认兜底
+	// （避免已知弱口令被抢先用 /init/autoInitDB 接管超管）
+	adminPassword := os.Getenv("INIT_ADMIN_PASSWORD")
+	if adminPassword == "" {
+		return "未设置 INIT_ADMIN_PASSWORD，拒绝自动初始化", nil
+	}
+
+	// 用 config 的 DB 配置（密码已被 env 覆盖）构建初始化请求
+	dbType := global.OPS_CONFIG.System.DbType
+	initReq := request.InitDB{
+		AdminPassword: adminPassword,
+		DBType:        dbType,
+	}
+	switch dbType {
+	case "pgsql":
+		initReq.Host = global.OPS_CONFIG.Pgsql.Path
+		initReq.Port = global.OPS_CONFIG.Pgsql.Port
+		initReq.UserName = global.OPS_CONFIG.Pgsql.Username
+		initReq.Password = global.OPS_CONFIG.Pgsql.Password
+		initReq.DBName = global.OPS_CONFIG.Pgsql.Dbname
+	default: // mysql 作为默认
+		initReq.Host = global.OPS_CONFIG.Mysql.Path
+		initReq.Port = global.OPS_CONFIG.Mysql.Port
+		initReq.UserName = global.OPS_CONFIG.Mysql.Username
+		initReq.Password = global.OPS_CONFIG.Mysql.Password
+		initReq.DBName = global.OPS_CONFIG.Mysql.Dbname
+	}
+
+	if global.OPS_CONFIG.System.UseRedis {
+		initReq.RedisAddr = global.OPS_CONFIG.Redis.Addr
+		initReq.RedisPassword = global.OPS_CONFIG.Redis.Password
+		initReq.RedisDB = global.OPS_CONFIG.Redis.DB
+	}
+
+	if err = initDBService.InitDB(initReq); err != nil {
+		return "", err
+	}
+	return "", nil
+}
+
+// CheckDockerConfigReady 检查 Docker 环境 config.yaml 的 DB 配置是否完整（按 db-type 动态检查）
+func (initDBService *InitDBService) CheckDockerConfigReady() bool {
+	switch global.OPS_CONFIG.System.DbType {
+	case "pgsql":
+		if global.OPS_CONFIG.Pgsql.Path == "" ||
+			global.OPS_CONFIG.Pgsql.Port == "" ||
+			global.OPS_CONFIG.Pgsql.Username == "" ||
+			global.OPS_CONFIG.Pgsql.Dbname == "" {
+			return false
+		}
+	default: // mysql
+		if global.OPS_CONFIG.Mysql.Path == "" ||
+			global.OPS_CONFIG.Mysql.Port == "" ||
+			global.OPS_CONFIG.Mysql.Username == "" ||
+			global.OPS_CONFIG.Mysql.Dbname == "" {
+			return false
+		}
+	}
+	if global.OPS_CONFIG.System.UseRedis && global.OPS_CONFIG.Redis.Addr == "" {
+		return false
+	}
+	return true
+}
+
 /* -- sortable interface -- */
 
 func (a initSlice) Len() int {

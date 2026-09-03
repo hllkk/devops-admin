@@ -431,6 +431,11 @@ const local: App.I18n.Schema = {
       noticeTitle: 'Before You Start',
       noticeDesc:
         'Initialization will create the database, auto-migrate tables and seed base data (roles, menus, admin account). Ensure the database service is reachable; use innoDB for MySQL.',
+      autoTitle: 'Automatic Initialization Detected',
+      autoDesc:
+        'Database and Redis connection settings were read from the deployment environment. Click the button below to finish initialization (admin account with the INIT_ADMIN_PASSWORD set at deploy time) — no manual input needed.',
+      autoSuccess: 'Automatic initialization completed',
+      manualConfig: 'Configure Manually',
       confirm: 'I understand, start configuration',
       back: 'Back to login',
       form: {

@@ -602,6 +602,10 @@ declare namespace App {
           subTitle: string;
           noticeTitle: string;
           noticeDesc: string;
+          autoTitle: string;
+          autoDesc: string;
+          autoSuccess: string;
+          manualConfig: string;
           confirm: string;
           back: string;
           form: {

@@ -217,6 +217,12 @@ services:
     image: ghcr.io/berriai/litellm:1.99.0
     container_name: devops-litellm
     restart: unless-stopped
+    # 宿主直连端口（LITELLM_HOST_PORT，默认仅本机回环 127.0.0.1:4000，安全等同不映射）：
+    # - 客户端常规接入走 nginx /llm/ 反代（LITELLM_PUBLIC_URL），无需宿主端口
+    # - 宿主 4000 已被其它 litellm 占用时，.env 设 LITELLM_HOST_PORT=4001 过渡；
+    #   旧实例停用后改回 4000，docker compose up -d 即完成切换
+    ports:
+      - "${LITELLM_HOST_PORT:-127.0.0.1:4000}:4000"
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-devops}:${POSTGRES_PASSWORD:?必须设置 POSTGRES_PASSWORD}@pgsql:5432/${POSTGRES_DB:-devops_admin}?schema=public
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:?必须设置 LITELLM_MASTER_KEY}

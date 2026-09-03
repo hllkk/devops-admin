@@ -12,6 +12,10 @@ declare namespace Api {
     interface CheckDBResult {
       /** true 表示尚未初始化，需要前往初始化 */
       needInit: boolean;
+      /** Docker 环境 config 完整，支持一键自动初始化 */
+      autoInit: boolean;
+      /** Docker 环境 config.yaml 的 DB 配置是否完整 */
+      configReady: boolean;
     }
 
     /**
