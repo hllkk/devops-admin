@@ -86,7 +86,7 @@ litellm:
     credential-key: 8a38e1e8c1a1b3d3ab852b94672a2ff2b5023082f5e2c0600e4b5a5cd6989577
     timeout: 10
     usd-to-cny-rate: 7
-    spend-dsn: postgresql://postgres:Tricolor_123@127.0.0.1:15432/litellm
+    spend-dsn: postgresql://postgres:Tricolor_123@127.0.0.1:15432/litellm?TimeZone=UTC
     log-sync-interval: 5
     log-sync-batch: 1000
     log-reconcile-window: 30

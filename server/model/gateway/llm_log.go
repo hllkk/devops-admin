@@ -55,7 +55,8 @@ func (SyncState) TableName() string {
 
 // LiteLLMSpendLog LiteLLM 的 spend 日志表只读映射（不 AutoMigrate，表由 LiteLLM 管理）。
 // 字段对齐 LiteLLM 1.98 的 LiteLLM_SpendLogs 列；startTime/endTime 是 timestamp without time zone，
-// 连接串配 TimeZone=UTC，Go 读取按 UTC 解释。
+// LiteLLM 落 naive UTC。Go 读取按 UTC 解释；SQL 比较侧显式 AT TIME ZONE 'UTC'（见 fetchSpendBatch），
+// 连接会话时区不参与正确性——spend-dsn 建议仍配 TimeZone=UTC。
 type LiteLLMSpendLog struct {
 	RequestId           string         `gorm:"column:request_id"`
 	CallType            string         `gorm:"column:call_type"`

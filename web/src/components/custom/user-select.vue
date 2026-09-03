@@ -42,6 +42,7 @@ getUserOptions();
     v-model:value="value"
     :loading="userLoading"
     :options="userOptions"
+    filterable
     v-bind="$attrs"
     placeholder="请选择用户"
   />

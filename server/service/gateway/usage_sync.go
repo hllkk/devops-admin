@@ -144,7 +144,7 @@ func (s *UsageSyncService) ReconcileLLMLogs(ctx context.Context) (map[string]int
 	var rows []gateway.LiteLLMSpendLog
 	if err := sdb.Table(gateway.LiteLLMSpendLog{}.TableName()).
 		Select(gateway.LiteLLMSpendLog{}.SelectColumns()).
-		Where(`"startTime" >= ?`, since).
+		Where(`"startTime" AT TIME ZONE 'UTC' >= ?`, since).
 		Where(`("api_key" IS NULL OR "api_key" = '' OR "api_key" <> ?)`, masterKeyToken).
 		Where(`("mcp_namespaced_tool_name" IS NULL OR "mcp_namespaced_tool_name" = '')`).
 		Order(`COALESCE("endTime","startTime") DESC, request_id DESC`).
@@ -402,6 +402,10 @@ func cursorStalled(c *spendCursor, prevT time.Time, prevRid string) bool {
 }
 
 // fetchSpendBatch 复合游标 keyset 分页查 LiteLLM_SpendLogs（仅 LLM 行，MCP 行互斥分流到 SyncMcpLogs）。
+// 游标比较显式 `AT TIME ZONE 'UTC'`：该表 startTime/endTime 是 naive UTC，若连接会话时区
+// 非 UTC（spend-dsn 漏配 TimeZone 时落到 PG 服务器默认 Asia/Shanghai），PG 会把游标参数按
+// 会话时区渲染成 naive 再比较，同一时刻两侧解释差 8h → 新调用 8 小时内对增量回流不可见，
+// 只能靠对账兜回。显式转换后语义与 Go 读取侧（naive 按 UTC 解释）一致，会话时区不再参与。
 func (s *UsageSyncService) fetchSpendBatch(sdb *gorm.DB, state *gateway.SyncState, limit int) ([]gateway.LiteLLMSpendLog, error) {
 	var rows []gateway.LiteLLMSpendLog
 	q := sdb.Table(gateway.LiteLLMSpendLog{}.TableName()).
@@ -412,10 +416,10 @@ func (s *UsageSyncService) fetchSpendBatch(sdb *gorm.DB, state *gateway.SyncStat
 		Order(`COALESCE("endTime","startTime") ASC, request_id ASC`).
 		Limit(limit)
 	if state.LastRequestId != "" {
-		// 复合游标：(COALESCE(endTime,startTime), request_id) > (last_t, last_rid)
-		q = q.Where(`(COALESCE("endTime","startTime"), request_id) > (?, ?)`, state.LastSyncAt, state.LastRequestId)
+		// 复合游标：(COALESCE(endTime,startTime) AT TIME ZONE 'UTC', request_id) > (last_t, last_rid)
+		q = q.Where(`(COALESCE("endTime","startTime") AT TIME ZONE 'UTC', request_id) > (?, ?)`, state.LastSyncAt, state.LastRequestId)
 	} else if !state.LastSyncAt.IsZero() {
-		q = q.Where(`COALESCE("endTime","startTime") > ?`, state.LastSyncAt)
+		q = q.Where(`COALESCE("endTime","startTime") AT TIME ZONE 'UTC' > ?`, state.LastSyncAt)
 	}
 	err := q.Find(&rows).Error
 	return rows, err

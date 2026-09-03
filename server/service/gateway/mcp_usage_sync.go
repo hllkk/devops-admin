@@ -108,7 +108,7 @@ func (s *UsageSyncService) ReconcileMcpLogs(ctx context.Context) (map[string]int
 	var rows []gateway.LiteLLMSpendLog
 	if err := sdb.Table(gateway.LiteLLMSpendLog{}.TableName()).
 		Select(gateway.LiteLLMSpendLog{}.SelectColumns()).
-		Where(`"startTime" >= ?`, since).
+		Where(`"startTime" AT TIME ZONE 'UTC' >= ?`, since).
 		Where(`("api_key" IS NULL OR "api_key" = '' OR "api_key" <> ?)`, masterKeyToken).
 		Where(`"mcp_namespaced_tool_name" IS NOT NULL AND "mcp_namespaced_tool_name" <> ''`).
 		Order(`COALESCE("endTime","startTime") DESC, request_id DESC`).
@@ -161,6 +161,7 @@ func (s *UsageSyncService) ReconcileMcpLogs(ctx context.Context) (map[string]int
 
 // fetchMcpSpendBatch 复合游标 keyset 分页查 LiteLLM_SpendLogs 的 MCP 行
 // （mcp_namespaced_tool_name 非空；排除 list_mcp_tools 类管理动作）。
+// 游标比较显式 AT TIME ZONE 'UTC'，根因见 fetchSpendBatch 注释（usage_sync.go）。
 func (s *UsageSyncService) fetchMcpSpendBatch(sdb *gorm.DB, state *gateway.SyncState, limit int) ([]gateway.LiteLLMSpendLog, error) {
 	var rows []gateway.LiteLLMSpendLog
 	q := sdb.Table(gateway.LiteLLMSpendLog{}.TableName()).
@@ -171,9 +172,9 @@ func (s *UsageSyncService) fetchMcpSpendBatch(sdb *gorm.DB, state *gateway.SyncS
 		Order(`COALESCE("endTime","startTime") ASC, request_id ASC`).
 		Limit(limit)
 	if state.LastRequestId != "" {
-		q = q.Where(`(COALESCE("endTime","startTime"), request_id) > (?, ?)`, state.LastSyncAt, state.LastRequestId)
+		q = q.Where(`(COALESCE("endTime","startTime") AT TIME ZONE 'UTC', request_id) > (?, ?)`, state.LastSyncAt, state.LastRequestId)
 	} else if !state.LastSyncAt.IsZero() {
-		q = q.Where(`COALESCE("endTime","startTime") > ?`, state.LastSyncAt)
+		q = q.Where(`COALESCE("endTime","startTime") AT TIME ZONE 'UTC' > ?`, state.LastSyncAt)
 	}
 	err := q.Find(&rows).Error
 	return rows, err

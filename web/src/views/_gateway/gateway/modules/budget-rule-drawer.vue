@@ -130,7 +130,6 @@ async function handleSubmit() {
           v-model:value="model.scopeId"
           :disabled="isEdit"
           clearable
-          filterable
           :placeholder="$t('common.placeholderSelect')"
         />
       </NFormItem>

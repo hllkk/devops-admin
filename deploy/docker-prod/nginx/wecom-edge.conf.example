@@ -1,0 +1,78 @@
+# ============================================================================
+# 公网侧（DMZ）外层 Nginx —— 企业微信 OAuth 回调专用入口（生产）
+#
+# 定位：公网单端点白名单，仅暴露
+#   1. /wecomCallback   企微 OAuth2 回调（PC 扫码由企微侧发起；企微客户端 WebView
+#                       免登在内网走同域名直连，不经本机）
+#   2. /WW_verify_*     可信域名归属验证（一次性；验证通过后删除该段）
+# 其余路径一律 444 断连；系统本体（SPA/API）不经公网，仅内网可达。
+#
+# DNS 前提（split-horizon，必须是同一个备案域名，否则登录态落错域）：
+#   公网 DNS：ops.example.com → 本机公网 IP（仅承接企微回调）
+#   内网 DNS：ops.example.com → 内网 Nginx（承接全部正常访问）
+# PC 扫码与企微客户端免登共用同一个 redirect_uri（sys_auth_config 的 wecomCallbackUrl，
+# 填 https://ops.example.com/wecomCallback），同域名分流保证「回调域 = 访问域」。
+#
+# 使用：放入 DMZ 机器 nginx 的 http{} 内（如 /etc/nginx/conf.d/wecom-edge.conf）。
+# 本机多站点共用时 limit_req_zone 只保留一份，勿重复定义。
+# ============================================================================
+
+limit_req_zone $binary_remote_addr zone=wecom_edge_cb:10m rate=10r/s;
+
+# 内网源站：compose 的 devops-web（内层 Nginx）宿主映射端口，默认 80（WEB_PORT 可改）
+upstream wecom_edge_origin {
+    server 10.0.0.10:80;   # TODO 改为内网 Nginx 实际地址
+}
+
+server {
+    listen 80;
+    server_name ops.example.com;          # TODO 换成备案域名
+
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name ops.example.com;          # TODO 换成备案域名
+
+    # 与内网 Nginx 同一张域名证书（同域名 split-horizon 两端共用）
+    ssl_certificate     /etc/nginx/certs/ops.example.com.pem;   # TODO 证书路径
+    ssl_certificate_key /etc/nginx/certs/ops.example.com.key;   # TODO 私钥路径
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_session_cache shared:SSL:10m;
+
+    server_tokens off;
+
+    # ---- 企微 OAuth2 回调：PC 扫码时由企微侧经公网 DNS 打到这里 ----
+    # 必须改写到内网 Nginx 的 /proxy-default 前缀：内层仅该前缀反代到 server:8888
+    # 并去前缀，直接透传 /wecomCallback 会掉进 SPA try_files 返回 index.html。
+    location = /wecomCallback {
+        limit_req zone=wecom_edge_cb burst=20 nodelay;
+        proxy_pass http://wecom_edge_origin/proxy-default/wecomCallback;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_connect_timeout 5s;
+        proxy_read_timeout    15s;
+    }
+
+    # ---- 企微可信域名归属验证（一次性）----
+    # 系统从 sys_auth_config 动态响应 /WW_verify_*.txt，无需手工放文件。
+    # 企微管理端验证通过后删除本段，公网入口收窄回仅 /wecomCallback。
+    location ^~ /WW_verify_ {
+        limit_req zone=wecom_edge_cb burst=20 nodelay;
+        proxy_pass http://wecom_edge_origin/proxy-default/WW_verify_;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    # ---- 其余一切：直接断连（不消耗上方限流配额） ----
+    location / {
+        return 444;
+    }
+}
