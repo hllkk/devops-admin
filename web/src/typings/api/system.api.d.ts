@@ -907,5 +907,60 @@ declare namespace Api {
       /** 最近一次完成时间 */
       finishedAt?: string;
     };
+
+    /** 版本信息(GET /system/upgrade/version，「关于」弹窗展示) */
+    type UpgradeVersionInfo = {
+      appName: string;
+      version: string;
+      buildTime: string;
+      description: string;
+    };
+
+    /** 检查更新结果(GET /system/upgrade/check) */
+    type UpgradeCheckResult = {
+      /** 当前运行版本 */
+      currentVersion: string;
+      hasUpdate: boolean;
+      /** manifest 版本 */
+      version?: string;
+      /** 更新内容(markdown) */
+      changeLog?: string;
+      releaseTime?: string;
+      /** 低于此版本需先升中间版(提示用) */
+      minUpgradeVersion?: string;
+      forceUpgrade: boolean;
+      /** 选中的升级包(优先增量) */
+      package?: UpgradePackageInfo;
+      /** 无更新/失败原因(用户可读) */
+      message: string;
+    };
+
+    /** manifest 选中的升级包描述 */
+    type UpgradePackageInfo = {
+      type: 'incr' | 'full';
+      url: string;
+      sha256: string;
+      sizeBytes: number;
+    };
+
+    /** 触发升级结果(POST /system/upgrade/start) */
+    type UpgradeStartResult = {
+      /** 是否已开始(进度轮询 fetchUpgradeStatus) */
+      accepted: boolean;
+      version?: string;
+      /** 未开始原因(已是最新/updater 拒绝等) */
+      message: string;
+    };
+
+    /** 升级状态机(GET /system/upgrade/status，代理 updater 的 upgrade-state.json) */
+    type UpgradeStateInfo = {
+      state: 'idle' | 'downloading' | 'verifying' | 'unpacking' | 'installing' | 'success' | 'failed' | 'unreachable';
+      /** 0-100(downloading 阶段为下载百分比) */
+      progress: number;
+      message?: string;
+      /** 目标版本(终态时为已装版本) */
+      version?: string;
+      updateTime?: string;
+    };
   }
 }

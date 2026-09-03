@@ -1,0 +1,26 @@
+# ============================================================================
+# 发布服务器 nginx 静态托管示例（manifest + 升级包）
+#
+# 多项目共用一台发布服务器：每个项目独立发布根目录，nginx 按路径前缀区分。
+# 项目侧 UPDATE_SERVER_URL = http://<本机>/devops-admin（server 拉取
+#   <UPDATE_SERVER_URL>/manifest.json，升级包地址取 manifest 内的相对路径拼接）
+# ============================================================================
+server {
+    listen 80;
+    server_name _;
+
+    # devops-admin 发布根目录（publish.sh 的 REMOTE_ROOT）
+    location /devops-admin/ {
+        alias /opt/devops-admin-publish/;
+        autoindex off;
+        # manifest 小文件强缓存没必要，升级包由 updater 断点续传下载
+        add_header Cache-Control "no-cache";
+    }
+
+    # 同机托管其它项目时按前缀追加（示例：SoyDisk）
+    # location /soydisk/ {
+    #     alias /opt/soydisk-publish/;
+    #     autoindex off;
+    #     add_header Cache-Control "no-cache";
+    # }
+}

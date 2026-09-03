@@ -92,6 +92,9 @@ litellm:
     log-reconcile-window: 30
     log-retention-days: 0
     sync-enabled: true
+upgrade:
+    update-server-url: ""
+    updater-token: ""
 local:
     path: uploads/file
     store-path: uploads/file

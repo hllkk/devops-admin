@@ -22,6 +22,7 @@ type ApiGroup struct {
 	WecomAuthApi
 	WecomContactApi
 	OnlineApi
+	UpgradeApi
 }
 
 var (
@@ -49,4 +50,5 @@ var (
 	socialService         = service.ServiceGroupApp.SystemServiceGroup.SocialService
 	wecomContactService   = service.ServiceGroupApp.SystemServiceGroup.WecomContactService
 	onlineService         = service.ServiceGroupApp.SystemServiceGroup.OnlineService
+	upgradeService        = service.ServiceGroupApp.SystemServiceGroup.UpgradeService
 )

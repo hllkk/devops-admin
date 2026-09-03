@@ -41,6 +41,11 @@ var rbacWhitelistPrivate = []string{
 	"/gateway/dashboard/trend",                // 我的成本趋势
 	"/gateway/dashboard/top",                  // 我的成本Top
 	"/gateway/dashboard/budget",               // 我的预算执行率
+	// 在线升级读接口(「关于」弹窗:版本展示/检查更新/升级进度,所有登录用户可用,只读无副作用);
+	// start 触发升级不在此列,走 casbin 菜单授权(系统设置菜单 ApiPrefix)
+	"/system/upgrade/version", // 版本信息
+	"/system/upgrade/check",   // 检查更新
+	"/system/upgrade/status",  // 升级状态轮询
 }
 
 // isRbacWhitelisted 判断去前缀后的接口路径是否命中已登录用户白名单。

@@ -1,10 +1,17 @@
 package global
 
-// Version 版本信息
-// 目前只有Version正式使用 其余为预留
-const (
+// Version/BuildTime 为 var（const 无法被 ldflags -X 注入）：
+// 发布构建经 ldflags 注入（deploy/docker-prod/Dockerfile.server），
+// 源码构建保留下方默认值；在线升级的版本比对以本值为准
+var (
 	// Version 当前版本号
 	Version = "v0.2.0"
+	// BuildTime 构建时间（RFC3339，裸构建为 unknown）
+	BuildTime = "unknown"
+)
+
+// 应用静态信息
+const (
 	// AppName 应用名称
 	AppName = "Devops-Admin"
 	// Description 应用描述

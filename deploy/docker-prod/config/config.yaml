@@ -102,6 +102,11 @@ litellm:
     # 用量日志保留天数(llm+mcp): 90 天物理清理(>聚合重建窗口60d+预算周期上限30d；
     # 生效值自动不低于对账窗口+7，防删了又被对账重灌)。改 0 可关闭清理。
     log-retention-days: 90
+upgrade:
+    # 在线升级：发布服务器地址由 .env 的 UPDATE_SERVER_URL 覆盖（留空=不启用，检查更新仅提示未配置）
+    update-server-url: ""
+    # 升级执行器(updater)写接口鉴权 token，与 .env 的 UPDATER_TOKEN 同源（env 覆盖）；空=不鉴权
+    updater-token: ""
 local:
     path: /app/uploads/file
     store-path: /app/uploads/file

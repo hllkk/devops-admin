@@ -12,6 +12,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AboutDialog: typeof import('./../components/custom/about-dialog.vue')['default']
     AppProvider: typeof import('./../components/common/app-provider.vue')['default']
     BetterScroll: typeof import('./../components/custom/better-scroll.vue')['default']
     BooleanTag: typeof import('./../components/custom/boolean-tag.vue')['default']
@@ -129,6 +130,7 @@ declare module 'vue' {
     NP: typeof import('naive-ui')['NP']
     NPopconfirm: typeof import('naive-ui')['NPopconfirm']
     NPopover: typeof import('naive-ui')['NPopover']
+    NProgress: typeof import('naive-ui')['NProgress']
     NRadio: typeof import('naive-ui')['NRadio']
     NRadioButton: typeof import('naive-ui')['NRadioButton']
     NRadioGroup: typeof import('naive-ui')['NRadioGroup']
@@ -169,6 +171,7 @@ declare module 'vue' {
     TableRowCheckAlert: typeof import('./../components/advanced/table-row-check-alert.vue')['default']
     TableSiderLayout: typeof import('./../components/advanced/table-sider-layout.vue')['default']
     ThemeSchemaSwitch: typeof import('./../components/common/theme-schema-switch.vue')['default']
+    UpgradeProgressDialog: typeof import('./../components/custom/upgrade-progress-dialog.vue')['default']
     UserSelect: typeof import('./../components/custom/user-select.vue')['default']
     WangEditor: typeof import('./../components/custom/wang-editor.vue')['default']
     WaveBg: typeof import('./../components/custom/wave-bg.vue')['default']
@@ -177,6 +180,7 @@ declare module 'vue' {
 
 // For TSX support
 declare global {
+  const AboutDialog: typeof import('./../components/custom/about-dialog.vue')['default']
   const AppProvider: typeof import('./../components/common/app-provider.vue')['default']
   const BetterScroll: typeof import('./../components/custom/better-scroll.vue')['default']
   const BooleanTag: typeof import('./../components/custom/boolean-tag.vue')['default']
@@ -294,6 +298,7 @@ declare global {
   const NP: typeof import('naive-ui')['NP']
   const NPopconfirm: typeof import('naive-ui')['NPopconfirm']
   const NPopover: typeof import('naive-ui')['NPopover']
+  const NProgress: typeof import('naive-ui')['NProgress']
   const NRadio: typeof import('naive-ui')['NRadio']
   const NRadioButton: typeof import('naive-ui')['NRadioButton']
   const NRadioGroup: typeof import('naive-ui')['NRadioGroup']
@@ -334,6 +339,7 @@ declare global {
   const TableRowCheckAlert: typeof import('./../components/advanced/table-row-check-alert.vue')['default']
   const TableSiderLayout: typeof import('./../components/advanced/table-sider-layout.vue')['default']
   const ThemeSchemaSwitch: typeof import('./../components/common/theme-schema-switch.vue')['default']
+  const UpgradeProgressDialog: typeof import('./../components/custom/upgrade-progress-dialog.vue')['default']
   const UserSelect: typeof import('./../components/custom/user-select.vue')['default']
   const WangEditor: typeof import('./../components/custom/wang-editor.vue')['default']
   const WaveBg: typeof import('./../components/custom/wave-bg.vue')['default']

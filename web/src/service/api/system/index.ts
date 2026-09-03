@@ -8,3 +8,4 @@ export * from './post';
 export * from './social';
 export * from './setting';
 export * from './timer';
+export * from './upgrade';

@@ -104,6 +104,15 @@ func applyEnvOverrides() {
 		global.OPS_CONFIG.Litellm.PublicURL = v
 		log.Println("[INFO] 配置项从环境变量加载: LITELLM_PUBLIC_URL")
 	}
+	// 在线升级：发布服务器地址与升级执行器 token（生产由 .env 注入，config.yaml 留空值）
+	if v := os.Getenv("UPDATE_SERVER_URL"); v != "" {
+		global.OPS_CONFIG.Upgrade.UpdateServerUrl = v
+		log.Println("[INFO] 配置项从环境变量加载: UPDATE_SERVER_URL")
+	}
+	if v := os.Getenv("UPDATER_TOKEN"); v != "" {
+		global.OPS_CONFIG.Upgrade.UpdaterToken = v
+		log.Println("[INFO] 配置项从环境变量加载: UPDATER_TOKEN")
+	}
 }
 
 // validateProductionSecurity 生产环境（GIN_MODE=release）强制安全配置：

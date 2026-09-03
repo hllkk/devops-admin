@@ -129,6 +129,7 @@ func Routers() *gin.Engine {
 		systemRouter.InitWecomContactRouter(PrivateGroup)          // 企业微信通讯录同步(/system/wecom/syncStructure|/syncStatus 管理操作,私有)
 		systemRouter.InitTimedTaskRouter(PrivateGroup)             // 定时任务(/timedTask/*)
 		systemRouter.InitOnlineRouter(PrivateGroup)                // 在线设备(/monitor/online,个人中心视角:仅当前用户自己)
+		systemRouter.InitUpgradeRouter(PrivateGroup)               // 在线升级(/system/upgrade/*:版本/检查/触发/状态)
 		gatewayRouter.InitProviderRouter(PrivateGroup)            // AI 网关·供应商管理(/gateway/provider/*)
 		gatewayRouter.InitCredentialRouter(PrivateGroup)          // AI 网关·凭证管理(/gateway/credential/*)
 		gatewayRouter.InitModelRouter(PrivateGroup)               // AI 网关·模型管理(/gateway/model/*)

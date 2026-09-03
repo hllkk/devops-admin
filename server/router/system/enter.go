@@ -23,6 +23,7 @@ type RouterGroup struct {
 	WecomRouter
 	WecomContactRouter
 	OnlineRouter
+	UpgradeRouter
 }
 
 var (
@@ -45,4 +46,5 @@ var (
 	wecomApi        = v1.ApiGroupApp.SystemApiGroup.WecomAuthApi
 	wecomContactApi = v1.ApiGroupApp.SystemApiGroup.WecomContactApi
 	onlineApi       = v1.ApiGroupApp.SystemApiGroup.OnlineApi
+	upgradeApi      = v1.ApiGroupApp.SystemApiGroup.UpgradeApi
 )

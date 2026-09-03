@@ -318,6 +318,27 @@ declare namespace App {
         updateConfirm: string;
         updateCancel: string;
       };
+      upgrade: {
+        checkFail: string;
+        alreadyLatest: string;
+        startFail: string;
+        foundNewVersion: string;
+        startNow: string;
+        startNowTip: string;
+        progressTitle: string;
+        stageIdle: string;
+        stageDownloading: string;
+        stageVerifying: string;
+        stageUnpacking: string;
+        stageInstalling: string;
+        stageSuccess: string;
+        stageFailed: string;
+        stageUnreachable: string;
+        successTip: string;
+        unreachableTip: string;
+        processingTip: string;
+        background: string;
+      };
       common: {
         action: string;
         add: string;
@@ -326,6 +347,10 @@ declare namespace App {
         batchDelete: string;
         cancel: string;
         close: string;
+        about: string;
+        version: string;
+        buildTime: string;
+        checkUpdate: string;
         check: string;
         selectAll: string;
         expandColumn: string;

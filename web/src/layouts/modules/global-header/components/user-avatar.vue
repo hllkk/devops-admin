@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import type { VNode } from 'vue';
 import { useBoolean } from '@sa/hooks';
 import { useAuthStore } from '@/store/modules/auth';
 import { useRouterPush } from '@/hooks/common/router';
 import { useSvgIcon } from '@/hooks/common/icon';
+import { fetchCheckUpdate } from '@/service/api/system';
 import defaultAvatar from '@/assets/imgs/soybean.jpg';
 import { $t } from '@/locales';
+import AboutDialog from '@/components/custom/about-dialog.vue';
 
 defineOptions({
   name: 'UserAvatar'
@@ -17,6 +19,9 @@ const { routerPushByKey, toLogin } = useRouterPush();
 const { SvgIconVNode } = useSvgIcon();
 
 const { bool: avatarError, setTrue: setError, setFalse: clearError } = useBoolean(false);
+const { bool: aboutVisible, setTrue: showAbout } = useBoolean(false);
+// 静默检查到有新版本时点亮「关于」入口的圆点标记
+const { bool: hasUpdate, setTrue: markUpdate } = useBoolean(false);
 
 function loginOrRegister() {
   toLogin();
@@ -30,7 +35,7 @@ function handleAvatarError() {
   setError();
 }
 
-type DropdownKey = 'home' | 'user-center' | 'logout';
+type DropdownKey = 'home' | 'user-center' | 'about' | 'logout';
 
 type DropdownOption =
   | {
@@ -60,12 +65,32 @@ const options = computed(() => {
       key: 'divider'
     },
     {
+      // 有新版本时 label 追加圆点提示；点开「关于」可查看 changelog 并升级
+      label: $t('common.about') + (hasUpdate.value ? ' ●' : ''),
+      key: 'about',
+      icon: SvgIconVNode({ icon: 'ph:info', fontSize: 18 })
+    },
+    {
       label: $t('common.logout'),
       key: 'logout',
       icon: SvgIconVNode({ icon: 'ph:sign-out', fontSize: 18 })
     }
   ];
   return opts;
+});
+
+// 登录后静默检查更新一次（检查失败静默：发布服务器未配置/不可达不打扰）
+onMounted(() => {
+  if (!authStore.isLogin) return;
+  fetchCheckUpdate().then(({ data, error }) => {
+    if (error || !data?.hasUpdate) return;
+    markUpdate();
+    window.$notification?.info({
+      title: $t('upgrade.foundNewVersion'),
+      content: `${data.version ?? ''} ${data.message}`.trim(),
+      duration: 6000
+    });
+  });
 });
 
 function logout() {
@@ -83,6 +108,8 @@ function logout() {
 function handleDropdown(key: DropdownKey) {
   if (key === 'logout') {
     logout();
+  } else if (key === 'about') {
+    showAbout();
   } else {
     routerPushByKey(key);
   }
@@ -111,6 +138,7 @@ function handleDropdown(key: DropdownKey) {
       </div>
     </div>
   </NDropdown>
+  <AboutDialog v-model:visible="aboutVisible" />
 </template>
 
 <style lang="scss" scoped>

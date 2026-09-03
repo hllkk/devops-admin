@@ -23,7 +23,9 @@ services:
       context: ../../web
       # Dockerfile 统一放在 docker-prod/，经 BuildKit 引用 context 之外的 Dockerfile
       dockerfile: ../deploy/docker-prod/Dockerfile.web
-    image: devops-admin/web:prod
+    # 版本化 tag：与 server ldflags 注入共用 APP_VERSION（deploy/release/build-release.sh 发布时注入），
+    # 在线升级/回滚依赖版本 tag（旧版本镜像不被升级覆盖，保留本地可随时回退）
+    image: devops-admin/web:${APP_VERSION:-prod}
     container_name: devops-web
     restart: unless-stopped
     ports:
@@ -47,7 +49,9 @@ services:
       dockerfile: ../deploy/docker-prod/Dockerfile.server
       args:
         GOPROXY: ${GOPROXY:-https://goproxy.cn,direct}
-    image: devops-admin/server:prod
+        APP_VERSION: ${APP_VERSION:-dev}
+        BUILD_TIME: ${BUILD_TIME:-unknown}
+    image: devops-admin/server:${APP_VERSION:-prod}
     container_name: devops-server
     restart: unless-stopped
     environment:
@@ -235,6 +239,44 @@ services:
     depends_on:
       pgsql:
         condition: service_healthy
+    networks:
+      - prod-net
+
+  # ----------------------------------------------------------------------------
+  # 在线升级执行器（updater sidecar，参照 SoyDisk 同名组件）
+  #
+  # - 接收 server 转发的升级指令（prod-net 内网 http://updater:8090，Bearer token 鉴权），
+  #   完成 下载(断点续传) → sha256 校验 → 解压 → 发起一次性 install job 容器执行安装
+  # - install job 化的原因：up -d 会重建 updater 自身容器，进程内直接跑 compose 会被杀中断；
+  #   job 容器由 docker daemon 直管，与 updater 生命周期解耦，能完整跑完安装并写终态
+  # - 挂 docker.sock + 安装目录（./ = compose 所在目录）：升级动作的最高权限执行者，
+  #   风险收敛：不对宿主暴露端口、写接口 UPDATER_TOKEN 鉴权
+  # - root 运行：需访问 docker.sock 与安装目录 root 属主的 .env(600)
+  # ----------------------------------------------------------------------------
+  updater:
+    build:
+      context: ../../deploy/updater
+      args:
+        GOPROXY: ${GOPROXY:-https://goproxy.cn,direct}
+        APP_VERSION: ${APP_VERSION:-dev}
+        BUILD_TIME: ${BUILD_TIME:-unknown}
+    image: devops-admin/updater:${APP_VERSION:-prod}
+    container_name: devops-updater
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      STACK_DIR: /opt/stack
+      # server 与 updater 同源 .env 注入；空 = 不鉴权（仅限可信内网）
+      UPDATER_TOKEN: ${UPDATER_TOKEN:-}
+      # 安装 job 复用本镜像（版本化 tag）与栈网络
+      UPDATER_IMAGE: devops-admin/updater:${APP_VERSION:-prod}
+      # 实际网络名 = 项目名(name: devops-admin-prod) + '_' + 本文件网络键；
+      # 不给网络加显式 name 是为不改动已部署环境的既有网络（避免全容器迁移重建）
+      UPDATER_NETWORK: devops-admin-prod_prod-net
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      # 安装目录（compose/.env/升级缓存/升级状态文件）；无 ports——仅 prod-net 内网可达
+      - ./:/opt/stack
     networks:
       - prod-net
 

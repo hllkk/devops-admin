@@ -305,7 +305,8 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			MenuName:  "route.system_setting",
 			MenuType:  "C",
 			Path:      "system/setting",
-			ApiPrefix: "/system/setting, /system/setting/*",
+			// /system/upgrade/start 为触发在线升级(管理操作,随本菜单授权;读接口在 rbacWhitelistPrivate)
+			ApiPrefix: "/system/setting, /system/setting/*, /system/upgrade/start",
 			Component: "_admin/system/setting/index",
 			Icon:      "carbon:settings",
 			Visible:   "0",
@@ -544,6 +545,7 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 		// ── 系统设置 ──
 		{ParentId: menuNameMap["route.system_setting"], MenuName: "设置查询", MenuType: "F", Perms: "system:setting:query", Icon: "#", Visible: "0", OrderNum: 1},
 		{ParentId: menuNameMap["route.system_setting"], MenuName: "设置保存", MenuType: "F", Perms: "system:setting:save", Icon: "#", Visible: "0", OrderNum: 2},
+		{ParentId: menuNameMap["route.system_setting"], MenuName: "在线升级", MenuType: "F", Perms: "system:setting:upgrade", Icon: "#", Visible: "0", OrderNum: 3},
 		// ── 登录日志 ──
 		{ParentId: menuNameMap["route.log_loginlog"], MenuName: "日志查询", MenuType: "F", Perms: "log:loginlog:query", Icon: "#", Visible: "0", OrderNum: 1},
 		{ParentId: menuNameMap["route.log_loginlog"], MenuName: "日志删除", MenuType: "F", Perms: "log:loginlog:remove", Icon: "#", Visible: "0", OrderNum: 2},

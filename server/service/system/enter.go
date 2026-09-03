@@ -31,4 +31,5 @@ type ServiceGroup struct {
 	SocialService
 	OnlineService
 	WecomContactService
+	UpgradeService
 }

@@ -19,6 +19,10 @@ FROM golang:1.26-alpine AS builder
 
 # 国内构建走 goproxy.cn 加速；外网构建可在 compose 用 build.args.GOPROXY 覆盖
 ARG GOPROXY=https://goproxy.cn,direct
+# 版本注入：与镜像版本化 tag 共用 APP_VERSION（compose 传参），
+# 注入 global.Version/BuildTime 供在线升级比对与「关于」展示
+ARG APP_VERSION=dev
+ARG BUILD_TIME=unknown
 ENV CGO_ENABLED=0 \
     GOPROXY=${GOPROXY}
 
@@ -31,8 +35,10 @@ RUN go mod download
 # 拷源码（含已入库的 docs/docs.go、docs/swagger.json 与 resource/ip2region.xdb）
 COPY . .
 
-# 静态编译，剥离调试信息与路径，缩小体积
-RUN go build -trimpath -ldflags="-s -w" -o /out/devops-admin-server .
+# 静态编译，剥离调试信息与路径，缩小体积；版本经 ldflags 注入 global
+RUN go build -trimpath \
+    -ldflags="-s -w -X 'github.com/hllkk/devops-admin/server/global.Version=${APP_VERSION}' -X 'github.com/hllkk/devops-admin/server/global.BuildTime=${BUILD_TIME}'" \
+    -o /out/devops-admin-server .
 
 # ----------------------------------------------------------------------------
 # 阶段 2：最小运行镜像
