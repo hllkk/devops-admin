@@ -406,7 +406,8 @@ onMounted(async () => {
           <div class="flex h-full flex-col gap-8px">
             <div class="flex items-start gap-10px">
               <div class="flex size-40px shrink-0 items-center justify-center rounded-12px bg-emerald-50 dark:bg-emerald-900/30">
-                <SvgIcon icon="lucide:server" class="text-20px text-emerald-600" />
+                <IconUrl v-if="mcp.iconUrl" :value="mcp.iconUrl" :size="20" class="text-emerald-600" />
+                <SvgIcon v-else icon="lucide:server" class="text-20px text-emerald-600" />
               </div>
               <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-4px">
@@ -473,7 +474,8 @@ onMounted(async () => {
           <div class="flex h-full flex-col gap-8px">
             <div class="flex items-start gap-10px">
               <div class="flex size-40px shrink-0 items-center justify-center rounded-12px bg-amber-50 dark:bg-amber-900/30">
-                <SvgIcon icon="lucide:package" class="text-20px text-amber-600" />
+                <IconUrl v-if="skill.iconUrl" :value="skill.iconUrl" :size="20" class="text-amber-600" />
+                <SvgIcon v-else icon="lucide:package" class="text-20px text-amber-600" />
               </div>
               <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-4px">

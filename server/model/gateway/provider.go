@@ -1,6 +1,8 @@
 package gateway
 
 import (
+	"time"
+
 	"github.com/hllkk/devops-admin/server/global"
 	"gorm.io/datatypes"
 )
@@ -18,6 +20,7 @@ type Provider struct {
 	Description   string   `json:"description" gorm:"type:text;comment:描述"`                  // 描述
 	SupportedFormats datatypes.JSON `json:"supportedFormats" gorm:"type:jsonb;comment:支持的接入格式(openai/anthropic/lmstudio/ollama)" swaggertype:"object"` // 支持的接入格式(凭证 format 从中选)
 	BalanceSyncConfig string        `json:"-" gorm:"type:text;comment:余量采集配置(AES-256-GCM密文JSON,含阿里云AK/SK,不序列化出网)"` // 余量采集配置(密文,旁路只读)
+	BalanceSyncedAt   *time.Time     `json:"-" gorm:"comment:余量最近同步时间(UTC,与快照行数解耦,空=从未同步)"`      // 余量最近同步时间(快照为空也有值,汇总出网走 summary.syncedAt)
 	CredentialCount  int64           `json:"credentialCount" gorm:"-"`                                // 凭证数(列表展示,service 层填充,不入库)
 }
 

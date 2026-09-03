@@ -27,7 +27,24 @@ async function getBalanceData() {
   loading.value = false;
 }
 
-watch(() => props.provider.providerId, getBalanceData, { immediate: true });
+/** 进入面板自动同步一次(后端静默:未配置凭证跳过/5分钟节流/失败不弹错) */
+async function autoSync() {
+  if (syncing.value) return;
+  syncing.value = true;
+  const { error } = await fetchSyncProviderBalance(props.provider.providerId!, true);
+  syncing.value = false;
+  if (error) return;
+  getBalanceData();
+}
+
+watch(
+  () => props.provider.providerId,
+  () => {
+    getBalanceData();
+    autoSync();
+  },
+  { immediate: true }
+);
 
 const summary = computed(() => detail.value?.summary ?? null);
 

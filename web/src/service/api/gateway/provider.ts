@@ -68,11 +68,12 @@ export function fetchSaveBalanceConfig(providerId: CommonType.IdType, data: Api.
   });
 }
 
-/** 手动同步供应商套餐余量 */
-export function fetchSyncProviderBalance(providerId: CommonType.IdType) {
+/** 同步供应商套餐余量(auto=true 进入面板自动触发:后端静默节流,失败不报错) */
+export function fetchSyncProviderBalance(providerId: CommonType.IdType, auto = false) {
   return request<Api.Gateway.ProviderBalanceSummary>({
     url: `/gateway/provider/${providerId}/balance-sync`,
     method: 'post',
+    params: auto ? { auto: true } : undefined,
     timeout: 0 // 厂商 OpenAPI 外呼+翻页,不吃默认 10s 超时
   });
 }

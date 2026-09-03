@@ -318,6 +318,256 @@ const docTemplate = `{
                 }
             }
         },
+        "/gateway/adoption/departments": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayAdoption"
+                ],
+                "summary": "部门覆盖率明细(全部部门含零调用,激活/成员/消耗)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "开始业务日",
+                        "name": "startDate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束业务日",
+                        "name": "endDate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "部门筛选(含子树)",
+                        "name": "departmentId",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/response.AdoptionDeptRow"
+                                            }
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/adoption/departments/{id}/users": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayAdoption"
+                ],
+                "summary": "部门成员明细下钻(含未激活成员,兼未使用人员清单)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "部门ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "开始业务日",
+                        "name": "startDate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束业务日",
+                        "name": "endDate",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/response.AdoptionUserRow"
+                                            }
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/adoption/models": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayAdoption"
+                ],
+                "summary": "模型分布(LLM 维,调用/成本占比)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "开始业务日",
+                        "name": "startDate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束业务日",
+                        "name": "endDate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "部门筛选(含子树)",
+                        "name": "departmentId",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/response.AdoptionModelRow"
+                                            }
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/adoption/overview": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayAdoption"
+                ],
+                "summary": "覆盖率总览(KPI 含环比+DAU 按日趋势)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "开始业务日(YYYY-MM-DD,缺省本月首日)",
+                        "name": "startDate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束业务日(缺省今天)",
+                        "name": "endDate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "部门筛选(含子树,0=不限)",
+                        "name": "departmentId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户筛选(0=不限)",
+                        "name": "userId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "密钥筛选(0=不限)",
+                        "name": "aiKeyId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "模型名(精确)",
+                        "name": "model",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "供应商(精确)",
+                        "name": "provider",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.AdoptionOverview"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/gateway/ai-key": {
             "put": {
                 "consumes": [
@@ -2786,6 +3036,74 @@ const docTemplate = `{
                 }
             }
         },
+        "/gateway/health/check-deployments": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayHealth"
+                ],
+                "summary": "手动巡检全部模型部署(按路由组探测落库,单机模式跳过)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "number"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/health/summary": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayHealth"
+                ],
+                "summary": "健康检查汇总(四卡:MCP上游/模型部署/基础组件/数据回流新鲜度+三块明细)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.HealthSummary"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/gateway/mcp": {
             "put": {
                 "produces": [
@@ -4516,11 +4834,205 @@ const docTemplate = `{
                 "tags": [
                     "GatewayProvider"
                 ],
-                "summary": "手动同步供应商套餐余量(拉百炼坐席+共享包)",
+                "summary": "同步供应商套餐余量(拉百炼坐席+共享包)",
                 "parameters": [
                     {
                         "type": "integer",
                         "description": "供应商ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "自动模式(进入面板静默触发:未配置凭证/距上次同步过近/失败均不报错,返回当前快照汇总)",
+                        "name": "auto",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.ProviderBalanceSummary"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/report/export/{id}": {
+            "post": {
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "GatewayReport"
+                ],
+                "summary": "导出效能报告 Excel(三 sheet:部门覆盖率/模型分布/用户Top)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "报告ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/report/generate": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayReport"
+                ],
+                "summary": "手动生成效能报告(weekly/monthly 取上一完整周期,custom 须带起止)",
+                "parameters": [
+                    {
+                        "description": "生成参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.ReportGenerateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.EfficiencyReportView"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/report/list": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayReport"
+                ],
+                "summary": "效能报告分页列表(不带内容大字段)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "pageNum",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页大小(上限100)",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "类型筛选(weekly/monthly/custom,空=全部)",
+                        "name": "reportType",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.PageResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "Rows": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/response.EfficiencyReportView"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway/report/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GatewayReport"
+                ],
+                "summary": "效能报告详情(结构化内容+Markdown)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "报告ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -4538,7 +5050,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/response.ProviderBalanceSummary"
+                                            "$ref": "#/definitions/response.EfficiencyReportView"
                                         },
                                         "msg": {
                                             "type": "string"
@@ -9378,16 +9890,142 @@ const docTemplate = `{
                 "tags": [
                     "SysSetting"
                 ],
-                "summary": "发送企微群机器人测试(使用当前表单webhook,无需先保存)",
+                "summary": "发送企微群机器人测试(按群主键实测已录入群的 webhook)",
                 "parameters": [
                     {
-                        "description": "群机器人webhook地址",
+                        "description": "目标群主键",
                         "name": "data",
                         "in": "body",
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/request.TestWecomBotReq"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/setting/notify/wecom-bot-group": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysSetting"
+                ],
+                "summary": "群机器人群列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/system.SysWecomBotGroup"
+                                            }
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysSetting"
+                ],
+                "summary": "新增群机器人群(群聊名称+webhook)",
+                "parameters": [
+                    {
+                        "description": "群聊名称+webhook地址",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.WecomBotGroupCreateReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/system.SysWecomBotGroup"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/setting/notify/wecom-bot-group/{id}": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SysSetting"
+                ],
+                "summary": "删除群机器人群(软删,即时生效)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "群主键",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -10218,6 +10856,74 @@ const docTemplate = `{
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/system.UserInfo"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/wecom/syncStatus": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wecom"
+                ],
+                "summary": "企业微信通讯录同步状态查询",
+                "responses": {
+                    "200": {
+                        "description": "同步状态",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/system.WecomSyncStatus"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/system/wecom/syncStructure": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wecom"
+                ],
+                "summary": "企业微信通讯录同步(异步启动)",
+                "responses": {
+                    "200": {
+                        "description": "启动状态(started/inProgress)",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/system.WecomSyncStatus"
                                         },
                                         "msg": {
                                             "type": "string"
@@ -11803,8 +12509,15 @@ const docTemplate = `{
         "request.MCPServerOperateParams": {
             "type": "object",
             "properties": {
+                "args": {
+                    "description": "stdio 启动参数",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "authType": {
-                    "description": "鉴权方式(none/api_key/bearer_token)",
+                    "description": "鉴权方式(none/api_key/bearer_token;stdio 恒 none)",
                     "type": "string"
                 },
                 "author": {
@@ -11819,8 +12532,12 @@ const docTemplate = `{
                     "description": "分类",
                     "type": "string"
                 },
+                "command": {
+                    "description": "stdio 启动命令(白名单运行时)",
+                    "type": "string"
+                },
                 "credentials": {
-                    "description": "鉴权凭据(明文入网,掩码回传=保留旧值)",
+                    "description": "鉴权凭据/stdio env变量(明文入网,掩码回传=保留旧值)",
                     "type": "object",
                     "additionalProperties": {}
                 },
@@ -11866,11 +12583,11 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "transport": {
-                    "description": "传输协议(sse/streamable_http)",
+                    "description": "传输协议(sse/streamable_http/stdio)",
                     "type": "string"
                 },
                 "url": {
-                    "description": "MCP 端点",
+                    "description": "MCP 端点(stdio 型留空)",
                     "type": "string"
                 }
             }
@@ -12266,6 +12983,31 @@ const docTemplate = `{
                 }
             }
         },
+        "request.ReportGenerateParams": {
+            "type": "object",
+            "required": [
+                "reportType"
+            ],
+            "properties": {
+                "endDate": {
+                    "description": "结束业务日(custom 用)",
+                    "type": "string"
+                },
+                "reportType": {
+                    "description": "报告类型",
+                    "type": "string",
+                    "enum": [
+                        "weekly",
+                        "monthly",
+                        "custom"
+                    ]
+                },
+                "startDate": {
+                    "description": "开始业务日(custom 用)",
+                    "type": "string"
+                }
+            }
+        },
         "request.ResetUserPwdParams": {
             "type": "object",
             "properties": {
@@ -12566,12 +13308,13 @@ const docTemplate = `{
         "request.TestWecomBotReq": {
             "type": "object",
             "required": [
-                "webhookUrl"
+                "groupId"
             ],
             "properties": {
-                "webhookUrl": {
-                    "description": "当前表单 webhook(未保存也可测)",
-                    "type": "string"
+                "groupId": {
+                    "description": "目标群(sys_wecom_bot_group 主键,须已录入)",
+                    "type": "string",
+                    "example": "0"
                 }
             }
         },
@@ -12682,6 +13425,23 @@ const docTemplate = `{
                 }
             }
         },
+        "request.WecomBotGroupCreateReq": {
+            "type": "object",
+            "required": [
+                "groupName",
+                "webhookUrl"
+            ],
+            "properties": {
+                "groupName": {
+                    "description": "群聊名称",
+                    "type": "string"
+                },
+                "webhookUrl": {
+                    "description": "群机器人 webhook 地址",
+                    "type": "string"
+                }
+            }
+        },
         "response.ActiveModelView": {
             "type": "object",
             "properties": {
@@ -12720,6 +13480,181 @@ const docTemplate = `{
                 "requiresApproval": {
                     "description": "订阅需审批",
                     "type": "boolean"
+                }
+            }
+        },
+        "response.AdoptionDeptRow": {
+            "type": "object",
+            "properties": {
+                "activeCount": {
+                    "description": "激活成员数",
+                    "type": "integer"
+                },
+                "coverage": {
+                    "description": "覆盖率%",
+                    "type": "number"
+                },
+                "deptId": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "deptName": {
+                    "type": "string"
+                },
+                "internalCost": {
+                    "description": "内部成本(¥)",
+                    "type": "number"
+                },
+                "memberCount": {
+                    "description": "启用成员数(直挂)",
+                    "type": "integer"
+                },
+                "requests": {
+                    "description": "调用数(含部门 Key 消耗)",
+                    "type": "integer"
+                },
+                "totalTokens": {
+                    "description": "总 token",
+                    "type": "integer"
+                }
+            }
+        },
+        "response.AdoptionKpi": {
+            "type": "object",
+            "properties": {
+                "activeUsers": {
+                    "description": "激活用户数(期内有 LLM/MCP 调用)",
+                    "type": "integer"
+                },
+                "coverage": {
+                    "description": "总覆盖率%(激活/启用总数)",
+                    "type": "number"
+                },
+                "coverageChange": {
+                    "description": "覆盖率环比(百分点,当期-上期;分母同为当前用户快照)",
+                    "type": "number"
+                },
+                "dailyRequests": {
+                    "description": "日均调用(按期间天数)",
+                    "type": "number"
+                },
+                "days": {
+                    "description": "期间天数(闭区间)",
+                    "type": "integer"
+                },
+                "newActiveUsers": {
+                    "description": "新增活跃(当期激活且上期未激活)",
+                    "type": "integer"
+                },
+                "perCapitaTokens": {
+                    "description": "人均 token(分母=激活用户数,活跃人均)",
+                    "type": "integer"
+                },
+                "prevActiveUsers": {
+                    "description": "上期激活用户数(等长上一期)",
+                    "type": "integer"
+                },
+                "totalRequests": {
+                    "description": "总调用数(LLM+MCP)",
+                    "type": "integer"
+                },
+                "totalUsers": {
+                    "description": "启用用户总数(分母,含从未使用者)",
+                    "type": "integer"
+                }
+            }
+        },
+        "response.AdoptionModelRow": {
+            "type": "object",
+            "properties": {
+                "activeUsers": {
+                    "description": "活跃用户数(去重)",
+                    "type": "integer"
+                },
+                "costShare": {
+                    "description": "内部成本占比%",
+                    "type": "number"
+                },
+                "internalCost": {
+                    "description": "内部成本(¥)",
+                    "type": "number"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "requestShare": {
+                    "description": "调用占比%",
+                    "type": "number"
+                },
+                "requests": {
+                    "description": "调用数",
+                    "type": "integer"
+                },
+                "totalTokens": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.AdoptionOverview": {
+            "type": "object",
+            "properties": {
+                "kpi": {
+                    "$ref": "#/definitions/response.AdoptionKpi"
+                },
+                "trend": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.AdoptionTrendItem"
+                    }
+                }
+            }
+        },
+        "response.AdoptionTrendItem": {
+            "type": "object",
+            "properties": {
+                "activeUsers": {
+                    "description": "当日活跃用户数(LLM∪MCP 去重)",
+                    "type": "integer"
+                },
+                "date": {
+                    "description": "业务日(YYYY-MM-DD)",
+                    "type": "string"
+                },
+                "requests": {
+                    "description": "当日调用数(LLM+MCP)",
+                    "type": "integer"
+                }
+            }
+        },
+        "response.AdoptionUserRow": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "description": "期内是否有调用",
+                    "type": "boolean"
+                },
+                "internalCost": {
+                    "description": "内部成本(¥)",
+                    "type": "number"
+                },
+                "lastActiveAt": {
+                    "description": "最后活跃(本地时区 YYYY-MM-DD HH:mm,空=期内无调用)",
+                    "type": "string"
+                },
+                "requests": {
+                    "description": "调用数(LLM+MCP)",
+                    "type": "integer"
+                },
+                "totalTokens": {
+                    "description": "总 token",
+                    "type": "integer"
+                },
+                "userId": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "userName": {
+                    "type": "string"
                 }
             }
         },
@@ -13586,9 +14521,21 @@ const docTemplate = `{
                     "description": "凭证协议格式(openai/anthropic)",
                     "type": "string"
                 },
+                "healthCheckError": {
+                    "description": "巡检失败信息(脱敏)",
+                    "type": "string"
+                },
+                "healthStatus": {
+                    "description": "健康状态(路由组级结论,见 HealthService)",
+                    "type": "string"
+                },
                 "isActive": {
                     "description": "是否启用",
                     "type": "boolean"
+                },
+                "lastHealthCheck": {
+                    "description": "最后巡检时间",
+                    "type": "string"
                 },
                 "litellmModelId": {
                     "description": "LiteLLM 部署 UUID",
@@ -13639,6 +14586,210 @@ const docTemplate = `{
                 },
                 "updateTime": {
                     "type": "string"
+                }
+            }
+        },
+        "response.EfficiencyReportView": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "详情才带",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/response.ReportContent"
+                        }
+                    ]
+                },
+                "contentMd": {
+                    "description": "详情才带",
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "createdBy": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "creatorName": {
+                    "description": "生成人昵称(空=定时任务)",
+                    "type": "string"
+                },
+                "periodEnd": {
+                    "type": "string"
+                },
+                "periodStart": {
+                    "type": "string"
+                },
+                "reportId": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "reportType": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.HealthCard": {
+            "type": "object",
+            "properties": {
+                "healthy": {
+                    "description": "健康",
+                    "type": "integer"
+                },
+                "total": {
+                    "description": "启用总数",
+                    "type": "integer"
+                },
+                "unhealthy": {
+                    "description": "异常",
+                    "type": "integer"
+                },
+                "unknown": {
+                    "description": "未检测(从未巡检)",
+                    "type": "integer"
+                }
+            }
+        },
+        "response.HealthComponentItem": {
+            "type": "object",
+            "properties": {
+                "latencyMs": {
+                    "description": "探测耗时",
+                    "type": "integer"
+                },
+                "message": {
+                    "description": "失败信息(成功为空)",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "组件名(litellm/postgresql/redis)",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "healthy/unhealthy/unknown(未配置)",
+                    "type": "string"
+                }
+            }
+        },
+        "response.HealthDeploymentItem": {
+            "type": "object",
+            "properties": {
+                "deployName": {
+                    "type": "string"
+                },
+                "deploymentId": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "healthCheckError": {
+                    "type": "string"
+                },
+                "healthStatus": {
+                    "type": "string"
+                },
+                "lastHealthCheck": {
+                    "description": "本地时区,空=从未",
+                    "type": "string"
+                },
+                "modelKey": {
+                    "type": "string"
+                },
+                "modelName": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.HealthFreshness": {
+            "type": "object",
+            "properties": {
+                "lastSyncAt": {
+                    "description": "两游标较新者",
+                    "type": "string"
+                },
+                "llmSyncAt": {
+                    "description": "llm_logs 游标最后推进(本地时区,空=无记录)",
+                    "type": "string"
+                },
+                "mcpSyncAt": {
+                    "description": "mcp_logs 游标最后推进",
+                    "type": "string"
+                },
+                "staleWarnMinutes": {
+                    "description": "判 warning 的阈值(分钟)",
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "healthy(≤10m)/warning(≤60m)/danger(\u003e60m)/unknown(无记录)",
+                    "type": "string"
+                },
+                "thresholdMinutes": {
+                    "description": "判 healthy 的阈值(分钟)",
+                    "type": "integer"
+                }
+            }
+        },
+        "response.HealthMcpItem": {
+            "type": "object",
+            "properties": {
+                "healthCheckError": {
+                    "type": "string"
+                },
+                "healthStatus": {
+                    "type": "string"
+                },
+                "lastHealthCheck": {
+                    "description": "本地时区,空=从未",
+                    "type": "string"
+                },
+                "mcpServerId": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "serverName": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.HealthSummary": {
+            "type": "object",
+            "properties": {
+                "checkedAt": {
+                    "description": "汇总生成时间(本地时区)",
+                    "type": "string"
+                },
+                "components": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.HealthComponentItem"
+                    }
+                },
+                "deployment": {
+                    "$ref": "#/definitions/response.HealthCard"
+                },
+                "deploymentItems": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.HealthDeploymentItem"
+                    }
+                },
+                "freshness": {
+                    "$ref": "#/definitions/response.HealthFreshness"
+                },
+                "mcp": {
+                    "$ref": "#/definitions/response.HealthCard"
+                },
+                "mcpItems": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.HealthMcpItem"
+                    }
                 }
             }
         },
@@ -13735,6 +14886,13 @@ const docTemplate = `{
         "response.MCPServerDetail": {
             "type": "object",
             "properties": {
+                "args": {
+                    "description": "stdio 启动参数",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "authType": {
                     "description": "鉴权方式",
                     "type": "string"
@@ -13753,6 +14911,10 @@ const docTemplate = `{
                 },
                 "category": {
                     "description": "分类(广场筛选)",
+                    "type": "string"
+                },
+                "command": {
+                    "description": "stdio 启动命令",
                     "type": "string"
                 },
                 "createBy": {
@@ -13876,6 +15038,13 @@ const docTemplate = `{
         "response.MCPServerView": {
             "type": "object",
             "properties": {
+                "args": {
+                    "description": "stdio 启动参数",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "authType": {
                     "description": "鉴权方式",
                     "type": "string"
@@ -13894,6 +15063,10 @@ const docTemplate = `{
                 },
                 "category": {
                     "description": "分类(广场筛选)",
+                    "type": "string"
+                },
+                "command": {
+                    "description": "stdio 启动命令",
                     "type": "string"
                 },
                 "createBy": {
@@ -14546,6 +15719,92 @@ const docTemplate = `{
                 "usedValue": {
                     "description": "已用额度(Credits)",
                     "type": "number"
+                }
+            }
+        },
+        "response.ReportContent": {
+            "type": "object",
+            "properties": {
+                "deptRows": {
+                    "description": "部门覆盖率 Top20",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.AdoptionDeptRow"
+                    }
+                },
+                "kpi": {
+                    "$ref": "#/definitions/response.ReportKpi"
+                },
+                "modelRows": {
+                    "description": "模型分布 Top20",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.AdoptionModelRow"
+                    }
+                },
+                "topUsers": {
+                    "description": "用户 Top10(成本口径)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.CostDetailRow"
+                    }
+                }
+            }
+        },
+        "response.ReportKpi": {
+            "type": "object",
+            "properties": {
+                "activeUsers": {
+                    "description": "激活用户数(期内有 LLM/MCP 调用)",
+                    "type": "integer"
+                },
+                "costDiff": {
+                    "description": "结算差额(¥)",
+                    "type": "number"
+                },
+                "coverage": {
+                    "description": "总覆盖率%(激活/启用总数)",
+                    "type": "number"
+                },
+                "coverageChange": {
+                    "description": "覆盖率环比(百分点,当期-上期;分母同为当前用户快照)",
+                    "type": "number"
+                },
+                "dailyRequests": {
+                    "description": "日均调用(按期间天数)",
+                    "type": "number"
+                },
+                "days": {
+                    "description": "期间天数(闭区间)",
+                    "type": "integer"
+                },
+                "externalCost": {
+                    "description": "外部成本合计(¥)",
+                    "type": "number"
+                },
+                "internalCost": {
+                    "description": "内部成本合计(¥)",
+                    "type": "number"
+                },
+                "newActiveUsers": {
+                    "description": "新增活跃(当期激活且上期未激活)",
+                    "type": "integer"
+                },
+                "perCapitaTokens": {
+                    "description": "人均 token(分母=激活用户数,活跃人均)",
+                    "type": "integer"
+                },
+                "prevActiveUsers": {
+                    "description": "上期激活用户数(等长上一期)",
+                    "type": "integer"
+                },
+                "totalRequests": {
+                    "description": "总调用数(LLM+MCP)",
+                    "type": "integer"
+                },
+                "totalUsers": {
+                    "description": "启用用户总数(分母,含从未使用者)",
+                    "type": "integer"
                 }
             }
         },
@@ -15373,6 +16632,11 @@ const docTemplate = `{
                 },
                 "updateTime": {
                     "type": "string"
+                },
+                "wecomDeptId": {
+                    "description": "企微通讯录同步锚点(0=手动创建,\u003e0 与企微部门一一对应)",
+                    "type": "string",
+                    "example": "0"
                 }
             }
         },
@@ -15878,10 +17142,7 @@ const docTemplate = `{
                     "example": "0"
                 },
                 "pushBudgetAlertEnabled": {
-                    "type": "boolean"
-                },
-                "pushMorningReportEnabled": {
-                    "description": "事件开关(控制该事件是否走外部渠道;站内通知不受控)",
+                    "description": "事件开关(控制该事件是否走外部渠道;站内通知不受控)。\n晨报渠道选择已移至 sys_notify_policy.params(按场景勾选应用消息/群机器人)",
                     "type": "boolean"
                 },
                 "updateTime": {
@@ -15898,11 +17159,8 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "wecomBotEnabled": {
-                    "description": "企业微信群机器人(webhook,markdown 进群)",
+                    "description": "企业微信群机器人(webhook,markdown 进群;群清单在 sys_wecom_bot_group 表,渠道是否可用由本开关控制)",
                     "type": "boolean"
-                },
-                "wecomBotWebhook": {
-                    "type": "string"
                 },
                 "wecomPushEnabled": {
                     "description": "企业微信应用消息(凭证复用 sys_auth_config 企微段,此处不重复存)",
@@ -16298,6 +17556,10 @@ const docTemplate = `{
                     "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
                     "type": "string"
                 },
+                "disabledBySync": {
+                    "description": "仅 wecom 有意义:区分\"同步停用\"与\"管理员手动停用\",复职只恢复前者",
+                    "type": "boolean"
+                },
                 "email": {
                     "type": "string"
                 },
@@ -16311,6 +17573,10 @@ const docTemplate = `{
                 "idToken": {
                     "description": "id token",
                     "type": "string"
+                },
+                "inSyncScope": {
+                    "description": "仅 wecom 有意义:通讯录同步建号/命中返回集置 true;扫码登录建号保持 false,不受同步停用影响",
+                    "type": "boolean"
                 },
                 "macAlgorithm": {
                     "description": "小米平台",
@@ -16589,6 +17855,29 @@ const docTemplate = `{
                 }
             }
         },
+        "system.SysWecomBotGroup": {
+            "type": "object",
+            "properties": {
+                "createTime": {
+                    "description": "字段名用 gorm 约定的 CreatedAt/UpdatedAt, 由 gorm 自动维护(写入填值、更新刷值);\ncolumn 锁定 create_time/update_time 列名, 沿用历史列不漂移成 created_at/updated_at;\njson 仍叫 createTime/updateTime 对齐前端 CommonRecord。",
+                    "type": "string"
+                },
+                "groupName": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "主键(过渡保留,未改造系统表用)",
+                    "type": "string",
+                    "example": "0"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "webhookUrl": {
+                    "type": "string"
+                }
+            }
+        },
         "system.UserInfo": {
             "type": "object",
             "properties": {
@@ -16626,6 +17915,88 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/system.MenuRoute"
                     }
+                }
+            }
+        },
+        "system.WecomSyncResult": {
+            "type": "object",
+            "properties": {
+                "deptCreated": {
+                    "description": "新建部门数",
+                    "type": "integer"
+                },
+                "deptSkipped": {
+                    "description": "跳过(无变化)部门数",
+                    "type": "integer"
+                },
+                "deptTotal": {
+                    "description": "企微拉取的部门总数",
+                    "type": "integer"
+                },
+                "deptUpdated": {
+                    "description": "更新部门数",
+                    "type": "integer"
+                },
+                "postCreated": {
+                    "description": "新建岗位数",
+                    "type": "integer"
+                },
+                "postTotal": {
+                    "description": "同步派生的岗位总数(去重后)",
+                    "type": "integer"
+                },
+                "userCreated": {
+                    "description": "新建用户数",
+                    "type": "integer"
+                },
+                "userDisabled": {
+                    "description": "离职停用用户数(本地有、企微无)",
+                    "type": "integer"
+                },
+                "userRestored": {
+                    "description": "复职恢复用户数(曾因离职被同步停用,本期回到企微返回集)",
+                    "type": "integer"
+                },
+                "userSkipped": {
+                    "description": "跳过(无变化)用户数",
+                    "type": "integer"
+                },
+                "userTotal": {
+                    "description": "企微拉取的成员总数(去重后)",
+                    "type": "integer"
+                },
+                "userUpdated": {
+                    "description": "更新用户数",
+                    "type": "integer"
+                }
+            }
+        },
+        "system.WecomSyncStatus": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "description": "最近一次同步错误(空=成功/未发生)",
+                    "type": "string"
+                },
+                "finishedAt": {
+                    "description": "最近一次完成时间",
+                    "type": "string"
+                },
+                "inProgress": {
+                    "description": "是否正在同步",
+                    "type": "boolean"
+                },
+                "result": {
+                    "description": "最近一次同步结果(进行中=上次结果)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/system.WecomSyncResult"
+                        }
+                    ]
+                },
+                "started": {
+                    "description": "本次请求是否成功启动新同步(POST)",
+                    "type": "boolean"
                 }
             }
         },

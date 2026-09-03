@@ -95,9 +95,10 @@ func (a *ProviderBalanceApi) SaveBalanceConfig(c *gin.Context) {
 
 // SyncProviderBalance
 // @Tags      GatewayProvider
-// @Summary   手动同步供应商套餐余量(拉百炼坐席+共享包)
+// @Summary   同步供应商套餐余量(拉百炼坐席+共享包)
 // @Produce   application/json
-// @Param     id  path  int  true  "供应商ID"
+// @Param     id    path  int   true  "供应商ID"
+// @Param     auto  query bool  false "自动模式(进入面板静默触发:未配置凭证/距上次同步过近/失败均不报错,返回当前快照汇总)"
 // @Success   200  {object}  response.Response{data=response.ProviderBalanceSummary,msg=string}
 // @Router    /gateway/provider/{id}/balance-sync [post]
 func (a *ProviderBalanceApi) SyncProviderBalance(c *gin.Context) {
@@ -105,7 +106,7 @@ func (a *ProviderBalanceApi) SyncProviderBalance(c *gin.Context) {
 	if !ok {
 		return
 	}
-	summary, err := providerBalanceService.SyncProviderBalance(c.Request.Context(), id)
+	summary, err := providerBalanceService.SyncProviderBalance(c.Request.Context(), id, c.Query("auto") == "true")
 	if err != nil {
 		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("同步供应商余量失败")
 		response.FailWithMessage(err.Error(), c)

@@ -35,6 +35,7 @@ const (
 	bailianPkgPath    = "/tokenplan/subscription/shared-packages" // ListSubscriptionSharedPackages(门户元数据确认复数)
 	balancePageSize   = 100                                       // 采集翻页大小
 	balanceMaxPages   = 10                                        // 翻页保护上限(坐席/共享包各最多1000条)
+	balanceAutoSyncMinInterval = 5 * time.Minute                  // 自动同步节流窗口(进入页面触发,太近则跳过真实拉取)
 )
 
 // GetProviderBalances 供应商余量明细（快照现状 + 汇总）。
@@ -88,11 +89,17 @@ func (s *ProviderBalanceService) buildSummaryFromProvider(ctx context.Context, p
 	}
 	summary.TotalValue, summary.UsedValue, summary.SurplusValue = a.Total, a.Used, a.Surplus
 	summary.SeatCount, summary.PackageCount = a.Seats, a.Pkgs
-	var last gateway.ProviderBalance
-	if err := global.OPS_DB.WithContext(ctx).Where("provider_id = ?", p.ProviderId).
-		Order("synced_at DESC").Limit(1).Select("synced_at").Scan(&last).Error; err == nil && !last.SyncedAt.IsZero() {
-		t := last.SyncedAt
+	// 最近同步时间以 provider 行为准(快照为空也有值)；为空时回退快照行(兼容加列前的存量数据)
+	if p.BalanceSyncedAt != nil {
+		t := *p.BalanceSyncedAt
 		summary.SyncedAt = &t
+	} else {
+		var last gateway.ProviderBalance
+		if err := global.OPS_DB.WithContext(ctx).Where("provider_id = ?", p.ProviderId).
+			Order("synced_at DESC").Limit(1).Select("synced_at").Scan(&last).Error; err == nil && !last.SyncedAt.IsZero() {
+			t := last.SyncedAt
+			summary.SyncedAt = &t
+		}
 	}
 	return summary, nil
 }
@@ -216,29 +223,47 @@ func decryptBalanceConfig(enc string) (gateway.BalanceSyncConfig, error) {
 	return cfg, nil
 }
 
-// SyncProviderBalance 手动/定时同步入口：拉百炼坐席+共享包 → 事务整批重建快照。
-func (s *ProviderBalanceService) SyncProviderBalance(ctx context.Context, providerId int64) (gatewayResp.ProviderBalanceSummary, error) {
+// SyncProviderBalance 手动/定时/自动同步入口：拉百炼坐席+共享包 → 事务整批重建快照并落同步时间。
+// auto=true 为页面进入触发的静默模式：未配置凭证/距上次同步过近/拉取失败均不报错，直接返回当前快照汇总。
+func (s *ProviderBalanceService) SyncProviderBalance(ctx context.Context, providerId int64, auto bool) (gatewayResp.ProviderBalanceSummary, error) {
 	p, err := (&ProviderService{}).GetProvider(ctx, providerId)
 	if err != nil {
 		return gatewayResp.ProviderBalanceSummary{}, err
-	}
-	if _, ok := gateway.BalanceSyncProviderTypes[p.ProviderType]; !ok {
-		return gatewayResp.ProviderBalanceSummary{}, errors.Errorf("供应商类型 %s 暂不支持余量采集", p.ProviderType)
 	}
 	summary, err := s.buildSummaryFromProvider(ctx, p)
 	if err != nil {
 		return summary, err
 	}
+	if _, ok := gateway.BalanceSyncProviderTypes[p.ProviderType]; !ok {
+		if auto {
+			return summary, nil
+		}
+		return summary, errors.Errorf("供应商类型 %s 暂不支持余量采集", p.ProviderType)
+	}
 	cfg, err := decryptBalanceConfig(p.BalanceSyncConfig)
 	if err != nil {
+		if auto {
+			return summary, nil
+		}
 		return summary, errors.Wrap(err, "读取采集配置失败")
 	}
 	if cfg.AccessKeyId == "" || cfg.AccessKeySecret == "" {
+		if auto {
+			return summary, nil
+		}
 		return summary, errors.New("未配置采集凭证(阿里云 AK/SK)，请先在余量面板保存配置")
+	}
+	// 自动同步节流：距上次成功同步太近直接返回现状，防频繁进出页面打爆厂商 OpenAPI 配额
+	if auto && p.BalanceSyncedAt != nil && time.Since(*p.BalanceSyncedAt) < balanceAutoSyncMinInterval {
+		return summary, nil
 	}
 
 	seats, pkgs, err := fetchBailianBalance(ctx, cfg)
 	if err != nil {
+		if auto {
+			logger.WithCtx(ctx).Mod("gateway").Err(err).Field("providerId", providerId).Error("供应商余量自动同步失败(静默返回快照)")
+			return summary, nil
+		}
 		return summary, err
 	}
 
@@ -256,11 +281,19 @@ func (s *ProviderBalanceService) SyncProviderBalance(ctx context.Context, provid
 			Delete(&gateway.ProviderBalance{}).Error; err != nil {
 			return err
 		}
-		if len(rows) == 0 {
-			return nil
+		if len(rows) > 0 {
+			if err := tx.Create(&rows).Error; err != nil {
+				return err
+			}
 		}
-		return tx.Create(&rows).Error
+		// 同步时间落在供应商行，与快照行数解耦（厂商侧确无坐席/共享包也记录"已同步"）
+		return tx.Model(&gateway.Provider{}).Where("provider_id = ?", providerId).
+			Update("balance_synced_at", now).Error
 	}); err != nil {
+		if auto {
+			logger.WithCtx(ctx).Mod("gateway").Err(err).Field("providerId", providerId).Error("供应商余量自动同步写入失败(静默返回快照)")
+			return summary, nil
+		}
 		return summary, errors.Wrap(err, "余量快照写入失败")
 	}
 	logger.WithCtx(ctx).Mod("gateway").Field("providerId", providerId).
@@ -278,7 +311,7 @@ func (s *ProviderBalanceService) SyncAllProviderBalances(ctx context.Context) (m
 	}
 	result := map[string]int{"total": len(providers), "ok": 0, "failed": 0}
 	for _, p := range providers {
-		if _, err := s.SyncProviderBalance(ctx, p.ProviderId); err != nil {
+		if _, err := s.SyncProviderBalance(ctx, p.ProviderId, false); err != nil {
 			result["failed"]++
 			logger.WithCtx(ctx).Mod("gateway").Err(err).Field("providerId", p.ProviderId).Error("供应商余量同步失败(旁路,不阻断)")
 			continue
