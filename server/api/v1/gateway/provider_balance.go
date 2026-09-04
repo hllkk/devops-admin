@@ -7,7 +7,6 @@ import (
 	"github.com/hllkk/devops-admin/server/model/common/response"
 	"github.com/hllkk/devops-admin/server/model/gateway"
 	gatewayResp "github.com/hllkk/devops-admin/server/model/gateway/response"
-	"github.com/hllkk/devops-admin/server/utils"
 	"github.com/hllkk/devops-admin/server/utils/logger"
 )
 
@@ -122,8 +121,8 @@ func (a *ProviderBalanceApi) SyncProviderBalance(c *gin.Context) {
 // @Success   200  {object}  response.Response{data=[]response.ProviderBalanceSummary,msg=string}
 // @Router    /gateway/dashboard/balance-summary [get]
 func (a *ProviderBalanceApi) GetBalanceSummary(c *gin.Context) {
-	// 供应商资产属管理视角：非超管(强制 self scope)不下发
-	if claims := utils.GetUserInfo(c); claims == nil || !claims.SuperAdmin {
+	// 供应商资产属管理视角：无全局数据视角者(强制 self scope)不下发(口径同 resolveScope)
+	if !canViewGlobalData(c) {
 		response.OkWithDetailed([]gatewayResp.ProviderBalanceSummary{}, "获取成功", c)
 		return
 	}

@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -30,12 +31,30 @@ func parseRange(c *gin.Context) (time.Time, time.Time) {
 	return start, end
 }
 
-// resolveScope 解析 scope：非超管强制 self（数据权限），超管尊重传入值。
-func resolveScope(c *gin.Context) (string, int64) {
+// canViewGlobalData 当前登录者是否可看全平台数据：超管直接放行；其余角色凭 casbin
+// 持有「调用日志明细」(/gateway/usage) 权限即放行——能看全平台调用明细的角色，
+// 看板汇总/预算/供应商资产不高于其数据敏感级。修复:「系统管理员」等管理角色
+// super_admin=false 被强制 scope=self、自身无调用记录时看板整页空白的问题。
+func canViewGlobalData(c *gin.Context) bool {
 	claims := utils.GetUserInfo(c)
-	if claims != nil && claims.SuperAdmin {
-		scope := c.DefaultQuery("scope", "all")
-		return scope, utils.GetUserID(c)
+	if claims == nil {
+		return false
+	}
+	if claims.SuperAdmin {
+		return true
+	}
+	e := utils.GetCasbin()
+	if e == nil {
+		return false
+	}
+	ok, _ := e.Enforce(strconv.Itoa(int(claims.RoleId)), "/gateway/usage", c.Request.Method)
+	return ok
+}
+
+// resolveScope 解析 scope：可看全局数据者尊重传入值(默认all)，其余强制 self（数据权限）。
+func resolveScope(c *gin.Context) (string, int64) {
+	if canViewGlobalData(c) {
+		return c.DefaultQuery("scope", "all"), utils.GetUserID(c)
 	}
 	return "self", utils.GetUserID(c)
 }
