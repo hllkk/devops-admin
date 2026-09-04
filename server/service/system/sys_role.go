@@ -3,6 +3,7 @@ package system
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -18,6 +19,9 @@ import (
 
 // RoleService 角色业务服务(对齐前端 /system/role/* 资源)
 type RoleService struct{}
+
+// RoleServiceApp 角色服务全局入口(initialize 等包直接引用)
+var RoleServiceApp = new(RoleService)
 
 // roleOrder 角色统一排序:role_sort 升序,同序按 role_id 升序。
 const roleOrder = "role_sort ASC, role_id ASC"
@@ -401,6 +405,25 @@ func rebuildAffectedCasbinPolicy(ctx context.Context, roleIds []int64) {
 			Where("sys_role_id = ?", roleId).Pluck("sys_menu_id", &menuIds)
 		syncRoleCasbinPolicy(roleId, menuIds)
 	}
+}
+
+// RebuildAllRoleCasbinPolicies 按各角色当前菜单授权(sys_role_menu)全量重建 casbin 接口策略(幂等自愈)。
+// 供启动期调用:存量库角色授权产生于 casbin 挂载前、或 casbin_rule 意外清空/漂移时,
+// 无需人工重新保存每个角色的授权。超管角色凭 SuperAdmin 绕过校验,不产生策略;
+// 失败仅告警(全量替换语义,下次授权或重启自愈)。
+func (s *RoleService) RebuildAllRoleCasbinPolicies() {
+	if utils.GetCasbin() == nil {
+		logger.Bg().Mod("rbac").Warn("casbin enforcer 未初始化, 跳过启动期角色策略重建")
+		return
+	}
+	var roleIds []int64
+	if err := global.OPS_DB.Model(&system.SysRole{}).
+		Where("super_admin = ?", false).Pluck("role_id", &roleIds).Error; err != nil {
+		logger.Bg().Mod("rbac").Err(err).Error("启动期角色策略重建: 查询角色失败")
+		return
+	}
+	rebuildAffectedCasbinPolicy(context.Background(), roleIds)
+	logger.Bg().Mod("rbac").Info(fmt.Sprintf("启动期 casbin 角色策略重建完成, 共 %d 个角色", len(roleIds)))
 }
 
 // toInt64Slice 将 []common.Int64String 转为 []int64。

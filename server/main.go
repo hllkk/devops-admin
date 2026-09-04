@@ -72,5 +72,6 @@ func initializeSystem() {
 		initialize.RegisterSnowflakeCallbacks() // 注册雪花 ID GORM 回调(须在建表前)
 		initialize.RegisterTables()             // 初始化表
 		initialize.LoadTimedTasks()             // 从 DB 恢复定时任务调度(必须在建表后)
+		initialize.RebuildRoleCasbinPolicies()  // 按存量授权自愈重建 casbin 策略(必须在建表后)
 	}
 }

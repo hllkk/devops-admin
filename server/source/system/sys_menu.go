@@ -145,7 +145,8 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			MenuName:  "route.gateway",
 			MenuType:  "C",
 			Path:      "gateway",
-			ApiPrefix: "/gateway/dashboard, /gateway/dashboard/*",
+			// budget: 首页预算卡片/预算规则抽屉调 /gateway/budget/*(无菜单覆盖会被 casbin 拒)
+			ApiPrefix: "/gateway/dashboard, /gateway/dashboard/*, /gateway/budget, /gateway/budget/*",
 			Component: "_gateway/gateway/index",
 			Icon:      "lucide:layout-dashboard",
 			Visible:   "0",
@@ -355,7 +356,8 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			MenuName:  "route.models_provider",
 			MenuType:  "C",
 			Path:      "models/provider",
-			ApiPrefix: "/gateway/provider, /gateway/provider/*",
+			// credential: 供应商页凭证面板调 /gateway/credential/*
+			ApiPrefix: "/gateway/provider, /gateway/provider/*, /gateway/credential, /gateway/credential/*",
 			Component: "_gateway/models/provider/index",
 			Icon:      "mdi:store-outline",
 			Visible:   "0",
@@ -367,7 +369,8 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			MenuName:  "route.models_model",
 			MenuType:  "C",
 			Path:      "models/model",
-			ApiPrefix: "/gateway/model, /gateway/model/*",
+			// router/settings: 模型页路由池设置弹窗调 /gateway/router/settings(GET/PUT)
+			ApiPrefix: "/gateway/model, /gateway/model/*, /gateway/router/settings, /gateway/router/settings/*",
 			Component: "_gateway/models/model/index",
 			Icon:      "carbon:ml-model-reference",
 			Visible:   "0",
