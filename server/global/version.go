@@ -5,7 +5,7 @@ package global
 // 源码构建保留下方默认值；在线升级的版本比对以本值为准
 var (
 	// Version 当前版本号
-	Version = "v1.0.4"
+	Version = "v1.0.5"
 	// BuildTime 构建时间（RFC3339，裸构建为 unknown）
 	BuildTime = "unknown"
 )

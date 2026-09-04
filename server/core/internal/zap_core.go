@@ -85,7 +85,7 @@ func (z *ZapCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 		info := entry.Message
 
 		// 提取 zap.Error(err) 内容与 request_id/trace_id（builder.assemble 已注入这两个字段）
-		var errStr string
+		errStr := extractErrorDetail(fields)
 		var reqID, traceID string
 		for i := 0; i < len(fields); i++ {
 			f := fields[i]
@@ -94,13 +94,6 @@ func (z *ZapCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 			}
 			if f.Key == logger.FieldTraceID && f.String != "" {
 				traceID = f.String
-			}
-			if errStr == "" && (f.Type == zapcore.ErrorType || f.Key == "error" || f.Key == "err") {
-				if f.Interface != nil {
-					errStr = fmt.Sprintf("%v", f.Interface)
-				} else if f.String != "" {
-					errStr = f.String
-				}
 			}
 		}
 		if errStr != "" {
@@ -140,4 +133,26 @@ func (z *ZapCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 
 func (z *ZapCore) Sync() error {
 	return z.Core.Sync()
+}
+
+// extractErrorDetail 从 zap 字段中提取错误详情文本，取首个命中的非空字段。
+// 命中范围：logger.Builder 的 error_msg 字段（Err() 链路，本项目主路径）、
+// 裸 zap.Error（ErrorType）、以及历史习惯键 "error"/"err"。
+// 键名须用 logger 常量对齐，避免与 builder.assemble 的字段名隐式脱钩
+// （曾因只匹配字面量 "error"/"err"，error_msg 永远漏提，sys_error.info 丢失错误内容）。
+func extractErrorDetail(fields []zapcore.Field) string {
+	for _, f := range fields {
+		if f.Type != zapcore.ErrorType && f.Key != logger.FieldErrorMsg && f.Key != "error" && f.Key != "err" {
+			continue
+		}
+		if f.Interface != nil {
+			if s := fmt.Sprintf("%v", f.Interface); s != "" {
+				return s
+			}
+		}
+		if f.String != "" {
+			return f.String
+		}
+	}
+	return ""
 }
