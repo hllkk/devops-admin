@@ -312,16 +312,21 @@ onMounted(async () => {
           <span class="text-18px font-bold text-slate-900 dark:text-slate-100">{{ $t('route.home') }}</span>
         </div>
 
-        <!-- 中：Tab 切换（我的应用 / 我的AI身份）-->
-        <nav class="absolute left-1/2 flex -translate-x-1/2 items-center gap-4px">
+        <!--
+ 中：Tab 切换（我的应用 / 我的AI身份 / 模型广场）segmented control。
+             按钮背景全部显式声明(含未选中 bg-transparent)，防浏览器 auto-dark(系统深色)给无背景元素强制填深底 
+-->
+        <nav
+          class="absolute left-1/2 flex -translate-x-1/2 items-center rounded-10px bg-slate-100/90 p-2px max-md:static max-md:ml-16px max-md:translate-x-0 dark:bg-slate-800/80"
+        >
           <button
             v-for="tab in homeTabs"
             :key="tab.key"
-            class="rounded-8px px-16px py-8px text-14px font-medium transition-colors"
+            class="max-w-160px truncate rounded-8px px-14px py-6px text-14px font-medium whitespace-nowrap transition-colors max-md:px-10px"
             :class="
               activeTab === tab.key
-                ? 'home-accent-box'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/60'
+                ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-slate-100'
+                : 'bg-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100'
             "
             @click="activeTab = tab.key"
           >
@@ -333,7 +338,7 @@ onMounted(async () => {
         <div class="ml-auto">
           <NDropdown placement="bottom-end" trigger="click" :options="dropdownOptions" @select="handleUserMenu">
             <div
-              class="flex cursor-pointer items-center gap-8px rounded-8px px-8px py-4px transition-colors hover:bg-slate-100 dark:hover:bg-slate-700/60"
+              class="flex cursor-pointer items-center gap-8px rounded-8px bg-transparent px-8px py-4px transition-colors hover:bg-slate-100 dark:hover:bg-slate-700/60"
             >
               <NAvatar :size="32" round :src="user?.avatar || defaultAvatar" />
               <span class="max-w-120px truncate text-14px font-medium text-slate-700 dark:text-slate-200">
@@ -722,10 +727,6 @@ onMounted(async () => {
   background-image: linear-gradient(to bottom right, rgb(var(--container-bg-color)), rgb(var(--primary-600-color) / 0.08));
 }
 .home-accent {
-  color: rgb(var(--primary-600-color));
-}
-.home-accent-box {
-  background-color: rgb(var(--primary-600-color) / 0.10);
   color: rgb(var(--primary-600-color));
 }
 .home-accent-border {
