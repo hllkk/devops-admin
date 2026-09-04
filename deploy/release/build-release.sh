@@ -13,8 +13,9 @@
 #   manifest-<版本>.json                 版本清单：版本/changelog/双包 sha256/包类型，
 #                                        上传发布服务器改名 manifest.json 生效（changelog 需手工编辑）
 #
-# 镜像版本化：自研镜像 tag = APP_VERSION（devops-admin/web|server|updater:<版本>），
-#             与 server ldflags 注入同源；旧版本镜像不被升级覆盖，保留本地可随时回滚。
+# 镜像版本化：自研镜像 tag = APP_VERSION（devops-admin/web|server|updater:<版本>），三处同源注入——
+#             server ldflags 进二进制 / web vite define+index.html meta 进前端产物；
+#             旧版本镜像不被升级覆盖，保留本地可随时回滚。
 #
 # 安全：
 #   - 全量包 .env 由构建机生成强随机机密（既有约定）；构建/校验阶段的临时 env

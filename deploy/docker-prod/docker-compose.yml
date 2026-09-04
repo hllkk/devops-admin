@@ -23,6 +23,8 @@ services:
       context: ../../web
       # Dockerfile 统一放在 docker-prod/，经 BuildKit 引用 context 之外的 Dockerfile
       dockerfile: ../deploy/docker-prod/Dockerfile.web
+      args:
+        APP_VERSION: ${APP_VERSION:-dev}
     # 版本化 tag：与 server ldflags 注入共用 APP_VERSION（deploy/release/build-release.sh 发布时注入），
     # 在线升级/回滚依赖版本 tag（旧版本镜像不被升级覆盖，保留本地可随时回退）
     image: devops-admin/web:${APP_VERSION:-prod}

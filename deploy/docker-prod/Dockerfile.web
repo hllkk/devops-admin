@@ -41,6 +41,12 @@ RUN pnpm install --frozen-lockfile
 # 拷源码（含 .env / .env.prod 等构建期变量文件）
 COPY . .
 
+# 版本注入：APP_VERSION 经 compose build.args 传入（与 server ldflags 同源），
+# vite 构建期注入 __APP_VERSION__ 与 index.html meta；未注入（本地构建）回退 package.json version。
+# 放依赖层之后：版本变化不打掉 pnpm install 层缓存
+ARG APP_VERSION
+ENV APP_VERSION=${APP_VERSION}
+
 # 生产构建（等价 pnpm build = vite build --mode prod，输出 dist/）
 RUN pnpm build
 

@@ -55,7 +55,9 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       {
         type: 'selection',
         align: 'center',
-        width: 48
+        width: 48,
+        // 超管禁勾选,从入口杜绝批量删除误选超管(后端 Delete 仍有兜底拦截)
+        disabled: row => row.superAdmin
       },
       {
         key: 'userName',

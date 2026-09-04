@@ -135,10 +135,19 @@ func (s *UserService) Create(ctx context.Context, req systemReq.UserOperateParam
 }
 
 // Update 修改用户(事务:更新用户[password 空=不改] + 全量替换 sys_user_role/sys_user_post)。
+// 超管用户受保护,管理侧整体禁改——尤其防经 roleIds 摘掉超管角色后绕过 Delete/UpdateStatus 保护;
+// 超管本人改资料/密码走自助 profile 接口,不受此限。
 func (s *UserService) Update(ctx context.Context, req systemReq.UserOperateParams, updateBy int64) error {
 	userId := req.UserId.Int64()
 	if userId == 0 {
 		return errors.New("用户ID不能为空")
+	}
+	protNames, err := s.protectedSuperAdminNames(ctx, []int64{userId})
+	if err != nil {
+		return err
+	}
+	if len(protNames) > 0 {
+		return fmt.Errorf("不允许修改超级管理员(%s),超级管理员是系统最高权限账号", strings.Join(protNames, ", "))
 	}
 	if req.NickName == "" {
 		return errors.New("昵称不能为空")
@@ -197,10 +206,33 @@ func (s *UserService) Update(ctx context.Context, req systemReq.UserOperateParam
 
 // UpdateStatus 修改用户状态(对齐前端 PUT /system/user/changeStatus)。
 // 状态变化后级联同步该用户名下 AiKey 启停(禁用后明文 Key 不能继续直连网关)。
+// protectedSuperAdminNames 查给定用户中挂 SuperAdmin=true 角色的用户名(超管保护校验用)。
+// 超管是权限体系的管理入口,禁删/禁改状态——被删或被停用都会导致系统失去超管且无法从界面自愈
+// (对齐 RoleService.DeleteRole 的超管角色保护;join 写法复用本文件 GetList 先例)。
+func (s *UserService) protectedSuperAdminNames(ctx context.Context, ids []int64) ([]string, error) {
+	var names []string
+	if err := global.OPS_DB.WithContext(ctx).Model(&system.SysUser{}).
+		Joins("JOIN sys_user_role ON sys_user_role.sys_user_id = sys_users.id").
+		Joins("JOIN sys_roles ON sys_roles.role_id = sys_user_role.sys_role_id").
+		Where("sys_users.id IN ? AND sys_roles.super_admin = ?", ids, true).
+		Distinct().Pluck("sys_users.user_name", &names).Error; err != nil {
+		return nil, err
+	}
+	return names, nil
+}
+
+// UpdateStatus 修改用户状态(0 正常/1 停用);超管用户受保护,禁止改状态(防越权停用废掉最高权限账号)。
 func (s *UserService) UpdateStatus(ctx context.Context, req systemReq.UserOperateParams, updateBy int64) error {
 	userId := req.UserId.Int64()
 	if userId == 0 {
 		return errors.New("用户ID不能为空")
+	}
+	protNames, err := s.protectedSuperAdminNames(ctx, []int64{userId})
+	if err != nil {
+		return err
+	}
+	if len(protNames) > 0 {
+		return fmt.Errorf("不允许修改超级管理员(%s)的状态,超级管理员是系统最高权限账号", strings.Join(protNames, ", "))
 	}
 	if err := global.OPS_DB.WithContext(ctx).Model(&system.SysUser{}).Where("id = ?", userId).
 		Updates(map[string]interface{}{"status": req.Status, "update_by": updateBy}).Error; err != nil {
@@ -216,9 +248,18 @@ func (s *UserService) UpdateStatus(ctx context.Context, req systemReq.UserOperat
 
 // Delete 批量删除用户(事务:清理 sys_user_role/sys_user_post/sys_user_departments → 删用户)。
 // 删除后级联停用其名下 AiKey(用户已删,Key 保留以承载历史用量归因)。
+// 超管用户受保护:挂 SuperAdmin=true 角色的用户禁删——超管是权限体系的管理入口,
+// 被删将导致系统失去超管且无法从界面自愈(对齐 RoleService.DeleteRole 的超管角色保护)。
 func (s *UserService) Delete(ctx context.Context, ids []int64, updateBy int64) error {
 	if len(ids) == 0 {
 		return errors.New("未选择删除项")
+	}
+	protNames, err := s.protectedSuperAdminNames(ctx, ids)
+	if err != nil {
+		return err
+	}
+	if len(protNames) > 0 {
+		return fmt.Errorf("不允许删除超级管理员(%s),超级管理员是系统最高权限账号,请先调整其角色", strings.Join(protNames, ", "))
 	}
 	if err := global.OPS_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Where("sys_user_id IN ?", ids).Delete(&system.SysUserRole{}).Error; err != nil {
@@ -269,6 +310,13 @@ func (s *UserService) ResetPwd(ctx context.Context, req systemReq.ResetUserPwdPa
 	userId := req.UserId.Int64()
 	if userId == 0 {
 		return errors.New("用户ID不能为空")
+	}
+	protNames, err := s.protectedSuperAdminNames(ctx, []int64{userId})
+	if err != nil {
+		return err
+	}
+	if len(protNames) > 0 {
+		return fmt.Errorf("不允许重置超级管理员(%s)的密码,超级管理员密码请由本人自助修改", strings.Join(protNames, ", "))
 	}
 	if req.Password == "" {
 		return errors.New("密码不能为空")

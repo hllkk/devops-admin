@@ -23,6 +23,8 @@ const { hasAuth } = useAuth();
 
 const loading = ref(false);
 const versionInfo = ref<Api.System.UpgradeVersionInfo | null>(null);
+// 前端构建内置版本（与 server ldflags 同源注入）：后端版本接口不可达时兜底展示
+const appVersion = __APP_VERSION__;
 
 // 检查更新状态
 const checking = ref(false);
@@ -127,7 +129,7 @@ function formatBuildTime(buildTime?: string) {
       <div class="flex flex-col gap-10px px-8px text-14px">
         <div class="flex items-center justify-between">
           <span class="opacity-60">{{ $t('common.version') }}</span>
-          <span class="font-medium">{{ versionInfo?.version ?? '-' }}</span>
+          <span class="font-medium">{{ versionInfo?.version ?? appVersion }}</span>
         </div>
         <div class="flex items-center justify-between">
           <span class="opacity-60">{{ $t('common.buildTime') }}</span>

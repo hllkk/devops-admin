@@ -24,7 +24,7 @@ import {
   transformMenuToSearchMenus,
   updateLocaleOfGlobalMenus
 } from './shared';
-import { ALL_MODULES, DEFAULT_MODULE, type RouteModule } from '@/constants/module';
+import { ALL_MODULES, AUTO_LAYOUT_ROUTES, DEFAULT_MODULE, type RouteModule } from '@/constants/module';
 import { filterRoutesByModule, resolveModuleFromRoute } from './module';
 
 export const useRouteStore = defineStore(SetupStoreId.Route, () => {
@@ -251,6 +251,27 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
     setIsInitAuthRoute(true);
   }
 
+  /**
+   * Merge global public auth routes (AUTO_LAYOUT_ROUTES, e.g. user-center).
+   *
+   * 这些是「登录后才访问、无 meta.module、hideInMenu」的公共功能页,语义上属于所有登录用户
+   * 必需、不应走后端角色菜单授权的页面。dynamic 模式下 auth 路由只从后端 getUserRoutes 取,
+   * 后端 sys_menu 不下发这类全局页,会导致点击入口 router.push 时 No match。
+   * 故从前端静态 authRoutes(routes.ts 生成产物)按 AUTO_LAYOUT_ROUTES 名单补齐,
+   * 仅补后端未下发的(后端若下发则以后端为准,避免覆盖)。
+   */
+  function mergeGlobalPublicAuthRoutes() {
+    const { authRoutes: staticAuthRoutes } = createStaticRoutes();
+    const existing = new Set(authRoutes.value.map(route => route.name));
+    const globals = staticAuthRoutes.filter(
+      route => AUTO_LAYOUT_ROUTES.includes(route.name as string) && !existing.has(route.name)
+    );
+
+    if (globals.length) {
+      addAuthRoutes([...authRoutes.value, ...globals]);
+    }
+  }
+
   /** Init dynamic auth route */
   async function initDynamicAuthRoute() {
     const { data, error } = await fetchGetUserRoutes();
@@ -259,6 +280,8 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
       const { routes, home } = data;
 
       addAuthRoutes(routes);
+
+      mergeGlobalPublicAuthRoutes();
 
       handleConstantAndAuthRoutes();
 

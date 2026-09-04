@@ -24,9 +24,12 @@ scp 全量包→解压→install.sh。要在产品内集成版本发布能力：
   rbacWhitelistPrivate（登录即可，关于弹窗人人可见）；`/system/upgrade/start` 走
   casbin——系统设置菜单 ApiPrefix 追加 `/system/upgrade/start` + F 按钮
   `system:setting:upgrade`（新库生效；已有库超管 SuperAdmin 绕过 casbin 直接可用）。
-- **镜像版本化**：web/server/updater tag = `${APP_VERSION:-prod}`，Dockerfile.server
-  ldflags 注入 `global.Version/BuildTime`（Version 由 const 改 var 才可注入）；回滚 =
-  .env 的 APP_VERSION 改回旧版本 + up -d。
+- **镜像版本化**：web/server/updater tag = `${APP_VERSION:-prod}`，三处同源注入——
+  Dockerfile.server ldflags 注入 `global.Version/BuildTime`（Version 由 const 改 var
+  才可注入）；Dockerfile.web `ARG APP_VERSION` → vite define `__APP_VERSION__` +
+  index.html `<meta name="appVersion">`（前端产物自证版本；开发态回退
+  package.json version，发版时与 global.Version 数值同步改，如 v1.2.0/1.2.0）；
+  回滚 = .env 的 APP_VERSION 改回旧版本 + up -d。
 
 ## 关键坑（搬运时必须保持的防线）
 

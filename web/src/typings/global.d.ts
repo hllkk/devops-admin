@@ -23,4 +23,6 @@ declare global {
 
   /** Build time of the project */
   export const BUILD_TIME: string;
+  /** App version (build-injected via APP_VERSION, same source as server ldflags; falls back to package.json in dev) */
+  export const __APP_VERSION__: string;
 }
