@@ -76,6 +76,10 @@ services:
       # AI 网关 LiteLLM 底座：master-key 敏感走 env 覆盖 config；public-url 按部署域名（经 nginx /llm/ 反代，留空则不下发）
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:?必须设置 LITELLM_MASTER_KEY}
       LITELLM_PUBLIC_URL: ${LITELLM_PUBLIC_URL:-}
+      # 在线升级：发布服务器地址 + updater 写接口 token（other.go env 覆盖 config.yaml；
+      # 留空=不启用检查更新；token 与 updater 服务同源，缺失则 server 调 updater 401）
+      UPDATE_SERVER_URL: ${UPDATE_SERVER_URL:-}
+      UPDATER_TOKEN: ${UPDATER_TOKEN:-}
     volumes:
       # 静态配置（入库，只读挂载；DOCKER_ENV 下向导不回写，敏感项由 env 覆盖）
       - ./config/config.yaml:/app/config/config.yaml:ro

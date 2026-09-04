@@ -3,6 +3,7 @@ package system
 import (
 	"context"
 	"errors"
+	"strings"
 	"sync/atomic"
 
 	"github.com/hllkk/devops-admin/server/global"
@@ -51,6 +52,10 @@ func (s *AuthConfigService) Set(ctx context.Context, cfg system.SysAuthConfig) e
 		return err
 	}
 	cfg.OPS_MODEL = prev.OPS_MODEL
+	// 企微可信域名校验两字段规范化：文件名 trim+仅中段自动补全、内容 trim，
+	// 防粘贴带空格/丢前缀后缀导致公网校验恒 404
+	cfg.WecomDomainFileName = system.NormalizeWecomDomainFileName(cfg.WecomDomainFileName)
+	cfg.WecomDomainFileContent = strings.TrimSpace(cfg.WecomDomainFileContent)
 	if err = global.OPS_DB.WithContext(ctx).Save(&cfg).Error; err != nil {
 		return err
 	}

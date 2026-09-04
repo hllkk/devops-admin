@@ -2,6 +2,7 @@ package system
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/hllkk/devops-admin/server/model/common/response"
@@ -201,17 +202,23 @@ func (s *SettingApi) WecomBotGroupDelete(c *gin.Context) {
 // 企业微信会请求 http://your-domain/WW_verify_xxxx.txt 验证域名所有权，
 // 文件名与内容由管理员在认证配置中填写，系统从 DB 读取并自动响应，无需手动放置文件。
 func (s *SettingApi) WecomDomainVerify(c *gin.Context) {
-	name := c.Param("name")
-	filename := "WW_verify_" + name + ".txt"
+	// 路由 /WW_verify_:name 的 param 按段匹配已含 .txt 后缀，直接拼回完整文件名
+	filename := "WW_verify_" + c.Param("name")
 
 	cfg := settingService.CurrentAuth(c.Request.Context())
-	if cfg.WecomDomainFileName == "" || cfg.WecomDomainFileContent == "" {
+	// 比对前规范化配置值（trim/前缀后缀补全），兼容存量脏数据；404 落 Warn 便于区分
+	// "未配置"与"文件名不一致"（企微后台重新申请校验会轮换文件名），Warn 级不进 sys_error 防公网扫描刷表
+	fileName := system.NormalizeWecomDomainFileName(cfg.WecomDomainFileName)
+	fileContent := strings.TrimSpace(cfg.WecomDomainFileContent)
+	if fileName == "" || fileContent == "" {
+		logger.WithCtx(c.Request.Context()).Mod("biz").Field("filename", filename).Warn("企微可信域名校验: 系统设置未配置校验文件, 返回404")
 		c.String(http.StatusNotFound, "not found")
 		return
 	}
-	if cfg.WecomDomainFileName != filename {
+	if fileName != filename {
+		logger.WithCtx(c.Request.Context()).Mod("biz").Field("filename", filename).Field("configured", fileName).Warn("企微可信域名校验: 请求文件名与配置不一致, 返回404")
 		c.String(http.StatusNotFound, "not found")
 		return
 	}
-	c.String(http.StatusOK, cfg.WecomDomainFileContent)
+	c.String(http.StatusOK, fileContent)
 }

@@ -1,6 +1,10 @@
 package system
 
-import "github.com/hllkk/devops-admin/server/global"
+import (
+	"strings"
+
+	"github.com/hllkk/devops-admin/server/global"
+)
 
 // SysAuthConfig 认证配置（单行表 id=1，启动加载入内存缓存，保存即热更新；对齐前端 AuthSettingConfig）
 //
@@ -51,4 +55,20 @@ func DefaultAuthConfig() SysAuthConfig {
 		RegisterEnabled: false,
 		ResetPwdEnabled: false,
 	}
+}
+
+// NormalizeWecomDomainFileName 规范化企微可信域名校验文件名：
+// 去首尾空白；仅填中段时自动补 WW_verify_ 前缀与 .txt 后缀（防粘贴空格/丢段导致校验恒 404）
+func NormalizeWecomDomainFileName(name string) string {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return ""
+	}
+	if !strings.HasPrefix(name, "WW_verify_") {
+		name = "WW_verify_" + name
+	}
+	if !strings.HasSuffix(name, ".txt") {
+		name += ".txt"
+	}
+	return name
 }

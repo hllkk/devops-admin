@@ -27,5 +27,8 @@ func (s *SettingRouter) InitSettingRouter(Router, PublicRouter *gin.RouterGroup)
 		publicSetting.GET("public", settingApi.GetPublicSetting) // 公开系统设置(登录页,免鉴权)
 	}
 	// 企业微信可信域名校验：企业微信会请求 /WW_verify_*.txt，无需鉴权
-	PublicRouter.GET("/WW_verify_:name.txt", settingApi.WecomDomainVerify)
+	// 注意路由不能写成 /WW_verify_:name.txt——gin 的 param 名会吞掉段内 ".txt" 后缀
+	// (param key 变成 "name.txt"，c.Param("name") 恒空，v1.12.0 探针实测)，
+	// 让 :name 吃整段(含 .txt)，handler 侧拼回完整文件名
+	PublicRouter.GET("/WW_verify_:name", settingApi.WecomDomainVerify)
 }
