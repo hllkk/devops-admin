@@ -2,7 +2,7 @@ ai:
     provider: ollama
     ollama:
         base-url: http://172.21.96.141:11434
-        model: qwen3.6:35b
+        model: qwen3.8:27b
         timeout: 120
 aliyun-oss:
     endpoint: yourEndpoint
