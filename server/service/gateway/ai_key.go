@@ -916,7 +916,9 @@ func (s *AiKeyService) ResyncAllKeys(ctx context.Context) (gatewayResp.ResyncRes
 			continue
 		}
 		if err := syncKeyToLitellm(ctx, cli, global.OPS_DB.WithContext(ctx), &keys[i], false); err != nil {
-			logger.WithCtx(ctx).Mod("gateway").Err(err).Field("aiKeyId", keys[i].AiKeyId).Warn("resync: 密钥投影重推失败")
+			// Error 而非 Warn：定时巡检路径无人查看 result.Failed，投影漂移需落 sys_error 供排查
+			// (对齐 credential.go/deployment.go resync 单点失败的同构处理)
+			logger.WithCtx(ctx).Mod("gateway").Err(err).Field("aiKeyId", keys[i].AiKeyId).Error("resync: 密钥投影重推失败")
 			result.Failed = append(result.Failed, keys[i].Name)
 			continue
 		}

@@ -140,7 +140,10 @@ func (s *BudgetRuleService) CheckBudgetAlerts(ctx context.Context) ([]BudgetAler
 		periodKey := s.periodKey(r.BudgetDuration)
 		// 软限预警
 		if percent >= float64(r.SoftWarnPercent) && !s.alertExists(db, r.RuleId, periodKey, gateway.BudgetAlertSoftWarn) {
-			db.Create(&gateway.BudgetAlert{RuleId: r.RuleId, PeriodKey: periodKey, AlertType: gateway.BudgetAlertSoftWarn})
+			if err := db.Create(&gateway.BudgetAlert{RuleId: r.RuleId, PeriodKey: periodKey, AlertType: gateway.BudgetAlertSoftWarn}).Error; err != nil {
+				// 落库失败会导致下一轮重复告警通知，须记 Error 供排查
+				logger.WithCtx(ctx).Mod("gateway").Err(err).Field("ruleId", r.RuleId).Error("预算软限告警记录写入失败")
+			}
 			results = append(results, BudgetAlertResult{
 				Rule: r, Used: used, Percent: percent, PeriodKey: periodKey,
 				AlertType:  gateway.BudgetAlertSoftWarn,
@@ -150,11 +153,16 @@ func (s *BudgetRuleService) CheckBudgetAlerts(ctx context.Context) ([]BudgetAler
 		}
 		// 硬限超限
 		if r.BudgetHardLimit && used >= r.BudgetLimit && !s.alertExists(db, r.RuleId, periodKey, gateway.BudgetAlertHardLimit) {
-			db.Create(&gateway.BudgetAlert{RuleId: r.RuleId, PeriodKey: periodKey, AlertType: gateway.BudgetAlertHardLimit})
+			if err := db.Create(&gateway.BudgetAlert{RuleId: r.RuleId, PeriodKey: periodKey, AlertType: gateway.BudgetAlertHardLimit}).Error; err != nil {
+				// 落库失败会导致下一轮重复触发硬限，须记 Error 供排查
+				logger.WithCtx(ctx).Mod("gateway").Err(err).Field("ruleId", r.RuleId).Error("预算硬限告警记录写入失败")
+			}
 			keyIds := s.scopeActiveKeyIds(ctx, db, r)
 			if len(keyIds) > 0 {
 				if err := db.Model(&gateway.AiKey{}).Where("ai_key_id IN ?", keyIds).Update("is_active", false).Error; err != nil {
-					logger.WithCtx(ctx).Mod("gateway").Err(err).Warn(fmt.Sprintf("预算规则 %d 硬限停用 Key 失败", r.RuleId))
+					// 管控动作失效(超限 Key 继续可用、成本失控)，且本路径在定时任务内 err 不上抛，
+					// 不记 Error 则 sys_error 零记录
+					logger.WithCtx(ctx).Mod("gateway").Err(err).Field("ruleId", r.RuleId).Error("预算硬限停用 Key 失败")
 				}
 				if cli := litellm.Default(); cli != nil {
 					for _, kid := range keyIds {
@@ -177,7 +185,9 @@ func (s *BudgetRuleService) CheckBudgetAlerts(ctx context.Context) ([]BudgetAler
 				OperTime:     time.Now(),
 				Status:       "0",
 			}
-			db.Create(&log)
+			if err := db.Create(&log).Error; err != nil {
+				logger.WithCtx(ctx).Mod("gateway").Err(err).Field("ruleId", r.RuleId).Error("预算硬限审计日志写入失败")
+			}
 			results = append(results, BudgetAlertResult{
 				Rule: r, Used: used, Percent: percent, PeriodKey: periodKey,
 				AlertType:      gateway.BudgetAlertHardLimit,
