@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -117,4 +118,23 @@ func ValidateSkillZipStructure(p string) error {
 // ID 不可变，无改名级联；与 models(modelKey)/mcps(serverName) 的"字符串锚点"约定对齐。
 func SkillIdentityOf(s gateway.Skill) string {
 	return fmt.Sprintf("%d", s.SkillId)
+}
+
+// ExtractAgentToken Agent 直连端点凭证提取：Authorization: Bearer <key> 优先，
+// 回落查询参数 ?token=<key>(curl 简单场景免 -H；AIHelms 同款双通道)。
+// Bearer 后空串/纯空白视为未提供。
+func ExtractAgentToken(authHeader, queryToken string) string {
+	if strings.HasPrefix(authHeader, "Bearer ") {
+		if t := strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer ")); t != "" {
+			return t
+		}
+	}
+	return strings.TrimSpace(queryToken)
+}
+
+// BuildAgentDownloadURL Agent 直连下载绝对 URL：{origin}{routerPrefix}/gateway/skill/agent/{id}/zip。
+// origin 尾斜杠归一；prefix 为空(router-prefix 默认 "")时直连拼接。
+func BuildAgentDownloadURL(origin, routerPrefix string, skillId int64) string {
+	return strings.TrimRight(origin, "/") + routerPrefix +
+		"/gateway/skill/agent/" + strconv.FormatInt(skillId, 10) + "/zip"
 }

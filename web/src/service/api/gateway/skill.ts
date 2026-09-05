@@ -139,11 +139,19 @@ export async function fetchDownloadSkillPackage(skillId: CommonType.IdType): Pro
   return unwrapBlob(data);
 }
 
-/** 分页获取 Skill 使用日志(管理端,回填用户名/技能名) */
+/** 分页获取 Skill 使用日志(管理端,回填用户名/技能名/密钥名) */
 export function fetchGetSkillUsageList(params?: Api.Gateway.SkillUsageSearchParams) {
   return request<Api.Gateway.SkillUsageList>({
     url: '/gateway/skill/usage/list',
     method: 'get',
     params
+  });
+}
+
+/** 获取 Skill Agent 接入信息(登录态;curl 命令含主 Key 明文,复制不回显) */
+export function fetchGetSkillInstallInfo(skillId: CommonType.IdType) {
+  return request<Api.Gateway.SkillInstallInfo>({
+    url: `/gateway/skill/install-info/${skillId}`,
+    method: 'get'
   });
 }

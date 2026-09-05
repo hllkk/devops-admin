@@ -144,7 +144,7 @@ func Routers() *gin.Engine {
 		gatewayRouter.InitRouterSettingsRouter(PrivateGroup)    // AI 网关·路由策略(/gateway/router/settings)
 		gatewayRouter.InitResourceApplicationRouter(PrivateGroup) // AI 网关·资源申请审批(/gateway/application/*)
 		gatewayRouter.InitMCPRouter(PrivateGroup)                 // AI 网关·MCP 服务器管理(/gateway/mcp/*)
-		gatewayRouter.InitSkillRouter(PrivateGroup)               // AI 网关·Skill 管理(/gateway/skill/*)
+		gatewayRouter.InitSkillRouter(PrivateGroup, PublicGroup)  // AI 网关·Skill 管理(/gateway/skill/*;agent zip 直连挂公开组)
 		gatewayRouter.InitBudgetRuleRouter(PrivateGroup)         // AI 网关·预算管控(/gateway/budget/*)
 	}
 

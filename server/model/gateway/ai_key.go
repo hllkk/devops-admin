@@ -10,6 +10,9 @@ import (
 // AiKey AI 密钥（LiteLLM 虚拟 Key 的管理面投影）。
 // key_value 加密存储(偏离 AIHelms 不存的设计：devops-admin home 需明文展示主 Key、
 // LiteLLM /key/generate 只返回一次、已有 AES-GCM 基座)，仅 owner 本人经 identity/my 可查明文。
+// key_hash=明文 sha256 hex，与密文同事务维护：Agent 直连端点(Skill zip 下载)凭明文定位
+// Key 行走索引等值查询，无需解密全表扫；密文列防拖库还原明文，哈希列防不了碰撞但明文
+// 是 LiteLLM 生成的高熵随机串，sha256 无盐足够。
 // owner_id 纯逻辑关联(sys_users.user_id / sys_departments.dept_id)，不建外键。
 // models 存 modelKey 列表；推送 LiteLLM 时原样下发(路由名无协议变体，协议混组由 LiteLLM 按部署前缀处理)。
 type AiKey struct {
@@ -21,6 +24,7 @@ type AiKey struct {
 	OwnerType         string         `json:"ownerType" gorm:"size:20;comment:归属类型(user/dept)"`                                             // 归属类型
 	OwnerId           int64          `json:"ownerId,string" gorm:"index;comment:归属ID(用户ID/部门ID)"`                                          // 归属ID(纯逻辑关联)
 	KeyValue          string         `json:"-" gorm:"type:text;comment:Key明文(AES-256-GCM密文,仅owner经identity/my可查)"`                         // Key明文密文(不出网)
+	KeyHash           string         `json:"-" gorm:"size:64;index;comment:Key哈希(sha256 hex,Agent直连端点按明文O(1)定位,不暴露明文;明文唯一故哈希不重,不用唯一索引防存量空串撞索引)"` // Key哈希(Agent直连鉴权索引)
 	KeyPrefix         string         `json:"keyPrefix" gorm:"size:20;comment:Key前缀(列表展示用)"`                                                // Key前缀(明文前8位+****)
 	LitellmKeyId      string         `json:"litellmKeyId" gorm:"size:100;index;comment:LiteLLM密钥ID"`                                       // LiteLLM key_id
 	LitellmKeyAlias   string         `json:"litellmKeyAlias" gorm:"size:200;comment:LiteLLM密钥别名"`                                          // LiteLLM key_alias({ownerType}:{ownerId}/{name})

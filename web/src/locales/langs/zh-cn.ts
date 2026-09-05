@@ -597,6 +597,16 @@ const local: App.I18n.Schema = {
         skillDownloadSuccess: '技能包开始下载',
         skillNoPackage: '技能包尚未上传，请联系管理员',
         skillNeedApproval: '该技能需审批授权后方可下载，请先申请',
+        skillAgentAccess: 'Agent 接入',
+        skillAgentTitle: 'Agent 接入信息',
+        skillAgentUrl: '直连下载地址',
+        skillAgentCurl: '下载命令 (curl)',
+        skillAgentCurlTip: '命令含主 Key 明文，不回显，仅经复制导出',
+        skillAgentCopyCurl: '复制命令',
+        skillAgentNoKey: '尚未开通 AI 身份，无法生成含密钥的下载命令，请联系管理员开通',
+        skillAgentPrompt: 'Agent 安装提示词',
+        skillAgentInstructions: '使用说明',
+        skillAgentLoading: '接入信息加载中…',
         accessMcpUrl: 'MCP 接入地址',
         accessMcpConfig: '客户端配置 JSON',
         accessMcpConfigTip: '粘贴到支持 MCP 的客户端即可启用',
@@ -1034,6 +1044,7 @@ const local: App.I18n.Schema = {
         add: '注册 Skill',
         edit: '编辑 Skill',
         actionDownload: '下载',
+        actionAgentDownload: 'Agent 直连下载',
         noPackage: '未上传',
         packageSize: '{size}',
         upload: {
@@ -1086,10 +1097,11 @@ const local: App.I18n.Schema = {
         },
         usage: {
           title: '使用日志',
-          tip: '技能包下载留痕（时间/用户/技能），下载时自动记录',
+          tip: '技能包下载留痕（时间/用户/技能），下载时自动记录；Agent 直连行经密钥归因',
           col: {
             userName: '用户',
             skillName: '技能',
+            aiKeyName: '密钥',
             action: '动作',
             createTime: '时间'
           }

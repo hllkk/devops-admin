@@ -501,13 +501,17 @@ declare namespace Api {
     /** Skill 发布设置回显(含 selected/user 模式的可见部门/用户) */
     type SkillPublishView = SkillPublishParams;
 
-    /** Skill 使用日志(回填用户名/技能名) */
+    /** Skill 使用日志(回填用户名/技能名/密钥名;agent_download 行经 aiKeyName 归因) */
     type SkillUsage = {
       id: number;
       userId: CommonType.IdType;
       userName: string;
       skillId: CommonType.IdType;
       skillName: string;
+      /** 密钥ID(0=登录态下载) */
+      aiKeyId: CommonType.IdType;
+      aiKeyName: string;
+      /** download=登录态下载 / agent_download=Agent 经 AiKey 直连 */
       action: string;
       createTime: string;
     };
@@ -519,6 +523,23 @@ declare namespace Api {
 
     /** Skill 使用日志列表 */
     type SkillUsageList = Api.Common.PaginatingQueryRecord<SkillUsage>;
+
+    /** Skill Agent 接入信息(登录态下发;curlCommand 含主 Key 明文,复制不回显) */
+    type SkillInstallInfo = {
+      skillId: CommonType.IdType;
+      name: string;
+      version: string;
+      hasPackage: boolean;
+      requiresApproval: boolean;
+      /** 当前用户主 Key 是否已授权(需审批 Skill 的下载前置) */
+      authorized: boolean;
+      /** Agent 直连下载 URL(裸地址,不含凭证) */
+      downloadUrl: string;
+      /** 可直接执行的 curl 命令(含主 Key 明文;未开通主 Key 为空串) */
+      curlCommand: string;
+      agentInstallPrompt: string;
+      usageInstructions: string;
+    };
 
     /** 看板总览(按时间范围汇总) */
     type DashboardOverview = {

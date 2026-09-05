@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"errors"
 	"strconv"
 	"strings"
 
@@ -8,6 +9,7 @@ import (
 
 	"github.com/hllkk/devops-admin/server/model/common/response"
 	gatewayReq "github.com/hllkk/devops-admin/server/model/gateway/request"
+	serviceGateway "github.com/hllkk/devops-admin/server/service/gateway"
 	"github.com/hllkk/devops-admin/server/utils"
 	"github.com/hllkk/devops-admin/server/utils/logger"
 	"github.com/hllkk/devops-admin/server/utils/request"
@@ -334,4 +336,78 @@ func (a *SkillApi) GetSkillUsageList(c *gin.Context) {
 	response.OkWithDetailed(response.PageResult{
 		Rows: list, Total: total, PageNum: q.PageNum, PageSize: q.PageSize,
 	}, "获取成功", c)
+}
+
+// AgentDownloadSkill
+// @Tags      GatewaySkill
+// @Summary   Agent直连下载Skill zip包(AI Key鉴权,无登录态;需审批Skill须该Key已授权)
+// @Description  公开端点(PublicGroup)：Authorization: Bearer <AiKey明文> 或查询参数 ?token=<AiKey明文>；401=凭证缺失/无效/停用/过期
+// @Produce   application/octet-stream
+// @Param     id     path  int     true  "技能ID"
+// @Param     token  query string  false "AiKey明文(与 Bearer 头二选一)"
+// @Success   200  {file}  binary
+// @Router    /gateway/skill/agent/{id}/zip [get]
+func (a *SkillApi) AgentDownloadSkill(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.FailWithMessage("无效的技能ID", c)
+		return
+	}
+	token := serviceGateway.ExtractAgentToken(c.GetHeader("Authorization"), c.Query("token"))
+	if token == "" {
+		response.NoAuth("未提供 AI Key 认证凭证(Bearer 头或 token 参数)", c)
+		return
+	}
+	filePath, originName, err := skillService.AgentDownloadSkill(c.Request.Context(), id, token)
+	if err != nil {
+		if errors.Is(err, serviceGateway.ErrAgentUnauthorized) {
+			response.NoAuth("AI Key 无效、已停用或已过期", c)
+			return
+		}
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Field("skillId", id).Error("Agent直连下载Skill包失败")
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	c.FileAttachment(filePath, originName)
+}
+
+// GetSkillInstallInfo
+// @Tags      GatewaySkill
+// @Summary   Skill Agent接入信息(登录态;含可直接复制的curl命令与安装提示词;casbin登录白名单)
+// @Produce   application/json
+// @Param     id  path  int  true  "技能ID"
+// @Success   200  {object}  response.Response{data=response.SkillInstallInfoView,msg=string}
+// @Router    /gateway/skill/install-info/{id} [get]
+func (a *SkillApi) GetSkillInstallInfo(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.FailWithMessage("无效的技能ID", c)
+		return
+	}
+	view, err := skillService.GetSkillInstallInfo(c.Request.Context(), id, utils.GetUserID(c), requestOriginOf(c))
+	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("获取Skill接入信息失败")
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	response.OkWithDetailed(view, "获取成功", c)
+}
+
+// requestOriginOf 推导请求来源绝对地址(反代/直连两栖)：X-Forwarded-Proto 优先，
+// 回落 TLS 判定；Host 取标准头(X-Forwarded-Host 优先，防多层反代丢 Host)。
+// 仅供 Agent 直连 URL 展示拼接，非安全判定用途。
+func requestOriginOf(c *gin.Context) string {
+	scheme := c.GetHeader("X-Forwarded-Proto")
+	if scheme == "" {
+		if c.Request.TLS != nil {
+			scheme = "https"
+		} else {
+			scheme = "http"
+		}
+	}
+	host := c.GetHeader("X-Forwarded-Host")
+	if host == "" {
+		host = c.Request.Host
+	}
+	return scheme + "://" + host
 }

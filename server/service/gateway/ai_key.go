@@ -2,6 +2,8 @@ package gateway
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -927,6 +929,63 @@ func (s *AiKeyService) ResyncAllKeys(ctx context.Context) (gatewayResp.ResyncRes
 	return result, nil
 }
 
+// BackfillAiKeyHashes 存量 Key 哈希回填(幂等)：key_hash 为空的行解密 key_value 补 sha256。
+// 新建/轮换经 syncKeyToLitellm 已同步写哈希，本函数只兜列上线前的存量行，由启动期
+// RegisterTables 末尾调用(对齐 EnsureAiKeyUniqueIndex 兜底模式)。失败仅记日志不阻断
+// 启动——无哈希存量行 Agent 直连会 401，重启即重试回填。导出供 initialize 调用。
+func BackfillAiKeyHashes(db *gorm.DB) {
+	if global.OPS_CONFIG.Litellm.CredentialKey == "" {
+		return // 未配置加密密钥的环境无密文可解(单机模式亦无 Agent 直连场景)
+	}
+	var rows []gateway.AiKey
+	if err := db.Select("ai_key_id", "key_value").
+		Where("key_hash = '' AND key_value <> ''").Find(&rows).Error; err != nil {
+		logger.Bg().Mod("gateway").Err(err).Error("backfill gateway_ai_key key_hash failed")
+		return
+	}
+	fixed := 0
+	for i := range rows {
+		values, err := decryptCredentialValues(rows[i].KeyValue)
+		if err != nil {
+			logger.Bg().Mod("gateway").Err(err).Field("aiKeyId", rows[i].AiKeyId).
+				Error("backfill key_hash: 解密 key_value 失败")
+			continue
+		}
+		plain, _ := values["k"].(string)
+		if plain == "" {
+			continue
+		}
+		if err := db.Model(&gateway.AiKey{}).Where("ai_key_id = ?", rows[i].AiKeyId).
+			Update("key_hash", aiKeyHashOf(plain)).Error; err != nil {
+			logger.Bg().Mod("gateway").Err(err).Field("aiKeyId", rows[i].AiKeyId).
+				Error("backfill key_hash: 回填失败")
+			continue
+		}
+		fixed++
+	}
+	if fixed > 0 {
+		logger.Bg().Mod("gateway").Info(fmt.Sprintf("gateway_ai_key key_hash 存量回填完成: %d 行", fixed))
+	}
+}
+
+// findAiKeyByPlain 凭 Key 明文定位行(Agent 直连端点鉴权)：sha256 索引等值查询，
+// 不解密不暴露明文。命中返回行，未命中返回 nil(调用方按 401 处理)。软删行天然
+// 被 GORM 过滤(删除的 Key 立即失效)。
+func findAiKeyByPlain(ctx context.Context, plain string) (*gateway.AiKey, error) {
+	if plain == "" {
+		return nil, nil
+	}
+	var k gateway.AiKey
+	err := global.OPS_DB.WithContext(ctx).Where("key_hash = ?", aiKeyHashOf(plain)).First(&k).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &k, nil
+}
+
 // ----------------------------------------------------------------------------
 // 包级共享：同步管线与主 Key 自愈
 // ----------------------------------------------------------------------------
@@ -1309,17 +1368,19 @@ func syncKeyToLitellm(ctx context.Context, cli *litellm.Client, tx *gorm.DB, k *
 			return fmt.Errorf("密钥同步 LiteLLM 失败: %w", err)
 		}
 		k.LitellmKeyId = resp.KeyID
-		// 加密 key_value(明文仅此一次返回，加密落库)
+		// 加密 key_value(明文仅此一次返回，加密落库)；哈希列同事务维护(Agent 直连定位索引)
 		enc, err := encryptCredentialValues(map[string]any{"k": resp.Key})
 		if err != nil {
 			return fmt.Errorf("密钥明文加密失败: %w", err)
 		}
 		k.KeyValue = enc
+		k.KeyHash = aiKeyHashOf(resp.Key)
 		k.KeyPrefix = keyPrefixOf(resp.Key)
 		return tx.Model(&gateway.AiKey{}).Where("ai_key_id = ?", k.AiKeyId).
 			Updates(map[string]any{
 				"litellm_key_id": k.LitellmKeyId,
 				"key_value":      k.KeyValue,
+				"key_hash":       k.KeyHash,
 				"key_prefix":     k.KeyPrefix,
 			}).Error
 	}
@@ -1473,6 +1534,13 @@ func keyPrefixOf(plain string) string {
 		return strings.Repeat("*", len(plain))
 	}
 	return plain[:8] + "****"
+}
+
+// aiKeyHashOf Key 明文 sha256 hex(Agent 直连端点按明文定位 Key 的索引值)。
+// 无盐足够：明文是 LiteLLM 生成的高熵随机串，非用户口令，无字典爆破面。
+func aiKeyHashOf(plain string) string {
+	sum := sha256.Sum256([]byte(plain))
+	return hex.EncodeToString(sum[:])
 }
 
 // budgetLimitToUsd 预算上限 ¥→USD(LiteLLM spend 记 USD，max_budget 须同币种；

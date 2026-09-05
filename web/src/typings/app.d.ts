@@ -792,6 +792,16 @@ declare namespace App {
             skillDownloadSuccess: string;
             skillNoPackage: string;
             skillNeedApproval: string;
+            skillAgentAccess: string;
+            skillAgentTitle: string;
+            skillAgentUrl: string;
+            skillAgentCurl: string;
+            skillAgentCurlTip: string;
+            skillAgentCopyCurl: string;
+            skillAgentNoKey: string;
+            skillAgentPrompt: string;
+            skillAgentInstructions: string;
+            skillAgentLoading: string;
             accessMcpUrl: string;
             accessMcpConfig: string;
             accessMcpConfigTip: string;
@@ -1208,6 +1218,7 @@ declare namespace App {
             add: string;
             edit: string;
             actionDownload: string;
+            actionAgentDownload: string;
             noPackage: string;
             packageSize: string;
             upload: {
@@ -1264,6 +1275,7 @@ declare namespace App {
               col: {
                 userName: string;
                 skillName: string;
+                aiKeyName: string;
                 action: string;
                 createTime: string;
               };

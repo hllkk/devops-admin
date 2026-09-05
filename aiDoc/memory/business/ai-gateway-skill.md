@@ -78,6 +78,10 @@ P2「AI 市场」最后一块：Skill(企业内 AI 技能包)统一注册/zip �
 
 - 用户运行时点触验证(已有库先执行补丁或重置菜单种子)。
 - swag 注释已写 @Tags GatewaySkill，待 swag 重生成(与 MCP 一并欠着)。
-- Agent 经 AI Key 认证直连下载端点(AIHelms `/{id}/zip` 同款)未做——当前下载走登录态，
-  Agent 场景留真实需求出现再补。
+- ~~Agent 经 AI Key 认证直连下载端点(AIHelms `/{id}/zip` 同款)未做~~ → 已实现(2026-09-05)：
+  `GET /gateway/skill/agent/{id}/zip` 挂 PublicGroup(AiKey Bearer/?token 自鉴权)；
+  AiKey 加 key_hash(sha256 明文索引，syncKeyToLitellm 同事务写入+启动期 BackfillAiKeyHashes
+  幂等回填存量)；授权锚点=当前 Key 自己的 skills(与登录态校验主 Key 区分)；usage log 加
+  ai_key_id 归因+action=agent_download；登录态 `GET /gateway/skill/install-info/{id}` 下发
+  服务端拼好的 curl 命令(主 Key 明文，前端复制不回显)；广场 Skill 卡片加「Agent 接入」弹窗。
 - Skill resync/巡检兜底未做(纯平台资源无远端投影，漂移面小，暂不建)。

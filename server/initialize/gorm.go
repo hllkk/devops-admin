@@ -7,6 +7,7 @@ import (
 	"github.com/hllkk/devops-admin/server/model/gateway"
 	"github.com/hllkk/devops-admin/server/model/media"
 	"github.com/hllkk/devops-admin/server/model/system"
+	serviceGateway "github.com/hllkk/devops-admin/server/service/gateway"
 	sourceGateway "github.com/hllkk/devops-admin/server/source/gateway"
 	"github.com/hllkk/devops-admin/server/utils/logger"
 
@@ -135,6 +136,9 @@ func RegisterTables() {
 	if err := sourceGateway.EnsureKeyScenarioUniqueIndex(db); err != nil {
 		logger.Bg().Mod("gateway").Err(err).Error("ensure gateway_key_scenario unique index failed")
 	}
+	// AiKey key_hash 存量回填(Agent 直连鉴权索引；新建/轮换已随 syncKeyToLitellm 同步写，
+	// 这里只兜列上线前的存量行，幂等)。失败仅记日志不阻断启动，重启重试。
+	serviceGateway.BackfillAiKeyHashes(db)
 	logger.Bg().Mod("system").Info("register table success")
 }
 

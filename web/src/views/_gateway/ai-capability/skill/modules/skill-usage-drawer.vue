@@ -55,6 +55,13 @@ const { columns, data, getDataByPage, loading, mobilePagination, scrollX } = use
       minWidth: 140
     },
     {
+      key: 'aiKeyName',
+      title: $t('page.gateway.skill.usage.col.aiKeyName'),
+      align: 'center',
+      minWidth: 120,
+      render: row => (row.aiKeyId && row.aiKeyName ? row.aiKeyName : '-')
+    },
+    {
       key: 'action',
       title: $t('page.gateway.skill.usage.col.action'),
       align: 'center',

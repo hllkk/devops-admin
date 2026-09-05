@@ -151,3 +151,49 @@ func TestValidateSkillZipStructure(t *testing.T) {
 		t.Error("伪装 zip 期望报错")
 	}
 }
+
+func TestExtractAgentToken(t *testing.T) {
+	cases := []struct {
+		name       string
+		authHeader string
+		queryToken string
+		want       string
+	}{
+		{"Bearer 头优先", "Bearer sk-abc123", "sk-query", "sk-abc123"},
+		{"回落查询参数", "", "sk-query", "sk-query"},
+		{"都缺失为空", "", "", ""},
+		{"Bearer 空白视为未提供回落 query", "Bearer   ", "sk-query", "sk-query"},
+		{"Bearer 后空白全空", "Bearer   ", "", ""},
+		{"非 Bearer 前缀头忽略", "Basic dXNlcjpwYXNz", "sk-query", "sk-query"},
+		{"Bearer 值去首尾空白", "Bearer  sk-trim  ", "", "sk-trim"},
+		{"query 去首尾空白", "", " sk-trim ", "sk-trim"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := ExtractAgentToken(tc.authHeader, tc.queryToken); got != tc.want {
+				t.Fatalf("ExtractAgentToken(%q, %q) = %q, want %q", tc.authHeader, tc.queryToken, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestBuildAgentDownloadURL(t *testing.T) {
+	cases := []struct {
+		name        string
+		origin      string
+		routerPre   string
+		skillId     int64
+		want        string
+	}{
+		{"默认无前缀", "http://gw.local:9999", "", 123, "http://gw.local:9999/gateway/skill/agent/123/zip"},
+		{"origin 尾斜杠归一", "http://gw.local:9999/", "", 7, "http://gw.local:9999/gateway/skill/agent/7/zip"},
+		{"带 router-prefix", "https://ops.corp", "/api", 42, "https://ops.corp/api/gateway/skill/agent/42/zip"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := BuildAgentDownloadURL(tc.origin, tc.routerPre, tc.skillId); got != tc.want {
+				t.Fatalf("BuildAgentDownloadURL(%q, %q, %d) = %q, want %q", tc.origin, tc.routerPre, tc.skillId, got, tc.want)
+			}
+		})
+	}
+}

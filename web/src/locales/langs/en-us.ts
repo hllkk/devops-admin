@@ -601,6 +601,16 @@ const local: App.I18n.Schema = {
         skillDownloadSuccess: 'Skill package download started',
         skillNoPackage: 'Skill package not uploaded yet, contact the admin',
         skillNeedApproval: 'This skill requires approval before download, apply first',
+        skillAgentAccess: 'Agent Access',
+        skillAgentTitle: 'Agent Access Info',
+        skillAgentUrl: 'Direct Download URL',
+        skillAgentCurl: 'Download Command (curl)',
+        skillAgentCurlTip: 'Contains your main key in plain text, hidden here, export via copy only',
+        skillAgentCopyCurl: 'Copy Command',
+        skillAgentNoKey: 'AI identity not enabled yet, cannot generate a keyed download command, contact the admin',
+        skillAgentPrompt: 'Agent Install Prompt',
+        skillAgentInstructions: 'Usage Instructions',
+        skillAgentLoading: 'Loading access info…',
         accessMcpUrl: 'MCP Endpoint',
         accessMcpConfig: 'Client Config JSON',
         accessMcpConfigTip: 'Paste into MCP-capable clients to enable',
@@ -1039,6 +1049,7 @@ const local: App.I18n.Schema = {
         add: 'Register Skill',
         edit: 'Edit Skill',
         actionDownload: 'Download',
+        actionAgentDownload: 'Agent Direct Download',
         noPackage: 'No package',
         packageSize: '{size}',
         upload: {
@@ -1091,10 +1102,11 @@ const local: App.I18n.Schema = {
         },
         usage: {
           title: 'Usage Logs',
-          tip: 'Download audit trail (time/user/skill), recorded automatically on download',
+          tip: 'Download audit trail (time/user/skill), recorded automatically on download; agent rows are attributed by key',
           col: {
             userName: 'User',
             skillName: 'Skill',
+            aiKeyName: 'Key',
             action: 'Action',
             createTime: 'Time'
           }

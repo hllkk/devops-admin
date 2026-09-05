@@ -67,9 +67,10 @@ func (SkillVisibilityUser) TableName() string {
 type SkillUsageLog struct {
 	global.OPS_BASE
 	Id      int64  `json:"id" gorm:"primarykey;autoIncrement;comment:日志ID(自增)"`     // 日志ID(自增)
-	UserId  int64  `json:"userId,string" gorm:"index;comment:用户ID(sys_users.id)"` // 用户
+	UserId  int64  `json:"userId,string" gorm:"index;comment:用户ID(sys_users.id;Agent经Key下载取Key owner,部门Key为0)"` // 用户
 	SkillId int64  `json:"skillId,string" gorm:"index;comment:技能ID"`              // 技能
-	Action  string `json:"action" gorm:"size:20;comment:动作(download)"`         // 动作
+	AiKeyId int64  `json:"aiKeyId,string" gorm:"index;comment:密钥ID(Agent直连下载归因;0=登录态下载)"` // 密钥归因(0=登录态)
+	Action  string `json:"action" gorm:"size:20;comment:动作(download/agent_download)"`         // 动作(登录态/Agent直连)
 }
 
 func (SkillUsageLog) TableName() string {
@@ -78,5 +79,6 @@ func (SkillUsageLog) TableName() string {
 
 // Skill 使用日志动作
 const (
-	SkillActionDownload = "download" // 下载技能包
+	SkillActionDownload      = "download"       // 下载技能包(登录态)
+	SkillActionAgentDownload = "agent_download" // Agent 经 AiKey 直连下载技能包
 )

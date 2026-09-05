@@ -219,5 +219,6 @@ export const MCP_HEALTH_OPTIONS = [
 
 /** Skill 使用日志动作选项(当前仅 download) */
 export const SKILL_USAGE_ACTION_OPTIONS = [
-  { label: 'page.gateway.skill.actionDownload', value: 'download' }
+  { label: 'page.gateway.skill.actionDownload', value: 'download' },
+  { label: 'page.gateway.skill.actionAgentDownload', value: 'agent_download' }
 ] as const;

@@ -610,6 +610,110 @@ func (s *SkillService) AdminDownloadSkill(ctx context.Context, id int64) (filePa
 	return p, name, nil
 }
 
+// ErrAgentUnauthorized Agent 直连鉴权失败(API 层转 401；与授权不足/资源不存在区分)。
+var ErrAgentUnauthorized = errors.New("AI Key 认证失败")
+
+// AgentDownloadSkill Agent 经 AiKey 直连下载技能包(PublicGroup 无登录态，AIHelms
+// /{id}/zip 同款)：token=Key 明文(Bearer/查询参数，API 层提取)。
+// 鉴权链：sha256 哈希索引定位行 → 启用/过期校验；资源校验与登录态下载同口径
+// (启用+已发布+有包)。**授权锚点差异**：登录态 DownloadSkill 校验主 Key skills
+// (审批落主 Key)，此处校验**当前 Key 自己的 skills**——Agent 持哪把 Key 就校验哪把，
+// 管理员单独授予场景 Key 的 skill 同样生效。归因：usage log 记 ai_key_id，
+// user_id 仅个人 Key 落 owner(部门 Key 落 0，经 ai_key_id 追溯)；顺带 touch
+// last_used_at(下载亦是 Key 使用行为，与用量回流同推前语义)。
+func (s *SkillService) AgentDownloadSkill(ctx context.Context, id int64, token string) (filePath, originName string, err error) {
+	k, err := findAiKeyByPlain(ctx, token)
+	if err != nil {
+		return "", "", err
+	}
+	if k == nil {
+		return "", "", ErrAgentUnauthorized
+	}
+	if !k.IsActive {
+		return "", "", ErrAgentUnauthorized
+	}
+	if k.ExpiresAt != nil && k.ExpiresAt.Before(time.Now()) {
+		return "", "", ErrAgentUnauthorized
+	}
+
+	var row gateway.Skill
+	if err := global.OPS_DB.WithContext(ctx).Where("skill_id = ?", id).First(&row).Error; err != nil {
+		return "", "", errors.New("Skill 不存在")
+	}
+	if !row.IsActive || !row.IsPublished {
+		return "", "", errors.New("该技能未开放下载")
+	}
+	if row.ZipFilename == "" {
+		return "", "", errors.New("该技能尚未上传技能包")
+	}
+	if row.RequiresApproval && !sliceContains(jsonToSlice(k.Skills), SkillIdentityOf(row)) {
+		return "", "", errors.New("该技能需审批授权后方可下载，请先在广场申请")
+	}
+	p := filepath.Join(skillStoreDir, row.ZipFilename)
+	if _, err := os.Stat(p); err != nil {
+		return "", "", errors.New("技能包文件缺失，请联系管理员")
+	}
+	name := row.ZipOriginName
+	if name == "" {
+		name = row.Name + ".zip"
+	}
+	// 计数+留痕(尽力而为，不阻塞下载)
+	if err := global.OPS_DB.WithContext(ctx).Model(&gateway.Skill{}).Where("skill_id = ?", id).
+		UpdateColumn("install_count", gorm.Expr("install_count + 1")).Error; err != nil {
+		logger.WithCtx(ctx).Mod("gateway").Err(err).Field("skillId", id).Warn("skill: Agent 下载计数失败")
+	}
+	var userId int64
+	if k.OwnerType == gateway.OwnerTypeUser {
+		userId = k.OwnerId
+	}
+	if err := global.OPS_DB.WithContext(ctx).Create(&gateway.SkillUsageLog{
+		UserId:   userId,
+		SkillId:  id,
+		AiKeyId:  k.AiKeyId,
+		Action:   gateway.SkillActionAgentDownload,
+	}).Error; err != nil {
+		logger.WithCtx(ctx).Mod("gateway").Err(err).Field("skillId", id).Warn("skill: Agent 使用日志落库失败")
+	}
+	global.OPS_DB.WithContext(ctx).Model(&gateway.AiKey{}).Where("ai_key_id = ?", k.AiKeyId).
+		UpdateColumn("last_used_at", time.Now())
+	return p, name, nil
+}
+
+// GetSkillInstallInfo Skill Agent 接入信息(登录态，广场弹窗)：拼可直接执行的 curl
+// 命令(含主 Key 明文，前端复制不回显，对齐 MCP connect-config 模式)。
+// origin=请求来源(API 层从反代头推导)；未开通主 Key 时 curlCommand 留空提示开通，
+// 不阻塞裸 URL/提示词预览。authorized=主 Key 对需审批 Skill 的授权态(前端按钮前置)。
+func (s *SkillService) GetSkillInstallInfo(ctx context.Context, id int64, userId int64, origin string) (gatewayResp.SkillInstallInfoView, error) {
+	var row gateway.Skill
+	if err := global.OPS_DB.WithContext(ctx).Where("skill_id = ?", id).First(&row).Error; err != nil {
+		return gatewayResp.SkillInstallInfoView{}, errors.New("Skill 不存在")
+	}
+	downloadUrl := BuildAgentDownloadURL(origin, global.OPS_CONFIG.System.RouterPrefix, row.SkillId)
+	view := gatewayResp.SkillInstallInfoView{
+		SkillId:            row.SkillId,
+		Name:               row.Name,
+		Version:            row.Version,
+		HasPackage:         row.ZipFilename != "",
+		RequiresApproval:   row.RequiresApproval,
+		DownloadUrl:        downloadUrl,
+		AgentInstallPrompt: row.AgentInstallPrompt,
+		UsageInstructions:  row.UsageInstructions,
+	}
+	if k, err := loadMainKey(ctx, userId); err == nil && k != nil && k.KeyValue != "" {
+		if values, err := decryptCredentialValues(k.KeyValue); err == nil {
+			if plain, _ := values["k"].(string); plain != "" {
+				view.CurlCommand = fmt.Sprintf("curl -sS -OJ -H \"Authorization: Bearer %s\" \"%s\"", plain, downloadUrl)
+				if row.RequiresApproval {
+					view.Authorized = sliceContains(jsonToSlice(k.Skills), SkillIdentityOf(row))
+				} else {
+					view.Authorized = true
+				}
+			}
+		}
+	}
+	return view, nil
+}
+
 // removeSkillZip 删除 zip 存储文件(尽力而为，失败仅告警)。
 func removeSkillZip(ctx context.Context, filename string) {
 	if filename == "" {
@@ -712,7 +816,7 @@ func (s *SkillService) GetSkillUsageList(ctx context.Context, q gatewayReq.Skill
 	if err != nil {
 		return nil, 0, err
 	}
-	userNames, skillNames := s.usageNames(ctx, rows)
+	userNames, skillNames, aiKeyNames := s.usageNames(ctx, rows)
 	list = make([]gatewayResp.SkillUsageView, 0, len(rows))
 	for i := range rows {
 		list = append(list, gatewayResp.SkillUsageView{
@@ -721,6 +825,8 @@ func (s *SkillService) GetSkillUsageList(ctx context.Context, q gatewayReq.Skill
 			UserName:   userNames[rows[i].UserId],
 			SkillId:    rows[i].SkillId,
 			SkillName:  skillNames[rows[i].SkillId],
+			AiKeyId:    rows[i].AiKeyId,
+			AiKeyName:  aiKeyNames[rows[i].AiKeyId],
 			Action:     rows[i].Action,
 			CreateTime: rows[i].CreatedAt,
 		})
@@ -728,15 +834,20 @@ func (s *SkillService) GetSkillUsageList(ctx context.Context, q gatewayReq.Skill
 	return list, total, nil
 }
 
-// usageNames 批量回填用户名/技能名 map(各一次 IN 查询)。
-func (s *SkillService) usageNames(ctx context.Context, rows []gateway.SkillUsageLog) (userNames, skillNames map[int64]string) {
+// usageNames 批量回填用户名/技能名/密钥名 map(各一次 IN 查询)。
+func (s *SkillService) usageNames(ctx context.Context, rows []gateway.SkillUsageLog) (userNames, skillNames, aiKeyNames map[int64]string) {
 	userNames = map[int64]string{}
 	skillNames = map[int64]string{}
+	aiKeyNames = map[int64]string{}
 	userIds := map[int64]struct{}{}
 	skillIds := map[int64]struct{}{}
+	aiKeyIds := map[int64]struct{}{}
 	for i := range rows {
 		userIds[rows[i].UserId] = struct{}{}
 		skillIds[rows[i].SkillId] = struct{}{}
+		if rows[i].AiKeyId != 0 {
+			aiKeyIds[rows[i].AiKeyId] = struct{}{}
+		}
 	}
 	if len(userIds) > 0 {
 		ids := make([]int64, 0, len(userIds))
@@ -759,6 +870,18 @@ func (s *SkillService) usageNames(ctx context.Context, rows []gateway.SkillUsage
 		if err := global.OPS_DB.WithContext(ctx).Select("skill_id, name").Where("skill_id IN ?", ids).Find(&ss).Error; err == nil {
 			for _, r := range ss {
 				skillNames[r.SkillId] = r.Name
+			}
+		}
+	}
+	if len(aiKeyIds) > 0 {
+		ids := make([]int64, 0, len(aiKeyIds))
+		for id := range aiKeyIds {
+			ids = append(ids, id)
+		}
+		var ks []gateway.AiKey
+		if err := global.OPS_DB.WithContext(ctx).Select("ai_key_id, name").Where("ai_key_id IN ?", ids).Find(&ks).Error; err == nil {
+			for _, k := range ks {
+				aiKeyNames[k.AiKeyId] = k.Name
 			}
 		}
 	}

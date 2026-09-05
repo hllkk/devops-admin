@@ -8,6 +8,7 @@ import {
   fetchGetActiveSkills,
   fetchGetMCPConnectConfig,
   fetchGetMyApplications,
+  fetchGetSkillInstallInfo,
   fetchSubmitApplication
 } from '@/service/api/gateway';
 import { MODEL_CATEGORY_OPTIONS, getProviderIcon } from '@/constants/business/gateway';
@@ -224,6 +225,17 @@ async function handleDownloadSkill(skill: Api.Gateway.AvailableSkill) {
   } finally {
     downloadingSkillId.value = null;
   }
+}
+
+// ===== Skill Agent 接入弹窗(后端拼 curl 命令含主 Key 明文;复制不回显,对齐 MCP config 模式) =====
+const skillInstallVisible = ref(false);
+const skillInstallInfo = ref<Api.Gateway.SkillInstallInfo | null>(null);
+
+async function handleViewSkillInstall(skill: Api.Gateway.AvailableSkill) {
+  skillInstallInfo.value = null;
+  skillInstallVisible.value = true;
+  const { data } = await fetchGetSkillInstallInfo(skill.skillId);
+  if (data) skillInstallInfo.value = data;
 }
 
 // ===== 接入弹窗复制(按字段隔离已复制标记,避免一处复制全部按钮亮"已复制") =====
@@ -527,6 +539,9 @@ onMounted(async () => {
                 >
                   {{ $t('page.home.square.skillDownload') }}
                 </NButton>
+                <NButton size="tiny" type="primary" ghost @click="handleViewSkillInstall(skill)">
+                  {{ $t('page.home.square.skillAgentAccess') }}
+                </NButton>
               </div>
             </div>
           </div>
@@ -692,6 +707,61 @@ onMounted(async () => {
             {{ $t('page.home.square.applySubmit') }}
           </NButton>
         </div>
+      </div>
+    </NModal>
+
+    <!-- Skill Agent 接入弹窗：直连地址 + 下载命令(含主 Key 明文,复制不回显) + 提示词/说明 -->
+    <NModal
+      v-model:show="skillInstallVisible"
+      :title="$t('page.home.square.skillAgentTitle')"
+      preset="card"
+      class="w-560px max-w-90%"
+      :mask-closable="true"
+    >
+      <div v-if="skillInstallInfo" class="flex flex-col gap-14px">
+        <div>
+          <div class="mb-4px text-12px font-medium">{{ $t('page.home.square.skillAgentUrl') }}</div>
+          <div class="flex items-center gap-8px">
+            <code class="min-w-0 flex-1 truncate rounded-8px bg-slate-100 px-10px py-6px text-13px dark:bg-slate-700/60">
+              {{ skillInstallInfo.downloadUrl }}
+            </code>
+            <NButton
+              size="tiny"
+              :type="isCopied('skillAgentUrl') ? 'success' : 'default'"
+              @click="handleCopy('skillAgentUrl', skillInstallInfo.downloadUrl, $event)"
+            >
+              {{ isCopied('skillAgentUrl') ? $t('page.home.square.copied') : $t('page.home.square.copy') }}
+            </NButton>
+          </div>
+        </div>
+        <div>
+          <div class="mb-4px text-12px font-medium">
+            {{ $t('page.home.square.skillAgentCurl') }}
+            <span class="font-normal text-slate-400">({{ $t('page.home.square.skillAgentCurlTip') }})</span>
+          </div>
+          <NAlert v-if="!skillInstallInfo.curlCommand" type="warning" :show-icon="true">
+            {{ $t('page.home.square.skillAgentNoKey') }}
+          </NAlert>
+          <NButton
+            v-else
+            size="tiny"
+            :type="isCopied('skillAgentCurl') ? 'success' : 'default'"
+            @click="handleCopy('skillAgentCurl', skillInstallInfo.curlCommand, $event)"
+          >
+            {{ isCopied('skillAgentCurl') ? $t('page.home.square.copied') : $t('page.home.square.skillAgentCopyCurl') }}
+          </NButton>
+        </div>
+        <div v-if="skillInstallInfo.agentInstallPrompt">
+          <div class="mb-4px text-12px font-medium">{{ $t('page.home.square.skillAgentPrompt') }}</div>
+          <pre class="max-h-160px overflow-auto rounded-8px bg-slate-50 p-10px text-12px whitespace-pre-wrap text-slate-500 dark:bg-slate-700/40 dark:text-slate-300">{{ skillInstallInfo.agentInstallPrompt }}</pre>
+        </div>
+        <div v-if="skillInstallInfo.usageInstructions">
+          <div class="mb-4px text-12px font-medium">{{ $t('page.home.square.skillAgentInstructions') }}</div>
+          <pre class="max-h-160px overflow-auto rounded-8px bg-slate-50 p-10px text-12px whitespace-pre-wrap text-slate-500 dark:bg-slate-700/40 dark:text-slate-300">{{ skillInstallInfo.usageInstructions }}</pre>
+        </div>
+      </div>
+      <div v-else class="flex h-80px items-center justify-center text-12px text-slate-400">
+        {{ $t('page.home.square.skillAgentLoading') }}
       </div>
     </NModal>
   </div>
