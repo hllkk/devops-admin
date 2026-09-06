@@ -1,0 +1,48 @@
+# ============================================================================
+# DBHub（数据库 MCP Server）配置
+#
+# - 目标库原则：连真实场景的数据库，dev 不内置演示 MySQL（mysql-dev 已移除）
+# - 当前保留一个占位 source：dev pgsql 业务库 devops_admin，保证服务可启动、
+#   MCP 链路可验证（零 [[sources]] 时 DBHub 拒绝启动）；换真实库改 DSN 即可
+# - DSN 凭据走 ${VAR} 插值，由 compose environment 注入，本文件不含明文密码
+# - 热重载：HTTP 模式下改本文件立即生效（含工具增减），无需重启容器；
+#   网关侧工具投影需在平台「MCP 管理」对该 server 点刷新工具
+# - 内置工具：execute_sql / search_objects；explain_sql / health_check 为 opt-in
+# - 只支持关系型（PG/MySQL/MariaDB/SQLServer/SQLite），Redis 不在支持列表
+# ============================================================================
+
+[[sources]]
+id = "pg"
+description = "占位：dev 环境 pgsql 业务库 devops_admin（接入真实场景库时改本 DSN）"
+dsn = "postgresql://postgres:${DBHUB_PG_PASSWORD}@pgsql:5432/devops_admin?sslmode=disable"
+
+[[tools]]
+name = "execute_sql"
+source = "pg"
+readonly = true
+max_rows = 500
+
+[[tools]]
+name = "search_objects"
+source = "pg"
+
+# ---- 真实场景库接入示例（取消注释改 DSN，热重载即生效）----
+# - 多 source 时工具名自动带后缀（execute_sql_shop），description 帮 AI 分流
+# - MySQL 库名有中文数据时配 charset = "utf8mb4"；PG 用 postgresql:// DSN
+# - 目标库侧建只读账号（仅 SELECT + 限库），与工具级 readonly=true 双保险
+#
+# [[sources]]
+# id = "shop"
+# description = "真实业务库：商品与订单数据"
+# dsn = "mysql://ai_reader:${DBHUB_MYSQL_PASSWORD}@10.0.0.1:3306/dev_shop?sslmode=disable"
+# charset = "utf8mb4"
+#
+# [[tools]]
+# name = "execute_sql"
+# source = "shop"
+# readonly = true
+# max_rows = 500
+#
+# [[tools]]
+# name = "search_objects"
+# source = "shop"

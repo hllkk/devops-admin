@@ -118,6 +118,44 @@ services:
       - dev-net
 
   # ============================================================================
+  # DBHub：数据库 MCP Server（Bytebase 开源，自托管 HTTP 端点）
+  #
+  # - 平台按远程型纳管：transport=streamable_http，url=http://dbhub:8080/mcp，
+  #   authType=bearer + 下方 token —— 不碰 litellm 镜像、不挂 docker.sock、
+  #   重启 litellm 无关（对比 stdio 型三短板全避开）
+  # - 多库：config/dbhub.toml 的 [[sources]] 数组，一个实例连多个库；
+  #   只支持关系型（PG/MySQL/MariaDB/SQLServer/SQLite），Redis 不支持
+  # - 目标库连真实场景数据库，不内置演示 MySQL；当前留一个占位 source
+  #   连 dev pgsql 保证服务可启动，换真实库只改 dbhub.toml 的 DSN（热重载）
+  # - 只读：工具级 readonly=true；占位 source 走 postgres 账号仅工具级拦截，
+  #   真实库接入时目标库侧建只读账号（仅 SELECT + 限库）补上第二道保险
+  # - --allowed-hosts '*'：关闭 DNS 重绑定防护（dev 内网 + 已有 bearer 认证），
+  #   生产若经反代暴露需收敛为显式主机名列表
+  # - 热重载：改 dbhub.toml 立即生效（HTTP 模式含工具增减），无需重启
+  # ============================================================================
+
+  dbhub:
+    image: bytebase/dbhub:${DBHUB_VERSION:-latest}
+    container_name: devops-dbhub-dev
+    restart: unless-stopped
+    ports:
+      - "18080:8080"
+    environment:
+      DBHUB_PG_PASSWORD: ${DBHUB_PG_PASSWORD:-Tricolor_123}
+    volumes:
+      - ./config/dbhub.toml:/etc/dbhub/dbhub.toml:ro
+    command:
+      [
+        "--transport", "http",
+        "--port", "8080",
+        "--config", "/etc/dbhub/dbhub.toml",
+        "--auth-token", "${DBHUB_AUTH_TOKEN:-sk-devops-dbhub-dev}",
+        "--allowed-hosts", "*",
+      ]
+    networks:
+      - dev-net
+
+  # ============================================================================
   # LiteLLM：AI 网关模型代理底座（转发面）
   #
   # - 转发面：客户端直连 http://127.0.0.1:4000，LiteLLM 鉴权虚拟 Key + 路由部署 + 记录 spend
