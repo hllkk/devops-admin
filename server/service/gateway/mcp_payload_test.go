@@ -169,3 +169,21 @@ func TestCollectMCPToolBilling(t *testing.T) {
 		t.Errorf("CollectMCPToolBilling = %v", got)
 	}
 }
+
+func TestBuildMCPLitellmBodyMcpInfoNeverNull(t *testing.T) {
+	// LiteLLM 1.99.0 的 PUT /v1/mcp/server 对 mcp_info:null 报 MissingRequiredValueError→500；
+	// free+无描述时 MCPCostInfo 返回 nil，body 必须落空对象而非 null(生产 2026-09-04 deepwiki 实证)
+	row := gateway.MCPServer{McpServerId: 1, ServerName: "deepwiki",
+		Transport: gateway.MCPTransportStreamableHttp, Url: "https://mcp.deepwiki.com/mcp"}
+	for _, update := range []bool{false, true} {
+		body := buildMCPLitellmBody(&row, nil, nil, update)
+		info, ok := body["mcp_info"].(map[string]any)
+		if !ok || len(info) != 0 {
+			t.Errorf("update=%v mcp_info 应为空对象而非 null: %#v", update, body["mcp_info"])
+		}
+	}
+	// create 分支 server_id 用归因锚点；update 分支用 LiteLLM 侧 ID
+	if got := buildMCPLitellmBody(&row, nil, nil, false)["server_id"]; got != "gw_mcp_1" {
+		t.Errorf("create server_id = %v, want gw_mcp_1", got)
+	}
+}

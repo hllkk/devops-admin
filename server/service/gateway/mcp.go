@@ -703,7 +703,8 @@ func (s *McpService) HealthCheckMCPServer(ctx context.Context, id int64) (gatewa
 			checkErr = err.Error()
 		} else if message, err := cli.TestMCPConnection(ctx, BuildMCPEndpointSpec(&row, credentials)); err != nil {
 			checkErr = err.Error()
-		} else if strings.HasPrefix(message, "success") {
+		// LiteLLM 探测成功 status=ok(1.99.0 实测 {"status":"ok"})，旧版为 success，两个前缀都认
+		} else if strings.HasPrefix(message, "success") || strings.HasPrefix(message, "ok") {
 			status = gateway.MCPHealthHealthy
 		} else {
 			checkErr = message
@@ -1045,7 +1046,8 @@ func markMCPSyncState(ctx context.Context, db *gorm.DB, id int64, syncErr error)
 // buildMCPLitellmBody 构建发往 LiteLLM 的 MCP server 投影体(投影原则：派生值只在此产生)。
 // allow_all_keys 恒 false——平台侧 Key.allowed_mcp_servers 是唯一授权凭证(AIHelms 坑规避)；
 // update 时 server_id 必带；create 时用自定义 server_id=gw_mcp_{雪花} 作归因锚点；
-// 无鉴权时显式下发 credentials:null 清残留；mcp_info 为 nil 时下发 null 清空计费投影。
+// 无鉴权时显式下发 credentials:null 清残留；mcp_info 无内容时下发空对象清空计费投影
+// (LiteLLM 1.99.0 的 PUT 对 mcp_info:null 报 MissingRequiredValueError→500，实测空对象通过)。
 // stdio 型发 command/args/env(credentials 列此时存 env 键值对)，url/auth_type/credentials
 // 显式 null 清残留(transport 可编辑切换，不留旧形态字段)；http/sse 型反向同理(command:null)。
 func buildMCPLitellmBody(row *gateway.MCPServer, credentials map[string]any, toolCosts map[string]*float64, update bool) map[string]any {
@@ -1080,6 +1082,9 @@ func buildMCPLitellmBody(row *gateway.MCPServer, credentials map[string]any, too
 		body["instructions"] = row.Instructions
 	}
 	info := MCPCostInfo(row.BillingType, row.ExternalCostPerCall, toolCosts, row.Description, global.OPS_CONFIG.Litellm.UsdToCnyRate)
+	if info == nil {
+		info = map[string]any{}
+	}
 	body["mcp_info"] = info
 	if update {
 		body["server_id"] = row.LitellmServerId
