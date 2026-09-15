@@ -205,12 +205,14 @@ func (c *WecomClient) UserName(ctx context.Context, userID string) (string, erro
 }
 
 // WecomProfile 企业微信用户资料(登录建号用)。
+// Gender 取自 getuserdetail(企微 "1"男/"2"女/"0"未定义/空),由调用方经 service.WecomGenderToSex 转项目字典值落库。
 type WecomProfile struct {
 	UserID string
 	Name   string
 	Mobile string
 	Email  string
 	Avatar string
+	Gender string
 }
 
 // ProfileByCode 一站式:code → userid + user_ticket → 敏感信息 + 姓名。
@@ -229,6 +231,7 @@ func (c *WecomClient) ProfileByCode(ctx context.Context, code string) (*WecomPro
 		prof.Mobile = sens.Mobile
 		prof.Email = sens.Email
 		prof.Avatar = sens.Avatar
+		prof.Gender = sens.Gender
 	} else {
 		logger.Bg().Mod("wecom").Err(err).Warn("拉取企微敏感信息失败,降级")
 	}

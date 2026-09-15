@@ -296,6 +296,7 @@ func (a *WecomAuthApi) loginOrRegister(ctx context.Context, prof *utils.WecomPro
 			return nil, errors.New("用户已被停用")
 		}
 		a.refreshWecomSocial(ctx, &rec, prof)
+		a.refreshWecomUser(ctx, &user, prof)
 		return &user, nil
 	}
 
@@ -327,6 +328,7 @@ func (a *WecomAuthApi) loginOrRegister(ctx context.Context, prof *utils.WecomPro
 			Email:             prof.Email,
 			Phonenumber:       prof.Mobile,
 			Avatar:            prof.Avatar,
+			Sex:               systemSvc.WecomGenderToSex(prof.Gender), // 企微"1/2"→项目"0/1","0"/空→"2"未知
 			RoleId:            defaultRoleId,
 			Status:            "0",
 			PasswordUpdatedAt: &now, // 标记刚设置,避免密码过期判定
@@ -384,6 +386,51 @@ func (a *WecomAuthApi) refreshWecomSocial(ctx context.Context, rec *system.SysSo
 	}
 	if err := global.OPS_DB.WithContext(ctx).Model(&system.SysSocial{}).Where("id = ?", rec.ID).Updates(updates).Error; err != nil {
 		logger.WithCtx(ctx).Mod("wecom").Err(err).Warn("刷新企微资料快照失败(非阻断)")
+	}
+}
+
+// refreshWecomUser 增量回填 sys_user 资料(头像/手机号/邮箱/性别)。
+// 已绑定用户(如通讯录同步建号)扫码登录时,企微拉到的敏感信息此前只刷进 sys_social 快照,
+// sys_user 不更新 → 前端/业务展示仍读旧值;故此处对非空且变化的字段回填 sys_user,
+// 策略与通讯录同步 upsertUser 对齐(空值不覆盖,性别仅"1"/"2"才写)。
+func (a *WecomAuthApi) refreshWecomUser(ctx context.Context, user *system.SysUser, prof *utils.WecomProfile) {
+	updates := map[string]interface{}{}
+	if prof.Avatar != "" && prof.Avatar != user.Avatar {
+		updates["avatar"] = prof.Avatar
+	}
+	if prof.Mobile != "" && prof.Mobile != user.Phonenumber {
+		updates["phonenumber"] = prof.Mobile
+	}
+	if prof.Email != "" && prof.Email != user.Email {
+		updates["email"] = prof.Email
+	}
+	// 仅当企微返回真实性别("1"男/"2"女)才更新;"0"/空属未定义,不覆盖既有值(对齐同步链路)
+	if prof.Gender == "1" || prof.Gender == "2" {
+		if newSex := systemSvc.WecomGenderToSex(prof.Gender); newSex != user.Sex {
+			updates["sex"] = newSex
+		}
+	}
+	if len(updates) == 0 {
+		return
+	}
+	if err := global.OPS_DB.WithContext(ctx).Model(&system.SysUser{}).Where("id = ?", user.UserId).Updates(updates).Error; err != nil {
+		logger.WithCtx(ctx).Mod("wecom").Err(err).Warn("回填企微用户资料失败(非阻断)")
+		return
+	}
+	// 回写内存对象,供后续 issueWecomLogin/JWT claims 用到最新值
+	for k, v := range updates {
+		if s, ok := v.(string); ok {
+			switch k {
+			case "avatar":
+				user.Avatar = s
+			case "phonenumber":
+				user.Phonenumber = s
+			case "email":
+				user.Email = s
+			case "sex":
+				user.Sex = s
+			}
+		}
 	}
 }
 

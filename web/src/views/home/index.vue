@@ -11,6 +11,7 @@ import { getRgb } from '@sa/color';
 import { ALL_MODULES, MODULE_CONFIG, type RouteModule } from '@/constants/module';
 import { $t } from '@/locales';
 import { copyTextToClipboard, selectText } from '@/utils/copy';
+import { rewriteGatewayUrl } from '@/utils/gateway';
 import {
   fetchGetDashboardOverview,
   fetchGetDashboardTrend,
@@ -28,9 +29,15 @@ const authStore = useAuthStore();
 const user = computed(() => authStore.userInfo.user);
 const { SvgIconVNode } = useSvgIcon();
 const showFullKey = ref(false);
-/** 主 Key 复制状态：成功才点亮"已复制"，失败弹错误提示(不假亮) */
-const keyCopied = ref(false);
-let keyCopiedTimer: ReturnType<typeof setTimeout> | null = null;
+/**
+ * 复制状态(按字段隔离:Base URL / API Key 各自独立,避免一处复制全部按钮亮"已复制")；
+ * 成功才点亮"已复制"，失败弹错误提示(不假亮)
+ */
+const copiedField = ref<string | null>(null);
+let copiedTimer: ReturnType<typeof setTimeout> | null = null;
+function isCopied(field: string) {
+  return copiedField.value === field;
+}
 const isLoading = ref(true);
 
 const tabStore = useTabStore();
@@ -122,6 +129,9 @@ const maskedKey = computed(() => {
   return value.length > 12 ? `${value.slice(0, 7)}****${value.slice(-4)}` : value;
 });
 const displayKey = computed(() => (showFullKey.value ? fullKey.value : maskedKey.value));
+
+/** 客户端 Base URL(网关接入点 litellm public-url):dev 本地占位按当前 host 重写,生产原样下发 */
+const gatewayUrl = computed(() => rewriteGatewayUrl(identity.value?.gatewayUrl || ''));
 
 const budgetDisplay = computed(() => {
   const key = mainKey.value;
@@ -242,16 +252,16 @@ function goSquare() {
   activeTab.value = 'square';
 }
 
-async function handleCopy(evt?: MouseEvent) {
-  if (!fullKey.value) return;
+async function handleCopy(field: string, value: string, evt?: MouseEvent) {
+  if (!value) return;
   // 同行可见 code 作选区载体(copy 事件载体)；显示掩码也不影响——写入值由 copy.ts 显式指定原文
   const code = (evt?.currentTarget as HTMLElement | null)?.parentElement?.querySelector('code');
   try {
-    await copyTextToClipboard(fullKey.value, code);
-    keyCopied.value = true;
-    if (keyCopiedTimer) clearTimeout(keyCopiedTimer);
-    keyCopiedTimer = setTimeout(() => {
-      keyCopied.value = false;
+    await copyTextToClipboard(value, code);
+    copiedField.value = field;
+    if (copiedTimer) clearTimeout(copiedTimer);
+    copiedTimer = setTimeout(() => {
+      copiedField.value = null;
     }, 2000);
   } catch {
     // 兜底：自动选中文本，引导 Ctrl+C 手动复制(不依赖剪贴板 API，任何环境可用)
@@ -456,12 +466,35 @@ onMounted(async () => {
                   <p v-if="user?.deptName" class="mt-4px text-12px text-slate-500">{{ user.deptName }}</p>
                 </div>
 
-                <!-- API Key 区 -->
+                <!-- 接入凭证区:Base URL + API Key(已开通才展示;接入模型的两件套,免再去模型广场接入弹窗) -->
                 <div
                   v-if="mainKey"
                   class="home-accent-border mt-20px rounded-16px border bg-white/80 px-20px py-16px backdrop-blur-10px dark:bg-slate-900/60"
                 >
-                  <div class="flex items-center justify-between gap-12px">
+                  <!-- Base URL(客户端接入点 litellm public-url) -->
+                  <div>
+                    <div class="home-accent text-11px tracking-1px font-bold">
+                      {{ $t('page.home.square.accessBaseUrl') }}
+                    </div>
+                    <div class="mt-6px flex items-center gap-8px">
+                      <code class="min-w-0 flex-1 truncate rounded-8px bg-slate-100 px-10px py-6px text-13px text-slate-700 dark:bg-slate-700/60 dark:text-slate-200">
+                        {{ gatewayUrl || '-' }}
+                      </code>
+                      <NButton
+                        size="small"
+                        :type="isCopied('baseUrl') ? 'success' : 'default'"
+                        ghost
+                        :disabled="!gatewayUrl"
+                        @click="handleCopy('baseUrl', gatewayUrl, $event)"
+                      >
+                        <template #icon>
+                          <SvgIcon :icon="isCopied('baseUrl') ? 'lucide:check' : 'lucide:copy'" />
+                        </template>
+                        {{ isCopied('baseUrl') ? $t('page.home.identity.copied') : $t('page.home.identity.copy') }}
+                      </NButton>
+                    </div>
+                  </div>
+                  <div class="mt-16px flex items-center justify-between gap-12px">
                     <div class="min-w-0 flex-1">
                       <div class="home-accent text-11px tracking-1px font-bold">
                         {{ $t('page.home.identity.apiKeyLabel') }}
@@ -476,11 +509,11 @@ onMounted(async () => {
                           <SvgIcon :icon="showFullKey ? 'lucide:eye-off' : 'lucide:eye'" />
                         </template>
                       </NButton>
-                      <NButton size="small" :type="keyCopied ? 'success' : 'primary'" ghost @click="handleCopy($event)">
+                      <NButton size="small" :type="isCopied('apiKey') ? 'success' : 'primary'" ghost @click="handleCopy('apiKey', fullKey, $event)">
                         <template #icon>
-                          <SvgIcon :icon="keyCopied ? 'lucide:check' : 'lucide:copy'" />
+                          <SvgIcon :icon="isCopied('apiKey') ? 'lucide:check' : 'lucide:copy'" />
                         </template>
-                        {{ keyCopied ? $t('page.home.identity.copied') : $t('page.home.identity.copy') }}
+                        {{ isCopied('apiKey') ? $t('page.home.identity.copied') : $t('page.home.identity.copy') }}
                       </NButton>
                     </div>
                   </div>
