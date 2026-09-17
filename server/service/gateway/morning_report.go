@@ -51,7 +51,7 @@ const defaultMorningMarkdownTpl = `## 【AI 平台晨报】{{.ProviderName}}
 已使用 **{{printf "%.1f" .UsedPercent}}%**（剩余 {{.Surplus}} / 总 {{.Total}} Credits）
 {{if .ResetLine}}重置日：**{{.ResetLine}}**
 {{end}}{{if .Overdrawn}}> 当前已超量，请临时切换到 MIMO 或其他个人自定义模型。{{else}}> 如已超量，可临时切换到 MIMO 或其他个人自定义模型。{{end}}{{if .JumpUrl}}
-[前往 AI 身份 ›]({{.JumpUrl}}){{end}}`
+[前往 AI 身份 ›]({{.JumpUrl}})（请用本地浏览器打开）{{end}}`
 
 // BuildMorningReport 汇总全部 token_plan 余量快照(按供应商)组晨报草稿。
 // 口径：坐席+共享包 SUM(total/surplus)；重置日取 MAX(cycle_end)(坐席周期基本一致，取最晚保底)。
