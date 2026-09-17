@@ -39,6 +39,7 @@ type MorningTemplateVars struct {
 	Total        string  // 总量(同上)
 	ResetLine    string  // 重置日文案(如 9月5日重置（3 天后）;可能为空)
 	Overdrawn    bool    // 是否已超量
+	JumpUrl      string  // AI 身份页跳转链接(跳转 base 未配置时为空,模板按空值整行省略;供群机器人 markdown 用)
 }
 
 // 默认模板(与历史硬编码文案保持一致;正文可被 sys_notify_policy.params 的自定义模板替换)
@@ -49,12 +50,14 @@ const defaultMorningContentTpl = `{{.ProviderName}} 已使用 {{printf "%.1f" .U
 const defaultMorningMarkdownTpl = `## 【AI 平台晨报】{{.ProviderName}}
 已使用 **{{printf "%.1f" .UsedPercent}}%**（剩余 {{.Surplus}} / 总 {{.Total}} Credits）
 {{if .ResetLine}}重置日：**{{.ResetLine}}**
-{{end}}{{if .Overdrawn}}> 当前已超量，请临时切换到 MIMO 或其他个人自定义模型。{{else}}> 如已超量，可临时切换到 MIMO 或其他个人自定义模型。{{end}}`
+{{end}}{{if .Overdrawn}}> 当前已超量，请临时切换到 MIMO 或其他个人自定义模型。{{else}}> 如已超量，可临时切换到 MIMO 或其他个人自定义模型。{{end}}{{if .JumpUrl}}
+[前往 AI 身份 ›]({{.JumpUrl}}){{end}}`
 
 // BuildMorningReport 汇总全部 token_plan 余量快照(按供应商)组晨报草稿。
 // 口径：坐席+共享包 SUM(total/surplus)；重置日取 MAX(cycle_end)(坐席周期基本一致，取最晚保底)。
 // 正文模板取晨报策略 params(场景勾选/目标群由 timer 侧解析,此处只读模板;直查表规避 service 反向依赖)。
-func (s *MorningReportService) BuildMorningReport(ctx context.Context) ([]MorningReportDraft, error) {
+// redirectBase 为企微消息跳转基础地址(sys_notify_config,timer 侧传入),用于拼群机器人 markdown 的跳转链接。
+func (s *MorningReportService) BuildMorningReport(ctx context.Context, redirectBase string) ([]MorningReportDraft, error) {
 	type row struct {
 		ProviderId   int64
 		ProviderName string
@@ -92,6 +95,7 @@ func (s *MorningReportService) BuildMorningReport(ctx context.Context) ([]Mornin
 			Total:        formatCredits(r.Total),
 			ResetLine:    morningResetLine(r.CycleEnd),
 			Overdrawn:    r.Surplus <= 0,
+			JumpUrl:      morningJumpURL(redirectBase),
 		}
 		drafts = append(drafts, MorningReportDraft{
 			ProviderId:   r.ProviderId,
@@ -167,6 +171,16 @@ func morningResetLine(cycleEnd *time.Time) string {
 	default:
 		return fmt.Sprintf("本周期已于 %s 重置", dateLabel)
 	}
+}
+
+// morningJumpURL 群机器人 markdown 跳转链接:跳转 base 已配置时拼 AI 身份页
+// (/home 默认落在「我的AI身份」Tab);未配置返回空串,模板按空值整行省略,不发废链接。
+func morningJumpURL(redirectBase string) string {
+	base := strings.TrimSuffix(redirectBase, "/")
+	if base == "" {
+		return ""
+	}
+	return base + "/home"
 }
 
 // formatCredits Credits 中文数量级格式化(亿/万)，避免大数字难读。

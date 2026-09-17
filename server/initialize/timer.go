@@ -116,7 +116,8 @@ func Timer() {
 		if !policy.Enabled {
 			return nil // 策略未启用,静默跳过(任务开着,配置可控)
 		}
-		drafts, err := (&gatewayService.MorningReportService{}).BuildMorningReport(ctx)
+		notifyCfg := (&system.NotifyConfigService{}).Current(ctx)
+		drafts, err := (&gatewayService.MorningReportService{}).BuildMorningReport(ctx, notifyCfg.WecomPushRedirectBase)
 		if err != nil {
 			return err
 		}
@@ -147,7 +148,6 @@ func Timer() {
 		if err != nil {
 			return fmt.Errorf("解析晨报场景参数失败: %w", err)
 		}
-		notifyCfg := (&system.NotifyConfigService{}).Current(ctx)
 		channels := system.SendChannels{
 			InApp:    true,
 			WecomApp: params.WecomApp && notifyCfg.WecomPushEnabled,

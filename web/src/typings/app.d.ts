@@ -313,6 +313,8 @@ declare namespace App {
     type Schema = {
       system: {
         title: string;
+        adminTitle: string;
+        gatewayTitle: string;
         updateTitle: string;
         updateContent: string;
         updateConfirm: string;
@@ -1937,6 +1939,7 @@ declare namespace App {
             notifyMorningTemplateVarTotal: string;
             notifyMorningTemplateVarResetLine: string;
             notifyMorningTemplateVarOverdrawn: string;
+            notifyMorningTemplateVarJumpUrl: string;
             notifyMorningTemplateTip: string;
             notifyMorningTip: string;
             // 认证配置

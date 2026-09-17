@@ -211,7 +211,8 @@ const templateVars = computed(() => [
   { name: '{{.Surplus}}', desc: t('page.system.setting.notifyMorningTemplateVarSurplus') },
   { name: '{{.Total}}', desc: t('page.system.setting.notifyMorningTemplateVarTotal') },
   { name: '{{.ResetLine}}', desc: t('page.system.setting.notifyMorningTemplateVarResetLine') },
-  { name: '{{.Overdrawn}}', desc: t('page.system.setting.notifyMorningTemplateVarOverdrawn') }
+  { name: '{{.Overdrawn}}', desc: t('page.system.setting.notifyMorningTemplateVarOverdrawn') },
+  { name: '{{.JumpUrl}}', desc: t('page.system.setting.notifyMorningTemplateVarJumpUrl') }
 ]);
 
 function resetTemplate(field: 'contentTemplate' | 'markdownTemplate') {

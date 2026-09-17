@@ -1,6 +1,8 @@
 const local: App.I18n.Schema = {
   system: {
-    title: 'DevOps Admin',
+    title: 'AIOps',
+    adminTitle: 'AIOps Admin',
+    gatewayTitle: 'AIOps Gateway',
     updateTitle: 'System Version Update Notification',
     updateContent: 'A new version of the system has been detected. Do you want to refresh the page immediately?',
     updateConfirm: 'Refresh immediately',
@@ -1775,6 +1777,7 @@ const local: App.I18n.Schema = {
         notifyMorningTemplateVarTotal: 'Total credits',
         notifyMorningTemplateVarResetLine: 'Reset date line (may be empty)',
         notifyMorningTemplateVarOverdrawn: 'Whether overdrawn',
+        notifyMorningTemplateVarJumpUrl: 'AI identity page jump URL (empty when redirect base unset, wecom bot markdown only)',
         notifyMorningTemplateTip: 'Go template syntax; empty = default template, render failure falls back to default',
         notifyMorningTip:
           'On weekdays at the configured time, summarizes Bailian TokenPlan seats + shared packages remaining and reset date, then pushes to target departments/users; changing send time takes effect after save (timed task schedule is synced). In-app notice is always sent; external channels follow the checkboxes above.',
