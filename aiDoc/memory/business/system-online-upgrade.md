@@ -47,8 +47,18 @@ scp 全量包→解压→install.sh。要在产品内集成版本发布能力：
 
 ## 产物链
 
-`build-release.sh [版本]`（默认 global.Version-gitsha）→ dist/ 三件套：全量包
-（8 镜像+.env+install.sh+upgrade.sh）、增量包（自研 3 镜像+编排资产+upgrade.sh）、
-manifest-<版本>.json（+sha256）→ `publish/publish.sh` 推发布服务器（人工填 changelog
-后 mv 名 manifest.json 原子生效）→ 生产「关于」检查更新 → updater 下载(断点续传)/
-校验/解压/job 安装 → 前端进度弹窗轮询 /system/upgrade/status。
+`build-release.sh [版本] [--with-full]`（默认 global.Version-gitsha）→ dist/ 产物：
+增量包（自研 3 镜像+编排资产+upgrade.sh，**默认唯一产物**，约 137M）、全量包
+（8 镜像+.env+install.sh+upgrade.sh，仅 `--with-full` 大版本变动时追加构建）、
+manifest-<版本>.json（+sha256，packages 数组按实际产物生成）→ `publish/publish.sh`
+推发布服务器（人工填 changelog 后 mv 名 manifest.json 原子生效）→ 生产「关于」
+检查更新 → updater 下载(断点续传)/校验/解压/job 安装 → 前端进度弹窗轮询
+/system/upgrade/status。
+
+**发布策略（2026-09-16 起）**：日常发布只出增量包（快，避免全量 800M+ 打包/等待）；
+全量包仅在**大版本变动**时 `--with-full` 追加。updater 选包优先 incr、无 incr 才回退
+full，仅含 incr 的 manifest 完全兼容。
+
+**发布服务器 = 构建本机** `/opt/devops-admin-publish/`（v1.1.0 起实测；publish.sh 的
+user@host 用不上，直接本机 cp 即可）：`packages/` 放包+sha256，根目录 manifest.json
+为生效清单（原子 mv 替换）。
