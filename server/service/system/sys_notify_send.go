@@ -238,7 +238,7 @@ func (s *NotifySendService) SendTestWecomApp(ctx context.Context, userId int64, 
 		return errWecomNotConfigured
 	}
 	card := utils.WecomTextCard{
-		Title:       "devops-admin 测试消息",
+		Title:       "AIOps 测试消息",
 		Description: "收到本条消息说明企业微信应用消息推送配置正确。",
 		Btntxt:      "前往查看",
 	}
@@ -259,5 +259,5 @@ func (s *NotifySendService) SendTestWecomBot(ctx context.Context, groupId uint) 
 		return err
 	}
 	return (&utils.WecomClient{}).SendBotMessage(ctx, g.WebhookUrl,
-		"## devops-admin 测试消息\n收到本条消息说明群机器人「"+g.GroupName+"」配置正确。")
+		"## AIOps 测试消息\n收到本条消息说明群机器人「"+g.GroupName+"」配置正确。")
 }

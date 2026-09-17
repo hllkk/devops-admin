@@ -35,9 +35,9 @@ func init() {
 // @Tag.Name        SysUser
 // @Tag.Description 用户
 
-// @title                       Devops-Admin Swagger API接口文档
+// @title                       AIOps Swagger API接口文档
 // @version                     v0.2.0
-// @description                 使用devops-admin进行开发基础平台
+// @description                 AIOps 开发基础平台
 // @securityDefinitions.apikey  ApiKeyAuth
 // @in                          header
 // @name                        x-token

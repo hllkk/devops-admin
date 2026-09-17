@@ -13,7 +13,7 @@ var (
 // 应用静态信息
 const (
 	// AppName 应用名称
-	AppName = "Devops-Admin"
+	AppName = "AIOps"
 	// Description 应用描述
 	Description = "面向 AI 应用开发与智能体集成的全栈开发基础平台"
 )

@@ -3219,6 +3219,40 @@ definitions:
         description: 全局超时(秒)
         type: integer
     type: object
+  response.SkillInstallInfoView:
+    properties:
+      agentInstallPrompt:
+        description: Agent 安装提示词(管理员维护)
+        type: string
+      authorized:
+        description: 当前用户主Key是否已授权(需审批Skill的下载前置)
+        type: boolean
+      curlCommand:
+        description: 可直接执行的 curl 命令(含主Key明文,复制不回显)
+        type: string
+      downloadUrl:
+        description: Agent 直连下载URL(裸地址,不含凭证)
+        type: string
+      hasPackage:
+        description: 是否已上传zip包
+        type: boolean
+      name:
+        description: 技能名称
+        type: string
+      requiresApproval:
+        description: 使用需审批
+        type: boolean
+      skillId:
+        description: 技能ID
+        example: "0"
+        type: string
+      usageInstructions:
+        description: 使用说明(管理员维护)
+        type: string
+      version:
+        description: 版本号
+        type: string
+    type: object
   response.SkillPublishView:
     properties:
       departmentIds:
@@ -3248,7 +3282,14 @@ definitions:
   response.SkillUsageView:
     properties:
       action:
-        description: 动作
+        description: 动作(download/agent_download)
+        type: string
+      aiKeyId:
+        description: 密钥ID(0=登录态下载)
+        example: "0"
+        type: string
+      aiKeyName:
+        description: 密钥名(回填,Agent直连归因)
         type: string
       createTime:
         description: 时间
@@ -3426,6 +3467,92 @@ definitions:
       tokens:
         description: 当日总token
         type: integer
+    type: object
+  response.UpgradeCheckResult:
+    properties:
+      changeLog:
+        description: 更新内容(markdown)
+        type: string
+      currentVersion:
+        description: 当前运行版本(global.Version)
+        type: string
+      forceUpgrade:
+        type: boolean
+      hasUpdate:
+        description: 是否有新版本
+        type: boolean
+      message:
+        description: 无更新/失败原因(用户可读)
+        type: string
+      minUpgradeVersion:
+        description: 低于此版本需先升中间版(提示用)
+        type: string
+      package:
+        allOf:
+        - $ref: '#/definitions/response.UpgradePackageInfo'
+        description: 选中的升级包(优先增量)
+      releaseTime:
+        type: string
+      version:
+        description: manifest 版本
+        type: string
+    type: object
+  response.UpgradePackageInfo:
+    properties:
+      sha256:
+        type: string
+      sizeBytes:
+        type: integer
+      type:
+        description: incr 增量 / full 全量
+        type: string
+      url:
+        description: 相对发布服务器根路径
+        type: string
+    type: object
+  response.UpgradeStartResult:
+    properties:
+      accepted:
+        description: 是否已开始(进度轮询 /system/upgrade/status)
+        type: boolean
+      message:
+        description: 未开始原因(已是最新/updater 拒绝等)
+        type: string
+      version:
+        description: 目标版本
+        type: string
+    type: object
+  response.UpgradeStateInfo:
+    properties:
+      message:
+        description: 进展/错误说明
+        type: string
+      progress:
+        description: 0-100(downloading 阶段为下载百分比)
+        type: integer
+      state:
+        description: idle/downloading/verifying/unpacking/installing/success/failed/unreachable
+        type: string
+      updateTime:
+        type: string
+      version:
+        description: 目标版本(终态时为已装版本)
+        type: string
+    type: object
+  response.VersionInfo:
+    properties:
+      appName:
+        description: 应用名(global.AppName)
+        type: string
+      buildTime:
+        description: 构建时间(RFC3339;裸构建为 unknown)
+        type: string
+      description:
+        description: 应用描述
+        type: string
+      version:
+        description: 当前版本号(global.Version,ldflags 注入)
+        type: string
     type: object
   system.CaptchaResult:
     properties:
@@ -4822,8 +4949,8 @@ definitions:
     type: object
 info:
   contact: {}
-  description: 使用devops-admin进行开发基础平台
-  title: Devops-Admin Swagger API接口文档
+  description: AIOps 开发基础平台
+  title: AIOps Swagger API接口文档
   version: v0.2.0
 paths:
   /auth/binding/{source}:
@@ -7990,6 +8117,29 @@ paths:
       summary: 用户侧可见Skill列表(广场,按发布可见性过滤;casbin 登录白名单)
       tags:
       - GatewaySkill
+  /gateway/skill/agent/{id}/zip:
+    get:
+      description: '公开端点(PublicGroup)：Authorization: Bearer <AiKey明文> 或查询参数 ?token=<AiKey明文>；401=凭证缺失/无效/停用/过期'
+      parameters:
+      - description: 技能ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: AiKey明文(与 Bearer 头二选一)
+        in: query
+        name: token
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+      summary: Agent直连下载Skill zip包(AI Key鉴权,无登录态;需审批Skill须该Key已授权)
+      tags:
+      - GatewaySkill
   /gateway/skill/available:
     get:
       produces:
@@ -8048,6 +8198,31 @@ paths:
           schema:
             type: file
       summary: 下载Skill zip包(用户侧;需审批Skill须已授权;casbin 登录白名单)
+      tags:
+      - GatewaySkill
+  /gateway/skill/install-info/{id}:
+    get:
+      parameters:
+      - description: 技能ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.SkillInstallInfoView'
+                msg:
+                  type: string
+              type: object
+      summary: Skill Agent接入信息(登录态;含可直接复制的curl命令与安装提示词;casbin登录白名单)
       tags:
       - GatewaySkill
   /gateway/skill/list:
@@ -10744,6 +10919,82 @@ paths:
       summary: 当前用户已绑定的第三方账号列表
       tags:
       - Social
+  /system/upgrade/check:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.UpgradeCheckResult'
+                msg:
+                  type: string
+              type: object
+      summary: 检查更新(拉取发布服务器 manifest 与当前版本比对)
+      tags:
+      - SysUpgrade
+  /system/upgrade/start:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.UpgradeStartResult'
+                msg:
+                  type: string
+              type: object
+      summary: 触发在线升级(转发 updater 执行,进度轮询 /system/upgrade/status;走 casbin 菜单授权)
+      tags:
+      - SysUpgrade
+  /system/upgrade/status:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.UpgradeStateInfo'
+                msg:
+                  type: string
+              type: object
+      summary: 获取升级状态(代理 updater 状态机:downloading/verifying/unpacking/installing/success/failed/unreachable)
+      tags:
+      - SysUpgrade
+  /system/upgrade/version:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.VersionInfo'
+                msg:
+                  type: string
+              type: object
+      summary: 版本信息(「关于」弹窗;登录即可)
+      tags:
+      - SysUpgrade
   /system/user:
     post:
       consumes:
