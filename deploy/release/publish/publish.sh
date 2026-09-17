@@ -10,8 +10,8 @@
 #     版本号            默认取 dist/ 下最新的 manifest-<版本>.json
 #
 # 动作：
-#   1. 检查 dist/ 三件套（manifest-<版本>.json + 增量包 + 全量包，含 .sha256）
-#   2. 两个包与 .sha256 上传到 <根目录>/packages/
+#   1. 检查 dist/ 产物（manifest-<版本>.json + 增量包必须；全量包按构建产物可选，含 .sha256）
+#   2. 实际存在的包与 .sha256 上传到 <根目录>/packages/
 #   3. manifest-<版本>.json 上传到 <根目录>/（不直接生效）
 #   4. 提示手工编辑 changeLog/releaseTime 后 mv 改名 manifest.json 生效（原子替换，旧清单保留）
 #
@@ -39,17 +39,24 @@ MANIFEST="$DIST_DIR/manifest-$VERSION.json"
 INCR_TARBALL="$DIST_DIR/devops-admin-upgrade-$VERSION.tar.gz"
 FULL_TARBALL="$DIST_DIR/devops-admin-release-$VERSION.tar.gz"
 
-# ---- 产物就位检查 -------------------------------------------------------------
-for f in "$MANIFEST" "$INCR_TARBALL" "$INCR_TARBALL.sha256" "$FULL_TARBALL" "$FULL_TARBALL.sha256"; do
+# ---- 产物就位检查（manifest+增量包必须；全量包按构建产物可选）-----------------
+for f in "$MANIFEST" "$INCR_TARBALL" "$INCR_TARBALL.sha256"; do
   [ -f "$f" ] || { echo "[错误] 缺产物：$f（先跑 build-release.sh）"; exit 1; }
+done
+HAVE_FULL=1
+for f in "$FULL_TARBALL" "$FULL_TARBALL.sha256"; do
+  [ -f "$f" ] || HAVE_FULL=0
 done
 
 # ---- 上传 ---------------------------------------------------------------------
 echo "==> 建远程目录 $REMOTE_ROOT/packages"
 ssh $SSH_OPTS "$REMOTE" "mkdir -p '$REMOTE_ROOT/packages'"
 
-echo "==> 上传升级包（增量 $(du -h "$INCR_TARBALL" | cut -f1) / 全量 $(du -h "$FULL_TARBALL" | cut -f1)）"
-scp $SSH_OPTS "$INCR_TARBALL" "$INCR_TARBALL.sha256" "$FULL_TARBALL" "$FULL_TARBALL.sha256" "$REMOTE:$REMOTE_ROOT/packages/"
+echo "==> 上传升级包（增量 $(du -h "$INCR_TARBALL" | cut -f1)$( [ "$HAVE_FULL" -eq 1 ] && printf ' / 全量 %s' "$(du -h "$FULL_TARBALL" | cut -f1)" )）"
+scp $SSH_OPTS "$INCR_TARBALL" "$INCR_TARBALL.sha256" "$REMOTE:$REMOTE_ROOT/packages/"
+if [ "$HAVE_FULL" -eq 1 ]; then
+  scp $SSH_OPTS "$FULL_TARBALL" "$FULL_TARBALL.sha256" "$REMOTE:$REMOTE_ROOT/packages/"
+fi
 
 echo "==> 上传版本清单（不直接生效）"
 scp $SSH_OPTS "$MANIFEST" "$REMOTE:$REMOTE_ROOT/"

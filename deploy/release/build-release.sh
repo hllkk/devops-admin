@@ -3,14 +3,16 @@
 # devops-admin 生产 Release 打包（在构建机/当前开发服务器执行）
 #
 # 用法：
-#   bash build-release.sh [版本号]    # 默认 <global.Version>-<git短sha>，如 v0.2.0-a1b2c3d
+#   bash build-release.sh [版本号] [--with-full]
+#     版本号        默认 <global.Version>-<git短sha>，如 v0.2.0-a1b2c3d
+#     --with-full   追加全量包；默认只出增量包（日常发布快，全量包大版本变动时再出）
 #
 # 产物（deploy/release/dist/，均附 .sha256）：
-#   devops-admin-release-<版本>.tar.gz   全量包：8 镜像 + 强随机 .env + install.sh
-#                                        （全新部署 / 离线手工升级，流程与既有约定一致）
-#   devops-admin-upgrade-<版本>.tar.gz   增量包：仅自研 3 镜像 + 编排资产 + upgrade.sh
+#   devops-admin-upgrade-<版本>.tar.gz   增量包（默认产物）：仅自研 3 镜像 + 编排资产 + upgrade.sh
 #                                        （在线升级载体：updater 拉取安装，或手工解压跑 upgrade.sh）
-#   manifest-<版本>.json                 版本清单：版本/changelog/双包 sha256/包类型，
+#   devops-admin-release-<版本>.tar.gz   全量包（--with-full）：8 镜像 + 强随机 .env + install.sh
+#                                        （全新部署 / 离线手工升级，流程与既有约定一致）
+#   manifest-<版本>.json                 版本清单：版本/changelog/包清单 sha256/包类型，
 #                                        上传发布服务器改名 manifest.json 生效（changelog 需手工编辑）
 #
 # 镜像版本化：自研镜像 tag = APP_VERSION（devops-admin/web|server|updater:<版本>），三处同源注入——
@@ -35,8 +37,15 @@ WEB_PORT=80                      # web 对外端口
 LITELLM_HOST_PORT=4001           # litellm 宿主映射端口（宿主 4000 已被旧 litellm 占用，过渡用 4001；
                                  # 旧实例停用后改 .env 的 LITELLM_HOST_PORT=4000 即切回）
 
-# ---- 版本号：显式参数 > global.Version-<git短sha> ----
-VERSION="${1:-}"
+# ---- 参数：[版本号] [--with-full]；发布模式见头部用法说明 ----
+WITH_FULL=0
+VERSION=""
+for arg in "$@"; do
+  case "$arg" in
+    --with-full) WITH_FULL=1 ;;
+    *) VERSION="$arg" ;;
+  esac
+done
 if [ -z "$VERSION" ]; then
   BASE_VERSION="$(sed -n 's/^.*Version = "\([^"]*\)".*$/\1/p' "$REPO_ROOT/server/global/version.go" | head -1)"
   BASE_VERSION=${BASE_VERSION:-v0.0.0}
@@ -105,8 +114,10 @@ copy_orchestration() {
 log "构建自研镜像（版本化 tag = $VERSION）"
 dc build
 
-log "拉取第三方镜像（--ignore-buildable 跳过自研）"
-dc pull --ignore-buildable
+if [ "$WITH_FULL" -eq 1 ]; then
+  log "拉取第三方镜像（--ignore-buildable 跳过自研，全量包导出用）"
+  dc pull --ignore-buildable
+fi
 
 # 镜像清单从 compose 动态获取，不手工维护（防漂移）
 mapfile -t ALL_IMAGES < <(dc config --images | sort -u)
@@ -116,8 +127,9 @@ mapfile -t OWN_IMAGES < <(dc config --images | grep '^devops-admin/' | sort -u)
 for img in "${ALL_IMAGES[@]}"; do printf '  ✓ %s\n' "$img"; done
 
 # ============================================================================
-# 2. 全量包（既有离线部署流程：强随机 .env + 全部镜像 + install.sh）
+# 2. 全量包（--with-full 时构建：强随机 .env + 全部镜像 + install.sh）
 # ============================================================================
+if [ "$WITH_FULL" -eq 1 ]; then
 log "组装全量包"
 # .env：本次部署机密（既有约定——构建机生成，install.sh 直接使用）
 sed -e "s|^WEB_PORT=.*|WEB_PORT=$WEB_PORT|" \
@@ -150,6 +162,7 @@ echo "$BUILD_TIME" > "$FULL_STAGE/BUILD_TIME"
 
 log "导出全量镜像（docker save | gzip，约 1-2GB，请耐心等待）"
 docker save "${ALL_IMAGES[@]}" | gzip > "$FULL_STAGE/images.tar.gz"
+fi
 
 # ============================================================================
 # 3. 增量包（在线升级载体：仅自研 3 镜像 + 编排资产，无 .env/无第三方镜像）
@@ -167,10 +180,12 @@ docker save -o "$INCR_STAGE/images/devops-admin-images-incr.tar" "${OWN_IMAGES[@
 log "压缩产物"
 FULL_TARBALL="$DIST_DIR/devops-admin-release-$VERSION.tar.gz"
 INCR_TARBALL="$DIST_DIR/devops-admin-upgrade-$VERSION.tar.gz"
-tar -C "$STAGING" -czf "$FULL_TARBALL" "$(basename "$FULL_STAGE")"
+if [ "$WITH_FULL" -eq 1 ]; then
+  tar -C "$STAGING" -czf "$FULL_TARBALL" "$(basename "$FULL_STAGE")"
+  # sha256 记录相对文件名，发布服务器/目标机同目录 `sha256sum -c` 可直接校验
+  ( cd "$DIST_DIR" && sha256sum "$(basename "$FULL_TARBALL")" > "$(basename "$FULL_TARBALL").sha256" )
+fi
 tar -C "$STAGING" -czf "$INCR_TARBALL" "$(basename "$INCR_STAGE")"
-# sha256 记录相对文件名，发布服务器/目标机同目录 `sha256sum -c` 可直接校验
-( cd "$DIST_DIR" && sha256sum "$(basename "$FULL_TARBALL")" > "$(basename "$FULL_TARBALL").sha256" )
 ( cd "$DIST_DIR" && sha256sum "$(basename "$INCR_TARBALL")" > "$(basename "$INCR_TARBALL").sha256" )
 
 # manifest：上传发布服务器后改名 manifest.json 生效（原子替换）；
@@ -178,6 +193,17 @@ tar -C "$STAGING" -czf "$INCR_TARBALL" "$(basename "$INCR_STAGE")"
 size_of() { stat -c%s "$1"; }
 sha_of() { cut -d' ' -f1 "$1.sha256"; }
 MANIFEST="$DIST_DIR/manifest-$VERSION.json"
+# 全量包清单项仅 --with-full 时生成；updater 选包优先 incr，无 incr 才回退 full
+FULL_ENTRY=""
+if [ "$WITH_FULL" -eq 1 ]; then
+FULL_ENTRY=",
+    {
+      \"type\": \"full\",
+      \"url\": \"/packages/devops-admin-release-$VERSION.tar.gz\",
+      \"sha256\": \"$(sha_of "$FULL_TARBALL")\",
+      \"sizeBytes\": $(size_of "$FULL_TARBALL")
+    }"
+fi
 cat > "$MANIFEST" <<EOF
 {
   "version": "$VERSION",
@@ -192,13 +218,7 @@ cat > "$MANIFEST" <<EOF
       "url": "/packages/devops-admin-upgrade-$VERSION.tar.gz",
       "sha256": "$(sha_of "$INCR_TARBALL")",
       "sizeBytes": $(size_of "$INCR_TARBALL")
-    },
-    {
-      "type": "full",
-      "url": "/packages/devops-admin-release-$VERSION.tar.gz",
-      "sha256": "$(sha_of "$FULL_TARBALL")",
-      "sizeBytes": $(size_of "$FULL_TARBALL")
-    }
+    }$FULL_ENTRY
   ]
 }
 EOF
@@ -212,16 +232,23 @@ cat <<EOF
 ============================================================
 ✅ Release 打包完成（版本 $VERSION）
 
-  全量包  : $FULL_TARBALL（$(du -sh "$FULL_TARBALL" | cut -f1)，8 镜像 + .env + install.sh）
   增量包  : $INCR_TARBALL（$(du -sh "$INCR_TARBALL" | cut -f1)，仅自研镜像）
   清单    : $MANIFEST（发布前手工编辑 changeLog/releaseTime，后改名 manifest.json）
   版本    : $VERSION（自研镜像 tag = 版本号，旧镜像保留可回滚）
+EOF
+
+if [ "$WITH_FULL" -eq 1 ]; then
+cat <<EOF
+  全量包  : $FULL_TARBALL（$(du -sh "$FULL_TARBALL" | cut -f1)，8 镜像 + .env + install.sh）
 
 全新部署（全量包）：
   scp $FULL_TARBALL root@$DEPLOY_IP:/root/
   ssh root@$DEPLOY_IP "mkdir -p /root/devops-admin && tar -xzf /root/$(basename "$FULL_TARBALL") -C /root/devops-admin --strip-components=1"
   ssh root@$DEPLOY_IP "cd /root/devops-admin && bash install.sh"
+EOF
+fi
 
+cat <<EOF
 在线升级（增量包，二选一）：
   A. 发布服务器：publish.sh 推送 → 编辑 manifest 填 changelog → 改名 manifest.json 生效
      → 生产「关于」弹窗检查更新 → 在线升级
