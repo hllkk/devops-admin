@@ -34,6 +34,10 @@ declare namespace Api {
       manageIp: string;
       /** SSH端口 */
       sshPort: number;
+      /** SSH用户名(公钥认证用户) */
+      sshUsername: string;
+      /** SSH验证状态(录入即验证,公钥已部署可用) */
+      sshVerified: boolean;
       /** 操作系统(linux/windows) */
       osType: string;
       /** 环境标签(prod/test/dev) */
@@ -46,6 +50,12 @@ declare namespace Api {
       monitorStatus: MonitorStatus;
       /** Agent状态 */
       agentStatus: AgentStatus;
+      /** Agent版本(注册/心跳回写) */
+      agentVersion: string;
+      /** Agent主机名(注册回写) */
+      agentHostname: string;
+      /** 最近心跳时间(UTC) */
+      lastHeartbeatAt: string | null;
       /** SSH凭据ID(0=未关联) */
       credentialId: CommonType.IdType;
       /** 采集通道配置(BMC地址等，按类型) */
@@ -80,9 +90,12 @@ declare namespace Api {
     type AssetOperateParams = CommonType.RecordNullable<
       Pick<
         Api.Server.Asset,
-        'assetId' | 'assetName' | 'assetType' | 'manageIp' | 'sshPort' | 'osType' | 'env' | 'location' | 'isActive' | 'credentialId' | 'description'
+        'assetId' | 'assetName' | 'assetType' | 'manageIp' | 'sshPort' | 'sshUsername' | 'osType' | 'env' | 'location' | 'isActive' | 'credentialId' | 'description'
       >
-    >;
+    > & {
+      /** SSH密码(一次性:仅保存时验证+部署公钥,不落库;编辑留空=公钥复验) */
+      sshPassword?: string;
+    };
 
     /** 采集凭据(credential_values 密文不出网，视图下发掩码键值) */
     type Credential = Common.CommonRecord<{
@@ -112,6 +125,50 @@ declare namespace Api {
     > & {
       /** 凭据键值(敏感值掩码 ******，掩码原样回传=未修改保留旧明文) */
       credentialValues: Record<string, string>;
+    };
+
+    /** agent 安装任务状态(轮询) */
+    type AgentInstallStatus = {
+      /** 任务ID */
+      taskId: string;
+      /** 资产ID */
+      assetId: CommonType.IdType;
+      /** running/success/failed */
+      status: 'running' | 'success' | 'failed';
+      /** 当前步骤(连接目标机/部署公钥/上传二进制/注册服务/启动) */
+      step: string;
+      /** 失败原因/成功摘要 */
+      message?: string;
+      /** 开始时间(UTC) */
+      startedAt: string;
+      /** 结束时间(UTC，空=进行中) */
+      finishedAt?: string | null;
+    };
+
+    /** agent 心跳上报的轻量指标快照(slice3 完整管道前的查看抽屉数据) */
+    type AgentSnapshot = {
+        /** CPU使用率% */
+        cpuPercent: number;
+        /** 1分钟负载 */
+        loadavg1: number;
+        /** 内存总量KB */
+        memTotalKb: number;
+        /** 内存可用KB */
+        memAvailableKb: number;
+        /** 根分区总量 */
+        diskTotalBytes: number;
+        /** 根分区已用 */
+        diskUsedBytes: number;
+        /** 网络入速率 B/s */
+        netInBps: number;
+        /** 网络出速率 B/s */
+        netOutBps: number;
+        /** 系统运行时长(秒) */
+        uptimeSec: number;
+        /** 上报时间(UTC) */
+        reportedAt: string;
+        /** 过期标记(agent 未上报时 true,数据为零值) */
+        stale: boolean;
     };
 
     /** 凭据下拉选项(资产表单用，仅启用中) */

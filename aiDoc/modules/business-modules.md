@@ -93,6 +93,20 @@ Go HTTP 客户端封装（用 `LITELLM_MASTER_KEY` 鉴权）调 LiteLLM 管理 A
 - 统一响应 `{code,data,msg}`、分页 `request.PageInfo`、Swagger `PageResult`
 - 前端复用 `@sa/axios`/Elegant Router/Soybean 体系，页面落 `views/_gateway/`，接口封装落 `service/api/gateway/`
 
+### 资产账号与登录授权（P4 立项，2026-10-08 决策）
+
+用户场景：平台用户有资产的监控可见性，但登录服务器只授权某个业务账号（ekp/qiyuesuo 等）。模型与共享凭据**并存且职责正交**：
+
+- `server_account`（资产账号，从属资产，一资产多账号）：account_id/asset_id/username/secret(AES 可选托管)/is_privileged(特权账号，自动改密用)——解决「每台机器账号各不相同」
+- `server_login_grant`（登录授权三元组）：user_id × asset_id × account_id + expires_at——**监控可见性(casbin/数据权限)与登录授权是两个正交权限轴**
+- `server_credential` 语义不变：仅平台管理通道（SSH 用户名/BMC/DB/SNMP），用户不可见
+- **登录通路选个人公钥下发**（非 SSH 会话代理）：授权=用户个人公钥写入目标机账号 authorized_keys，撤销=删行；密码不托管（契合公钥架构）、改密零耦合；会话审计录像将来真有需求再补代理层。slice2 的公钥部署函数按「可写任意公钥」设计（平台公钥/用户公钥同函数），将来零返工
+- 分期：P4（或独立一期）账号表+授权表+个人中心用户公钥登记+授权下发；自动改密/会话审计更后
+
+### SSH 凭据语义收敛（2026-10-08）
+
+SSH 凭据模板去掉 password 字段（root 密码仅内存态是既定决策，安装后走公钥认证，SSH 密码不该落库）；SSH 凭据=公钥认证用户名。BMC/DB/SNMP 存密码是协议本质（AES+掩码+审计兜底），不受影响。
+
 ### 分期规划（4 期；P1–P3 主线，P4 可选）
 
 对照 AIHelms 全功能地图，devops-admin 已有 system 基座（用户/角色/部门/认证/数据权限/操作·登录日志），故 AIHelms 的 `users`/`departments`/`projects`/`roles`/`auth`/`audit_logs`/`license`/`branding` 不重做，只聚焦 **AI 特有**功能。
@@ -279,6 +293,20 @@ Go HTTP 客户端封装（用 `LITELLM_MASTER_KEY` 鉴权）调 LiteLLM 管理 A
 - 拨测：ICMP ping（全部资产默认开）+ TCP 端口/HTTP 拨测（可配目标），拨测结果落资产在线状态
 - SNMP：gosnmp（v2c/v3），接口流量（ifTable）+ 端口状态 + 设备信息，网络设备资产通道配置
 
+### 资产账号与登录授权（P4 立项，2026-10-08 决策）
+
+用户场景：平台用户有资产的监控可见性，但登录服务器只授权某个业务账号（ekp/qiyuesuo 等）。模型与共享凭据**并存且职责正交**：
+
+- `server_account`（资产账号，从属资产，一资产多账号）：account_id/asset_id/username/secret(AES 可选托管)/is_privileged(特权账号，自动改密用)——解决「每台机器账号各不相同」
+- `server_login_grant`（登录授权三元组）：user_id × asset_id × account_id + expires_at——**监控可见性(casbin/数据权限)与登录授权是两个正交权限轴**
+- `server_credential` 语义不变：仅平台管理通道（SSH 用户名/BMC/DB/SNMP），用户不可见
+- **登录通路选个人公钥下发**（非 SSH 会话代理）：授权=用户个人公钥写入目标机账号 authorized_keys，撤销=删行；密码不托管（契合公钥架构）、改密零耦合；会话审计录像将来真有需求再补代理层。slice2 的公钥部署函数按「可写任意公钥」设计（平台公钥/用户公钥同函数），将来零返工
+- 分期：P4（或独立一期）账号表+授权表+个人中心用户公钥登记+授权下发；自动改密/会话审计更后
+
+### SSH 凭据语义收敛（2026-10-08）
+
+SSH 凭据模板去掉 password 字段（root 密码仅内存态是既定决策，安装后走公钥认证，SSH 密码不该落库）；SSH 凭据=公钥认证用户名。BMC/DB/SNMP 存密码是协议本质（AES+掩码+审计兜底），不受影响。
+
 ### 分期规划
 
 **P1 · 资产 + agent 地基 + 基础监控**（核心价值最快落地）：
@@ -299,6 +327,11 @@ Go HTTP 客户端封装（用 `LITELLM_MASTER_KEY` 鉴权）调 LiteLLM 管理 A
 8. slice8：SNMP 网络设备监控（接口流量/端口状态 + 页面）
 9. slice9：告警中心完善（事件管理/恢复通知/企微联动/通知策略）
 
+**P4 · 账号与登录授权（访问控制子域，2026-10-08 立项）**：
+
+10. slice10：`server_account` 资产账号表 + `server_login_grant` 授权表 + 个人中心用户公钥登记
+11. slice11：授权公钥下发（复用 slice2 SSH 通道写 authorized_keys）+ 到期/撤销；自动改密与会话审计按需再评估
+
 ### 现状（2026-10-07）
 
 - **slice1 已落地（2026-10-07）**：统一资产 + 采集凭据 CRUD 全链路
@@ -308,6 +341,18 @@ Go HTTP 客户端封装（用 `LITELLM_MASTER_KEY` 鉴权）调 LiteLLM 管理 A
   - 前端：概览页 `views/_server/server/index.vue`（route server=/server：资产总数+五类型卡片(可点跳资产管理)/监控状态三卡/Agent 状态四卡，`GET /server/asset/overview` 统计——ByType/ByEnv 含停用、Monitor/Agent 仅启用中口径，后端 AssetService.GetAssetOverview 四次 GROUP BY）+ 资产页 `views/_server/asset/`（route asset=/asset **一级路由**——概览改造后 asset 升为模块内独立单页，elegant 目录两层 `_server/asset`）——index.vue（TableSiderLayout 左菜单双面板：资产列表/凭据管理，凭据面板 changed 联动资产面板凭据下拉刷新）+ asset-list-panel.vue（搜索/表格/新增编辑 NModal）+ credential-panel.vue（搜索/表格/NModal 按类型动态渲染字段模板 CREDENTIAL_FORM_FIELDS as const，敏感字段 password 输入框掩码回传）
   - 契约：typings/api/server.api.d.ts（Api.Server 命名空间，CredentialOperateParams 的 credentialValues 移出 RecordNullable 防递归 nullable）+ service/api/server/{asset,credential}.ts + constants/business/server.ts（ASSET_TYPE/MONITOR_STATUS/AGENT_STATUS/CREDENTIAL_TYPE_OPTIONS + CREDENTIAL_FORM_FIELDS + ACTIVE_OPTIONS 均与后端常量对齐）；i18n 三处同步（route.server_asset + page.server.*，asset.col.isActive 补齐）
   - 验证：go build/vet/test 全过（单测含掩码/合并/类型域 4 组）+ vue-tsc typecheck 通过 + oxlint/eslint 改动文件 0 错误（存量 global.d.ts __APP_VERSION__ 遗留除外）；elegant 路由四件经 pnpm dev 短暂启动自动重生成（server_asset=/server/asset 已确认）
-  - **已有库需手动补菜单**（seed 仅新库生效，dev 库已由 AI 直接执行）：结构修正 SQL 与踩坑记录见业务记忆 server-module-plan.md（表名 sys_roles 复数/docker exec -i 转发 stdin）；重启后端启动期 RebuildRoleCasbinPolicies 自愈 casbin
+  - 本机 Docker 内置资产：`source/server/local_docker.go` EnsureBuiltinLocalDocker 双路幂等种子（channel_config internalKey 值子串 LIKE 查重规避 PG jsonb 规范化文本坑；含软删查重删除后不复活；dev 库已插入验证）——「先纳管本机」开箱即见，详见 memory/business/server-builtin-docker-asset.md
+- **已有库需手动补菜单**（seed 仅新库生效，dev 库已由 AI 直接执行）：结构修正 SQL 与踩坑记录见业务记忆 server-module-plan.md（表名 sys_roles 复数/docker exec -i 转发 stdin）；重启后端启动期 RebuildRoleCasbinPolicies 自愈 casbin
 - go.mod 无 gofish/goipmi/dockerclient/gosnmp/go-ping，随对应 slice 引入
-- 待办：slice2（SSH 公钥部署+agent 安装流+agent 注册心跳）、slice3（指标管道+实时图表）、slice4（拨测+告警 v1）按 P1 规划推进
+- **slice2 已落地（2026-10-08，同日按用户反馈完成 spug 式「录入即验证」改造，详见 memory/business/server-asset-verify-on-save.md）**：agent 安装流 + 注册心跳全链路；**录入即验证**——physical/vm 保存时强制「密码验证→公钥注入→私钥闭环 ping」（错误分诊 E00/E01/E02），Asset 加 ssh_username/ssh_verified 列，SSH 凭据类型退役（公钥架构下无共享价值），安装流改纯公钥模式（前置校验 ssh_verified，安装弹窗无密码输入）
+  - 平台密钥对：`utils/sshkey`（启动期幂等生成 ed25519 落 resource/ssh，私钥 PEM/公钥行缓存；**公钥部署函数 appendAuthorizedKey 按「写任意公钥」设计**——平台公钥/P4 用户公钥同入口）
+  - 安装流：`service/server/agent_install.go`——SSH 密码认证（**密码仅函数参数内存态**，不落库/日志/任务状态）→ 幂等部署平台公钥 → uname 探测架构 → sftp 上传托管二进制（pkg/sftp 新依赖）→ 写 systemd unit（env 注入接入地址+一次性注册 token）→ enable --now；**异步任务**（Redis 状态 server:agent-install:<taskId> TTL 2h，步骤级进度，失败回 none 保留重试入口）；安装成功状态仍 installing，转 running 由 agent 注册回调驱动
+  - 注册/心跳：`service/server/agent_registry.go`——Redis 一次性注册 token（30min TTL，用后即删）换**持久 token（服务端只存 sha256 hex 列 agent_token_hash，心跳带明文比对——对齐 AiKey key_hash 先例）**；心跳回写 running+last_heartbeat_at；`CheckLostAgents` 失联扫描注册为 task.Register 命名任务（面板选配调度）
+  - 资产表加列：agent_token_hash/agent_version/agent_hostname/last_heartbeat_at（AutoMigrate 自动加）
+  - agent 程序：`cmd/agent/main.go`（同 module 多 main 先例——cmd/ 目录本就预留）——注册（token 落盘 /var/lib/aiops-agent/token 重启复用）→ 循环心跳；401 触发重注册（NoAuth=HTTP401+code7 语义闭环）；`scripts/build-agent.sh` 交叉构建 amd64/arm64 到 resource/agent（文件名 aiops-agent-<ver>-linux-<arch>，版本去 v 与平台一致；无版本号文件名兜底识别）
+  - API：安装/状态挂 PrivateGroup（菜单 ApiPrefix /server/asset/* 覆盖 casbin 零改动）；register/heartbeat 挂 **PublicGroup**（agent 无登录态，token 自鉴权，对齐 Skill Agent 直连先例，401 走 NoAuth）
+  - 配置：server.agent 段（heartbeat-interval 30/lost-threshold 90/install-timeout 120/binary-dir/ssh-key-dir/**server-url**——agent 回连地址留空按本机出网 IP+端口推导，跨网段显式配置）；prod：Dockerfile 交叉编译 agent 进镜像 resource/agent + compose 挂 resource/ssh 卷（密钥持久化，丢密钥=已部署资产需重装）+ prod config agent 段
+  - 前端：资产行「安装 agent」按钮（physical/vm 且非 installing/running 显示）+ `agent-install-modal.vue`（用户名/密码表单——**密码提交后立即清空前端态**，弹窗内 2s 轮询任务进度步骤级展示，失败可重试，进度中可关闭后台继续）
+  - 验证：go build/vet/test 全过 + 启动冒烟（四条 agent 路由注册确认：install-agent/install-status 挂 10 handlers 私有组、register/heartbeat 挂 5 handlers 公开组）+ agent 二进制双架构构建成功（6.0M/5.6M）+ typecheck/oxlint/eslint 0 错误；**安装流真实目标机验证待用户执行**（dev agent 产物已就位 resource/agent）
+- **agent 运维+查看抽屉已落地（2026-10-08）**：操作列精简为 查看/编辑/删除；查看抽屉四区——基本信息（NDescriptions）/Agent 状态（状态/版本/主机名/最近心跳）/**资源快照**（CPU%/负载/内存/根分区磁盘/网络速率/uptime——agent 心跳顺带上报轻量快照（cmd/agent/collect.go 的 /proc 采集，差值算速率/CPU），服务端心跳落 Redis `server:asset-snapshot:<assetId>` TTL=2×心跳间隔+60s，不进 PG，slice3 完整管道前的数据源）/Agent 运维（未装=安装、已装=重启+卸载，`agent_ops.go` 复用异步任务框架与同一轮询接口；卸载清服务端 agent 字段+快照，平台公钥保留可重装）
+- 待办：slice3（指标管道+实时图表）、slice4（拨测+告警 v1）按 P1 规划推进；agent 自升级与多版本托管后续；安装流 HostKeyCallback 跳过校验（一次性密码流无指纹预置，后续可做首次指纹钉扎）

@@ -10,6 +10,7 @@ import (
 	sysModel "github.com/hllkk/devops-admin/server/model/system"
 	gatewayService "github.com/hllkk/devops-admin/server/service/gateway"
 	mediaService "github.com/hllkk/devops-admin/server/service/media"
+	serverService "github.com/hllkk/devops-admin/server/service/server"
 	"github.com/hllkk/devops-admin/server/service/system"
 	"github.com/hllkk/devops-admin/server/task"
 	"github.com/hllkk/devops-admin/server/utils/logger"
@@ -48,6 +49,9 @@ func Timer() {
 	task.Register("ReconcileMcpLogs", "对账回灌MCP调用漏单", func(ctx context.Context, _ json.RawMessage) error {
 		_, err := (&gatewayService.UsageSyncService{}).ReconcileMcpLogs(ctx)
 		return err
+	})
+	task.Register("CheckLostAgents", "服务器模块·agent 失联扫描(超过阈值未心跳的 running 资产置 lost)", func(ctx context.Context, _ json.RawMessage) error {
+		return (&serverService.AgentRegistryService{}).CheckLostAgents(ctx)
 	})
 	task.Register("CleanupUsageLogs", "清理过期用量日志(llm+mcp按保留天数物理删,log-retention-days<=0禁用)", func(ctx context.Context, _ json.RawMessage) error {
 		_, err := (&gatewayService.UsageSyncService{}).CleanupUsageLogs(ctx)

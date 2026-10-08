@@ -6,9 +6,11 @@ import v1 "github.com/hllkk/devops-admin/server/api/v1"
 type RouterGroup struct {
 	AssetRouter
 	CredentialRouter
+	AgentRouter
 }
 
 var (
 	assetApi      = v1.ApiGroupApp.ServerApiGroup.AssetApi
 	credentialApi = v1.ApiGroupApp.ServerApiGroup.CredentialApi
+	agentApi      = v1.ApiGroupApp.ServerApiGroup.AgentApi
 )

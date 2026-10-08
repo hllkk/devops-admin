@@ -26,11 +26,13 @@ type AssetOperateParams struct {
 	AssetType     string         `json:"assetType" form:"assetType"`                              // 资产类型
 	ManageIp      string         `json:"manageIp" form:"manageIp"`                                // 管理IP
 	SshPort       int            `json:"sshPort" form:"sshPort"`                                  // SSH端口
+	SshUsername   string         `json:"sshUsername" form:"sshUsername"`                          // SSH用户名(physical/vm 必填,公钥认证用户)
+	SshPassword   string         `json:"sshPassword" form:"sshPassword"`                          // SSH密码(一次性:仅保存时验证+部署公钥,不落库;编辑留空=公钥复验)
 	OsType        string         `json:"osType" form:"osType"`                                    // 操作系统
 	Env           string         `json:"env" form:"env"`                                          // 环境标签
 	Location      string         `json:"location" form:"location"`                                // 机房/位置
 	IsActive      *bool          `json:"isActive" form:"isActive"`                                // 是否启用(nil=不改/默认true)
-	CredentialId  int64          `json:"credentialId,string" form:"credentialId"`                 // SSH凭据ID(0=未关联)
+	CredentialId  int64          `json:"credentialId,string" form:"credentialId"`                 // 采集凭据ID(0=未关联,BMC/DB凭据预留;SSH走公钥不关联)
 	ChannelConfig datatypes.JSON `json:"channelConfig" form:"channelConfig" swaggertype:"object"` // 采集通道配置(BMC地址等,按类型)
 	Description   string         `json:"description" form:"description"`                          // 描述
 }

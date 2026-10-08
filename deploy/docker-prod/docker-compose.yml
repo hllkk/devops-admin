@@ -87,6 +87,9 @@ services:
       - ./config/config.yaml:/app/config/config.yaml:ro
       # 本地上传文件（oss-type=local 时使用；minio 模式下也可留作兜底）
       - ${SERVER_UPLOADS_PATH:-/home/docker/docker-prod/uploads}:/app/uploads
+      # 服务器模块：平台 SSH 密钥对持久化(agent 安装公钥部署用,丢密钥=已部署资产需重装;
+      # agent 二进制镜像自带不挂卷;首次启动自动生成)
+      - ${SERVER_SSH_PATH:-/home/docker/docker-prod/server-ssh}:/app/resource/ssh
       # 运行日志（zap director=log）
       - ${SERVER_LOG_PATH:-/home/docker/docker-prod/server-log}:/app/log
     # 生产：后端不对外暴露，仅经 web(:80) 反代访问（容器间走 prod-net 的 server:8888）

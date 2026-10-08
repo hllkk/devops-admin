@@ -40,6 +40,17 @@ RUN go build -trimpath \
     -ldflags="-s -w -X 'github.com/hllkk/devops-admin/server/global.Version=${APP_VERSION}' -X 'github.com/hllkk/devops-admin/server/global.BuildTime=${BUILD_TIME}'" \
     -o /out/devops-admin-server .
 
+# aiops-agent 交叉编译(安装流托管产物: amd64/arm64;版本与平台一致注入 main.agentVersion)
+# agent 版本号取 Version 去 v 前缀(与 scripts/build-agent.sh 同口径)
+RUN set -eux; \
+    AGENT_VER="$(echo "${APP_VERSION}" | tr -d 'v')"; \
+    mkdir -p /out/agent; \
+    for arch in amd64 arm64; do \
+        CGO_ENABLED=0 GOOS=linux GOARCH=$arch go build -trimpath \
+            -ldflags="-s -w -X main.agentVersion=${AGENT_VER}" \
+            -o /out/agent/aiops-agent-${AGENT_VER}-linux-$arch ./cmd/agent; \
+    done
+
 # ----------------------------------------------------------------------------
 # 阶段 2：最小运行镜像
 # ----------------------------------------------------------------------------
@@ -59,6 +70,8 @@ WORKDIR /app
 # 二进制 + 运行时资源（ip2region.xdb 由 config.system.ip2region-db-path 相对引用）
 COPY --from=builder /out/devops-admin-server /app/server
 COPY --from=builder /build/resource /app/resource
+# agent 托管二进制(安装流按目标架构选用;resource 卷对宿主挂载时不覆盖此目录)
+COPY --from=builder /out/agent /app/resource/agent
 
 RUN chown -R app:app /app
 

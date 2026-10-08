@@ -391,7 +391,6 @@ const local: App.I18n.Schema = {
         title: 'Asset Overview',
         totalAssets: 'Total Assets',
         activeSub: '{count} active',
-        gotoAsset: 'Asset Management',
         monitorSection: 'Monitor Status (active assets)',
         agentSection: 'Agent Status (active assets)'
       },
@@ -413,6 +412,8 @@ const local: App.I18n.Schema = {
         agentInstalling: 'Installing',
         agentRunning: 'Running',
         agentLost: 'Lost',
+        sshVerified: 'Verified',
+        sshUnverified: 'Unverified',
         col: {
           assetName: 'Name',
           assetType: 'Type',
@@ -424,6 +425,9 @@ const local: App.I18n.Schema = {
           monitorStatus: 'Monitor',
           agentStatus: 'Agent',
           credential: 'SSH Credential',
+          sshUsername: 'SSH User',
+          sshPassword: 'SSH Password',
+          sshVerified: 'SSH Verify',
           isActive: 'Status',
           description: 'Description'
         },
@@ -437,7 +441,58 @@ const local: App.I18n.Schema = {
           envPlaceholder: 'Environment label',
           locationPlaceholder: 'e.g. DC-A Rack-01',
           credentialPlaceholder: 'SSH credential (for agent install)',
+          sshUsernamePlaceholder: 'e.g. root (public key user)',
+          sshPasswordPlaceholder: 'One-time for SSH verify, never stored',
+          sshPasswordEditPlaceholder: 'Empty = re-verify key; fill = rebuild trust',
+          sshUsernameRequired: 'SSH username is required',
           descPlaceholder: 'Remarks'
+        }
+      },
+      assetDetail: {
+        title: 'Asset Detail',
+        actionView: 'View'
+      },
+      agentOps: {
+        agentSection: 'Agent Status',
+        resourceSection: 'Resources',
+        opsSection: 'Agent Operations',
+        agentVersion: 'Agent Version',
+        agentHostname: 'Hostname',
+        lastHeartbeat: 'Last Heartbeat',
+        restart: 'Restart Agent',
+        uninstall: 'Uninstall Agent',
+        restartConfirm: 'Restart Agent',
+        restartConfirmDesc: 'This will run systemctl restart aiops-agent on the target. Confirm?',
+        uninstallConfirm: 'Uninstall Agent',
+        uninstallConfirmDesc: 'This will stop the service and remove binary/config, platform-side records are cleared (platform public key is kept for reinstall). Confirm?',
+        opsFailed: 'Operation failed',
+        noSnapshot: 'No live data yet (shown after agent installs and heartbeats)',
+        memory: 'Memory',
+        disk: 'Disk',
+        network: 'Network',
+        uptime: 'Uptime',
+        loadavg1: 'Load (1m)'
+      },
+      agentInstall: {
+        title: 'Install agent - {name}',
+        titlePlain: 'Install agent',
+        action: 'Install agent',
+        submit: 'Start install',
+        started: 'Install task started',
+        success: 'Install completed, waiting for agent to register',
+        failed: 'Install failed',
+        progress: 'Progress',
+        status_running: 'Running',
+        status_success: 'Success',
+        status_failed: 'Failed',
+        form: {
+          username: 'SSH username',
+          usernameRequired: 'Please enter SSH username',
+          usernamePlaceholder: 'e.g. root',
+          password: 'SSH password',
+          passwordRequired: 'Please enter SSH password',
+          passwordPlaceholder: 'One-time use, never stored',
+          notice: 'Pure public-key mode (trust established during asset verify), no password needed; the agent binary is uploaded and the systemd service registered automatically.'
         }
       },
       credential: {

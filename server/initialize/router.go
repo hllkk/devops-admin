@@ -151,6 +151,7 @@ func Routers() *gin.Engine {
 		// 服务器模块(资产/凭据管理,slice1;后续 slice 追加 agent/IPMI/Docker/DB/SNMP)
 		serverRouter.InitAssetRouter(PrivateGroup)                 // 服务器模块·统一资产管理(/server/asset/*)
 		serverRouter.InitCredentialRouter(PrivateGroup)            // 服务器模块·采集凭据(/server/credential/*)
+		serverRouter.InitAgentRouter(PrivateGroup, PublicGroup)    // 服务器模块·agent 安装流(私有)+注册心跳(公开组 token 自鉴权)
 	}
 
 

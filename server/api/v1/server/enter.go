@@ -6,9 +6,12 @@ import "github.com/hllkk/devops-admin/server/service"
 type ApiGroup struct {
 	AssetApi
 	CredentialApi
+	AgentApi
 }
 
 var (
-	assetService      = service.ServiceGroupApp.ServerServiceGroup.AssetService
-	credentialService = service.ServiceGroupApp.ServerServiceGroup.CredentialService
+	assetService         = service.ServiceGroupApp.ServerServiceGroup.AssetService
+	credentialService    = service.ServiceGroupApp.ServerServiceGroup.CredentialService
+	agentRegistryService = service.ServiceGroupApp.ServerServiceGroup.AgentRegistryService
+	agentInstallService  = service.ServiceGroupApp.ServerServiceGroup.AgentInstallService
 )

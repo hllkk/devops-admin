@@ -1,13 +1,8 @@
 <script setup lang="tsx">
 import { computed, onMounted, ref } from 'vue';
 import { NTag, NTime } from 'naive-ui';
-import {
-  fetchBatchDeleteAssets,
-  fetchCreateAsset,
-  fetchGetAssetList,
-  fetchGetCredentialOptions,
-  fetchUpdateAsset
-} from '@/service/api/server';
+import { fetchBatchDeleteAssets, fetchCreateAsset, fetchGetAssetList, fetchUpdateAsset } from '@/service/api/server';
+import AssetDetailDrawer from './asset-detail-drawer.vue';
 import { useAppStore } from '@/store/modules/app';
 import { defaultTransform, useNaivePaginatedTable, useTableOperate } from '@/hooks/common/table';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
@@ -54,7 +49,7 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       render: row => (
         <div class="flex flex-col">
           <span class="font-500">{row.assetName}</span>
-          <span class="text-12px text-slate-400">{row.manageIp || '-'}</span>
+          {row.manageIp ? <span class="text-12px text-slate-400">{row.manageIp}</span> : null}
         </div>
       )
     },
@@ -91,6 +86,20 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       }
     },
     {
+      key: 'sshVerified',
+      title: $t('page.server.asset.col.sshVerified'),
+      align: 'center',
+      minWidth: 80,
+      render: row =>
+        needSSHTag(row.assetType) ? (
+          <NTag size="small" type={row.sshVerified ? 'success' : 'warning'} bordered={false}>
+            {row.sshVerified ? $t('page.server.asset.sshVerified') : $t('page.server.asset.sshUnverified')}
+          </NTag>
+        ) : (
+          <span class="text-slate-400">-</span>
+        )
+    },
+    {
       key: 'agentStatus',
       title: $t('page.server.asset.col.agentStatus'),
       align: 'center',
@@ -118,9 +127,16 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       key: 'operate',
       title: $t('common.operate'),
       align: 'center',
-      width: 140,
+      width: 150,
       render: row => (
         <div class="flex-center gap-8px">
+          <ButtonIcon
+            text
+            type="primary"
+            icon="material-symbols:visibility-outline"
+            tooltipContent={$t('page.server.assetDetail.actionView')}
+            onClick={() => handleDetail(row)}
+          />
           <ButtonIcon
             text
             type="primary"
@@ -199,23 +215,26 @@ const assetModel = ref<AssetModel>(createDefaultAssetModel());
 const { formRef, validate, restoreValidation } = useNaiveForm();
 const { createRequiredRule } = useFormRules();
 
-const rules: Record<'assetName' | 'assetType' | 'manageIp', App.Global.FormRule> = {
+/** physical/vm 类型显示 SSH 验证区块(spug 式录入即验证) */
+const isSSHAsset = computed(
+  () => assetModel.value.assetType === 'physical' || assetModel.value.assetType === 'vm'
+);
+
+const rules: Record<'assetName' | 'assetType' | 'manageIp' | 'sshUsername', App.Global.FormRule> = {
   assetName: createRequiredRule($t('page.server.asset.form.assetNameRequired')),
   assetType: createRequiredRule($t('page.server.asset.form.assetTypeRequired')),
-  manageIp: createRequiredRule($t('page.server.asset.form.manageIpRequired'))
+  manageIp: createRequiredRule($t('page.server.asset.form.manageIpRequired')),
+  sshUsername: {
+    trigger: ['blur', 'change'],
+    validator: (_rule: unknown, value: string | null) => {
+      if (!isSSHAsset.value) return true;
+      if (!value) return new Error($t('page.server.asset.form.sshUsernameRequired'));
+      return true;
+    }
+  }
 };
 
 const modalTitle = computed(() => (editingAsset.value ? $t('page.server.asset.edit') : $t('page.server.asset.add')));
-
-// SSH 凭据下拉(仅启用中,异步加载)
-const credentialOptions = ref<{ label: string; value: string }[]>([]);
-
-async function loadCredentialOptions() {
-  const { error, data: opts } = await fetchGetCredentialOptions('ssh');
-  if (!error && opts) {
-    credentialOptions.value = opts.map(o => ({ label: o.credentialName, value: String(o.credentialId) }));
-  }
-}
 
 function createDefaultAssetModel(): AssetModel {
   return {
@@ -224,12 +243,14 @@ function createDefaultAssetModel(): AssetModel {
     assetType: null,
     manageIp: '',
     sshPort: 22,
+    sshUsername: '',
     osType: 'linux',
     env: null,
     location: '',
     isActive: true,
     credentialId: null,
-    description: ''
+    description: '',
+    sshPassword: ''
   };
 }
 
@@ -248,12 +269,14 @@ function handleEdit(row: Api.Server.Asset) {
     assetType: row.assetType,
     manageIp: row.manageIp,
     sshPort: row.sshPort || 22,
+    sshUsername: row.sshUsername || '',
     osType: row.osType || 'linux',
     env: row.env || null,
     location: row.location,
     isActive: row.isActive,
     credentialId: row.credentialId && row.credentialId !== '0' ? String(row.credentialId) : null,
-    description: row.description
+    description: row.description,
+    sshPassword: ''
   };
   showModal.value = true;
   restoreValidation();
@@ -263,10 +286,15 @@ async function handleSubmit() {
   await validate();
   submitLoading.value = true;
   const isEdit = !!editingAsset.value;
+  const needSSH = assetModel.value.assetType === 'physical' || assetModel.value.assetType === 'vm';
+  const password = needSSH ? assetModel.value.sshPassword || '' : '';
   const payload: Api.Server.AssetOperateParams = {
     ...assetModel.value,
-    credentialId: assetModel.value.credentialId || '0'
+    credentialId: assetModel.value.credentialId || '0',
+    sshPassword: password || undefined
   };
+  assetModel.value.sshPassword = '';
+  // 提交即验证+保存(SSH 验证使保存耗时数秒)
   const { error } = isEdit ? await fetchUpdateAsset(payload) : await fetchCreateAsset(payload);
   submitLoading.value = false;
   if (error) return;
@@ -288,6 +316,24 @@ async function handleBatchDelete() {
   onBatchDeleted();
 }
 
+// ── agent 安装(physical/vm 且非 installing/running) ──
+function needSSHTag(assetType: string): boolean {
+  return assetType === 'physical' || assetType === 'vm';
+}
+
+// ── 查看抽屉(agent 状态/资源快照/安装重启卸载入口) ──
+const detailVisible = ref(false);
+const detailRow = ref<Api.Server.Asset | null>(null);
+
+function handleDetail(row: Api.Server.Asset) {
+  detailRow.value = row;
+  detailVisible.value = true;
+}
+
+function handleDetailChanged() {
+  getData();
+}
+
 // 资产增/删后凭据面板的关联计数可能变化——由父组件监听 changed 事件处理
 const emit = defineEmits<{
   (e: 'changed'): void;
@@ -301,7 +347,6 @@ defineExpose({ refresh: getData });
 
 onMounted(() => {
   getData();
-  loadCredentialOptions();
 });
 </script>
 
@@ -378,6 +423,7 @@ onMounted(() => {
         class="sm:h-full"
       />
     </NCard>
+    <AssetDetailDrawer v-model:visible="detailVisible" :row="detailRow" @changed="handleDetailChanged" />
     <NModal v-model:show="showModal" preset="card" :title="modalTitle" class="w-640px">
       <NForm ref="formRef" :model="assetModel" :rules="rules" label-placement="left" :label-width="90">
         <NGrid responsive="screen" item-responsive :x-gap="12">
@@ -402,12 +448,15 @@ onMounted(() => {
           <NFormItemGi span="24 m:12" :label="$t('page.server.asset.col.location')" path="location">
             <NInput v-model:value="assetModel.location" :placeholder="$t('page.server.asset.form.locationPlaceholder')" />
           </NFormItemGi>
-          <NFormItemGi span="24 m:12" :label="$t('page.server.asset.col.credential')" path="credentialId">
-            <NSelect
-              v-model:value="assetModel.credentialId"
-              clearable
-              :options="credentialOptions"
-              :placeholder="$t('page.server.asset.form.credentialPlaceholder')"
+          <NFormItemGi v-if="isSSHAsset" span="24 m:12" :label="$t('page.server.asset.col.sshUsername')" path="sshUsername">
+            <NInput v-model:value="assetModel.sshUsername" :placeholder="$t('page.server.asset.form.sshUsernamePlaceholder')" />
+          </NFormItemGi>
+          <NFormItemGi v-if="isSSHAsset" span="24 m:12" :label="$t('page.server.asset.col.sshPassword')" path="sshPassword">
+            <NInput
+              v-model:value="assetModel.sshPassword"
+              type="password"
+              show-password-on="click"
+              :placeholder="editingAsset ? $t('page.server.asset.form.sshPasswordEditPlaceholder') : $t('page.server.asset.form.sshPasswordPlaceholder')"
             />
           </NFormItemGi>
           <NFormItemGi span="24" :label="$t('page.server.asset.col.description')" path="description">

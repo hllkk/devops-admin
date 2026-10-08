@@ -10,6 +10,7 @@ import (
 	"github.com/hllkk/devops-admin/server/model/system"
 	serviceGateway "github.com/hllkk/devops-admin/server/service/gateway"
 	sourceGateway "github.com/hllkk/devops-admin/server/source/gateway"
+	sourceServer "github.com/hllkk/devops-admin/server/source/server"
 	"github.com/hllkk/devops-admin/server/utils/logger"
 
 	"gorm.io/gorm"
@@ -139,6 +140,12 @@ func RegisterTables() {
 	// KeyScenario 名称唯一索引兜底(同上：软删行不占名，停用行占名防同名二义)。
 	if err := sourceGateway.EnsureKeyScenarioUniqueIndex(db); err != nil {
 		logger.Bg().Mod("gateway").Err(err).Error("ensure gateway_key_scenario unique index failed")
+	}
+	// 本机 Docker 内置资产登记（「先纳管本机」决策：平台自有资源开箱即见，不让用户手动录入；
+	// 幂等 internalKey 含软删查重，用户删除后不复活。/initdb 路径由 source/server 初始化器链覆盖）。
+	// 失败仅记日志不阻断启动。prod 采集需 compose 挂 docker.sock（slice6 加挂载）。
+	if err := sourceServer.EnsureBuiltinLocalDocker(db); err != nil {
+		logger.Bg().Mod("server").Err(err).Error("ensure builtin local docker asset failed")
 	}
 	// AiKey key_hash 存量回填(Agent 直连鉴权索引；新建/轮换已随 syncKeyToLitellm 同步写，
 	// 这里只兜列上线前的存量行，幂等)。失败仅记日志不阻断启动，重启重试。

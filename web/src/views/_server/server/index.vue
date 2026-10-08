@@ -94,12 +94,7 @@ function gotoAsset() {
   <div class="min-h-500px flex-col-stretch gap-16px overflow-hidden flex-shrink-0 lt-sm:overflow-auto">
     <NCard :title="$t('page.server.overview.title')" :bordered="false" size="small" class="card-wrapper">
       <template #header-extra>
-        <NSpace size="small">
-          <NButton size="small" type="primary" ghost @click="gotoAsset">
-            {{ $t('page.server.overview.gotoAsset') }}
-          </NButton>
-          <ButtonIcon text type="primary" icon="material-symbols:refresh" :tooltip-content="$t('common.refresh')" @click="loadOverview" />
-        </NSpace>
+        <ButtonIcon text type="primary" icon="material-symbols:refresh" :tooltip-content="$t('common.refresh')" @click="loadOverview" />
       </template>
       <NSpin :show="loading">
         <!-- 第一行:资产总量 + 五类型 -->

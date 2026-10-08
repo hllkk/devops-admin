@@ -387,7 +387,6 @@ const local: App.I18n.Schema = {
         title: '资产概览',
         totalAssets: '资产总数',
         activeSub: '启用中 {count} 台',
-        gotoAsset: '资产管理',
         monitorSection: '监控状态（启用中口径）',
         agentSection: 'Agent 状态（启用中口径）'
       },
@@ -409,6 +408,8 @@ const local: App.I18n.Schema = {
         agentInstalling: '安装中',
         agentRunning: '运行中',
         agentLost: '失联',
+        sshVerified: '已验证',
+        sshUnverified: '未验证',
         col: {
           assetName: '资产名称',
           assetType: '资产类型',
@@ -420,6 +421,9 @@ const local: App.I18n.Schema = {
           monitorStatus: '监控状态',
           agentStatus: 'Agent',
           credential: 'SSH凭据',
+          sshUsername: 'SSH用户',
+          sshPassword: 'SSH密码',
+          sshVerified: 'SSH验证',
           isActive: '状态',
           description: '描述'
         },
@@ -433,7 +437,58 @@ const local: App.I18n.Schema = {
           envPlaceholder: '环境标签',
           locationPlaceholder: '如：A机房-01机柜',
           credentialPlaceholder: '选择 SSH 凭据(安装 agent 用)',
+          sshUsernamePlaceholder: '如 root(公钥认证用户)',
+          sshPasswordPlaceholder: '一次性用于 SSH 验证，不保存',
+          sshPasswordEditPlaceholder: '留空 = 复验已有公钥；输入 = 重建信任',
+          sshUsernameRequired: 'SSH 用户名必填',
           descPlaceholder: '备注信息'
+        }
+      },
+      assetDetail: {
+        title: '资产详情',
+        actionView: '查看'
+      },
+      agentOps: {
+        agentSection: 'Agent 状态',
+        resourceSection: '资源状态',
+        opsSection: 'Agent 运维',
+        agentVersion: 'Agent 版本',
+        agentHostname: '主机名',
+        lastHeartbeat: '最近心跳',
+        restart: '重启 Agent',
+        uninstall: '卸载 Agent',
+        restartConfirm: '重启 Agent',
+        restartConfirmDesc: '将在目标机执行 systemctl restart aiops-agent，确认重启？',
+        uninstallConfirm: '卸载 Agent',
+        uninstallConfirmDesc: '将停止服务并删除二进制/配置，平台侧记录一并清除（平台公钥保留，可随时重装）。确认卸载？',
+        opsFailed: '操作失败',
+        noSnapshot: '暂无实时数据（安装 Agent 并心跳后展示）',
+        memory: '内存',
+        disk: '磁盘',
+        network: '网络',
+        uptime: '运行时长',
+        loadavg1: '1分钟负载'
+      },
+      agentInstall: {
+        title: '安装 agent - {name}',
+        titlePlain: '安装 agent',
+        action: '安装 agent',
+        submit: '开始安装',
+        started: '安装任务已启动',
+        success: '安装完成，等待 agent 注册上线',
+        failed: '安装失败',
+        progress: '安装进度',
+        status_running: '进行中',
+        status_success: '成功',
+        status_failed: '失败',
+        form: {
+          username: 'SSH 用户名',
+          usernameRequired: '请输入 SSH 用户名',
+          usernamePlaceholder: '如 root',
+          password: 'SSH 密码',
+          passwordRequired: '请输入 SSH 密码',
+          passwordPlaceholder: '一次性使用，不会保存',
+          notice: '安装走纯公钥模式（信任已在资产录入验证时建立），无需输入密码；将自动上传 agent 二进制并注册 systemd 服务。'
         }
       },
       credential: {

@@ -557,7 +557,6 @@ declare namespace App {
             title: string;
             totalAssets: string;
             activeSub: string;
-            gotoAsset: string;
             monitorSection: string;
             agentSection: string;
           };
@@ -584,6 +583,8 @@ declare namespace App {
             agentInstalling: string;
             agentRunning: string;
             agentLost: string;
+            sshVerified: string;
+            sshUnverified: string;
             col: {
               assetName: string;
               assetType: string;
@@ -595,6 +596,9 @@ declare namespace App {
               monitorStatus: string;
               agentStatus: string;
               credential: string;
+              sshUsername: string;
+              sshPassword: string;
+              sshVerified: string;
               isActive: string;
               description: string;
             };
@@ -605,10 +609,61 @@ declare namespace App {
               assetNamePlaceholder: string;
               manageIpPlaceholder: string;
               sshPortPlaceholder: string;
+              sshUsernamePlaceholder: string;
+              sshPasswordPlaceholder: string;
+              sshPasswordEditPlaceholder: string;
+              sshUsernameRequired: string;
               envPlaceholder: string;
               locationPlaceholder: string;
               credentialPlaceholder: string;
               descPlaceholder: string;
+            };
+          };
+          assetDetail: {
+            title: string;
+            actionView: string;
+          };
+          agentOps: {
+            agentSection: string;
+            resourceSection: string;
+            opsSection: string;
+            agentVersion: string;
+            agentHostname: string;
+            lastHeartbeat: string;
+            restart: string;
+            uninstall: string;
+            restartConfirm: string;
+            restartConfirmDesc: string;
+            uninstallConfirm: string;
+            uninstallConfirmDesc: string;
+            opsFailed: string;
+            noSnapshot: string;
+            memory: string;
+            disk: string;
+            network: string;
+            uptime: string;
+            loadavg1: string;
+          };
+          agentInstall: {
+            title: string;
+            titlePlain: string;
+            action: string;
+            submit: string;
+            started: string;
+            success: string;
+            failed: string;
+            progress: string;
+            status_running: string;
+            status_success: string;
+            status_failed: string;
+            form: {
+              username: string;
+              usernameRequired: string;
+              usernamePlaceholder: string;
+              password: string;
+              passwordRequired: string;
+              passwordPlaceholder: string;
+              notice: string;
             };
           };
           credential: {

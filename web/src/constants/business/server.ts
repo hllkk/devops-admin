@@ -29,9 +29,9 @@ export const AGENT_STATUS_OPTIONS = [
   { label: 'page.server.asset.agentLost', value: 'lost' }
 ] as const;
 
-/** 凭据类型选项 */
+/** 凭据类型选项(SSH 已退役:公钥架构下 SSH 走资产行 ssh_username+录入验证,不再存共享凭据;
+ *  存量 SSH 凭据行仍可编辑,CREDENTIAL_FORM_FIELDS 保留其模板) */
 export const CREDENTIAL_TYPE_OPTIONS = [
-  { label: 'page.server.credential.typeSSH', value: 'ssh' },
   { label: 'page.server.credential.typeBMC', value: 'bmc' },
   { label: 'page.server.credential.typeSNMP', value: 'snmp' },
   { label: 'page.server.credential.typeDB', value: 'db' }
@@ -46,8 +46,8 @@ export const CREDENTIAL_MASKED_VALUE = '******';
  */
 export const CREDENTIAL_FORM_FIELDS = {
   ssh: [
-    { key: 'username', label: 'page.server.credential.fieldUsername', sensitive: false, placeholder: 'root' },
-    { key: 'password', label: 'page.server.credential.fieldPassword', sensitive: true, placeholder: '' }
+    // 公钥认证用户名(平台公钥部署到该用户的 authorized_keys;root 密码仅安装时内存态,不落库)
+    { key: 'username', label: 'page.server.credential.fieldUsername', sensitive: false, placeholder: 'root' }
   ],
   bmc: [
     { key: 'username', label: 'page.server.credential.fieldUsername', sensitive: false, placeholder: 'admin' },
