@@ -32,6 +32,7 @@ declare module "@elegant-router/types" {
     "ai-capability_mcp": "/ai-capability/mcp";
     "ai-capability_skill": "/ai-capability/skill";
     "ai-key": "/ai-key";
+    "asset": "/asset";
     "gateway": "/gateway";
     "home": "/home";
     "iframe-page": "/iframe-page/:url";
@@ -95,6 +96,7 @@ declare module "@elegant-router/types" {
     | "ai-audit"
     | "ai-capability"
     | "ai-key"
+    | "asset"
     | "gateway"
     | "home"
     | "iframe-page"
@@ -156,6 +158,7 @@ declare module "@elegant-router/types" {
     | "gateway"
     | "models_model"
     | "models_provider"
+    | "asset"
     | "server"
     | "home"
   >;

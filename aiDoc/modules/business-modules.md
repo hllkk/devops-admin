@@ -217,3 +217,97 @@ Go HTTP 客户端封装（用 `LITELLM_MASTER_KEY` 鉴权）调 LiteLLM 管理 A
 
 - 进展：MCP stdio 型服务器支持（2026-09-03，详见 memory/business/ai-gateway-mcp-stdio.md）——传输协议加第三态 stdio(本地子进程形态,如 uvx/npx 型 server)：LiteLLM 1.99.0 原生托管 stdio 子进程对外仍暴露 /{server_name}/mcp 统一端点,授权/接入配置/日志回流/计费全复用零改动(dev 已实测注册/探测/主路径调用/SpendLogs 回流全通)。MCPServer 加 Command/Args 列；**env 即凭据**——stdio 的 env 变量存 Credentials 列同套 AES/掩码/合并,authType 恒 none,投影时发 env 键不发 credentials；command 白名单七项(deno/docker/node/npx/python/python3/uvx)前置拦截与上游同清单；transport 可切换,投影体与本地列双向清残留。已知限制:env 键删除不支持(同 http 凭据浅 merge 限制)/容器运行时收窄(litellm 镜像原生 python 系,uvx/npx 需扩镜像,docker 型挂 sock 单独立项)/多用户并发进程管理语义待压测。go build/test+typecheck 全过(平台级链路待 dev 重启验证)
 - 进展：Skill Agent 直连下载端点（2026-09-05，详见 memory/business/ai-gateway-skill.md 待办节更新）——补齐 Skill 分发链最后的 Agent 场景(AIHelms `/{id}/zip` 同款)：`GET /gateway/skill/agent/{id}/zip` 挂 **PublicGroup**(无 JWT/casbin,AiKey `Authorization: Bearer`/`?token=` 双通道自鉴权,401 走 NoAuth 语义状态码)。**AiKey 加 key_hash 列**(sha256 hex 普通索引,明文高熵不用唯一索引防存量空串撞索引)：syncKeyToLitellm create 分支与密文同事务写入(含 rotate 复用),启动期 BackfillAiKeyHashes 幂等回填存量(解密→哈希,credential-key 未配置直跳),单机模式 key_value 空×哈希查不中语义自洽。**授权锚点差异**:登录态 DownloadSkill 校验主 Key skills(审批落主 Key),Agent 端点校验**当前 Key 自己的 skills**(管理员单独授予场景 Key 同样生效)。SkillUsageLog 加 ai_key_id 归因列+action=agent_download(user_id 仅个人 Key 落 owner,部门 Key 落 0 经 Key 追溯);顺带 touch last_used_at。登录态 `GET /gateway/skill/install-info/{id}`(casbin 白名单)下发服务端拼好的 curl 命令(主 Key 明文,对齐 MCP connect-config 复制不回显)+agentInstallPrompt/usageInstructions;URL 的 origin 由 API 层从 X-Forwarded-Proto/Host 推导(反代/直连两栖,零新配置)。前端广场 Skill 卡片加「Agent 接入」弹窗(直连地址+复制命令+提示词),管理端使用日志抽屉加密钥列。ExtractAgentToken/BuildAgentDownloadURL 纯函数 2 组单测+路由冒烟双组签名更新。go build/vet/test+typecheck 全过,改动文件 oxlint/eslint 0 错误(存量的 typings/global.d.ts `__APP_VERSION__` no-underscore-dangle 报错为历史遗留非本次引入)
+
+---
+
+## 服务器模块
+
+> 2026-10-07 立项。五大功能：服务器资产管理、物理服务器 IPMI 管理、Docker 纳管监控、数据库监控、网络监控。可行性结论=全部可实现（无技术硬伤），风险集中在环境前提（BMC 管理网可达）与接入成本，决策记录见 `memory/business/server-module-plan.md`。
+
+### 核心决策（2026-10-07 用户确认）
+
+- **OS 层指标走 agent**（非 SSH 轮询）：录入资产时输入 root 密码仅内存态一次性使用——SSH 密码登录配平台公钥转密钥认证 + 自动安装 agent，**密码绝不落库**；前端资产行提供「安装 agent」按钮触发自动安装
+- **Docker 先只纳管本机**（docker.sock 挂载），远程纳管（TLS/SSH 隧道）后续另立项
+- **规模约 150 台**（服务器+虚机+网络设备），**默认采集频率 5 秒可配置**
+- **IPMI 厂商=浪潮/华为/联想**：Redfish（gofish）优先 + IPMI 2.0 over LAN（goipmi）兜底，实施时逐家实测
+- **网络监控=拨测+SNMP**，流量分析（netflow/sFlow）明确不做
+
+### 统一架构
+
+| 层 | 落点 | 复用来源 |
+|---|---|---|
+| 资产锚点 | `server_asset` 统一表（asset_type 区分物理机/虚机/docker主机/db实例/网络设备），dept_id 挂数据权限 | OPS_AUDIT_MODEL 基座 |
+| 凭据 | `server_credential`（SSH 密钥/BMC/SNMP/DB 凭据）AES-256-GCM 加密+掩码回显 | gateway credential 模式 |
+| agent | `aiops-agent` Go 单二进制（linux amd64/arm64），主动外连上报，agent 侧零监听端口 | 新建 |
+| 指标管道 | Redis 热窗口（1h 明细，供实时图表）+ PG 1 分钟降采样聚合 + 保留期清理 | llm_log→cost_summary→cleanup 同构 |
+| 调度 | task.Register 命名任务 + SysTimedTask 面板 | AI 网关种子任务模式 |
+| 告警 | `server_alert_rule` 阈值规则 + 上报时即时评估（5s 实时性）+ 状态机去重 + SysNotice/企微推送 | budget_alert 模式 |
+| 前端 | `_server/` 目录 + module=server 菜单 + casbin api_prefix | 三模块隔离机制（占位页已预留） |
+
+### agent 设计要点
+
+- **安装流**（前端「安装 agent」触发）：后端持内存态密码 SSH 登录 → 写平台公钥（authorized_keys）→ scp 二进制 → 注册 systemd 服务并启动 → 回执；安装为异步任务（状态轮询接口反馈进行中/成功/失败）
+- **通信全主动外连**：注册（安装时下发一次性注册 token 换 agent 身份）→ 心跳+指标批量上报（POST 快照 JSON）→ 定期拉配置（采集频率/指标开关/升级版本）→ 自升级（服务端托管多版本二进制）
+- **上报频率 5s 可配置**（150 台 ≈ 30 QPS，无压力）；agent 本地环形缓冲断网补传
+- 上报即时评估告警（不经聚合，保 5 秒实时性）；断网恢复后补传数据照常评估
+
+### 数据管道分层（150 台 × 5s 的规模设计）
+
+- **Redis 热窗口**：每主机 LPUSH+LTRIM 固定长度快照 list（约 720 点=1h，150 台约 300MB），图表实时接口直接读
+- **PG 降采样**：定时任务每分钟从 Redis 窗口聚合（avg/max/min/last）写 `server_metric_minute`；保留 30 天
+- **保留期清理**：分批物理删（Unscoped），对齐 gateway usage-log-cleanup 模式
+- IPMI 传感器（30-60s 级）/数据库轮询（30s 级）/SNMP（分钟级）频率各自独立配置，直接落 PG 聚合表，不过 Redis 热窗口（无 5s 实时图表需求）
+
+### IPMI 设计要点
+
+- gofish（Redfish）优先 + goipmi（IPMI 2.0 over LAN）兜底；浪潮 BMC/华为 iBMC（有私有扩展）/联想 XCC 三家逐台实测校准，厂商差异做适配层不做表驱动
+- 采集：传感器（温度/风扇/电压/功耗）、电源状态、SEL 事件、硬件清单；写操作（电源开/关/重启）走 SysOperLog 审计
+- BMC 地址/BMC 凭据为物理机资产的采集通道配置
+
+### Docker 本机纳管
+
+- fsouza/go-dockerclient；deploy compose 给 server 容器挂 `docker.sock`（`:ro`，注释注明等效 root 风险，严格化后续可换 socket proxy）
+- 容器列表/状态/stats（CPU/内存/网络 IO）+ 事件订阅；本机 docker 作为内置资产（type=docker_host）自动登记
+
+### 数据库监控
+
+- MySQL（SHOW GLOBAL STATUS/performance_schema/慢查询）、PG（pg_stat_*）、Redis（INFO/SLOWLOG）——驱动已在 go.mod，纯查询零侵入
+- server 侧定时轮询（30s 级），凭据 AES 加密，建议目标库侧最小权限只读账号
+
+### 网络监控
+
+- 拨测：ICMP ping（全部资产默认开）+ TCP 端口/HTTP 拨测（可配目标），拨测结果落资产在线状态
+- SNMP：gosnmp（v2c/v3），接口流量（ifTable）+ 端口状态 + 设备信息，网络设备资产通道配置
+
+### 分期规划
+
+**P1 · 资产 + agent 地基 + 基础监控**（核心价值最快落地）：
+
+1. slice1：资产 CRUD（`server_asset`+`server_credential` AES）+ 前端资产页 + 菜单/权限 seed
+2. slice2：SSH 公钥部署 + agent 安装流（密码内存态/异步安装任务）+ agent 二进制构建托管/注册心跳
+3. slice3：agent 指标上报管道（Redis 热窗口 + PG 1 分钟聚合 + 清理）+ 资产详情实时图表
+4. slice4：拨测（ICMP/TCP）+ 资产在线状态 + 告警 v1（阈值规则/状态机/通知去重）
+
+**P2 · IPMI + Docker**：
+
+5. slice5：IPMI 采集与控制（Redfish+IPMI 双协议，三家实测）+ 传感器/SEL/电源页
+6. slice6：Docker 本机纳管（sock 挂载 + 容器列表/stats/启停 + 页面）
+
+**P3 · 数据库 + 网络设备**：
+
+7. slice7：数据库监控（MySQL/PG/Redis 轮询 + 指标 + 页面）
+8. slice8：SNMP 网络设备监控（接口流量/端口状态 + 页面）
+9. slice9：告警中心完善（事件管理/恢复通知/企微联动/通知策略）
+
+### 现状（2026-10-07）
+
+- **slice1 已落地（2026-10-07）**：统一资产 + 采集凭据 CRUD 全链路
+  - 后端：`model/server/{server_asset,server_credential}.go`（`server_asset` 统一表 asset_type 五类型 + `server_credential` 凭据表 credential_values AES-256-GCM 密文列）+ request/response + `service/server/`（AssetService/CredentialService + credential_payload 纯函数层掩码/合并/类型域校验 4 组单测）+ `api/v1/server/` + `router/server/`；三处 enter.go 挂 ServerServiceGroup/ServerApiGroup/Server 挂 initialize/router.go；RegisterTables 加两表；config 新增 `server.credential-key`（type ServerConfig 挂主配置 ServerModule 字段；other.go env 覆盖 SERVER_CREDENTIAL_KEY；prod config/compose 已配）
+  - 掩码/合并语义对齐 gateway credential：敏感键集合 password/community/authPassword/privPassword，出网 `******`，回传掩码串=未修改保留旧明文（MergeCredentialValues 旧键不在新值中即删除）；凭据类型建后不可改（域内字段集合不同）；软删行服务层查重（成文决策不建唯一索引）；凭据被资产引用拒删、资产关停用凭据拒绑（纯逻辑关联不建外键）
+  - 菜单（2026-10-07 用户反馈后修正为最终形态）：**`route.server` 顶层 C 概览页**（path=server，`_server/server/index`，ApiPrefix=/server/asset/overview——对齐 admin 首页/AI 看板「模块第一项=概览」模式）+ **`route.asset` 顶层 C 资产管理单页**（path=asset，`_server/asset/index`，ApiPrefix=/server/asset,/server/credential 全量，对齐 ai-key 模式）；初版曾做成「M 目录+route.server_asset 子菜单」被用户纠正与其他模块结构不一致；super/admin 全量循环授权自动覆盖，user 不授（管理页面）
+  - 前端：概览页 `views/_server/server/index.vue`（route server=/server：资产总数+五类型卡片(可点跳资产管理)/监控状态三卡/Agent 状态四卡，`GET /server/asset/overview` 统计——ByType/ByEnv 含停用、Monitor/Agent 仅启用中口径，后端 AssetService.GetAssetOverview 四次 GROUP BY）+ 资产页 `views/_server/asset/`（route asset=/asset **一级路由**——概览改造后 asset 升为模块内独立单页，elegant 目录两层 `_server/asset`）——index.vue（TableSiderLayout 左菜单双面板：资产列表/凭据管理，凭据面板 changed 联动资产面板凭据下拉刷新）+ asset-list-panel.vue（搜索/表格/新增编辑 NModal）+ credential-panel.vue（搜索/表格/NModal 按类型动态渲染字段模板 CREDENTIAL_FORM_FIELDS as const，敏感字段 password 输入框掩码回传）
+  - 契约：typings/api/server.api.d.ts（Api.Server 命名空间，CredentialOperateParams 的 credentialValues 移出 RecordNullable 防递归 nullable）+ service/api/server/{asset,credential}.ts + constants/business/server.ts（ASSET_TYPE/MONITOR_STATUS/AGENT_STATUS/CREDENTIAL_TYPE_OPTIONS + CREDENTIAL_FORM_FIELDS + ACTIVE_OPTIONS 均与后端常量对齐）；i18n 三处同步（route.server_asset + page.server.*，asset.col.isActive 补齐）
+  - 验证：go build/vet/test 全过（单测含掩码/合并/类型域 4 组）+ vue-tsc typecheck 通过 + oxlint/eslint 改动文件 0 错误（存量 global.d.ts __APP_VERSION__ 遗留除外）；elegant 路由四件经 pnpm dev 短暂启动自动重生成（server_asset=/server/asset 已确认）
+  - **已有库需手动补菜单**（seed 仅新库生效，dev 库已由 AI 直接执行）：结构修正 SQL 与踩坑记录见业务记忆 server-module-plan.md（表名 sys_roles 复数/docker exec -i 转发 stdin）；重启后端启动期 RebuildRoleCasbinPolicies 自愈 casbin
+- go.mod 无 gofish/goipmi/dockerclient/gosnmp/go-ping，随对应 slice 引入
+- 待办：slice2（SSH 公钥部署+agent 安装流+agent 注册心跳）、slice3（指标管道+实时图表）、slice4（拨测+告警 v1）按 P1 规划推进

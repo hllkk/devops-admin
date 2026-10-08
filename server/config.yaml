@@ -79,6 +79,8 @@ jwt:
     expires-time: 7d
     buffer-time: 1d
     issuer: devops-admin
+server:
+    credential-key: f3b7c9a5e2d84f61b0a7d94c5e8326170f4d2b96c8a1e5307d6f29b4a8c3e07d
 litellm:
     base-url: http://127.0.0.1:4000
     public-url: http://127.0.0.1:4000

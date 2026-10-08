@@ -104,6 +104,11 @@ func applyEnvOverrides() {
 		global.OPS_CONFIG.Litellm.PublicURL = v
 		log.Println("[INFO] 配置项从环境变量加载: LITELLM_PUBLIC_URL")
 	}
+	// 服务器模块：凭据加密密钥敏感，生产由 .env 注入（SSH/BMC/SNMP/DB 凭据 AES-256-GCM）
+	if v := os.Getenv("SERVER_CREDENTIAL_KEY"); v != "" {
+		global.OPS_CONFIG.ServerModule.CredentialKey = v
+		log.Println("[INFO] 配置项从环境变量加载: SERVER_CREDENTIAL_KEY")
+	}
 	// 在线升级：发布服务器地址与升级执行器 token（生产由 .env 注入，config.yaml 留空值）
 	if v := os.Getenv("UPDATE_SERVER_URL"); v != "" {
 		global.OPS_CONFIG.Upgrade.UpdateServerUrl = v

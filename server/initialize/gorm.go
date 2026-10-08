@@ -6,6 +6,7 @@ import (
 	"github.com/hllkk/devops-admin/server/global"
 	"github.com/hllkk/devops-admin/server/model/gateway"
 	"github.com/hllkk/devops-admin/server/model/media"
+	servermod "github.com/hllkk/devops-admin/server/model/server"
 	"github.com/hllkk/devops-admin/server/model/system"
 	serviceGateway "github.com/hllkk/devops-admin/server/service/gateway"
 	sourceGateway "github.com/hllkk/devops-admin/server/source/gateway"
@@ -102,6 +103,9 @@ func RegisterTables() {
 		gateway.SkillVisibilityUser{},
 		gateway.SkillUsageLog{},
 		gateway.EfficiencyReport{},
+
+		servermod.Asset{},
+		servermod.Credential{},
 	)
 
 	if err != nil {

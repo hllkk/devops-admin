@@ -90,6 +90,10 @@ jwt:
     expires-time: 7d
     buffer-time: 1d
     issuer: devops-admin
+# 服务器模块：凭据加密密钥(SSH/BMC/SNMP/DB 凭据 AES-256-GCM)。
+# 留空=拒绝凭据写入；生产由 .env 的 SERVER_CREDENTIAL_KEY 覆盖(64 字符 hex)，轮换会使历史密文不可解
+server:
+    credential-key: ""
 litellm:
     # LiteLLM 代理底座：转发由 litellm 容器承担；prod server 容器经 prod-net 走服务名
     base-url: http://litellm:4000

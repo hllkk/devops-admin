@@ -552,6 +552,97 @@ declare namespace App {
         };
       };
       page: {
+        server: {
+          overview: {
+            title: string;
+            totalAssets: string;
+            activeSub: string;
+            gotoAsset: string;
+            monitorSection: string;
+            agentSection: string;
+          };
+          common: {
+            active: string;
+            inactive: string;
+            updateTime: string;
+          };
+          asset: {
+            title: string;
+            tabAssets: string;
+            tabAssetsDesc: string;
+            add: string;
+            edit: string;
+            typePhysical: string;
+            typeVm: string;
+            typeDockerHost: string;
+            typeDbInstance: string;
+            typeNetDevice: string;
+            monitorOnline: string;
+            monitorOffline: string;
+            monitorUnknown: string;
+            agentNone: string;
+            agentInstalling: string;
+            agentRunning: string;
+            agentLost: string;
+            col: {
+              assetName: string;
+              assetType: string;
+              manageIp: string;
+              sshPort: string;
+              osType: string;
+              env: string;
+              location: string;
+              monitorStatus: string;
+              agentStatus: string;
+              credential: string;
+              isActive: string;
+              description: string;
+            };
+            form: {
+              assetNameRequired: string;
+              assetTypeRequired: string;
+              manageIpRequired: string;
+              assetNamePlaceholder: string;
+              manageIpPlaceholder: string;
+              sshPortPlaceholder: string;
+              envPlaceholder: string;
+              locationPlaceholder: string;
+              credentialPlaceholder: string;
+              descPlaceholder: string;
+            };
+          };
+          credential: {
+            title: string;
+            tabCredential: string;
+            tabCredentialDesc: string;
+            add: string;
+            edit: string;
+            typeSSH: string;
+            typeBMC: string;
+            typeSNMP: string;
+            typeDB: string;
+            fieldUsername: string;
+            fieldPassword: string;
+            fieldCommunity: string;
+            fieldVersion: string;
+            col: {
+              credentialName: string;
+              credentialType: string;
+              credentialValues: string;
+              description: string;
+              isActive: string;
+            };
+            form: {
+              nameRequired: string;
+              typeRequired: string;
+              namePlaceholder: string;
+              typePlaceholder: string;
+              sensitivePlaceholder: string;
+              descPlaceholder: string;
+              valuesRequired: string;
+            };
+          };
+        };
         login: {
           common: {
             title: string;

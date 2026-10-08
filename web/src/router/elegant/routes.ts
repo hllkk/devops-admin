@@ -164,6 +164,15 @@ export const generatedRoutes: GeneratedRoute[] = [
     }
   },
   {
+    name: 'asset',
+    path: '/asset',
+    component: 'layout.base$view.asset',
+    meta: {
+      title: 'asset',
+      i18nKey: 'route.asset'
+    }
+  },
+  {
     name: 'gateway',
     path: '/gateway',
     component: 'layout.base$view.gateway',
@@ -306,8 +315,7 @@ export const generatedRoutes: GeneratedRoute[] = [
     component: 'layout.base$view.server',
     meta: {
       title: 'server',
-      i18nKey: 'route.server',
-      module: 'server'
+      i18nKey: 'route.server'
     }
   },
   {

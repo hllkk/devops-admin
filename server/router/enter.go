@@ -3,6 +3,7 @@ package router
 import (
 	"github.com/hllkk/devops-admin/server/router/gateway"
 	"github.com/hllkk/devops-admin/server/router/media"
+	"github.com/hllkk/devops-admin/server/router/server"
 	"github.com/hllkk/devops-admin/server/router/system"
 )
 
@@ -12,4 +13,5 @@ type RouterGroup struct {
 	System  system.RouterGroup
 	Media   media.RouterGroup
 	Gateway gateway.RouterGroup
+	Server  server.RouterGroup
 }

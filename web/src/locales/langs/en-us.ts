@@ -304,7 +304,8 @@ const local: App.I18n.Schema = {
     log_loginlog: 'Login Log',
     log_operlog: 'Operation Log',
     log_errorlog: 'Error Log',
-    server: 'Server',
+    server: 'Asset Overview',
+    asset: 'Asset Management',
     gateway: 'AI Dashboard',
     'ai-key': 'AI Keys',
     models: 'Model Supply',
@@ -380,6 +381,97 @@ const local: App.I18n.Schema = {
     }
   },
   page: {
+    server: {
+      common: {
+        active: 'Active',
+        inactive: 'Inactive',
+        updateTime: 'Updated'
+      },
+      overview: {
+        title: 'Asset Overview',
+        totalAssets: 'Total Assets',
+        activeSub: '{count} active',
+        gotoAsset: 'Asset Management',
+        monitorSection: 'Monitor Status (active assets)',
+        agentSection: 'Agent Status (active assets)'
+      },
+      asset: {
+        title: 'Server Assets',
+        tabAssets: 'Assets',
+        tabAssetsDesc: 'Physical / VM / Docker / DB / Network in one place',
+        add: 'Add Asset',
+        edit: 'Edit Asset',
+        typePhysical: 'Physical Server',
+        typeVm: 'Virtual Machine',
+        typeDockerHost: 'Docker Host',
+        typeDbInstance: 'DB Instance',
+        typeNetDevice: 'Network Device',
+        monitorOnline: 'Online',
+        monitorOffline: 'Offline',
+        monitorUnknown: 'Unknown',
+        agentNone: 'Not Installed',
+        agentInstalling: 'Installing',
+        agentRunning: 'Running',
+        agentLost: 'Lost',
+        col: {
+          assetName: 'Name',
+          assetType: 'Type',
+          manageIp: 'Manage IP',
+          sshPort: 'SSH Port',
+          osType: 'OS',
+          env: 'Env',
+          location: 'Location',
+          monitorStatus: 'Monitor',
+          agentStatus: 'Agent',
+          credential: 'SSH Credential',
+          isActive: 'Status',
+          description: 'Description'
+        },
+        form: {
+          assetNameRequired: 'Please enter asset name',
+          assetTypeRequired: 'Please select asset type',
+          manageIpRequired: 'Please enter manage IP',
+          assetNamePlaceholder: 'e.g. web-node-01',
+          manageIpPlaceholder: 'Manage / connect IP',
+          sshPortPlaceholder: 'Default 22',
+          envPlaceholder: 'Environment label',
+          locationPlaceholder: 'e.g. DC-A Rack-01',
+          credentialPlaceholder: 'SSH credential (for agent install)',
+          descPlaceholder: 'Remarks'
+        }
+      },
+      credential: {
+        title: 'Credentials',
+        tabCredential: 'Credentials',
+        tabCredentialDesc: 'SSH / BMC / SNMP / DB accounts, encrypted at rest',
+        add: 'Add Credential',
+        edit: 'Edit Credential',
+        typeSSH: 'SSH',
+        typeBMC: 'BMC/IPMI',
+        typeSNMP: 'SNMP',
+        typeDB: 'Database',
+        fieldUsername: 'Username',
+        fieldPassword: 'Password',
+        fieldCommunity: 'Community',
+        fieldVersion: 'Version',
+        col: {
+          credentialName: 'Name',
+          credentialType: 'Type',
+          credentialValues: 'Values',
+          description: 'Description',
+          isActive: 'Status'
+        },
+        form: {
+          nameRequired: 'Please enter credential name',
+          typeRequired: 'Please select credential type',
+          namePlaceholder: 'e.g. root-op',
+          typePlaceholder: 'Immutable after creation',
+          sensitivePlaceholder: 'Empty / ****** = keep unchanged',
+          descPlaceholder: 'Usage notes',
+          valuesRequired: 'At least one key/value is required'
+        }
+      }
+    },
     login: {
       common: {
         title: 'Welcome',

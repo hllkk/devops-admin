@@ -66,6 +66,7 @@ func Routers() *gin.Engine {
 
 	systemRouter := router.RouterGroupApp.System
 	gatewayRouter := router.RouterGroupApp.Gateway
+	serverRouter := router.RouterGroupApp.Server
 	// mediaRouter := router.RouterGroupApp.Media
 	// 如果想要不使用nginx代理前端网页，可以修改 web/.env.production 下的
 	// VUE_APP_BASE_API = /
@@ -146,6 +147,10 @@ func Routers() *gin.Engine {
 		gatewayRouter.InitMCPRouter(PrivateGroup)                 // AI 网关·MCP 服务器管理(/gateway/mcp/*)
 		gatewayRouter.InitSkillRouter(PrivateGroup, PublicGroup)  // AI 网关·Skill 管理(/gateway/skill/*;agent zip 直连挂公开组)
 		gatewayRouter.InitBudgetRuleRouter(PrivateGroup)         // AI 网关·预算管控(/gateway/budget/*)
+
+		// 服务器模块(资产/凭据管理,slice1;后续 slice 追加 agent/IPMI/Docker/DB/SNMP)
+		serverRouter.InitAssetRouter(PrivateGroup)                 // 服务器模块·统一资产管理(/server/asset/*)
+		serverRouter.InitCredentialRouter(PrivateGroup)            // 服务器模块·采集凭据(/server/credential/*)
 	}
 
 

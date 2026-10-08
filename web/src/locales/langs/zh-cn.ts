@@ -300,7 +300,8 @@ const local: App.I18n.Schema = {
     log_loginlog: '登录日志',
     log_operlog: '操作日志',
     log_errorlog: '错误日志',
-    server: '服务器管理',
+    server: '资产概览',
+    asset: '资产管理',
     gateway: 'AI 看板',
     'ai-key': '密钥管理',
     models: '模型供给',
@@ -376,6 +377,97 @@ const local: App.I18n.Schema = {
     }
   },
   page: {
+    server: {
+      common: {
+        active: '启用',
+        inactive: '停用',
+        updateTime: '更新时间'
+      },
+      overview: {
+        title: '资产概览',
+        totalAssets: '资产总数',
+        activeSub: '启用中 {count} 台',
+        gotoAsset: '资产管理',
+        monitorSection: '监控状态（启用中口径）',
+        agentSection: 'Agent 状态（启用中口径）'
+      },
+      asset: {
+        title: '服务器资产管理',
+        tabAssets: '资产列表',
+        tabAssetsDesc: '物理机/虚机/Docker/数据库/网络设备统一纳管',
+        add: '新增资产',
+        edit: '编辑资产',
+        typePhysical: '物理服务器',
+        typeVm: '虚拟机',
+        typeDockerHost: 'Docker 主机',
+        typeDbInstance: '数据库实例',
+        typeNetDevice: '网络设备',
+        monitorOnline: '在线',
+        monitorOffline: '离线',
+        monitorUnknown: '未知',
+        agentNone: '未安装',
+        agentInstalling: '安装中',
+        agentRunning: '运行中',
+        agentLost: '失联',
+        col: {
+          assetName: '资产名称',
+          assetType: '资产类型',
+          manageIp: '管理IP',
+          sshPort: 'SSH端口',
+          osType: '操作系统',
+          env: '环境',
+          location: '位置',
+          monitorStatus: '监控状态',
+          agentStatus: 'Agent',
+          credential: 'SSH凭据',
+          isActive: '状态',
+          description: '描述'
+        },
+        form: {
+          assetNameRequired: '请输入资产名称',
+          assetTypeRequired: '请选择资产类型',
+          manageIpRequired: '请输入管理IP',
+          assetNamePlaceholder: '如：web-node-01',
+          manageIpPlaceholder: '管理/连接 IP',
+          sshPortPlaceholder: '默认 22',
+          envPlaceholder: '环境标签',
+          locationPlaceholder: '如：A机房-01机柜',
+          credentialPlaceholder: '选择 SSH 凭据(安装 agent 用)',
+          descPlaceholder: '备注信息'
+        }
+      },
+      credential: {
+        title: '采集凭据管理',
+        tabCredential: '凭据管理',
+        tabCredentialDesc: 'SSH/BMC/SNMP/数据库账号，加密存储',
+        add: '新增凭据',
+        edit: '编辑凭据',
+        typeSSH: 'SSH',
+        typeBMC: 'BMC/IPMI',
+        typeSNMP: 'SNMP',
+        typeDB: '数据库',
+        fieldUsername: '用户名',
+        fieldPassword: '密码',
+        fieldCommunity: 'Community',
+        fieldVersion: '版本',
+        col: {
+          credentialName: '凭据名称',
+          credentialType: '凭据类型',
+          credentialValues: '键值',
+          description: '描述',
+          isActive: '状态'
+        },
+        form: {
+          nameRequired: '请输入凭据名称',
+          typeRequired: '请选择凭据类型',
+          namePlaceholder: '如：root-op',
+          typePlaceholder: '建后不可修改',
+          sensitivePlaceholder: '留空 / ****** 表示保持不变',
+          descPlaceholder: '用途说明',
+          valuesRequired: '请至少填写一个键值'
+        }
+      }
+    },
     login: {
       common: {
         title: '欢迎登录',

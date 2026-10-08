@@ -127,16 +127,32 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			OrderNum:  4,
 			Module:    "admin",
 		},
-		// 业务模块占位首页(顶层单级 C,对齐前端 views 的 _server/_gateway 占位页)
+		// 服务器模块概览首页(顶层单级 C,对齐 admin 首页/AI 看板模式:进入模块即看资产统计;
+		// 一级路由 path 单段以符合 elegant first-level 约束)
 		{
 			ParentId:  0,
 			MenuName:  "route.server",
 			MenuType:  "C",
 			Path:      "server",
+			ApiPrefix: "/server/asset/overview",
 			Component: "_server/server/index",
 			Icon:      "mdi:server-network",
 			Visible:   "0",
 			OrderNum:  6,
+			Module:    "server",
+		},
+		// 服务器模块·资产管理(顶层单页,对齐 ai-key 模式;双 Tab 资产列表/凭据管理)
+		{
+			ParentId:  0,
+			MenuName:  "route.asset",
+			MenuType:  "C",
+			Path:      "asset",
+			// 凭据内聚进资产管理页双 Tab(对齐 ai-key 页场景管理内聚先例);ApiPrefix 沿用后端接口前缀,与菜单 Path 解耦
+			ApiPrefix: "/server/asset, /server/asset/*, /server/credential, /server/credential/*",
+			Component: "_server/asset/index",
+			Icon:      "mdi:server",
+			Visible:   "0",
+			OrderNum:  10,
 			Module:    "server",
 		},
 		// ── AI 网关模块:看板页 + 模型目录 + 密钥顶层单页(一级路由,path 单段以符合 elegant first-level 约束) ──
