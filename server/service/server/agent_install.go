@@ -21,45 +21,44 @@ import (
 	"github.com/hllkk/devops-admin/server/utils/sshkey"
 )
 
-// AgentInstallService agent 自动安装流（前端「安装 agent」触发，异步任务 + 状态轮询）。
+// agent_install.go 采集端(node_exporter)安装流（2026-10-08 自研 agent 退役后，
+// 数据面改为 Prometheus pull 架构：node_exporter 部署到目标机监听 9100 被
+// Prometheus 经 HTTP SD 动态发现刮取；管理面保留 SSH 公钥通道——安装/重启/
+// 卸载全部走 SSH，平台不再有 agent 进程与上报通道）。
 //
-// 全程 agentless 一次性 SSH 密码认证（密码仅函数参数内存态，绝不落库/日志/任务状态）：
-// 密码登录 → 平台公钥写入 authorized_keys（幂等，转公钥认证）→ sftp 上传 agent 二进制
-// （按目标机架构选托管文件）→ 写 systemd unit（含一次性注册 token）→ enable --now。
-// agent 启动后携 token 调 /server/agent/register 换持久 token，注册成功状态转 running。
-//
-// 公钥部署函数按「可写任意公钥」设计（平台公钥/用户个人公钥同函数，P4 登录授权零返工）。
+// 安装步骤：公钥连接(信任在资产录入验证时建立) → 探测架构 → sftp 上传
+// node_exporter → 写 systemd unit(:9100) → enable --now → 放行防火墙 9100
+// (firewalld/ufw 幂等) → 本地 curl 校验 /metrics 可达。
+// 异步任务状态复用原框架(Redis server:node-install:<taskId>,前端同一轮询接口)。
 
 const (
 	// installTaskKeyPrefix 安装任务状态 Redis key 前缀（value = 状态 JSON，TTL 2h）
-	installTaskKeyPrefix = "server:agent-install:"
+	installTaskKeyPrefix = "server:node-install:"
 	// installTaskTTL 安装任务状态保留时长（轮询窗口，过期自动清理）
 	installTaskTTL = 2 * time.Hour
-	// remoteBinaryPath 目标机 agent 二进制路径
-	remoteBinaryPath = "/usr/local/bin/aiops-agent"
+	// remoteBinaryPath 目标机 node_exporter 二进制路径
+	remoteBinaryPath = "/usr/local/bin/node_exporter"
 	// remoteUnitPath 目标机 systemd unit 路径
-	remoteUnitPath = "/etc/systemd/system/aiops-agent.service"
+	remoteUnitPath = "/etc/systemd/system/node_exporter.service"
+	// exporterPortDefault node_exporter 默认端口(与 Prometheus scrape/防火墙放行一致)
+	exporterPortDefault = 9100
 )
 
-// AgentInstallService 安装编排服务。
+// AgentInstallService 采集端安装/运维编排服务。
 type AgentInstallService struct{}
-
-// registryService 同包注册服务实例（安装流生成注册 token 用）。
-var registryService = &AgentRegistryService{}
 
 // AgentInstallStatus 异步安装任务状态（Redis 存储 + 轮询出网）。
 type AgentInstallStatus struct {
 	TaskId     string     `json:"taskId"`            // 任务ID
 	AssetId    int64      `json:"assetId,string"`    // 资产ID
 	Status     string     `json:"status"`            // running/success/failed
-	Step       string     `json:"step"`              // 当前步骤(部署公钥/上传二进制/注册服务/启动)
+	Step       string     `json:"step"`              // 当前步骤
 	Message    string     `json:"message,omitempty"` // 失败原因/成功摘要
 	StartedAt  time.Time  `json:"startedAt"`         // 开始时间(UTC)
 	FinishedAt *time.Time `json:"finishedAt"`        // 结束时间(UTC,空=进行中)
 }
 
-// StartInstall 启动异步安装（纯公钥模式：SSH 信任已在资产录入验证时建立——
-// 平台公钥已部署,安装不再需要密码）：置 installing + 生成注册 token + 后台 goroutine 执行。
+// StartInstall 启动异步安装（纯公钥模式：SSH 信任已在资产录入验证时建立）。
 // 立即返回任务ID，前端轮询 GetInstallStatus。
 func (s *AgentInstallService) StartInstall(ctx context.Context, assetId int64) (string, error) {
 	var asset servermod.Asset
@@ -67,7 +66,7 @@ func (s *AgentInstallService) StartInstall(ctx context.Context, assetId int64) (
 		return "", errors.New("资产不存在")
 	}
 	if asset.AssetType != servermod.AssetTypePhysical && asset.AssetType != servermod.AssetTypeVm {
-		return "", fmt.Errorf("资产类型 %q 不支持安装 agent(仅物理机/虚拟机)", asset.AssetType)
+		return "", fmt.Errorf("资产类型 %q 不支持安装采集端(仅物理机/虚拟机)", asset.AssetType)
 	}
 	if !asset.SshVerified {
 		return "", errors.New("资产未完成 SSH 验证(请编辑资产输入密码完成录入验证后再安装)")
@@ -75,22 +74,13 @@ func (s *AgentInstallService) StartInstall(ctx context.Context, assetId int64) (
 	if asset.SshUsername == "" || asset.ManageIp == "" {
 		return "", errors.New("资产缺少 SSH 用户名或管理IP(请编辑资产补全)")
 	}
-	port := asset.SshPort
-	if port == 0 {
-		port = 22
-	}
-	// 一次性注册 token（30min 窗口，agent 首启换持久 token）
-	registerToken, err := registryService.CreateRegisterToken(ctx, assetId)
-	if err != nil {
-		return "", err
-	}
-	// 任务状态 + 资产置 installing
+	port := s.portOf(asset)
 	taskId := sha256Hex(fmt.Sprintf("%d-%d", assetId, time.Now().UnixNano()))[:16]
 	status := AgentInstallStatus{
 		TaskId:    taskId,
 		AssetId:   assetId,
 		Status:    "running",
-		Step:      "连接目标机",
+		Step:      "连接目标机(公钥认证)",
 		StartedAt: time.Now().UTC(),
 	}
 	if err := s.saveStatus(ctx, status); err != nil {
@@ -102,7 +92,7 @@ func (s *AgentInstallService) StartInstall(ctx context.Context, assetId int64) (
 		return "", err
 	}
 
-	go s.runInstall(assetId, asset.SshUsername, asset.ManageIp, port, registerToken, taskId)
+	go s.runInstall(assetId, asset.SshUsername, asset.ManageIp, port, taskId)
 	return taskId, nil
 }
 
@@ -119,8 +109,8 @@ func (s *AgentInstallService) GetInstallStatus(ctx context.Context, taskId strin
 	return status, nil
 }
 
-// runInstall 安装流主体（goroutine；公钥认证连接，无密码入参）。
-func (s *AgentInstallService) runInstall(assetId int64, sshUser, host string, port int, registerToken, taskId string) {
+// runInstall 安装流主体（goroutine；公钥认证连接）。
+func (s *AgentInstallService) runInstall(assetId int64, sshUser, host string, port int, taskId string) {
 	ctx := context.Background()
 	status := AgentInstallStatus{
 		TaskId:    taskId,
@@ -136,7 +126,7 @@ func (s *AgentInstallService) runInstall(assetId int64, sshUser, host string, po
 		global.OPS_DB.Model(&servermod.Asset{}).Where("asset_id = ?", assetId).
 			Update("agent_status", servermod.AgentStatusNone)
 		logger.WithCtx(ctx).Mod("server").Field("assetId", assetId).Field("taskId", taskId).
-			Field("step", step).Error("agent 安装失败: " + msg)
+			Field("step", step).Error("采集端安装失败: " + msg)
 	}
 	finish := func(msg string) {
 		now := time.Now().UTC()
@@ -159,7 +149,7 @@ func (s *AgentInstallService) runInstall(assetId int64, sshUser, host string, po
 	}
 	defer client.Close()
 
-	// ── 2. 探测架构 + 上传 agent 二进制(sftp) ──
+	// ── 2. 探测架构 + 上传 node_exporter 二进制(sftp) ──
 	status.Step = "探测系统架构"
 	_ = s.saveStatus(ctx, status)
 	arch, err := sshRun(client, "uname -m")
@@ -168,9 +158,9 @@ func (s *AgentInstallService) runInstall(assetId int64, sshUser, host string, po
 		return
 	}
 	goarch := mapUnameToGoarch(strings.TrimSpace(arch))
-	status.Step = "上传 agent 二进制(" + goarch + ")"
+	status.Step = "上传 node_exporter(" + goarch + ")"
 	_ = s.saveStatus(ctx, status)
-	binaryPath, err := s.agentBinaryPath(goarch)
+	binaryPath, err := s.exporterBinaryPath(goarch)
 	if err != nil {
 		fail(status.Step, err.Error())
 		return
@@ -180,28 +170,51 @@ func (s *AgentInstallService) runInstall(assetId int64, sshUser, host string, po
 		return
 	}
 
-	// ── 4. 写 systemd unit + 启动 ──
+	// ── 3. 写 systemd unit + 启动 ──
 	status.Step = "注册 systemd 服务"
 	_ = s.saveStatus(ctx, status)
-	unit, err := s.buildUnit(registerToken)
-	if err != nil {
-		fail(status.Step, err.Error())
-		return
-	}
-	if err := sshRunWriteFile(client, remoteUnitPath, unit); err != nil {
+	if err := sshRunWriteFile(client, remoteUnitPath, buildExporterUnit(s.exporterPort())); err != nil {
 		fail(status.Step, fmt.Sprintf("写 unit 失败: %v", err))
 		return
 	}
 	status.Step = "启动服务"
 	_ = s.saveStatus(ctx, status)
-	if out, err := sshRun(client, "systemctl daemon-reload && systemctl enable --now aiops-agent 2>&1"); err != nil {
+	if out, err := sshRun(client, "systemctl daemon-reload && systemctl enable --now node_exporter 2>&1"); err != nil {
 		fail(status.Step, fmt.Sprintf("启动失败: %v; %s", err, out))
 		return
 	}
-	// 状态转 running 由 agent 注册回调驱动；安装流程至此成功（状态仍是 installing，
-	// agent 首启注册成功后 AgentRegistryService.Register 置 running）
-	finish("安装完成,等待 agent 注册(状态将自动转为运行中)")
-	logger.WithCtx(ctx).Mod("server").Field("assetId", assetId).Field("taskId", taskId).Info("agent 安装成功")
+
+	// ── 4. 放行防火墙端口(幂等;firewalld/ufw 二选一,均无则跳过) ──
+	status.Step = fmt.Sprintf("放行防火墙端口 %d", s.exporterPort())
+	_ = s.saveStatus(ctx, status)
+	if out, err := sshRun(client, allowFirewallPortScript(s.exporterPort())); err != nil {
+		fail(status.Step, fmt.Sprintf("防火墙放行失败: %v; %s(云安全组需控制台另行放行)", err, out))
+		return
+	}
+
+	// ── 5. 本地校验指标端点可达 + 提取版本 ──
+	status.Step = "校验指标端点"
+	_ = s.saveStatus(ctx, status)
+	if out, err := sshRun(client, fmt.Sprintf("curl -sf -o /dev/null http://127.0.0.1:%d/metrics", s.exporterPort())); err != nil {
+		fail(status.Step, fmt.Sprintf("node_exporter 端点校验失败: %v; %s(检查服务日志 journalctl -u node_exporter)", err, out))
+		return
+	}
+	exporterVer, _ := sshRun(client, fmt.Sprintf(
+		"curl -s http://127.0.0.1:%d/metrics | grep -oP 'node_exporter_build_info{version=\"[^\" ]+' | grep -oP '[0-9]+[.][0-9]+[.][0-9]+' | head -1", s.exporterPort()))
+	exporterVer = strings.TrimSpace(exporterVer)
+
+	// 采集端状态转 running;Prometheus 下轮刮取(约 30s)起指标生效
+	updates := map[string]any{"agent_status": servermod.AgentStatusRunning}
+	if exporterVer != "" {
+		updates["agent_version"] = exporterVer
+	}
+	if err := global.OPS_DB.Model(&servermod.Asset{}).Where("asset_id = ?", assetId).
+		Updates(updates).Error; err != nil {
+		fail("更新资产状态", err.Error())
+		return
+	}
+	finish("安装完成,采集端运行中(Prometheus 约 30s 后开始采集)")
+	logger.WithCtx(ctx).Mod("server").Field("assetId", assetId).Field("taskId", taskId).Info("node_exporter 安装成功")
 }
 
 // saveStatus 任务状态写 Redis（TTL 2h）。
@@ -213,74 +226,62 @@ func (s *AgentInstallService) saveStatus(ctx context.Context, status AgentInstal
 	return global.OPS_REDIS.Set(ctx, installTaskKeyPrefix+status.TaskId, raw, installTaskTTL).Err()
 }
 
-// buildUnit 生成 systemd unit（环境变量注入 server 地址/注册 token/心跳间隔）。
-func (s *AgentInstallService) buildUnit(registerToken string) (string, error) {
-	serverURL := agentServerURL()
-	if serverURL == "" {
-		return "", errors.New("agent 接入地址未配置(agent.server-url)")
-	}
+// buildExporterUnit 生成 node_exporter systemd unit。
+func buildExporterUnit(port int) string {
 	return fmt.Sprintf(`[Unit]
-Description=AIOps Agent
+Description=Node Exporter (AIOps managed)
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=%s
+ExecStart=%s --web.listen-address=:%d
 Restart=always
 RestartSec=10
-Environment=AIOPS_SERVER_URL=%s
-Environment=AIOPS_REGISTER_TOKEN=%s
 
 [Install]
 WantedBy=multi-user.target
-`, remoteBinaryPath, serverURL, registerToken), nil
+`, remoteBinaryPath, port)
 }
 
-// agentBinaryPath 按目标架构找托管二进制（aiops-agent-<ver>-linux-<arch>）。
-func (s *AgentInstallService) agentBinaryPath(goarch string) (string, error) {
+// allowFirewallPortScript 幂等放行防火墙端口(firewalld/ufw 检测到哪个用哪个;
+// 都未运行则原样通过;云安全组不在 OS 层,需控制台另行处理)。
+func allowFirewallPortScript(port int) string {
+	return fmt.Sprintf(`if command -v firewall-cmd >/dev/null 2>&1 && systemctl is-active firewalld >/dev/null 2>&1; then
+  firewall-cmd --permanent --add-port=%d/tcp >/dev/null && firewall-cmd --reload >/dev/null
+elif command -v ufw >/dev/null 2>&1 && ufw status | grep -q "active"; then
+  ufw allow %d/tcp >/dev/null
+fi; echo ok`, port, port)
+}
+
+// denyFirewallPortScript 幂等撤销放行(卸载时清理)。
+func denyFirewallPortScript(port int) string {
+	return fmt.Sprintf(`if command -v firewall-cmd >/dev/null 2>&1 && systemctl is-active firewalld >/dev/null 2>&1; then
+  firewall-cmd --permanent --remove-port=%d/tcp >/dev/null && firewall-cmd --reload >/dev/null
+elif command -v ufw >/dev/null 2>&1 && ufw status | grep -q "active"; then
+  ufw delete allow %d/tcp >/dev/null
+fi; echo ok`, port, port)
+}
+
+// exporterBinaryPath 按目标架构找托管二进制（node_exporter-<arch>，无版本号
+// 文件名——版本随官方发布更新由下载脚本管理，安装始终取最新托管文件）。
+func (s *AgentInstallService) exporterBinaryPath(goarch string) (string, error) {
 	dir := s.binaryDir()
 	if dir == "" {
-		dir = "resource/agent"
+		dir = "resource/node-exporter"
 	}
-	ver := agentVersion()
 	candidates := []string{
-		filepath.Join(dir, fmt.Sprintf("aiops-agent-%s-linux-%s", ver, goarch)),
-		filepath.Join(dir, fmt.Sprintf("aiops-agent-linux-%s", goarch)), // 无版本号兜底(开发期手放)
+		filepath.Join(dir, fmt.Sprintf("node_exporter-%s", goarch)),
+		filepath.Join(dir, goarch, "node_exporter"),
 	}
 	for _, p := range candidates {
 		if _, err := os.Stat(p); err == nil {
 			return p, nil
 		}
 	}
-	return "", fmt.Errorf("agent 二进制缺失: %s(先执行 scripts/build-agent.sh 构建托管)", candidates[0])
+	return "", fmt.Errorf("node_exporter 二进制缺失: %s(先执行 scripts/download-node-exporter.sh 下载托管)", candidates[0])
 }
 
-// agentServerURL agent 回连地址（agent 侧需要能解析到达；默认本机:port 推导，
-// 跨网段部署显式配置 server.agent.server-url）。
-func agentServerURL() string {
-	if v := global.OPS_CONFIG.ServerModule.Agent.ServerURL; v != "" {
-		return v
-	}
-	// 未配置：用本机非回环地址 + 后端端口推导（dev 单机 go run 场景够用）
-	port := global.OPS_CONFIG.System.Addr
-	if ip := outboundIP(); ip != "" && port > 0 {
-		return fmt.Sprintf("http://%s%s", net.JoinHostPort(ip, fmt.Sprintf("%d", port)), global.OPS_CONFIG.System.RouterPrefix)
-	}
-	return ""
-}
-
-// outboundIP 本机主要出网地址（UDP connect 技巧，不发包）。
-func outboundIP() string {
-	conn, err := net.Dial("udp", "8.8.8.8:53")
-	if err != nil {
-		return ""
-	}
-	defer conn.Close()
-	return conn.LocalAddr().(*net.UDPAddr).IP.String()
-}
-
-// installTimeout 安装单步超时（秒）。
 func (s *AgentInstallService) installTimeout() int {
 	if v := global.OPS_CONFIG.ServerModule.Agent.InstallTimeout; v > 0 {
 		return v
@@ -295,11 +296,25 @@ func (s *AgentInstallService) sshKeyDir() string {
 	return global.OPS_CONFIG.ServerModule.Agent.SSHKeyDir
 }
 
+func (s *AgentInstallService) exporterPort() int {
+	if v := global.OPS_CONFIG.ServerModule.Agent.ExporterPort; v > 0 {
+		return v
+	}
+	return exporterPortDefault
+}
+
+func (s *AgentInstallService) portOf(asset servermod.Asset) int {
+	if asset.SshPort > 0 {
+		return asset.SshPort
+	}
+	return 22
+}
+
 // ----------------------------------------------------------------------------
-// SSH 底层工具（密码认证/公钥部署/命令执行/sftp 上传）
+// SSH 底层工具（密码认证/公钥认证/公钥部署/命令执行/sftp 上传）
 // ----------------------------------------------------------------------------
 
-// sshDialPassword SSH 密码认证连接（一次性使用场景；后续平台访问走公钥认证）。
+// sshDialPassword SSH 密码认证连接（录入验证一次性使用；后续平台访问走公钥认证）。
 func sshDialPassword(host string, port int, username, password string, timeoutSec int) (*ssh.Client, error) {
 	conf := &ssh.ClientConfig{
 		User: username,
@@ -394,7 +409,7 @@ func sshRunWriteFile(client *ssh.Client, path, content string) error {
 	if err := session.Start(fmt.Sprintf("tee %s >/dev/null", path)); err != nil {
 		return err
 	}
-	if _, err := io.WriteString(stdin, content); err != nil {
+	if _, err := stdin.Write([]byte(content)); err != nil {
 		return err
 	}
 	stdin.Close()
@@ -425,14 +440,6 @@ func sftpUpload(client *ssh.Client, localPath, remotePath string) error {
 		return err
 	}
 	return nil
-}
-
-// agentVersion agent 当前版本（与平台版本一致；构建脚本按版本命名产物）。
-func agentVersion() string {
-	if v := global.Version; v != "" {
-		return strings.TrimPrefix(v, "v")
-	}
-	return "dev"
 }
 
 // mapUnameToGoarch uname -m 输出 → Go arch。

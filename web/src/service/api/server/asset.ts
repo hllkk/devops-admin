@@ -24,6 +24,15 @@ export function fetchUninstallAgent(assetId: CommonType.IdType) {
   });
 }
 
+/** 资产指标趋势(1h=Redis热窗口;1d=分钟表;7d/30d=按小时聚合) */
+export function fetchGetAssetMetricsTrend(assetId: CommonType.IdType, range: '1h' | '1d' | '7d' | '30d' = '1h') {
+  return request<Api.Server.MetricsTrend>({
+    url: `/server/asset/${assetId}/metrics`,
+    method: 'get',
+    params: { range }
+  });
+}
+
 /** 资产实时快照(agent 心跳指标) */
 export function fetchGetAssetSnapshot(assetId: CommonType.IdType) {
   return request<Api.Server.AgentSnapshot>({

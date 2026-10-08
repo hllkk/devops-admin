@@ -78,6 +78,9 @@ services:
       LITELLM_PUBLIC_URL: ${LITELLM_PUBLIC_URL:-}
       # 服务器模块凭据加密密钥(SSH/BMC/SNMP/DB 凭据 AES-256-GCM；留空=拒绝凭据写入,轮换会使历史密文不可解)
       SERVER_CREDENTIAL_KEY: ${SERVER_CREDENTIAL_KEY:-}
+      # 服务器模块·Prometheus 集成:查询地址(容器间服务名) + HTTP SD 鉴权 token(与 prometheus.yml 一致)
+      PROMETHEUS_BASE_URL: ${PROMETHEUS_BASE_URL:-http://prometheus:9090}
+      PROMETHEUS_SD_TOKEN: ${PROMETHEUS_SD_TOKEN:?必须设置 PROMETHEUS_SD_TOKEN}
       # 在线升级：发布服务器地址 + updater 写接口 token（other.go env 覆盖 config.yaml；
       # 留空=不启用检查更新；token 与 updater 服务同源，缺失则 server 调 updater 401）
       UPDATE_SERVER_URL: ${UPDATE_SERVER_URL:-}
@@ -293,6 +296,32 @@ services:
 
 # 同处 prod-net bridge 网络，服务间用服务名互访
 # （server → pgsql:5432 / redis:6379 / minio:9000，web → server:8888）
+  # ----------------------------------------------------------------------------
+  # Prometheus 指标监控(服务器模块数据面)
+  #  - HTTP SD 动态发现:定时(默认 1m)调 server 的 /prometheus/sd 拉资产清单,资产增删自动生效
+  #  - pull 150 台 node_exporter:9100(安装流自动部署+放行防火墙)
+  #  - 平台后端代查其 API 渲染快照/趋势;数据卷持久化,TSDB 保留 30 天
+  # ----------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:v3.7.1
+    container_name: devops-prometheus
+    restart: unless-stopped
+    # 配置文件不支持 env 插值:token 由 entrypoint 从环境变量落盘供 credentials_file 读取
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        printf '%s' "$${SD_TOKEN}" > /run/sd.token
+        exec prometheus --config.file=/etc/prometheus/prometheus.yml \
+          --storage.tsdb.retention.time=30d --web.enable-lifecycle
+    environment:
+      SD_TOKEN: ${PROMETHEUS_SD_TOKEN:?必须设置 PROMETHEUS_SD_TOKEN}
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ${PROMETHEUS_DATA_PATH:-/home/docker/docker-prod/prometheus-data}:/prometheus
+    networks:
+      - prod-net
+
 networks:
   prod-net:
     driver: bridge

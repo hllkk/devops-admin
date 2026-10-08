@@ -623,6 +623,15 @@ declare namespace App {
             title: string;
             actionView: string;
           };
+          metrics: {
+            trendTitle: string;
+            trendSection: string;
+            avgLine: string;
+            maxLine: string;
+            netIn: string;
+            netOut: string;
+            noData: string;
+          };
           agentOps: {
             agentSection: string;
             resourceSection: string;

@@ -49,6 +49,7 @@ func (i *initTimedTask) InitializeData(ctx context.Context) (context.Context, er
 		{Name: "ClearDB", Description: "定时清理数据库过期日志(操作记录/JWT黑名单/定时任务执行日志)", Spec: "@daily", ExecutorType: sysModel.TimedTaskExecutorMethod, MethodName: "ClearDB", Enabled: true},
 		{Name: "CleanStaleUploads", Description: "定时清理过期大文件上传会话", Spec: "@hourly", ExecutorType: sysModel.TimedTaskExecutorMethod, MethodName: "CleanStaleUploads", Enabled: true},
 		{Name: "SyncLLMLogs", Description: "同步LiteLLM用量日志(归因+成本重算,复合游标增量)", Spec: "*/5 * * * *", ExecutorType: sysModel.TimedTaskExecutorMethod, MethodName: "SyncLLMLogs", Enabled: true},
+		{Name: "SyncMonitorStatus", Description: "服务器模块·同步监控状态(查 Prometheus up 指标回写资产状态)", Spec: "*/2 * * * *", ExecutorType: sysModel.TimedTaskExecutorMethod, MethodName: "SyncMonitorStatus", Enabled: true},
 		{Name: "ReconcileLLMLogs", Description: "对账回灌LiteLLM用量漏单(近30天NOT EXISTS兜底)", Spec: "0 * * * *", ExecutorType: sysModel.TimedTaskExecutorMethod, MethodName: "ReconcileLLMLogs", Enabled: true},
 		{Name: "SyncMcpLogs", Description: "同步LiteLLM MCP调用日志(工具归因+per_call成本,独立游标)", Spec: "*/5 * * * *", ExecutorType: sysModel.TimedTaskExecutorMethod, MethodName: "SyncMcpLogs", Enabled: true},
 		{Name: "ReconcileMcpLogs", Description: "对账回灌MCP调用漏单(近30天兜底)", Spec: "0 * * * *", ExecutorType: sysModel.TimedTaskExecutorMethod, MethodName: "ReconcileMcpLogs", Enabled: true},

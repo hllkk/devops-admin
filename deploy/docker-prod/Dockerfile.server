@@ -40,15 +40,19 @@ RUN go build -trimpath \
     -ldflags="-s -w -X 'github.com/hllkk/devops-admin/server/global.Version=${APP_VERSION}' -X 'github.com/hllkk/devops-admin/server/global.BuildTime=${BUILD_TIME}'" \
     -o /out/devops-admin-server .
 
-# aiops-agent 交叉编译(安装流托管产物: amd64/arm64;版本与平台一致注入 main.agentVersion)
-# agent 版本号取 Version 去 v 前缀(与 scripts/build-agent.sh 同口径)
+# node_exporter 官方二进制下载到托管目录(安装流按架构选用: resource/node-exporter/node_exporter-<arch>)
+# 多源回退:官方 release 直连 → gh-proxy 国内代理;GOPROXY 同构建参数
 RUN set -eux; \
-    AGENT_VER="$(echo "${APP_VERSION}" | tr -d 'v')"; \
     mkdir -p /out/agent; \
     for arch in amd64 arm64; do \
-        CGO_ENABLED=0 GOOS=linux GOARCH=$arch go build -trimpath \
-            -ldflags="-s -w -X main.agentVersion=${AGENT_VER}" \
-            -o /out/agent/aiops-agent-${AGENT_VER}-linux-$arch ./cmd/agent; \
+        ver="1.9.1"; \
+        file="node_exporter-${ver}.linux-${arch}.tar.gz"; \
+        if ! curl -fsSL --retry 2 -o /tmp/${file} "https://github.com/prometheus/node_exporter/releases/download/v${ver}/${file}"; then \
+            curl -fsSL --retry 3 -o /tmp/${file} "https://gh-proxy.com/https://github.com/prometheus/node_exporter/releases/download/v${ver}/${file}"; \
+        fi; \
+        tar -xzf /tmp/${file} -C /tmp; \
+        mv "/tmp/node_exporter-${ver}.linux-${arch}/node_exporter" "/out/agent/node_exporter-${arch}"; \
+        rm -rf /tmp/${file} "/tmp/node_exporter-${ver}.linux-${arch}"; \
     done
 
 # ----------------------------------------------------------------------------

@@ -423,7 +423,7 @@ const local: App.I18n.Schema = {
           env: 'Env',
           location: 'Location',
           monitorStatus: 'Monitor',
-          agentStatus: 'Agent',
+          agentStatus: 'Exporter',
           credential: 'SSH Credential',
           sshUsername: 'SSH User',
           sshPassword: 'SSH Password',
@@ -452,21 +452,30 @@ const local: App.I18n.Schema = {
         title: 'Asset Detail',
         actionView: 'View'
       },
+      metrics: {
+        trendTitle: 'Metrics Trend',
+        trendSection: 'Metrics Trend',
+        avgLine: 'Avg',
+        maxLine: 'Max',
+        netIn: 'Inbound',
+        netOut: 'Outbound',
+        noData: 'No data yet (real-time trend shows after agent heartbeats)'
+      },
       agentOps: {
-        agentSection: 'Agent Status',
+        agentSection: 'Exporter Status',
         resourceSection: 'Resources',
-        opsSection: 'Agent Operations',
-        agentVersion: 'Agent Version',
+        opsSection: 'Exporter Operations',
+        agentVersion: 'Exporter Version',
         agentHostname: 'Hostname',
         lastHeartbeat: 'Last Heartbeat',
-        restart: 'Restart Agent',
-        uninstall: 'Uninstall Agent',
-        restartConfirm: 'Restart Agent',
-        restartConfirmDesc: 'This will run systemctl restart aiops-agent on the target. Confirm?',
-        uninstallConfirm: 'Uninstall Agent',
+        restart: 'Restart exporter',
+        uninstall: 'Uninstall exporter',
+        restartConfirm: 'Restart exporter',
+        restartConfirmDesc: 'This will run systemctl restart node_exporter on the target. Confirm?',
+        uninstallConfirm: 'Uninstall exporter',
         uninstallConfirmDesc: 'This will stop the service and remove binary/config, platform-side records are cleared (platform public key is kept for reinstall). Confirm?',
         opsFailed: 'Operation failed',
-        noSnapshot: 'No live data yet (shown after agent installs and heartbeats)',
+        noSnapshot: 'No live data yet (shown after exporter installed)',
         memory: 'Memory',
         disk: 'Disk',
         network: 'Network',
@@ -474,9 +483,9 @@ const local: App.I18n.Schema = {
         loadavg1: 'Load (1m)'
       },
       agentInstall: {
-        title: 'Install agent - {name}',
-        titlePlain: 'Install agent',
-        action: 'Install agent',
+        title: 'Install exporter - {name}',
+        titlePlain: 'Install exporter',
+        action: 'Install exporter',
         submit: 'Start install',
         started: 'Install task started',
         success: 'Install completed, waiting for agent to register',
@@ -492,7 +501,7 @@ const local: App.I18n.Schema = {
           password: 'SSH password',
           passwordRequired: 'Please enter SSH password',
           passwordPlaceholder: 'One-time use, never stored',
-          notice: 'Pure public-key mode (trust established during asset verify), no password needed; the agent binary is uploaded and the systemd service registered automatically.'
+          notice: 'Pure public-key mode (trust established during asset verify), no password needed; deploys node_exporter, registers systemd service and opens firewall port 9100 automatically.'
         }
       },
       credential: {

@@ -1,0 +1,19 @@
+# Prometheus 抓取配置（服务器模块数据面）。
+# 目标清单由平台动态下发(HTTP SD)：server 容器的 /prometheus/sd 端点返回
+# 已安装采集端且启用中的资产(IP:9100)；资产增删自动生效(SD 默认 1m 刷新)。
+# token 经 compose entrypoint 把 SD_TOKEN 环境变量写成 /run/sd.token(Prometheus 配置
+# 不支持 env 插值,credentials_file 是标准做法)。
+global:
+  scrape_interval: 30s
+  scrape_timeout: 10s
+  external_labels:
+    monitor: aiops
+
+scrape_configs:
+  - job_name: node
+    http_sd_configs:
+      - url: http://server:8888/prometheus/sd
+        refresh_interval: 1m
+        authorization:
+          type: Bearer
+          credentials_file: /run/sd.token

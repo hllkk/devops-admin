@@ -265,7 +265,11 @@ SSH 凭据模板去掉 password 字段（root 密码仅内存态是既定决策�
 - **上报频率 5s 可配置**（150 台 ≈ 30 QPS，无压力）；agent 本地环形缓冲断网补传
 - 上报即时评估告警（不经聚合，保 5 秒实时性）；断网恢复后补传数据照常评估
 
-### 数据管道分层（150 台 × 5s 的规模设计）
+### Prometheus 转型（2026-10-08 最终架构，取代本节以下原自研管道设计）
+
+自研 agent 与自建管道（本节及 slice2/3 记录的 Redis 热窗口/分钟聚合/agent 心跳）**已全部退役**，数据面转 Prometheus pull 架构：node_exporter 部署到目标机（安装流自动装+放行 9100 防火墙）→ Prometheus 容器经 **HTTP SD**（Bearer sd-token 调平台 `/prometheus/sd` 拉资产清单，增删自动生效）pull 刮取 → 后端 `service/server/prometheus.go` 代查 API 渲染快照/趋势（**接口字段形态保持自研时代形态，前端零改动**）→ `SyncMonitorStatus` 定时（*/2min）刮 `up` 回写资产 monitor_status/agent_status。管理面（SSH 公钥/录入验证/安装重启卸载）不变，Asset 的 agent_* 列语义改为「采集端(node_exporter)」。告警（slice4）改走 Alertmanager webhook 回流平台通知。详见 memory/business/server-prometheus-migration.md。
+
+### 数据管道分层（150 台 × 5s 的规模设计——已退役，历史设计记录）
 
 - **Redis 热窗口**：每主机 LPUSH+LTRIM 固定长度快照 list（约 720 点=1h，150 台约 300MB），图表实时接口直接读
 - **PG 降采样**：定时任务每分钟从 Redis 窗口聚合（avg/max/min/last）写 `server_metric_minute`；保留 30 天

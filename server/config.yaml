@@ -82,11 +82,13 @@ jwt:
 server:
     credential-key: f3b7c9a5e2d84f61b0a7d94c5e8326170f4d2b96c8a1e5307d6f29b4a8c3e07d
     agent:
-        heartbeat-interval: 30
-        lost-threshold: 90
         install-timeout: 120
-        binary-dir: resource/agent
+        binary-dir: resource/node-exporter
         ssh-key-dir: resource/ssh
+        exporter-port: 9100
+    prometheus:
+        base-url: http://127.0.0.1:9090
+        sd-token: dev-sd-token
 litellm:
     base-url: http://127.0.0.1:4000
     public-url: http://127.0.0.1:4000

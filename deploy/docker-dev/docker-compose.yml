@@ -163,6 +163,36 @@ services:
   # - 共用 dev pgsql：独立 litellm 库（由 litellm_db_init 建），表前缀 LiteLLM_* 不与业务表冲突
   # - 模型/凭证/密钥由管理面同步进来，本配置只留底座开关（store_model_in_db 等）
   # ============================================================================
+  # ============================================================================
+  # Prometheus 指标监控（服务器模块数据面）
+  #  - 目标清单 HTTP SD 指向宿主机 go run 的后端(8888)；采集端 node_exporter 由
+  #    平台安装流部署到目标机(9100 被 pull)
+  #  - 宿主机访问 http://127.0.0.1:9090；SD token 与 server/config.yaml 的
+  #    server.prometheus.sd-token 一致(dev-sd-token)
+  # ============================================================================
+  prometheus:
+    image: prom/prometheus:v3.7.1
+    container_name: devops-prometheus-dev
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    extra_hosts:
+      # 容器内经 host.docker.internal 访问宿主机 go run 的 SD 端点
+      - "host.docker.internal:host-gateway"
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        printf '%s' "$${SD_TOKEN}" > /run/sd.token
+        exec prometheus --config.file=/etc/prometheus/prometheus.yml \
+          --storage.tsdb.retention.time=30d
+    environment:
+      SD_TOKEN: ${PROMETHEUS_SD_TOKEN:-dev-sd-token}
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - dev-net
+
   litellm:
     image: ghcr.io/berriai/litellm:1.99.0
     container_name: devops-litellm-dev

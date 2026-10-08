@@ -5,6 +5,6 @@ package server
 type ServiceGroup struct {
 	AssetService
 	CredentialService
-	AgentRegistryService
 	AgentInstallService
+	PrometheusService
 }

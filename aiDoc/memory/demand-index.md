@@ -4,6 +4,7 @@
 
 | 日期 | 需求 | 文件 | 状态 |
 |---|---|---|---|
+| 2026-10-08 | 服务器模块·Prometheus 架构转型（用户对比 OTel/Prometheus 后决策数据面转 pull 架构；自研 aiops-agent/心跳/快照/热窗口/分钟表/聚合任务全退役，SSH 公钥管理与安装流保留改装 node_exporter[含防火墙 9100 放行/卸载撤端口]；PrometheusService 代查 API 保持原接口字段形态[前端零改动]+HTTP SD 动态资产清单[Bearer sd-token]+SyncMonitorStatus 刮 up 回写状态；prod/dev compose 加 prometheus 容器[retention 30d,SD token 走 entrypoint 落盘 credentials_file——prometheus.yml 不支持 env 插值的坑]；slice4 告警改走 Alertmanager webhook） | business/server-prometheus-migration.md | 已实现待运行时验证 |
 | 2026-10-08 | 服务器模块·agent 重启/卸载+资产查看抽屉（操作列精简为查看/编辑/删除;抽屉四区:基本信息/Agent状态/资源快照[CPU负载/内存/磁盘/网络速率/uptime,agent 心跳顺带上报轻量快照落 Redis TTL,不进 PG——slice3 完整管道前的数据源]/运维操作[未装=安装,已装=重启+卸载,异步任务复用安装状态框架];卸载清服务端字段+平台公钥保留可重装;agent 端 /proc 采集器 collect.go） | business/server-agent-ops-detail-drawer.md | 已实现待运行时验证 |
 | 2026-10-08 | 服务器模块·资产录入即 SSH 验证（用户指路 spug 借鉴：spug 与本项目架构同构[密码一次性→注入公钥→不落库]，保存流一体完成密码验证+公钥注入+私钥闭环 ping,验证不过不落库；Asset 加 ssh_username/ssh_verified 列;SSH 凭据类型退役[公钥架构下只剩 username 无共享价值];安装流改纯公钥模式[无密码参数,前置校验 ssh_verified];错误分诊 E00/E01/E02 对齐 spug） | business/server-asset-verify-on-save.md | 已实现待真实目标机验证 |
 | 2026-10-08 | 服务器模块·资产账号与登录授权规划 P4 立项（用户场景=仅授权登录某业务账号[ekp等]；模型=server_account 资产从属账号+server_login_grant 用户×资产×账号三元组授权,与共享凭据并存正交[监控可见性与登录授权两个权限轴]；技术路线选个人公钥下发[授权=写用户公钥进 authorized_keys,密码不托管,改密零耦合,slice2 公钥部署函数按可写任意公钥设计];SSH 凭据模板同步去 password 字段） | business/server-account-grant-plan.md | 设计决策确认待 P4 动工 |

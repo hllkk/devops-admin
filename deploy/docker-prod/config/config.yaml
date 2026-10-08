@@ -95,12 +95,16 @@ jwt:
 server:
     credential-key: ""
     agent:
-        heartbeat-interval: 30
-        lost-threshold: 90
         install-timeout: 120
-        # agent 回连接入地址(留空=容器内按出网IP+端口推导;经 nginx 反代/跨网段部署时
-        # 显式配置为 agent 可达地址,如 http://<宿主IP>:<SERVER_PORT>)
-        server-url: ""
+        # node_exporter 二进制托管目录(安装流按架构选文件,由镜像构建阶段下载)
+        binary-dir: resource/node-exporter
+        ssh-key-dir: resource/ssh
+        exporter-port: 9100
+    prometheus:
+        # 容器间走服务名；由 env PROMETHEUS_BASE_URL 覆盖
+        base-url: ""
+        # HTTP SD 鉴权 token：由 env PROMETHEUS_SD_TOKEN 覆盖(必填非空,否则 SD 端点拒绝)
+        sd-token: ""
 litellm:
     # LiteLLM 代理底座：转发由 litellm 容器承担；prod server 容器经 prod-net 走服务名
     base-url: http://litellm:4000

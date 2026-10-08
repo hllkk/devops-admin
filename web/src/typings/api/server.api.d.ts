@@ -171,6 +171,42 @@ declare namespace Api {
         stale: boolean;
     };
 
+    /** 指标趋势点(实时窗口帧与历史分钟/小时聚合行统一投影) */
+    type MetricPoint = {
+      /** 点时间(UTC, ISO) */
+      ts: string;
+      /** CPU使用率% */
+      cpu: number;
+      /** CPU峰值%(实时帧=cpu) */
+      cpuMax: number;
+      /** 内存使用率% */
+      memPct: number;
+      /** 内存峰值% */
+      memPctMax: number;
+      /** 磁盘使用率% */
+      diskPct: number;
+      /** 磁盘峰值% */
+      diskPctMax: number;
+      /** 网络入速率 B/s */
+      netIn: number;
+      /** 入峰值 */
+      netInMax: number;
+      /** 网络出速率 B/s */
+      netOut: number;
+      /** 出峰值 */
+      netOutMax: number;
+      /** 1分钟负载 */
+      loadavg1: number;
+    };
+
+    /** 指标趋势响应 */
+    type MetricsTrend = {
+      /** 1h/1d/7d/30d */
+      range: string;
+      /** 时间正序点列 */
+      points: MetricPoint[];
+    };
+
     /** 凭据下拉选项(资产表单用，仅启用中) */
     type CredentialOption = {
       credentialId: CommonType.IdType;

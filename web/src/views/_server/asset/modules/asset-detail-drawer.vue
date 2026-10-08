@@ -10,6 +10,7 @@ import {
 import { $t } from '@/locales';
 import { ASSET_TYPE_OPTIONS, MONITOR_STATUS_OPTIONS, AGENT_STATUS_OPTIONS } from '@/constants/business/server';
 import AgentInstallModal from './agent-install-modal.vue';
+import AssetMetricsChart from './asset-metrics-chart.vue';
 
 defineOptions({ name: 'AssetDetailDrawer' });
 
@@ -316,6 +317,13 @@ watch(visible, v => {
         </div>
         <NEmpty v-else :description="$t('page.server.agentOps.noSnapshot')" class="py-24px" />
       </NSpin>
+
+      <!-- 指标趋势 -->
+      <div class="mb-16px flex items-center gap-8px">
+        <span class="text-13px font-500">{{ $t('page.server.metrics.trendSection') }}</span>
+        <NDivider class="flex-1" />
+      </div>
+      <AssetMetricsChart :asset-id="row?.assetId ?? null" class="mb-16px" />
 
       <!-- 运维操作 -->
       <div class="mb-8px flex items-center gap-8px">

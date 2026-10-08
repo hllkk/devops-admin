@@ -419,7 +419,7 @@ const local: App.I18n.Schema = {
           env: '环境',
           location: '位置',
           monitorStatus: '监控状态',
-          agentStatus: 'Agent',
+          agentStatus: '采集端',
           credential: 'SSH凭据',
           sshUsername: 'SSH用户',
           sshPassword: 'SSH密码',
@@ -448,21 +448,30 @@ const local: App.I18n.Schema = {
         title: '资产详情',
         actionView: '查看'
       },
+      metrics: {
+        trendTitle: '指标趋势',
+        trendSection: '指标趋势',
+        avgLine: '均值',
+        maxLine: '峰值',
+        netIn: '入流量',
+        netOut: '出流量',
+        noData: '暂无数据（Agent 心跳后展示实时趋势）'
+      },
       agentOps: {
-        agentSection: 'Agent 状态',
+        agentSection: '采集端状态',
         resourceSection: '资源状态',
-        opsSection: 'Agent 运维',
-        agentVersion: 'Agent 版本',
+        opsSection: '采集端运维',
+        agentVersion: '采集端版本',
         agentHostname: '主机名',
         lastHeartbeat: '最近心跳',
-        restart: '重启 Agent',
-        uninstall: '卸载 Agent',
-        restartConfirm: '重启 Agent',
-        restartConfirmDesc: '将在目标机执行 systemctl restart aiops-agent，确认重启？',
-        uninstallConfirm: '卸载 Agent',
-        uninstallConfirmDesc: '将停止服务并删除二进制/配置，平台侧记录一并清除（平台公钥保留，可随时重装）。确认卸载？',
+        restart: '重启采集端',
+        uninstall: '卸载采集端',
+        restartConfirm: '重启采集端',
+        restartConfirmDesc: '将在目标机执行 systemctl restart node_exporter，确认重启？',
+        uninstallConfirm: '卸载采集端',
+        uninstallConfirmDesc: '将停止并删除 node_exporter、撤销防火墙端口，平台侧记录一并清除（平台公钥保留，可随时重装）。确认卸载？',
         opsFailed: '操作失败',
-        noSnapshot: '暂无实时数据（安装 Agent 并心跳后展示）',
+        noSnapshot: '暂无实时数据（安装采集端后展示）',
         memory: '内存',
         disk: '磁盘',
         network: '网络',
@@ -470,9 +479,9 @@ const local: App.I18n.Schema = {
         loadavg1: '1分钟负载'
       },
       agentInstall: {
-        title: '安装 agent - {name}',
-        titlePlain: '安装 agent',
-        action: '安装 agent',
+        title: '安装采集端 - {name}',
+        titlePlain: '安装采集端',
+        action: '安装采集端',
         submit: '开始安装',
         started: '安装任务已启动',
         success: '安装完成，等待 agent 注册上线',
@@ -488,7 +497,7 @@ const local: App.I18n.Schema = {
           password: 'SSH 密码',
           passwordRequired: '请输入 SSH 密码',
           passwordPlaceholder: '一次性使用，不会保存',
-          notice: '安装走纯公钥模式（信任已在资产录入验证时建立），无需输入密码；将自动上传 agent 二进制并注册 systemd 服务。'
+          notice: '安装走纯公钥模式（信任已在资产录入验证时建立），无需输入密码；将自动部署 node_exporter、注册 systemd 服务并放行防火墙 9100 端口。'
         }
       },
       credential: {

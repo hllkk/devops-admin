@@ -10,8 +10,8 @@ type ApiGroup struct {
 }
 
 var (
-	assetService         = service.ServiceGroupApp.ServerServiceGroup.AssetService
-	credentialService    = service.ServiceGroupApp.ServerServiceGroup.CredentialService
-	agentRegistryService = service.ServiceGroupApp.ServerServiceGroup.AgentRegistryService
-	agentInstallService  = service.ServiceGroupApp.ServerServiceGroup.AgentInstallService
+	assetService        = service.ServiceGroupApp.ServerServiceGroup.AssetService
+	credentialService   = service.ServiceGroupApp.ServerServiceGroup.CredentialService
+	agentInstallService = service.ServiceGroupApp.ServerServiceGroup.AgentInstallService
+	promService         = service.ServiceGroupApp.ServerServiceGroup.PrometheusService
 )

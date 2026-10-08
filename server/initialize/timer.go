@@ -50,8 +50,8 @@ func Timer() {
 		_, err := (&gatewayService.UsageSyncService{}).ReconcileMcpLogs(ctx)
 		return err
 	})
-	task.Register("CheckLostAgents", "服务器模块·agent 失联扫描(超过阈值未心跳的 running 资产置 lost)", func(ctx context.Context, _ json.RawMessage) error {
-		return (&serverService.AgentRegistryService{}).CheckLostAgents(ctx)
+	task.Register("SyncMonitorStatus", "服务器模块·同步监控状态(查 Prometheus up 指标回写资产在线/采集端状态)", func(ctx context.Context, _ json.RawMessage) error {
+		return serverService.SyncMonitorStatus(ctx)
 	})
 	task.Register("CleanupUsageLogs", "清理过期用量日志(llm+mcp按保留天数物理删,log-retention-days<=0禁用)", func(ctx context.Context, _ json.RawMessage) error {
 		_, err := (&gatewayService.UsageSyncService{}).CleanupUsageLogs(ctx)
@@ -161,8 +161,8 @@ func Timer() {
 		for _, d := range drafts {
 			if err := sendSvc.Send(ctx, system.SendRequest{
 				Title: d.Title, Content: d.Content, Markdown: d.Markdown,
-				Url:         "/gateway",
-				TargetType:  policy.TargetType, UserIds: userIds, DeptIds: deptIds,
+				Url:        "/gateway",
+				TargetType: policy.TargetType, UserIds: userIds, DeptIds: deptIds,
 				BotGroupIds: params.BotGroupIds,
 				Channels:    channels,
 			}); err != nil {

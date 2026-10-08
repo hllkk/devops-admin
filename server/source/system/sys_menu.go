@@ -143,10 +143,10 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 		},
 		// 服务器模块·资产管理(顶层单页,对齐 ai-key 模式;双 Tab 资产列表/凭据管理)
 		{
-			ParentId:  0,
-			MenuName:  "route.asset",
-			MenuType:  "C",
-			Path:      "asset",
+			ParentId: 0,
+			MenuName: "route.asset",
+			MenuType: "C",
+			Path:     "asset",
 			// 凭据内聚进资产管理页双 Tab(对齐 ai-key 页场景管理内聚先例);ApiPrefix 沿用后端接口前缀,与菜单 Path 解耦
 			ApiPrefix: "/server/asset, /server/asset/*, /server/credential, /server/credential/*",
 			Component: "_server/asset/index",
@@ -157,10 +157,10 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 		},
 		// ── AI 网关模块:看板页 + 模型目录 + 密钥顶层单页(一级路由,path 单段以符合 elegant first-level 约束) ──
 		{
-			ParentId:  0,
-			MenuName:  "route.gateway",
-			MenuType:  "C",
-			Path:      "gateway",
+			ParentId: 0,
+			MenuName: "route.gateway",
+			MenuType: "C",
+			Path:     "gateway",
 			// budget: 首页预算卡片/预算规则抽屉调 /gateway/budget/*(无菜单覆盖会被 casbin 拒)
 			ApiPrefix: "/gateway/dashboard, /gateway/dashboard/*, /gateway/budget, /gateway/budget/*",
 			Component: "_gateway/gateway/index",
@@ -318,10 +318,10 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			Module:    "admin",
 		},
 		{
-			ParentId:  menuNameMap["route.system"],
-			MenuName:  "route.system_setting",
-			MenuType:  "C",
-			Path:      "system/setting",
+			ParentId: menuNameMap["route.system"],
+			MenuName: "route.system_setting",
+			MenuType: "C",
+			Path:     "system/setting",
 			// /system/upgrade/start 为触发在线升级(管理操作,随本菜单授权;读接口在 rbacWhitelistPrivate)
 			ApiPrefix: "/system/setting, /system/setting/*, /system/upgrade/start",
 			Component: "_admin/system/setting/index",
@@ -368,10 +368,10 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 		},
 		// ── AI 网关(密钥升顶层单页;模型目录下供应商/模型两页;凭证内聚进供应商管理页;ApiPrefix 沿用后端接口前缀,与菜单 Path 解耦) ──
 		{
-			ParentId:  menuNameMap["route.models"],
-			MenuName:  "route.models_provider",
-			MenuType:  "C",
-			Path:      "models/provider",
+			ParentId: menuNameMap["route.models"],
+			MenuName: "route.models_provider",
+			MenuType: "C",
+			Path:     "models/provider",
 			// credential: 供应商页凭证面板调 /gateway/credential/*
 			ApiPrefix: "/gateway/provider, /gateway/provider/*, /gateway/credential, /gateway/credential/*",
 			Component: "_gateway/models/provider/index",
@@ -381,10 +381,10 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			Module:    "gateway",
 		},
 		{
-			ParentId:  menuNameMap["route.models"],
-			MenuName:  "route.models_model",
-			MenuType:  "C",
-			Path:      "models/model",
+			ParentId: menuNameMap["route.models"],
+			MenuName: "route.models_model",
+			MenuType: "C",
+			Path:     "models/model",
 			// router/settings: 模型页路由池设置弹窗调 /gateway/router/settings(GET/PUT)
 			ApiPrefix: "/gateway/model, /gateway/model/*, /gateway/router/settings, /gateway/router/settings/*",
 			Component: "_gateway/models/model/index",

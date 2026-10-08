@@ -5,18 +5,20 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hllkk/devops-admin/server/global"
 	"github.com/hllkk/devops-admin/server/model/common/response"
-	serverSvc "github.com/hllkk/devops-admin/server/service/server"
 	"github.com/hllkk/devops-admin/server/utils/logger"
 )
 
-// AgentApi agent 安装流与注册心跳（安装接口挂 PrivateGroup 走 JWT/casbin；
-// register/heartbeat 挂 PublicGroup 由 agent token 自鉴权，对齐 Skill Agent 直连先例）。
+// AgentApi 采集端(node_exporter)安装/运维 + Prometheus 查询代理。
+// 安装/重启/卸载/状态轮询/快照/趋势挂 PrivateGroup(JWT/casbin,菜单 ApiPrefix
+// /server/asset/* 覆盖);HTTP SD 端点挂 PublicGroup(Bearer sd-token 自鉴权,
+// 供 Prometheus http_sd_configs 拉取资产清单)。
 type AgentApi struct{}
 
 // InstallAgent
 // @Tags      ServerAgent
-// @Summary   触发 agent 自动安装(异步,纯公钥模式:SSH 信任已在资产录入验证时建立,无需密码)
+// @Summary   触发采集端(node_exporter)自动安装(异步,纯公钥模式;含防火墙 9100 放行)
 // @Produce   application/json
 // @Param     id    path  int  true  "资产ID(需已通过 SSH 录入验证)"
 // @Success   200   {object}  response.Response{data=object{taskId=string},msg=string}
@@ -29,18 +31,62 @@ func (a *AgentApi) InstallAgent(c *gin.Context) {
 	}
 	taskId, err := agentInstallService.StartInstall(c.Request.Context(), id)
 	if err != nil {
-		logger.WithCtx(c.Request.Context()).Mod("server").Err(err).Field("assetId", id).Error("触发 agent 安装失败")
+		logger.WithCtx(c.Request.Context()).Mod("server").Err(err).Field("assetId", id).Error("触发采集端安装失败")
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
 	response.OkWithDetailed(gin.H{"taskId": taskId}, "安装任务已启动", c)
 }
 
+// RestartAgent
+// @Tags      ServerAgent
+// @Summary   重启目标机采集端(异步,公钥通道)
+// @Produce   application/json
+// @Param     id  path  int  true  "资产ID"
+// @Success   200 {object}  response.Response{data=object{taskId=string},msg=string}
+// @Router    /server/asset/{id}/restart-agent [post]
+func (a *AgentApi) RestartAgent(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.FailWithMessage("无效的资产ID", c)
+		return
+	}
+	taskId, err := agentInstallService.StartRestart(c.Request.Context(), id)
+	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("server").Err(err).Field("assetId", id).Error("触发采集端重启失败")
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	response.OkWithDetailed(gin.H{"taskId": taskId}, "重启任务已启动", c)
+}
+
+// UninstallAgent
+// @Tags      ServerAgent
+// @Summary   卸载目标机采集端(异步,公钥通道;平台公钥保留可重装,撤防火墙端口)
+// @Produce   application/json
+// @Param     id  path  int  true  "资产ID"
+// @Success   200 {object}  response.Response{data=object{taskId=string},msg=string}
+// @Router    /server/asset/{id}/uninstall-agent [post]
+func (a *AgentApi) UninstallAgent(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.FailWithMessage("无效的资产ID", c)
+		return
+	}
+	taskId, err := agentInstallService.StartUninstall(c.Request.Context(), id)
+	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("server").Err(err).Field("assetId", id).Error("触发采集端卸载失败")
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	response.OkWithDetailed(gin.H{"taskId": taskId}, "卸载任务已启动", c)
+}
+
 // GetInstallStatus
 // @Tags      ServerAgent
-// @Summary   轮询 agent 安装任务状态
+// @Summary   轮询采集端安装/运维任务状态
 // @Produce   application/json
-// @Param     taskId  path  string  true  "安装任务ID"
+// @Param     taskId  path  string  true  "任务ID"
 // @Success   200  {object}  response.Response{data=response.AgentInstallStatus,msg=string}
 // @Router    /server/asset/install-status/{taskId} [get]
 func (a *AgentApi) GetInstallStatus(c *gin.Context) {
@@ -57,130 +103,12 @@ func (a *AgentApi) GetInstallStatus(c *gin.Context) {
 	response.OkWithDetailed(status, "获取成功", c)
 }
 
-// AgentRegister
-// @Tags      ServerAgent
-// @Summary   agent 注册(一次性注册 token 换持久 token;PublicGroup 无 JWT)
-// @Accept    application/json
-// @Produce   application/json
-// @Param     data  body  object{token=string,hostname=string,arch=string,os=string,agentVersion=string}  true  "注册信息"
-// @Success   200  {object}  response.Response{data=object{agentId=string,token=string,heartbeatInterval=int},msg=string}
-// @Router    /server/agent/register [post]
-func (a *AgentApi) AgentRegister(c *gin.Context) {
-	var req agentRegisterParams
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.FailWithMessage(err.Error(), c)
-		return
-	}
-	regReq := serverSvc.AgentRegisterRequest{
-		Token: req.Token, Hostname: req.Hostname, Arch: req.Arch, Os: req.Os, AgentVersion: req.AgentVersion,
-	}
-	resp, err := agentRegistryService.Register(c.Request.Context(), regReq)
-	if err != nil {
-		logger.WithCtx(c.Request.Context()).Mod("server").Err(err).Error("agent 注册失败")
-		response.FailWithMessage(err.Error(), c)
-		return
-	}
-	response.OkWithDetailed(resp, "注册成功", c)
-}
-
-// AgentHeartbeat
-// @Tags      ServerAgent
-// @Summary   agent 心跳(Bearer token 自鉴权;回写 running + 时间戳)
-// @Accept    application/json
-// @Produce   application/json
-// @Param     Authorization  header  string  false  "Bearer <持久token>(或 ?token= 查询参数)"
-// @Param     data  body  object{agentVersion=string}  false  "心跳信息(版本可选)"
-// @Success   200  {object}  response.Response{data=bool,msg=string}
-// @Router    /server/agent/heartbeat [post]
-func (a *AgentApi) AgentHeartbeat(c *gin.Context) {
-	token := extractAgentToken(c)
-	if token == "" {
-		response.NoAuth("未提供 agent 认证凭证(Bearer 头或 token 参数)", c)
-		return
-	}
-	var req agentHeartbeatParams
-	_ = c.ShouldBindJSON(&req) // 版本字段可选,body 缺失不拒
-	hbReq := serverSvc.AgentHeartbeatRequest{AgentVersion: req.AgentVersion}
-	if err := agentRegistryService.Heartbeat(c.Request.Context(), token, hbReq); err != nil {
-		// token 无效按 401 语义(agent 据此触发重注册)
-		response.NoAuth(err.Error(), c)
-		return
-	}
-	response.OkWithDetailed(true, "心跳成功", c)
-}
-
-// extractAgentToken 双通道取 agent 持久 token（Authorization: Bearer / ?token=）。
-func extractAgentToken(c *gin.Context) string {
-	h := c.GetHeader("Authorization")
-	if strings.HasPrefix(h, "Bearer ") {
-		return strings.TrimSpace(strings.TrimPrefix(h, "Bearer "))
-	}
-	return strings.TrimSpace(c.Query("token"))
-}
-
-// agentRegisterParams/agentHeartbeatParams 请求结构。
-type agentRegisterParams struct {
-	Token        string `json:"token" binding:"required" form:"token"`
-	Hostname     string `json:"hostname" form:"hostname"`
-	Arch         string `json:"arch" form:"arch"`
-	Os           string `json:"os" form:"os"`
-	AgentVersion string `json:"agentVersion" form:"agentVersion"`
-}
-
-type agentHeartbeatParams struct {
-	AgentVersion string `json:"agentVersion" form:"agentVersion"`
-}
-
-// RestartAgent
-// @Tags      ServerAgent
-// @Summary   重启目标机 agent(异步,公钥通道)
-// @Produce   application/json
-// @Param     id  path  int  true  "资产ID"
-// @Success   200 {object}  response.Response{data=object{taskId=string},msg=string}
-// @Router    /server/asset/{id}/restart-agent [post]
-func (a *AgentApi) RestartAgent(c *gin.Context) {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil {
-		response.FailWithMessage("无效的资产ID", c)
-		return
-	}
-	taskId, err := agentInstallService.StartRestart(c.Request.Context(), id)
-	if err != nil {
-		logger.WithCtx(c.Request.Context()).Mod("server").Err(err).Field("assetId", id).Error("触发 agent 重启失败")
-		response.FailWithMessage(err.Error(), c)
-		return
-	}
-	response.OkWithDetailed(gin.H{"taskId": taskId}, "重启任务已启动", c)
-}
-
-// UninstallAgent
-// @Tags      ServerAgent
-// @Summary   卸载目标机 agent(异步,公钥通道;平台公钥保留可重装)
-// @Produce   application/json
-// @Param     id  path  int  true  "资产ID"
-// @Success   200 {object}  response.Response{data=object{taskId=string},msg=string}
-// @Router    /server/asset/{id}/uninstall-agent [post]
-func (a *AgentApi) UninstallAgent(c *gin.Context) {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil {
-		response.FailWithMessage("无效的资产ID", c)
-		return
-	}
-	taskId, err := agentInstallService.StartUninstall(c.Request.Context(), id)
-	if err != nil {
-		logger.WithCtx(c.Request.Context()).Mod("server").Err(err).Field("assetId", id).Error("触发 agent 卸载失败")
-		response.FailWithMessage(err.Error(), c)
-		return
-	}
-	response.OkWithDetailed(gin.H{"taskId": taskId}, "卸载任务已启动", c)
-}
-
 // GetAssetSnapshot
 // @Tags      ServerAsset
-// @Summary   资产实时快照(agent 心跳上报的轻量指标;agent 未上报时 stale=true)
+// @Summary   资产实时快照(后端代查 Prometheus instant;未配置/未刮到时 stale=true)
 // @Produce   application/json
 // @Param     id  path  int  true  "资产ID"
-// @Success   200 {object}  response.Response{data=response.AgentSnapshot,msg=string}
+// @Success   200  {object}  response.Response{data=response.AgentSnapshot,msg=string}
 // @Router    /server/asset/{id}/snapshot [get]
 func (a *AgentApi) GetAssetSnapshot(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
@@ -188,6 +116,65 @@ func (a *AgentApi) GetAssetSnapshot(c *gin.Context) {
 		response.FailWithMessage("无效的资产ID", c)
 		return
 	}
-	snap := agentRegistryService.GetSnapshot(c.Request.Context(), id)
+	snap, err := promService.GetSnapshot(c.Request.Context(), id)
+	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("server").Err(err).Field("assetId", id).Error("获取资产快照失败")
+		response.FailWithMessage("获取失败", c)
+		return
+	}
 	response.OkWithDetailed(snap, "获取成功", c)
+}
+
+// GetAssetMetricsTrend
+// @Tags      ServerAsset
+// @Summary   资产指标趋势(后端代查 Prometheus query_range)
+// @Produce   application/json
+// @Param     id     path   string  true   "资产ID"
+// @Param     range  query  string  false  "时间范围(1h/1d/7d/30d,默认1h)"
+// @Success   200  {object}  response.Response{data=response.MetricsTrend,msg=string}
+// @Router    /server/asset/{id}/metrics [get]
+func (a *AgentApi) GetAssetMetricsTrend(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.FailWithMessage("无效的资产ID", c)
+		return
+	}
+	rng := c.Query("range")
+	switch rng {
+	case "":
+		rng = "1h"
+	case "1h", "1d", "7d", "30d":
+	default:
+		response.FailWithMessage("range 仅支持 1h/1d/7d/30d", c)
+		return
+	}
+	trend, err := promService.GetTrend(c.Request.Context(), id, rng)
+	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("server").Err(err).Field("assetId", id).Error("获取资产指标趋势失败")
+		response.FailWithMessage("获取失败", c)
+		return
+	}
+	response.OkWithDetailed(trend, "获取成功", c)
+}
+
+// GetPrometheusSD
+// @Tags      ServerAgent
+// @Summary   HTTP SD 端点(Prometheus http_sd_configs 拉资产清单;Bearer sd-token 鉴权)
+// @Produce   application/json
+// @Param     Authorization  header  string  true  "Bearer <server.prometheus.sd-token>"
+// @Success   200  {object}  []object
+// @Router    /prometheus/sd [get]
+func (a *AgentApi) GetPrometheusSD(c *gin.Context) {
+	token := strings.TrimSpace(strings.TrimPrefix(c.GetHeader("Authorization"), "Bearer "))
+	expect := global.OPS_CONFIG.ServerModule.Prometheus.SDToken
+	if expect == "" || token == "" || token != expect {
+		// 不区分 401 细节:统一按未授权语义(HTTP SD 对非 200 会报错并保持旧 targets)
+		c.JSON(401, gin.H{"error": "unauthorized"})
+		return
+	}
+	targets := promService.SDTargets(c.Request.Context())
+	if targets == nil {
+		targets = []map[string]any{}
+	}
+	c.JSON(200, targets)
 }
