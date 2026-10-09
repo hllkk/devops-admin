@@ -13,5 +13,6 @@ type RouterSettingsUpdate struct {
 	CooldownTime    int                    `json:"cooldownTime"`    // 冷却时间(秒)
 	NumRetries      int                    `json:"numRetries"`      // 全局重试次数
 	Timeout         int                    `json:"timeout"`         // 全局超时(秒)
+	GlobalMaxParallel *int                 `json:"globalMaxParallel"` // 全局并发上限(nil=清空恢复无限制)
 	Config          map[string]any         `json:"config"`          // 扩展配置(可空)
 }

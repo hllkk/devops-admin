@@ -538,9 +538,45 @@ func (c *Client) GetRouterSettings(ctx context.Context) (map[string]any, error) 
 	return resp.RouterSettings, nil
 }
 
-// UpdateRouterSettings 更新 LiteLLM 路由策略（POST /router/settings）。
+// UpdateRouterSettings 更新 LiteLLM 路由策略（POST /config/update，按 section 写）。
+// 1.104 起 /router/settings 仅剩 GET（POST 返回 405），写端点改为 config 管理：
 // settings 为 LiteLLM 蛇形键 map（routing_strategy/allowed_fails/cooldown_time/
-// num_retries/timeout/fallbacks/config），热更新即时生效。
+// num_retries/timeout/fallbacks），统一落 router_settings section（UpdateRouterConfig
+// 合法键）；热更新即时生效。config 扩展键 1.104 无对应 section，暂不下发。
 func (c *Client) UpdateRouterSettings(ctx context.Context, settings map[string]any) error {
-	return c.do(ctx, http.MethodPost, "/router/settings", settings, nil)
+	routerSection := make(map[string]any, len(settings))
+	for k, v := range settings {
+		if k == "config" {
+			continue // 扩展配置暂无对应 LiteLLM section
+		}
+		routerSection[k] = v
+	}
+	body := map[string]any{"router_settings": routerSection}
+	return c.do(ctx, http.MethodPost, "/config/update", body, nil)
+}
+
+// ----------------------------------------------------------------------------
+// 全局并发（/config/field/*）—— general_settings 投影同步用
+// ----------------------------------------------------------------------------
+
+// UpdateGlobalConcurrency 设置全局并发上限（POST /config/field/update，热生效）。
+// value 为网关整体同时在途请求数上限，超出 429。前置条件：该字段未写在 yaml
+// （config-owned 字段的 API 写入会被 400 拒绝），须以 DB 为唯一事实源；
+// 且 LiteLLM 1.104+ 需 LEGACY_MULTI_INSTANCE_RATE_LIMITING=true 才实际执行。
+func (c *Client) UpdateGlobalConcurrency(ctx context.Context, value int) error {
+	body := map[string]any{
+		"config_type": "general_settings",
+		"field_name":  "global_max_parallel_requests",
+		"field_value": value,
+	}
+	return c.do(ctx, http.MethodPost, "/config/field/update", body, nil)
+}
+
+// DeleteGlobalConcurrency 删除全局并发上限（DELETE /config/field/delete，恢复无限制）。
+func (c *Client) DeleteGlobalConcurrency(ctx context.Context) error {
+	body := map[string]any{
+		"config_type": "general_settings",
+		"field_name":  "global_max_parallel_requests",
+	}
+	return c.do(ctx, http.MethodDelete, "/config/field/delete", body, nil)
 }

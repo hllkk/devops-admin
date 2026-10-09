@@ -1470,6 +1470,7 @@ const local: App.I18n.Schema = {
           timeout: '超时(秒)',
           streamTimeout: '流式超时(秒)',
           maxRetries: '最大重试',
+          maxParallelRequests: '并发上限',
           tags: '标签',
           useInPassThrough: '透传',
           dropParams: '丢弃不支持参数',
@@ -1504,7 +1505,8 @@ const local: App.I18n.Schema = {
           allowedFails: '允许失败',
           cooldownTime: '冷却时间(秒)',
           numRetries: '重试次数',
-          timeout: '超时(秒)'
+          timeout: '超时(秒)',
+          globalMaxParallel: '全局并发上限'
         },
         form: {
           strategyPlaceholder: '选择路由策略',
@@ -1512,6 +1514,7 @@ const local: App.I18n.Schema = {
           cooldownTimePlaceholder: '默认 60',
           numRetriesPlaceholder: '默认 2',
           timeoutPlaceholder: '默认 30',
+          globalMaxParallelTip: '整个网关同时在途请求数，超出返回 429；防上游封号建议低于供应商额度并留缓冲，清空=无限制',
           fallbacksTip: '源模型请求失败时降级到指定模型；源模型与降级模型均为模型 ID',
           addFallback: '添加降级',
           modelPlaceholder: '源模型',
@@ -1595,6 +1598,7 @@ const local: App.I18n.Schema = {
           rateLimitMode: '限流模式',
           tpmLimit: 'TPM（Tokens/分钟）',
           rpmLimit: 'RPM（请求/分钟）',
+          maxParallelLimit: '并发上限',
           isActive: '状态',
           expiresAt: '过期时间',
           lastUsedAt: '最近使用',
@@ -1609,6 +1613,7 @@ const local: App.I18n.Schema = {
           scenarioRequired: '场景 Key 需选择使用场景',
           namePlaceholder: '场景 Key 可自定义名称',
           mainKeyNameFixed: '主 Key 名称固定为 main，无需填写',
+          maxParallelLimitTip: '同时在途请求数，超出返回 429（限流模式-总量时生效）',
           modelsPlaceholder: '选择授权模型',
           mcpsPlaceholder: '选择授权 MCP（主 Key 默认含可见免审批 MCP）',
           skillsPlaceholder: '选择授权 Skill（主 Key 默认含可见免审批 Skill）',

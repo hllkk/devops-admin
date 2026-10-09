@@ -71,6 +71,7 @@ function createDefaultModel(): Model {
     rateLimitMode: 'none',
     tpmLimit: null,
     rpmLimit: null,
+    maxParallelLimit: null,
     modelLimits: {},
     isActive: true,
     expiresAt: null
@@ -339,6 +340,12 @@ watch(visible, () => {
         </NFormItem>
         <NFormItem :label="$t('page.gateway.aiKey.col.rpmLimit')" path="rpmLimit">
           <NInputNumber v-model:value="model.rpmLimit" :min="0" clearable :placeholder="$t('page.gateway.common.unlimited')" class="w-full" />
+        </NFormItem>
+        <NFormItem :label="$t('page.gateway.aiKey.col.maxParallelLimit')" path="maxParallelLimit">
+          <div class="w-full">
+            <NInputNumber v-model:value="model.maxParallelLimit" :min="1" clearable :placeholder="$t('page.gateway.common.unlimited')" class="w-full" />
+            <p class="mt-4px text-12px text-slate-400">{{ $t('page.gateway.aiKey.form.maxParallelLimitTip') }}</p>
+          </div>
         </NFormItem>
 
         <NFormItem :label="$t('page.gateway.aiKey.col.isActive')" path="isActive">

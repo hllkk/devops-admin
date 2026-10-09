@@ -1643,6 +1643,7 @@ declare namespace App {
               timeout: string;
               streamTimeout: string;
               maxRetries: string;
+              maxParallelRequests: string;
               tags: string;
               useInPassThrough: string;
               dropParams: string;
@@ -1675,6 +1676,7 @@ declare namespace App {
               cooldownTime: string;
               numRetries: string;
               timeout: string;
+              globalMaxParallel: string;
             };
             form: {
               strategyPlaceholder: string;
@@ -1682,6 +1684,7 @@ declare namespace App {
               cooldownTimePlaceholder: string;
               numRetriesPlaceholder: string;
               timeoutPlaceholder: string;
+              globalMaxParallelTip: string;
               fallbacksTip: string;
               addFallback: string;
               modelPlaceholder: string;
@@ -1765,6 +1768,7 @@ declare namespace App {
               rateLimitMode: string;
               tpmLimit: string;
               rpmLimit: string;
+              maxParallelLimit: string;
               isActive: string;
               expiresAt: string;
               lastUsedAt: string;
@@ -1779,6 +1783,7 @@ declare namespace App {
               scenarioRequired: string;
               namePlaceholder: string;
               mainKeyNameFixed: string;
+              maxParallelLimitTip: string;
               modelsPlaceholder: string;
               mcpsPlaceholder: string;
               skillsPlaceholder: string;

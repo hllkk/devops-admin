@@ -168,6 +168,7 @@ function computeExpandedNames(): string[] {
     p.timeout != null ||
     p.stream_timeout != null ||
     p.max_retries != null ||
+    p.max_parallel_requests != null ||
     (Array.isArray(p.tags) && p.tags.length > 0)
   ) {
     names.push('routing');
@@ -217,7 +218,7 @@ async function handleSubmit() {
 
   // 保留 litellmParams 其他掩码键，仅覆盖 model + 剔除清空的可选路由键
   const nextParams: Record<string, any> = { ...formModel.value.litellmParams, model: vendorModel.value.trim() };
-  for (const key of ['weight', 'order', 'timeout', 'stream_timeout', 'max_retries', 'tags']) {
+  for (const key of ['weight', 'order', 'timeout', 'stream_timeout', 'max_retries', 'max_parallel_requests', 'tags']) {
     const v = nextParams[key];
     if (v === null || v === undefined || v === '' || (Array.isArray(v) && v.length === 0)) {
       Reflect.deleteProperty(nextParams, key);
@@ -432,6 +433,15 @@ watch(visible, async () => {
                 :min="0"
                 clearable
                 :placeholder="$t('page.gateway.deployment.form.maxRetriesPlaceholder')"
+                class="w-full"
+              />
+            </NFormItemGi>
+            <NFormItemGi span="24 s:12" :label="$t('page.gateway.deployment.col.maxParallelRequests')">
+              <NInputNumber
+                v-model:value="params.max_parallel_requests"
+                :min="1"
+                clearable
+                :placeholder="$t('page.gateway.common.unlimited')"
                 class="w-full"
               />
             </NFormItemGi>

@@ -39,6 +39,7 @@ type MyIdentityView struct {
 	RateLimitMode   string               `json:"rateLimitMode"`   // 限流模式
 	TpmLimit        *int                 `json:"tpmLimit"`        // 全局TPM
 	RpmLimit        *int                 `json:"rpmLimit"`        // 全局RPM
+	MaxParallelLimit *int                `json:"maxParallelLimit"` // 并发上限(同时在途请求数,超出429)
 	SceneKeys       []AiKeyView          `json:"sceneKeys"`       // 我的场景Key列表
 	AvailableModels []AvailableModelView `json:"availableModels"` // 可见模型(按发布可见性过滤,home 可用模型卡)
 	Mcps            []string             `json:"mcps"`            // 已授权MCP(serverName列表)

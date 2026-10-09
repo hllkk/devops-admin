@@ -33,6 +33,10 @@ type RouterSettings struct {
 	CooldownTime    int            `json:"cooldownTime" gorm:"default:60;comment:冷却时间(秒)"`
 	NumRetries      int            `json:"numRetries" gorm:"default:2;comment:全局重试次数"`
 	Timeout         int            `json:"timeout" gorm:"default:30;comment:全局超时(秒)"`
+	// 全局并发上限(整个网关同时在途请求数,超出429;nil=无限制)。同步至 LiteLLM
+	// general_settings.global_max_parallel_requests(/config/field/update 热生效)。
+	// 注意 LiteLLM 1.104 须开 LEGACY_MULTI_INSTANCE_RATE_LIMITING 才执行此限制
+	GlobalMaxParallel *int         `json:"globalMaxParallel" gorm:"comment:全局并发上限(nil=无限制)"`
 	Config          datatypes.JSON `json:"config" gorm:"type:jsonb;comment:扩展配置(预留)" swaggertype:"object"`
 }
 

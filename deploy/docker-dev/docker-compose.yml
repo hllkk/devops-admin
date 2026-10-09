@@ -194,7 +194,7 @@ services:
       - dev-net
 
   litellm:
-    image: ghcr.io/berriai/litellm:1.99.0
+    image: ghcr.io/berriai/litellm:1.104.2
     container_name: devops-litellm-dev
     restart: unless-stopped
     ports:
@@ -204,6 +204,10 @@ services:
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:-sk-devops-litellm-master}
       LITELLM_SALT_KEY: ${LITELLM_SALT_KEY:-sk-devops-litellm-salt}
       STORE_MODEL_IN_DB: "True"
+      # 1.104.x 默认的 V3 并发限制器不再执行 general_settings.global_max_parallel_requests
+      # （V3 只覆盖 key/user/team/org 级）；此开关换回 V1 limiter 以启用全局并发上限，
+      # 代价是失去 V3 的 org/MCP/team-model 级 descriptor（本项目未使用）
+      LEGACY_MULTI_INSTANCE_RATE_LIMITING: "true"
       TZ: Asia/Shanghai
     volumes:
       - ./config/litellm.yaml:/app/config.yaml:ro

@@ -40,6 +40,7 @@ type AiKeyOperateParams struct {
 	RateLimitMode    string          `json:"rateLimitMode" form:"rateLimitMode"`     // 限流模式
 	TpmLimit         *int            `json:"tpmLimit" form:"tpmLimit"`         // 全局TPM
 	RpmLimit         *int            `json:"rpmLimit" form:"rpmLimit"`         // 全局RPM
+	MaxParallelLimit *int            `json:"maxParallelLimit" form:"maxParallelLimit"` // 并发上限(同时在途请求数,超出429)
 	ModelLimits      map[string]any   `json:"modelLimits" form:"modelLimits"`  // per-model限流
 	IsActive         *bool           `json:"isActive" form:"isActive"`         // 是否启用
 	ExpiresAt        *time.Time      `json:"expiresAt" form:"expiresAt"`       // 过期时间(nil=永不过期,覆盖式更新)
@@ -73,6 +74,7 @@ type AiKeyBatchSceneCreateParams struct {
 	RateLimitMode    string                  `json:"rateLimitMode"`        // 限流模式
 	TpmLimit         *int                    `json:"tpmLimit"`             // 全局TPM
 	RpmLimit         *int                    `json:"rpmLimit"`             // 全局RPM
+	MaxParallelLimit *int                    `json:"maxParallelLimit"`     // 并发上限(同时在途请求数,超出429)
 	ModelLimits      map[string]any          `json:"modelLimits"`          // per-model限流
 	IsActive         *bool                   `json:"isActive"`             // 是否启用(nil=默认启用)
 	ExpiresAt        *time.Time              `json:"expiresAt"`            // 过期时间(nil=永不过期)

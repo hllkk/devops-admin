@@ -69,6 +69,7 @@ func (s *AiKeyService) GetMyIdentity(ctx context.Context, userId int64) (gateway
 	view.RateLimitMode = mainKey.RateLimitMode
 	view.TpmLimit = mainKey.TpmLimit
 	view.RpmLimit = mainKey.RpmLimit
+	view.MaxParallelLimit = mainKey.MaxParallelLimit
 	// 主 Key 明文(仅此接口解密返回)；单机模式(litellm_key_id 空)无可用 Key 返回空
 	if mainKey.LitellmKeyId != "" {
 		if plain, err := decryptCredentialValues(mainKey.KeyValue); err == nil {
@@ -444,6 +445,7 @@ func (s *AiKeyService) CreateSceneKey(ctx context.Context, req gatewayReq.AiKeyO
 		RateLimitMode:   normalizeRateLimitMode(req.RateLimitMode),
 		TpmLimit:        req.TpmLimit,
 		RpmLimit:        req.RpmLimit,
+		MaxParallelLimit: req.MaxParallelLimit,
 		ModelLimits:     marshalJSONMap(req.ModelLimits),
 		IsActive:        req.IsActive == nil || *req.IsActive,
 		ExpiresAt:       req.ExpiresAt,
@@ -561,6 +563,11 @@ func (s *AiKeyService) UpdateAiKey(ctx context.Context, req gatewayReq.AiKeyOper
 	if req.RpmLimit != nil {
 		updates["rpm_limit"] = req.RpmLimit
 		k.RpmLimit = req.RpmLimit
+	}
+	// 并发上限同 tpm/rpm 语义：nil 不清空(随限流模式切换由 SyncRateLimits 恒刷同步清)
+	if req.MaxParallelLimit != nil {
+		updates["max_parallel_limit"] = req.MaxParallelLimit
+		k.MaxParallelLimit = req.MaxParallelLimit
 	}
 	if req.BudgetLimit != nil {
 		updates["budget_limit"] = *req.BudgetLimit
@@ -814,6 +821,7 @@ func (s *AiKeyService) BatchCreateSceneKeys(ctx context.Context, req gatewayReq.
 			RateLimitMode:   req.RateLimitMode,
 			TpmLimit:        req.TpmLimit,
 			RpmLimit:        req.RpmLimit,
+			MaxParallelLimit: req.MaxParallelLimit,
 			ModelLimits:     req.ModelLimits,
 			IsActive:        req.IsActive,
 			ExpiresAt:       req.ExpiresAt,
@@ -1359,6 +1367,7 @@ func syncKeyToLitellm(ctx context.Context, cli *litellm.Client, tx *gorm.DB, k *
 		if k.RateLimitMode == gateway.RateLimitModeTotal {
 			req.TPMLimit = k.TpmLimit
 			req.RPMLimit = k.RpmLimit
+			req.MaxParallelReqs = k.MaxParallelLimit
 		}
 		if k.OwnerType == gateway.OwnerTypeUser {
 			req.UserID = fmt.Sprintf("devops_user_%d", k.OwnerId)
@@ -1403,6 +1412,7 @@ func syncKeyToLitellm(ctx context.Context, cli *litellm.Client, tx *gorm.DB, k *
 	if k.RateLimitMode == gateway.RateLimitModeTotal {
 		req.TPMLimit = k.TpmLimit
 		req.RPMLimit = k.RpmLimit
+		req.MaxParallelReqs = k.MaxParallelLimit
 	}
 	return cli.UpdateKey(ctx, k.LitellmKeyId, req)
 }

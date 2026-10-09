@@ -40,6 +40,7 @@ type AiKey struct {
 	RateLimitMode     string         `json:"rateLimitMode" gorm:"size:20;default:none;comment:限流模式(none/total/per_model)"`                 // 限流模式
 	TpmLimit          *int           `json:"tpmLimit" gorm:"comment:全局TPM限流(total模式)"`                                                     // 全局TPM
 	RpmLimit          *int           `json:"rpmLimit" gorm:"comment:全局RPM限流(total模式)"`                                                     // 全局RPM
+	MaxParallelLimit  *int           `json:"maxParallelLimit" gorm:"comment:并发上限(total模式,同时在途请求数,超出429)"`                              // 并发上限(LiteLLM max_parallel_requests,防单Key独占)
 	ModelLimits       datatypes.JSON `json:"modelLimits" gorm:"type:jsonb;comment:按模型限流({modelKey:{tpm,rpm}})" swaggertype:"object"`       // per-model 限流
 	IsActive          bool           `json:"isActive" gorm:"default:true;comment:是否启用"`                                                    // 是否启用(停用=max_budget=0)
 	DisabledByCascade bool           `json:"disabledByCascade" gorm:"default:false;comment:被动停用标记(用户生命周期级联停用;恢复用户时仅恢复此标记的Key,管理员手动停的不动)"`  // 被动停用(用户禁用/删除级联;手动启停/超限停用不打标)

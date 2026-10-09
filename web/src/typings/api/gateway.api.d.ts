@@ -149,6 +149,8 @@ declare namespace Api {
       rateLimitMode: RateLimitMode;
       tpmLimit: number | null;
       rpmLimit: number | null;
+      /** 并发上限(同时在途请求数,超出429;total模式生效) */
+      maxParallelLimit: number | null;
       modelLimits: Record<string, { tpm?: number; rpm?: number }>;
       isActive: boolean;
       /** 过期时间(RFC3339,null=永不过期;下发 LiteLLM expires_at 原生拦截) */
@@ -185,6 +187,8 @@ declare namespace Api {
       rateLimitMode: RateLimitMode;
       tpmLimit: number | null;
       rpmLimit: number | null;
+      /** 并发上限(同时在途请求数,超出429;total模式生效) */
+      maxParallelLimit: number | null;
       sceneKeys: AiKey[];
       /** 可见模型(按发布可见性过滤:全员/部门/指定用户) */
       availableModels: AvailableModel[];
@@ -768,13 +772,15 @@ declare namespace Api {
       numRetries: number;
       /** 全局超时(秒) */
       timeout: number;
+      /** 全局并发上限(整个网关同时在途请求数,超出429;null=无限制) */
+      globalMaxParallel: number | null;
       /** 扩展配置(预留,前端暂不配置 UI) */
       config: Record<string, any>;
     };
 
     /** 路由策略更新参数(可选字段,null=不改) */
     type RouterSettingsParams = CommonType.RecordNullable<
-      Pick<RouterSettings, 'routingStrategy' | 'fallbacks' | 'allowedFails' | 'cooldownTime' | 'numRetries' | 'timeout' | 'config'>
+      Pick<RouterSettings, 'routingStrategy' | 'fallbacks' | 'allowedFails' | 'cooldownTime' | 'numRetries' | 'timeout' | 'globalMaxParallel' | 'config'>
     >;
 
     /** 部署连通性测试参数(管理员视角,经 LiteLLM 数据面) */
@@ -823,6 +829,7 @@ declare namespace Api {
         | 'rateLimitMode'
         | 'tpmLimit'
         | 'rpmLimit'
+        | 'maxParallelLimit'
         | 'modelLimits'
         | 'isActive'
         | 'expiresAt'
@@ -849,6 +856,7 @@ declare namespace Api {
         | 'rateLimitMode'
         | 'tpmLimit'
         | 'rpmLimit'
+        | 'maxParallelLimit'
         | 'modelLimits'
         | 'isActive'
         | 'expiresAt'

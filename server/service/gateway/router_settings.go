@@ -45,7 +45,8 @@ func (s *RouterSettingsService) getOrCreate(ctx context.Context) (gateway.Router
 	return rs, err
 }
 
-// Update 更新全局路由策略(整体覆盖;事务:落库 + 同步 LiteLLM /router/settings 热更新)。
+// Update 更新全局路由策略(整体覆盖;事务:落库 + 同步 LiteLLM /router/settings 热更新
+// + 全局并发上限经 /config/field/update 热生效)。
 func (s *RouterSettingsService) Update(ctx context.Context, req gatewayReq.RouterSettingsUpdate) (gatewayResp.RouterSettingsView, error) {
 	prev, err := s.getOrCreate(ctx)
 	if err != nil {
@@ -82,6 +83,7 @@ func (s *RouterSettingsService) Update(ctx context.Context, req gatewayReq.Route
 		CooldownTime:    req.CooldownTime,
 		NumRetries:      req.NumRetries,
 		Timeout:         req.Timeout,
+		GlobalMaxParallel: req.GlobalMaxParallel,
 		Config:          datatypes.JSON(cfgJSON),
 	}
 	rs.OPS_MODEL = prev.OPS_MODEL // 保留基座(ID/时间戳)
@@ -95,6 +97,10 @@ func (s *RouterSettingsService) Update(ctx context.Context, req gatewayReq.Route
 		if cli != nil {
 			if err := cli.UpdateRouterSettings(ctx, s.toLitellm(rs)); err != nil {
 				return fmt.Errorf("同步 LiteLLM 路由策略失败: %w", err)
+			}
+			// 全局并发独立投影(general_settings 非 router_settings):nil=删字段恢复无限制
+			if err := s.syncGlobalConcurrency(ctx, cli, rs.GlobalMaxParallel); err != nil {
+				return err
 			}
 		}
 		return nil
@@ -113,6 +119,7 @@ func (s *RouterSettingsService) toView(rs gateway.RouterSettings) gatewayResp.Ro
 		CooldownTime:    rs.CooldownTime,
 		NumRetries:      rs.NumRetries,
 		Timeout:         rs.Timeout,
+		GlobalMaxParallel: rs.GlobalMaxParallel,
 		Fallbacks:       []gateway.FallbackItem{},
 		Config:          map[string]any{},
 	}
@@ -129,6 +136,21 @@ func (s *RouterSettingsService) toView(rs gateway.RouterSettings) gatewayResp.Ro
 		view.Config = map[string]any{}
 	}
 	return view
+}
+
+// syncGlobalConcurrency 全局并发上限投影同步(nil → 删 LiteLLM 字段恢复无限制)。
+// 前置约束:LiteLLM yaml 不得声明该字段(config-owned 会让 API 写入被 400 拒绝)。
+func (s *RouterSettingsService) syncGlobalConcurrency(ctx context.Context, cli *litellm.Client, v *int) error {
+	if v == nil {
+		if err := cli.DeleteGlobalConcurrency(ctx); err != nil {
+			return fmt.Errorf("清除 LiteLLM 全局并发上限失败: %w", err)
+		}
+		return nil
+	}
+	if err := cli.UpdateGlobalConcurrency(ctx, *v); err != nil {
+		return fmt.Errorf("同步 LiteLLM 全局并发上限失败: %w", err)
+	}
+	return nil
 }
 
 // toLitellm 平台格式 → LiteLLM 蛇形投影:

@@ -1475,6 +1475,7 @@ const local: App.I18n.Schema = {
           timeout: 'Timeout (s)',
           streamTimeout: 'Stream Timeout (s)',
           maxRetries: 'Max Retries',
+          maxParallelRequests: 'Concurrency',
           tags: 'Tags',
           useInPassThrough: 'Pass-through',
           dropParams: 'Drop Unsupported Params',
@@ -1509,7 +1510,8 @@ const local: App.I18n.Schema = {
           allowedFails: 'Allowed Fails',
           cooldownTime: 'Cooldown (s)',
           numRetries: 'Retries',
-          timeout: 'Timeout (s)'
+          timeout: 'Timeout (s)',
+          globalMaxParallel: 'Global Concurrency'
         },
         form: {
           strategyPlaceholder: 'Select routing strategy',
@@ -1517,6 +1519,7 @@ const local: App.I18n.Schema = {
           cooldownTimePlaceholder: 'Default 60',
           numRetriesPlaceholder: 'Default 2',
           timeoutPlaceholder: 'Default 30',
+          globalMaxParallelTip: 'Max in-flight requests across the whole gateway; excess returns 429. To avoid upstream bans keep below the provider quota with headroom; empty = unlimited',
           fallbacksTip: 'Fallback to specified models when the source model fails; both source and fallback are model IDs',
           addFallback: 'Add Fallback',
           modelPlaceholder: 'Source Model',
@@ -1600,6 +1603,7 @@ const local: App.I18n.Schema = {
           rateLimitMode: 'Rate Limit Mode',
           tpmLimit: 'TPM (Tokens/min)',
           rpmLimit: 'RPM (Req/min)',
+          maxParallelLimit: 'Concurrency',
           isActive: 'Status',
           expiresAt: 'Expires At',
           lastUsedAt: 'Last Used',
@@ -1613,6 +1617,7 @@ const local: App.I18n.Schema = {
           scenarioPlaceholder: 'Select a scenario (manage in "Scenarios" tab)',
           scenarioRequired: 'A scenario key requires a use scenario',
           namePlaceholder: 'Custom name for scene key',
+          maxParallelLimitTip: 'Max in-flight requests; excess returns 429 (applies in total rate-limit mode)',
           mainKeyNameFixed: 'Main key name is fixed to "main"',
           modelsPlaceholder: 'Select authorized models',
           mcpsPlaceholder: 'Select authorized MCP (main keys default to visible no-approval MCP)',

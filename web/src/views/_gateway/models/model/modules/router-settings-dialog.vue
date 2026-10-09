@@ -20,6 +20,7 @@ function createDefault(): Api.Gateway.RouterSettings {
     cooldownTime: 60,
     numRetries: 2,
     timeout: 30,
+    globalMaxParallel: null,
     config: {}
   };
 }
@@ -58,6 +59,7 @@ async function loadSettings() {
       cooldownTime: data.cooldownTime ?? 60,
       numRetries: data.numRetries ?? 2,
       timeout: data.timeout ?? 30,
+      globalMaxParallel: data.globalMaxParallel ?? null,
       config: data.config ?? {}
     };
   }
@@ -82,6 +84,7 @@ async function handleSubmit() {
     cooldownTime: formModel.value.cooldownTime,
     numRetries: formModel.value.numRetries,
     timeout: formModel.value.timeout,
+    globalMaxParallel: formModel.value.globalMaxParallel,
     config: formModel.value.config
   };
   const { error } = await fetchUpdateRouterSettings(payload);
@@ -154,7 +157,17 @@ watch(visible, async open => {
             class="w-full"
           />
         </NFormItemGi>
+        <NFormItemGi span="24 s:12" :label="$t('page.gateway.router.col.globalMaxParallel')">
+          <NInputNumber
+            v-model:value="formModel.globalMaxParallel"
+            :min="1"
+            clearable
+            :placeholder="$t('page.gateway.common.unlimited')"
+            class="w-full"
+          />
+        </NFormItemGi>
       </NGrid>
+      <p class="mb-4px text-12px text-slate-400">{{ $t('page.gateway.router.form.globalMaxParallelTip') }}</p>
 
       <div class="mb-8px mt-12px text-13px font-500 text-slate-500">{{ $t('page.gateway.router.col.fallbacks') }}</div>
       <p class="mb-8px text-12px text-slate-400">{{ $t('page.gateway.router.form.fallbacksTip') }}</p>

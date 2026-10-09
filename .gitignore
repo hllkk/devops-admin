@@ -65,3 +65,7 @@ deploy/docker-prod/.env
 deploy/release/dist/
 deploy/release/out/
 deploy/release/.staging/
+
+# litellm 升级前库备份（含密钥 hash，勿入库）
+deploy/docker-dev/backup/
+deploy/docker-prod/backup/
