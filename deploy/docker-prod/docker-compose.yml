@@ -232,7 +232,12 @@ services:
   # - 端口默认不对宿主暴露，仅经 nginx /llm/ 反代对外（见 nginx.conf）
   # ----------------------------------------------------------------------------
   litellm:
-    image: ghcr.io/berriai/litellm:1.99.0
+    # 1.104.2：dev 已全量验证（189 项 prisma 迁移自动跑；spend_logs 未分区管理面直读兼容；
+    # POST /router/settings 已 405 由管理面 v1.1.2 改走 POST /config/update 适配）。
+    # 升级编排随增量包下发，但 upgrade.sh 只重建 web/server/updater——litellm 须手动:
+    #   docker pull ghcr.io/berriai/litellm:1.104.2 && docker compose up -d litellm
+    # （升级前 pg_dump 全库备份；升后必验 MCP/spend_logs 回流/并发生效）
+    image: ghcr.io/berriai/litellm:1.104.2
     container_name: devops-litellm
     restart: unless-stopped
     # 宿主直连端口（LITELLM_HOST_PORT，默认仅本机回环 127.0.0.1:4000，安全等同不映射）：
@@ -246,6 +251,10 @@ services:
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:?必须设置 LITELLM_MASTER_KEY}
       LITELLM_SALT_KEY: ${LITELLM_SALT_KEY:?必须设置 LITELLM_SALT_KEY}
       STORE_MODEL_IN_DB: "True"
+      # 1.104 默认 V3 并发限制器不执行 global_max_parallel_requests（无全局层 descriptor），
+      # 此开关换回 V1 limiter 启用全局并发上限（管理面「路由」对话框配置，热生效）；
+      # 代价是失去 V3 的 org/MCP 级 descriptor（本项目未使用）
+      LEGACY_MULTI_INSTANCE_RATE_LIMITING: "true"
       TZ: ${TZ:-Asia/Shanghai}
     volumes:
       - ./config/litellm.yaml:/app/config.yaml:ro
