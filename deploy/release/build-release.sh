@@ -87,6 +87,7 @@ sed -e "s|^JWT_SIGNING_KEY=.*|JWT_SIGNING_KEY=$(gen_hex 32)|" \
     -e "s|^RUSTFS_ROOT_PASSWORD=.*|RUSTFS_ROOT_PASSWORD=$(gen_pw)|" \
     -e "s|^LITELLM_MASTER_KEY=.*|LITELLM_MASTER_KEY=sk-$(gen_hex 32)|" \
     -e "s|^LITELLM_SALT_KEY=.*|LITELLM_SALT_KEY=$(gen_hex 32)|" \
+    -e "s|^PROMETHEUS_SD_TOKEN=.*|PROMETHEUS_SD_TOKEN=$(gen_hex 16)|" \
     -e "s|^APP_VERSION=.*|APP_VERSION=$VERSION|" \
     -e "s|^BUILD_TIME=.*|BUILD_TIME=$BUILD_TIME|" \
     "$PROD_DIR/.env.example" > "$BUILD_ENV"

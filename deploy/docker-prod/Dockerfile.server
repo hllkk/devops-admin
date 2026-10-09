@@ -42,6 +42,9 @@ RUN go build -trimpath \
 
 # node_exporter 官方二进制下载到托管目录(安装流按架构选用: resource/node-exporter/node_exporter-<arch>)
 # 多源回退:官方 release 直连 → gh-proxy 国内代理;GOPROXY 同构建参数
+# alpine 基础镜像无 curl(退出码 127)，先装；apk 走清华源对齐 Dockerfile.web 的国内构建加速
+RUN sed -i 's|dl-cdn.alpinelinux.org|mirrors.tuna.tsinghua.edu.cn|g' /etc/apk/repositories \
+    && apk add --no-cache curl ca-certificates
 RUN set -eux; \
     mkdir -p /out/agent; \
     for arch in amd64 arm64; do \
