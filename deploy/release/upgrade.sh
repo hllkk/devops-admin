@@ -51,13 +51,14 @@ mkdir -p "$BAK_DIR"
 # ---- 3. 覆盖编排资产（保守合并式：包内有什么覆盖什么，不删生产既有文件）-------
 log "覆盖编排资产"
 cp -f docker-compose.yml .env.example VERSION BUILD_TIME ./ 2>/dev/null || true
-[ -d nginx ] && cp -rf nginx/. ./nginx/
+# 手工直传场景包解压在部署目录本身（nginx/ 即 ./nginx/），自拷贝报 same file，容错跳过
+[ -d nginx ] && cp -rf nginx/. ./nginx/ 2>/dev/null || true
 if [ -d config ]; then
   mkdir -p ./config
   # 包内不含 config.yaml（机密资产）；其余配置文件逐个覆盖
   for f in config/*; do
     [ "$(basename "$f")" = "config.yaml" ] && continue
-    cp -rf "$f" ./config/
+    cp -rf "$f" ./config/ 2>/dev/null || true
   done
 fi
 

@@ -68,13 +68,16 @@ check_port "$LITELLM_PORT_NUM" "litellm"
 # 2. 创建数据目录（幂等）
 # ============================================================================
 log "准备数据目录（$DEPLOY_HOME）"
-for var in PG_DATA_PATH REDIS_DATA_PATH RUSTFS_DATA_PATH SERVER_UPLOADS_PATH SERVER_LOG_PATH; do
+for var in PG_DATA_PATH REDIS_DATA_PATH RUSTFS_DATA_PATH SERVER_UPLOADS_PATH SERVER_LOG_PATH PROMETHEUS_DATA_PATH; do
   dir=$(env_get "$var"); dir=${dir:-$DEPLOY_HOME}
   mkdir -p "$dir"
   # server 以非 root app 用户运行（Dockerfile.server: uid=100 gid=101），日志/上传目录须可写，
   # 否则 zap 持续 write error: permission denied
   case "$var" in
     SERVER_LOG_PATH|SERVER_UPLOADS_PATH) chown -R 100:101 "$dir" 2>/dev/null || chmod 777 "$dir" ;;
+    # prometheus 官方镜像以 uid=65534(nobody) 运行；目录缺位时 docker 自建 root 目录
+    # 会导致启动循环 panic "open data/queries.active: no such file or directory"
+    PROMETHEUS_DATA_PATH) chown -R 65534:65534 "$dir" 2>/dev/null || chmod 777 "$dir" ;;
   esac
   printf '  ✓ %s\n' "$dir"
 done

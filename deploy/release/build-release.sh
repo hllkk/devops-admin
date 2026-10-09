@@ -102,7 +102,9 @@ copy_orchestration() {
   cp "$PROD_DIR/.env.example" "$target/"
   cp -r "$PROD_DIR/nginx" "$target/nginx"
   mkdir -p "$target/config"
-  for f in postgresql.conf redis.conf litellm.yaml; do
+  # prometheus.yml：Prometheus 服务 bind mount 配置（漏带会让 docker 自动建同名
+  # 目录，up 时挂载类型冲突且 prometheus 起不来）
+  for f in postgresql.conf redis.conf litellm.yaml prometheus.yml; do
     [ -f "$PROD_DIR/config/$f" ] && cp "$PROD_DIR/config/$f" "$target/config/"
   done
   echo "$VERSION" > "$target/VERSION"
