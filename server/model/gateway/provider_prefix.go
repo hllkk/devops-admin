@@ -17,3 +17,13 @@ type ProviderPrefix struct {
 func (ProviderPrefix) TableName() string {
 	return "gateway_provider_prefix"
 }
+
+// ProviderOptionTypes 前端供应商类型预置选项 value 的后端镜像
+// (web/src/constants/business/gateway.ts PROVIDER_TYPE_OPTIONS)。providerType 是自由文本，
+// 本集合只约束"预置选项"必须在前缀差异表有种可路由行；与前端选项增删须双向同步，
+// 一致性由 source/gateway/provider_prefix_test.go 单测强制。
+var ProviderOptionTypes = []string{
+	"openai", "anthropic", "azure", "google", "deepseek", "bedrock", "vertex_ai",
+	"volcengine", "bailian", "zhipu", "moonshot", "minimax", "xiaomi_mimo",
+	"tencent", "xai", "vllm", "sglang", "ollama", "other",
+}

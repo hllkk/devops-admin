@@ -1617,6 +1617,8 @@ declare namespace App {
             testOk: string;
             testFail: string;
             testDetail: string;
+            resync: string;
+            resyncSuccess: string;
             group: {
               billing: string;
               pricing: string;

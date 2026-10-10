@@ -1449,6 +1449,8 @@ const local: App.I18n.Schema = {
         testOk: 'OK',
         testFail: 'Failed',
         testDetail: 'Technical Detail',
+        resync: 'Resync LiteLLM (all deployments)',
+        resyncSuccess: 'Resync done: pushed {pushed}/{total}, orphans cleaned {orphanCleaned}',
         group: {
           billing: 'Billing & Quota',
           pricing: 'Pricing',

@@ -489,7 +489,11 @@ func cascadeRebuildModelDeployments(ctx context.Context, db *gorm.DB, cli *litel
 			}
 		}
 		params, modelInfo := buildDeploymentParams(dep, cred)
-		prefix, needsV1 := resolveDeploymentPrefix(db, cred, format, model.Category)
+		prefix, needsV1, perr := resolveDeploymentPrefix(db, cred, format, model.Category)
+		if perr != nil {
+			warnings = append(warnings, fmt.Sprintf("部署 %q 前缀解析失败: %v", dep.DeployName, perr))
+			continue
+		}
 		if err := pushDeployment(ctx, cli, dep, model.ModelKey, routableOf(dep.IsActive, cred), prefix, needsV1, params, modelInfo); err != nil {
 			warnings = append(warnings, fmt.Sprintf("部署 %q 路由名级联切换失败: %v", dep.DeployName, err))
 			continue

@@ -2,7 +2,12 @@
 import { ref, watch } from 'vue';
 import { NPopover, NTag } from 'naive-ui';
 import type { DataTableColumns } from 'naive-ui';
-import { fetchBatchDeleteDeployment, fetchGetDeploymentList, fetchTestDeployment } from '@/service/api/gateway';
+import {
+  fetchBatchDeleteDeployment,
+  fetchGetDeploymentList,
+  fetchResyncDeployments,
+  fetchTestDeployment
+} from '@/service/api/gateway';
 import { $t } from '@/locales';
 import ButtonIcon from '@/components/custom/button-icon.vue';
 import { BILLING_TYPE_OPTIONS, MODEL_CATEGORY_OPTIONS } from '@/constants/business/gateway';
@@ -23,6 +28,8 @@ const deploymentList = ref<Api.Gateway.Deployment[]>([]);
 const loading = ref(false);
 // 部署连通性测试结果：未测=undefined、测试中='loading'、已测=DeploymentTestResult
 const testState = ref<Record<string, 'loading' | Api.Gateway.DeploymentTestResult>>({});
+// 全量重推 LiteLLM 防重入(全局动作，任一行按钮触发)
+const resyncing = ref(false);
 
 
 async function getDeploymentData() {
@@ -103,7 +110,7 @@ const columns: DataTableColumns<Api.Gateway.Deployment> = [
     key: 'operate',
     title: () => $t('common.operate'),
     align: 'center',
-    width: 110,
+    width: 140,
     render: row => (
       <div class="flex-center gap-4px">
         <ButtonIcon
@@ -114,6 +121,15 @@ const columns: DataTableColumns<Api.Gateway.Deployment> = [
           tooltip-content={$t('page.gateway.deployment.test')}
           loading={testState.value[String(row.deploymentId)] === 'loading'}
           onClick={() => handleTest(row)}
+        />
+        <ButtonIcon
+          text
+          type="info"
+          size="small"
+          icon="material-symbols:sync-rounded"
+          tooltip-content={$t('page.gateway.deployment.resync')}
+          loading={resyncing.value}
+          onClick={() => handleResync()}
         />
         <ButtonIcon
           text
@@ -182,6 +198,23 @@ async function handleTest(row: Api.Gateway.Deployment) {
     return;
   }
   testState.value[id] = data!;
+}
+
+// 全量重推所有部署投影到 LiteLLM(全局动作,同凭证面板模式)+远端孤儿对账清理
+async function handleResync() {
+  if (resyncing.value) return; // 防重入
+  resyncing.value = true;
+  const { data, error } = await fetchResyncDeployments();
+  resyncing.value = false;
+  if (error) return;
+  window.$message?.success(
+    $t('page.gateway.deployment.resyncSuccess', {
+      pushed: data?.pushed ?? 0,
+      total: data?.total ?? 0,
+      orphanCleaned: data?.orphanCleaned ?? 0
+    })
+  );
+  getDeploymentData();
 }
 
 function renderConnectivity(row: Api.Gateway.Deployment) {

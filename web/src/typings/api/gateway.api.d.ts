@@ -623,12 +623,14 @@ declare namespace Api {
     /** 供应商凭证表单字段定义(透传 LiteLLM /public/providers/fields，结构宽松,动态表单按实返回渲染) */
     type ProviderField = Record<string, any>;
 
-    /** 凭证重同步 LiteLLM 结果汇总 */
+    /** 凭证/部署重同步 LiteLLM 结果汇总(孤儿清理字段仅部署 resync 返回) */
     type ResyncResult = {
       total: number;
       pushed: number;
       skipped: number;
       failed: string[];
+      orphanCleaned: number;
+      orphanFailed: string[];
     };
 
     // ───────────────── 模型 Model ─────────────────

@@ -154,6 +154,7 @@ func (s *HealthService) HealthCheckAllDeployments(ctx context.Context) (int, err
 }
 
 // probeRoute 单路由组探测：传输层错误/HTTP>=400 均为 unhealthy，信息脱敏。
+// 429 冷却响应追加回流侧真实上游错误根因(cooldownRootCause)。
 func (s *HealthService) probeRoute(ctx context.Context, cli *litellm.Client, path string, body map[string]any) (status, healthErr string) {
 	respStatus, respBody, err := cli.RawPost(ctx, path, body)
 	if err != nil {
@@ -163,7 +164,9 @@ func (s *HealthService) probeRoute(ctx context.Context, cli *litellm.Client, pat
 		return gateway.DeploymentHealthHealthy, ""
 	}
 	_, msg := classifyUpstreamError(respStatus)
-	return gateway.DeploymentHealthUnhealthy, SanitizeTechnicalDetail(fmt.Sprintf("%s: %s", msg, string(respBody)))
+	modelGroup, _ := body["model"].(string)
+	detail, _ := appendCooldownCause(ctx, respStatus, modelGroup, string(respBody), msg)
+	return gateway.DeploymentHealthUnhealthy, SanitizeTechnicalDetail(fmt.Sprintf("%s: %s", msg, detail))
 }
 
 // probeComponents 基础组件即时探测：LiteLLM(未配置=unknown)/PostgreSQL/Redis(未配置=unknown)。

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -117,13 +118,21 @@ func buildDeploymentParams(dep *gateway.ModelDeployment, cred *gateway.Credentia
 }
 
 // resolveDeploymentPrefix 投影层前缀解析(封装 providerTypeOfTx + resolvePrefix)：cred 为 nil
-// 或未关联供应商 → 返 ("", false)；仅 pushDeployment 投影用，不写回 DB。
-func resolveDeploymentPrefix(db *gorm.DB, cred *gateway.Credential, format, category string) (prefix string, needsV1 bool) {
+// (内联部署，model 可自带 provider/ 前缀) → 返 ("", false, nil)；绑凭证但差异表未命中 →
+// 返 error 拦截推送(裸模型名必被 LiteLLM 路由层 Dropping，静默失败比报错更难排查)。
+// 仅 pushDeployment 投影用，不写回 DB。
+func resolveDeploymentPrefix(db *gorm.DB, cred *gateway.Credential, format, category string) (prefix string, needsV1 bool, err error) {
 	if cred == nil {
-		return "", false
+		return "", false, nil
 	}
 	providerType := providerTypeOfTx(db, cred.ProviderId)
-	return resolvePrefix(db, providerType, format, category)
+	prefix, needsV1 = resolvePrefix(db, providerType, format, category)
+	if prefix == "" {
+		return "", false, fmt.Errorf(
+			"供应商类型 %q(format=%s) 未命中前缀差异表 gateway_provider_prefix，部署将推送裸模型名被 LiteLLM 拒绝；"+
+				"请补齐该类型前缀行(参照种子 providerPrefixSeeds)或改用已支持的供应商类型", providerType, format)
+	}
+	return prefix, needsV1, nil
 }
 
 // pushDeployment 推送部署投影到 LiteLLM：路由名两态 + 投影层前缀化 + active 双写 + USD/token 换算副本。
@@ -274,7 +283,10 @@ func (s *DeploymentService) CreateDeployment(ctx context.Context, req gatewayReq
 		}
 		params, modelInfo := buildDeploymentParams(&dep, cred)
 		if cli != nil && routable {
-			prefix, needsV1 := resolveDeploymentPrefix(tx, cred, format, model.Category)
+			prefix, needsV1, err := resolveDeploymentPrefix(tx, cred, format, model.Category)
+			if err != nil {
+				return err
+			}
 			if err := pushDeployment(ctx, cli, &dep, model.ModelKey, routable, prefix, needsV1, params, modelInfo); err != nil {
 				return err
 			}
@@ -379,7 +391,10 @@ func (s *DeploymentService) UpdateDeployment(ctx context.Context, req gatewayReq
 		}
 		params, modelInfo := buildDeploymentParams(&dep, cred)
 		if cli != nil && (routable || dep.LitellmModelId != "") {
-			prefix, needsV1 := resolveDeploymentPrefix(tx, cred, format, model.Category)
+			prefix, needsV1, err := resolveDeploymentPrefix(tx, cred, format, model.Category)
+			if err != nil {
+				return err
+			}
 			if err := pushDeployment(ctx, cli, &dep, model.ModelKey, routable, prefix, needsV1, params, modelInfo); err != nil {
 				return err
 			}
@@ -515,9 +530,10 @@ func (s *DeploymentService) TestDeployment(ctx context.Context, req gatewayReq.D
 		// anthropic 协议通道会丢弃 input_audio part，语音识别部署必须走 OpenAI 兼容端点
 		msg += "；语音识别部署须走 OpenAI 兼容端点，请核对该部署凭证的 api_base 与格式(openai)"
 	}
+	detail, msg := appendCooldownCause(ctx, status, model.ModelKey, string(respBody), msg)
 	return gatewayResp.DeploymentTestResult{Success: false, LatencyMs: latency,
 		ErrorCategory: category, Message: msg,
-		TechnicalDetail: SanitizeTechnicalDetail(string(respBody))}, nil
+		TechnicalDetail: SanitizeTechnicalDetail(detail)}, nil
 }
 
 // ResyncDeployments 全量重推部署投影到 LiteLLM(漂移兜底 + 存量路由名治理，管理员手动触发)。
@@ -565,7 +581,12 @@ func (s *DeploymentService) ResyncDeployments(ctx context.Context) (gatewayResp.
 			format = "openai"
 		}
 		params, modelInfo := buildDeploymentParams(&dep, cred)
-		prefix, needsV1 := resolveDeploymentPrefix(db, cred, format, model.Category)
+		prefix, needsV1, perr := resolveDeploymentPrefix(db, cred, format, model.Category)
+		if perr != nil {
+			logger.WithCtx(ctx).Mod("gateway").Err(perr).Field("deploymentId", dep.DeploymentId).Error("resync: 前缀解析失败")
+			result.Failed = append(result.Failed, dep.DeployName)
+			continue
+		}
 		if err := pushDeployment(ctx, cli, &dep, model.ModelKey, routableOf(dep.IsActive, cred), prefix, needsV1, params, modelInfo); err != nil {
 			logger.WithCtx(ctx).Mod("gateway").Err(err).Field("deploymentId", dep.DeploymentId).Error("resync: 部署投影推送失败")
 			result.Failed = append(result.Failed, dep.DeployName)
@@ -581,10 +602,124 @@ func (s *DeploymentService) ResyncDeployments(ctx context.Context) (gatewayResp.
 		}
 		result.Pushed++
 	}
+	s.cleanupOrphanDeployments(ctx, cli, &result)
 	return result, nil
 }
 
-// classifyUpstreamError 上游 HTTP 状态粗分类(P1 简化版；16 类细模板留前端体验优化)。
+// cleanupOrphanDeployments LiteLLM 侧孤儿对账：远端存在、管理面(含软删行——删除=禁用留痕
+// 保归因锚点)已无对应 litellm_model_id 的记录删除。防"管理面删建部署后 LiteLLM 残留旧记录
+// 持续进 cooldown 拉低路由组"的漂移(2026-10 生产 glm-5.3 孤儿 7bb324e3 案例)。
+// 单条失败只计数不中断；config 静态模型(db_model=false)不归管理面管，跳过。
+func (s *DeploymentService) cleanupOrphanDeployments(ctx context.Context, cli *litellm.Client, result *gatewayResp.ResyncResult) {
+	remote, err := cli.ListModels(ctx)
+	if err != nil {
+		logger.WithCtx(ctx).Mod("gateway").Err(err).Error("resync: 拉取 LiteLLM 模型列表失败(跳过孤儿对账)")
+		return
+	}
+	var owned []string
+	if err := global.OPS_DB.WithContext(ctx).Model(&gateway.ModelDeployment{}).Unscoped().
+		Where("litellm_model_id <> ''").Select("litellm_model_id").
+		Find(&owned).Error; err != nil {
+		logger.WithCtx(ctx).Mod("gateway").Err(err).Error("resync: 读管理面部署锚点失败(跳过孤儿对账)")
+		return
+	}
+	ownedSet := make(map[string]bool, len(owned))
+	for _, id := range owned {
+		ownedSet[id] = true
+	}
+	for _, m := range remote {
+		info, _ := m["model_info"].(map[string]any)
+		if info == nil {
+			continue
+		}
+		id, _ := info["id"].(string)
+		if id == "" || ownedSet[id] {
+			continue
+		}
+		if v, ok := info["db_model"].(bool); ok && !v {
+			continue // config 静态定义的模型不属管理面生命周期
+		}
+		if err := cli.DeleteModel(ctx, id); err != nil {
+			result.OrphanFailed = append(result.OrphanFailed, id)
+			logger.WithCtx(ctx).Mod("gateway").Err(err).Field("litellmModelId", id).Error("resync: 孤儿记录删除失败")
+			continue
+		}
+		result.OrphanCleaned++
+		logger.WithCtx(ctx).Mod("gateway").Field("litellmModelId", id).Info("resync: 已清理 LiteLLM 侧孤儿部署记录")
+	}
+}
+
+// cooldownRootCause 从回流侧 spend 日志取该路由组冷却前最近一次真实上游错误。
+// all_deployments_in_cooldown 是冷却态的包装错误，真实原因(如 401 InvalidApiKey)只在
+// 失败日志的 traceback 末行；取最近数条跳过冷却包装自身(RouterRateLimitError)后返回。
+// 无记录/解析失败返回空串，调用方原样呈现原始错误。
+func cooldownRootCause(ctx context.Context, modelGroup string) string {
+	if modelGroup == "" {
+		return ""
+	}
+	var rows []gateway.LiteLLMSpendLog
+	if err := global.OPS_DB.WithContext(ctx).Model(&gateway.LiteLLMSpendLog{}).
+		Where("model_group = ? AND status <> 'success'", modelGroup).
+		Order(`"startTime" DESC`).Limit(5).
+		Select("metadata").Scan(&rows).Error; err != nil {
+		return ""
+	}
+	for i := range rows {
+		cause := lastTracebackLine(rows[i].Metadata)
+		if cause == "" || strings.Contains(cause, "RouterRateLimitError") ||
+			strings.Contains(cause, "all_deployments_in_cooldown") {
+			continue
+		}
+		return cause
+	}
+	return ""
+}
+
+// lastTracebackLine 解析 spend 日志 metadata.error_information(JSON 字符串二次编码)里的
+// traceback，取最后一个非空行(异常类+消息形态)。
+func lastTracebackLine(meta datatypes.JSON) string {
+	if len(meta) == 0 {
+		return ""
+	}
+	var m struct {
+		ErrorInformation string `json:"error_information"`
+	}
+	if err := json.Unmarshal(meta, &m); err != nil || m.ErrorInformation == "" {
+		return ""
+	}
+	var e struct {
+		Traceback string `json:"traceback"`
+	}
+	if err := json.Unmarshal([]byte(m.ErrorInformation), &e); err != nil || e.Traceback == "" {
+		return ""
+	}
+	lines := strings.Split(e.Traceback, "\n")
+	for i := len(lines) - 1; i >= 0; i-- {
+		if s := strings.TrimSpace(lines[i]); s != "" {
+			return s
+		}
+	}
+	return ""
+}
+
+// appendCooldownCause 连通性测试/巡检的 429 冷却响应追加根因：真实上游错误拼进技术详情，
+// 避免用户只看到 all_deployments_in_cooldown 再去翻 LiteLLM 日志。返回拼接后的详情与提示语。
+func appendCooldownCause(ctx context.Context, status int, modelGroup, respBody, msg string) (detail, message string) {
+	detail = respBody
+	if status != http.StatusTooManyRequests || !strings.Contains(respBody, "all_deployments_in_cooldown") {
+		return detail, msg
+	}
+	cause := cooldownRootCause(ctx, modelGroup)
+	if cause == "" {
+		return detail, msg
+	}
+	detail = respBody + "\n冷却前最近一次真实上游错误: " + cause
+	if msg != "" {
+		msg += "；"
+	}
+	msg += "全组部署冷却中，已附冷却前最近一次真实错误"
+	return detail, msg
+}
 func classifyUpstreamError(status int) (category, message string) {
 	switch {
 	case status == 401 || status == 403:

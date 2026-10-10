@@ -117,6 +117,15 @@ export function fetchTestDeployment(data: Api.Gateway.DeploymentTestParams) {
   });
 }
 
+/** 全量重推部署投影到 LiteLLM(漂移兜底+远端孤儿记录对账清理) */
+export function fetchResyncDeployments() {
+  return request<Api.Gateway.ResyncResult>({
+    url: '/gateway/model/deployment/resync',
+    method: 'post',
+    timeout: 60000
+  });
+}
+
 // ── 路由策略 RouterSettings ──
 
 /** 获取全局路由策略(单例,同步自 LiteLLM /router/settings) */

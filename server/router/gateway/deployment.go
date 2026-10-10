@@ -11,6 +11,7 @@ func (r *DeploymentRouter) InitDeploymentRouter(Router *gin.RouterGroup) {
 	{
 		g.GET("list", deploymentApi.GetDeploymentList)       // 分页获取部署列表
 		g.POST("test", deploymentApi.TestDeployment)         // 部署连通性测试
+		g.POST("resync", deploymentApi.ResyncDeployments)    // 全量重推部署投影(漂移兜底+孤儿对账)
 		g.POST("", deploymentApi.CreateDeployment)           // 新增部署
 		g.PUT("", deploymentApi.UpdateDeployment)            // 修改部署
 		g.DELETE(":ids", deploymentApi.BatchDeleteDeployments) // 批量删除部署

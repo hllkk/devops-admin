@@ -11,12 +11,14 @@ type CredentialView struct {
 	CredentialValues map[string]any `json:"credentialValues"` // 凭证键值(敏感值已掩码,如 sk-ab****cdef)
 }
 
-// ResyncResult 手动重同步 LiteLLM 凭证投影的结果汇总。
+// ResyncResult 手动重同步 LiteLLM 投影的结果汇总(凭证/部署 resync 共用)。
 type ResyncResult struct {
-	Total   int      `json:"total"`   // 参与比对的凭证总数
-	Pushed  int      `json:"pushed"`  // 实际推送(新建或更新)数
-	Skipped int      `json:"skipped"` // 投影一致跳过数
-	Failed  []string `json:"failed"`  // 失败凭证名列表(解密/推送失败，不中断整体)
+	Total         int      `json:"total"`         // 参与比对的凭证/部署总数
+	Pushed        int      `json:"pushed"`        // 实际推送(新建或更新)数
+	Skipped       int      `json:"skipped"`       // 投影一致跳过数
+	Failed        []string `json:"failed"`        // 失败名列表(解密/推送失败，不中断整体)
+	OrphanCleaned int      `json:"orphanCleaned"` // 孤儿清理数(仅部署 resync：LiteLLM 侧无主记录)
+	OrphanFailed  []string `json:"orphanFailed"`  // 孤儿清理失败的 LiteLLM model_id(仅部署 resync)
 }
 
 // CredentialUpdateResult 凭证更新结果：出网视图 + 部署路由级联同步计数

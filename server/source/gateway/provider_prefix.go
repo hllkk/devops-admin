@@ -123,6 +123,15 @@ var providerPrefixSeeds = []gatewayModel.ProviderPrefix{
 	{ProviderType: "dashscope", Format: "openai", Category: "chat", Prefix: "openai", NeedsV1: true},
 	{ProviderType: "dashscope", Format: "openai", Category: "embedding", Prefix: "openai", NeedsV1: true},
 	{ProviderType: "dashscope", Format: "anthropic", Category: "chat", Prefix: "anthropic"},
+	// bailian 是前端供应商下拉的"百炼"选项 value(与 dashscope 同属百炼平台，
+	// 余量采集白名单两口径并存)；前缀行缺失会让部署投影前缀解析落空：
+	// openai 格式推裸名被 LiteLLM Dropping、anthropic 格式误走协议兜底。
+	{ProviderType: "bailian", Format: "openai", Category: "chat", Prefix: "openai", NeedsV1: true},
+	{ProviderType: "bailian", Format: "openai", Category: "embedding", Prefix: "openai", NeedsV1: true},
+	{ProviderType: "bailian", Format: "anthropic", Category: "chat", Prefix: "anthropic"},
+	// ollama 凭证 format 默认 openai，补 openai 兼容口径(原生 ollama/ 前缀行保留)
+	{ProviderType: "ollama", Format: "openai", Category: "chat", Prefix: "openai", NeedsV1: true},
+	{ProviderType: "ollama", Format: "openai", Category: "embedding", Prefix: "openai", NeedsV1: true},
 	{ProviderType: "zhipu", Format: "openai", Category: "chat", Prefix: "openai", NeedsV1: true},
 	{ProviderType: "zhipu", Format: "anthropic", Category: "chat", Prefix: "anthropic"},
 	{ProviderType: "moonshot", Format: "openai", Category: "chat", Prefix: "openai", NeedsV1: true},

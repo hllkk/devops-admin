@@ -1444,6 +1444,8 @@ const local: App.I18n.Schema = {
         testOk: '连通',
         testFail: '失败',
         testDetail: '技术详情',
+        resync: '重同步LiteLLM(全部部署)',
+        resyncSuccess: '重同步完成：推送 {pushed}/{total}，清理孤儿 {orphanCleaned}',
         group: {
           billing: '计费与配额',
           pricing: '定价配置',

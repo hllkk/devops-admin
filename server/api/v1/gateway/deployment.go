@@ -142,3 +142,19 @@ func (a *DeploymentApi) TestDeployment(c *gin.Context) {
 	}
 	response.OkWithDetailed(result, "测试完成", c)
 }
+
+// ResyncDeployments
+// @Tags      GatewayModelDeployment
+// @Summary   全量重推部署投影到 LiteLLM(漂移兜底 + LiteLLM 侧孤儿对账清理)
+// @Produce   application/json
+// @Success   200  {object}  response.Response{data=response.ResyncResult,msg=string}
+// @Router    /gateway/model/deployment/resync [post]
+func (a *DeploymentApi) ResyncDeployments(c *gin.Context) {
+	result, err := deploymentService.ResyncDeployments(c.Request.Context())
+	if err != nil {
+		logger.WithCtx(c.Request.Context()).Mod("gateway").Err(err).Error("重同步部署失败")
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	response.OkWithDetailed(result, "重同步完成", c)
+}
