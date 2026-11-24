@@ -150,6 +150,9 @@ func RegisterTables() {
 	// AiKey key_hash 存量回填(Agent 直连鉴权索引；新建/轮换已随 syncKeyToLitellm 同步写，
 	// 这里只兜列上线前的存量行，幂等)。失败仅记日志不阻断启动，重启重试。
 	serviceGateway.BackfillAiKeyHashes(db)
+	// 空 models 存量 Key 重推 deny-all 哨兵(LiteLLM 空 models=全量放行的历史漏洞行，
+	// 幂等重推兼一致性纠偏)。LiteLLM 未配置直通，失败仅记日志不阻断启动。
+	serviceGateway.HealEmptyKeyModels(db)
 	logger.Bg().Mod("system").Info("register table success")
 }
 

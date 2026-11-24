@@ -96,7 +96,7 @@ func (c *Client) do(ctx context.Context, method, path string, body any, out any)
 		logger.WithCtx(ctx).Mod("gateway").
 			Field("status", resp.StatusCode).
 			Error(fmt.Sprintf("litellm %s %s 返回 %d: %s", method, path, resp.StatusCode, truncate(string(respBody), 500)))
-		return fmt.Errorf("litellm: %s %s 返回状态 %d", method, path, resp.StatusCode)
+		return fmt.Errorf("litellm: %s %s 返回状态 %d: %s", method, path, resp.StatusCode, truncate(string(respBody), 300))
 	}
 	if out != nil {
 		if err := json.Unmarshal(respBody, out); err != nil {

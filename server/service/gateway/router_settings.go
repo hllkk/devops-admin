@@ -154,19 +154,25 @@ func (s *RouterSettingsService) syncGlobalConcurrency(ctx context.Context, cli *
 }
 
 // toLitellm 平台格式 → LiteLLM 蛇形投影:
-// fallbacks [{model,fallbacks}] → [[model,[fallbacks]]]；驼峰键 → 蛇形键。
+// fallbacks [{model,fallbacks}] → [{model:[fallbacks]}]；驼峰键 → 蛇形键。
+// 注意 /config/update 的 pydantic 校验 fallbacks 是 List[Dict[str, List[str]]]
+// （每项 {"主模型": ["备模型"...]}），列表套列表/裸 dict 均被 422 拒绝；
+// 空列表合法（语义=清空），故无条件下发以支持清空降级链。
 func (s *RouterSettingsService) toLitellm(rs gateway.RouterSettings) map[string]any {
 	var items []gateway.FallbackItem
 	if len(rs.Fallbacks) > 0 {
 		_ = json.Unmarshal(rs.Fallbacks, &items)
 	}
-	fbLitellm := make([][]any, 0, len(items))
+	fbLitellm := make([]map[string][]string, 0, len(items))
 	for _, f := range items {
+		if f.Model == "" {
+			continue // 防御：空模型名的降级行无意义，不下发
+		}
 		fbs := f.Fallbacks
 		if fbs == nil {
 			fbs = []string{}
 		}
-		fbLitellm = append(fbLitellm, []any{f.Model, fbs})
+		fbLitellm = append(fbLitellm, map[string][]string{f.Model: fbs})
 	}
 	settings := map[string]any{
 		"routing_strategy": rs.RoutingStrategy,
@@ -174,9 +180,7 @@ func (s *RouterSettingsService) toLitellm(rs gateway.RouterSettings) map[string]
 		"cooldown_time":   rs.CooldownTime,
 		"num_retries":     rs.NumRetries,
 		"timeout":         rs.Timeout,
-	}
-	if len(fbLitellm) > 0 {
-		settings["fallbacks"] = fbLitellm
+		"fallbacks":       fbLitellm,
 	}
 	if len(rs.Config) > 0 {
 		var cfg map[string]any

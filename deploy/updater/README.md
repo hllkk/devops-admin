@@ -22,6 +22,10 @@ updater daemon（常驻）
         ├─ compose up -d --force-recreate web server updater
         ├─ 健康检查 http://web/
         └─ success / failed 写状态文件（job --rm 自动清理）
+        └─ success 后清理：upgrade-cache 旧版本目录 + 历史版本镜像
+           （仅留当前版本 server/web/updater tag，第三方镜像不碰；
+            副作用：改 .env APP_VERSION 的镜像级回滚不再可用，
+            回滚改为从发布服务器重载对应版本包）
 ```
 
 **安装阶段为什么 job 化**：`up -d` 会重建 updater 自身容器，进程内直接跑 compose
@@ -85,4 +89,4 @@ go run . version
 | 状态卡 installing | `docker ps -a \| grep devops-upgrade-job` 看 job；`cat upgrade-install.log`（安装目录下） |
 | 下载失败 | 重发升级请求（断点续传）；检查发布服务器连通 |
 | sha256 不符 | 损坏包已自动删除，重发即可；持续不符查发布服务器上的包 |
-| 升级后服务异常 | 回滚：`sed -i 's\|^APP_VERSION=.*\|APP_VERSION=<旧版本>\|' .env && docker compose up -d --no-build` |
+| 升级后服务异常 | 回滚：`sed -i 's\|^APP_VERSION=.*\|APP_VERSION=<旧版本>\|' .env && docker compose up -d --no-build`；旧版本镜像已被升级后自动清理时，改从发布服务器取对应版本增量包，解压后 `docker load images/*.tar` 再执行上述命令 |

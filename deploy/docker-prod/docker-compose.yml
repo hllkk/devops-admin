@@ -232,12 +232,12 @@ services:
   # - 端口默认不对宿主暴露，仅经 nginx /llm/ 反代对外（见 nginx.conf）
   # ----------------------------------------------------------------------------
   litellm:
-    # 1.104.2：dev 已全量验证（189 项 prisma 迁移自动跑；spend_logs 未分区管理面直读兼容；
-    # POST /router/settings 已 405 由管理面 v1.1.2 改走 POST /config/update 适配）。
+    # v1.108.5 (LTS)：dev 已全量实测升级（2026-11-11，31 项 prisma 迁移自动跑；
+    # 模型/MCP/spend_logs 直读/fallbacks 投影/全局并发/stdio 开关全过）。
     # 升级编排随增量包下发，但 upgrade.sh 只重建 web/server/updater——litellm 须手动:
-    #   docker pull ghcr.io/berriai/litellm:1.104.2 && docker compose up -d litellm
+    #   docker pull ghcr.io/berriai/litellm:v1.108.5 && docker compose up -d litellm
     # （升级前 pg_dump 全库备份；升后必验 MCP/spend_logs 回流/并发生效）
-    image: ghcr.io/berriai/litellm:1.104.2
+    image: ghcr.io/berriai/litellm:v1.108.5
     container_name: devops-litellm
     restart: unless-stopped
     # 宿主直连端口（LITELLM_HOST_PORT，默认仅本机回环 127.0.0.1:4000，安全等同不映射）：

@@ -161,6 +161,24 @@ func TestExtractTarGzRejectPathTraversal(t *testing.T) {
 	}
 }
 
+func TestOldImageTags(t *testing.T) {
+	tags := []string{"1.1.8", "", "1.2.0", "<none>", "1.1.0"}
+	got := oldImageTags(tags, "1.2.0")
+	want := []string{"1.1.8", "1.1.0"}
+	if len(got) != len(want) {
+		t.Fatalf("oldImageTags(%v, 1.2.0) = %v, want %v", tags, got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("oldImageTags(%v, 1.2.0) = %v, want %v", tags, got, want)
+		}
+	}
+	// 全部保留：仅当前版本在场
+	if got := oldImageTags([]string{"1.2.0", "<none>"}, "1.2.0"); len(got) != 0 {
+		t.Fatalf("仅当前版本时应无删除项: %v", got)
+	}
+}
+
 func TestStateReadWrite(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("STACK_DIR", dir)

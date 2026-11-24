@@ -15,7 +15,7 @@ import (
 //
 //	load 镜像 → 替换编排资产 → 更新 .env 版本 → 镜像完整性校验 →
 //	up -d --force-recreate web server updater → onlyoffice 网络归属按需迁移 →
-//	健康检查 → 状态落盘
+//	健康检查 → 状态落盘 → 清理历史升级缓存与历史版本镜像
 //
 // 任一步失败写 failed 终态并退出非零；资产替换发生在 load 成功之后，
 // load 失败时 .env/编排未动，旧栈继续运行，重发升级请求即可重试。
@@ -147,6 +147,8 @@ func runInstall(args []string) error {
 	fmt.Printf("[install] 升级完成: %s\n", *version)
 	// 升级成功的缓存目录保留一个版本作重装/排查源，更早的清掉
 	pruneOldCaches(*version)
+	// 历史版本镜像同口径清理：仅当前版本镜像在场，磁盘不被多代版本蚕食
+	pruneOldImages(*version)
 	return nil
 }
 
@@ -281,6 +283,42 @@ func pruneOldCaches(keepVersion string) {
 	}
 	// 半成品下载文件一并清理
 	_ = os.RemoveAll(filepath.Join(cacheRoot, keepVersion+".download.tar.gz"))
+}
+
+// pruneOldImages 删除自研三仓库（server/web/updater）除 keepVersion 外的全部历史版本
+// tag（省磁盘）。第三方镜像（pgsql/redis/rustfs/litellm 等）不碰。
+//
+// 语义变化：镜像删除后「改 .env APP_VERSION 回滚」不再可用，镜像级回滚改为
+// 从发布服务器重载对应版本包；缓存目录（pruneOldCaches）同样只留当前版
+// 本，卸载重装走发布服务器全量包。
+//
+// 时机与容错：只在健康检查通过后的成功终态执行；失败只记日志不回滚、不影
+// 响升级结果（旧镜像残留只是占盘，不阻碍运行）。
+func pruneOldImages(keepVersion string) {
+	for _, repo := range []string{"devops-admin/server", "devops-admin/web", "devops-admin/updater"} {
+		out, err := runCmd(time.Minute, "docker", "images", "--format", "{{.Tag}}", repo)
+		if err != nil {
+			fmt.Printf("[install] 列举 %s 版本失败: %v: %s\n", repo, err, out)
+			continue
+		}
+		for _, tag := range oldImageTags(splitLines(out), keepVersion) {
+			if o, err := runCmd(time.Minute, "docker", "rmi", repo+":"+tag); err != nil {
+				fmt.Printf("[install] 删除历史镜像 %s:%s 失败（可能被残留停止容器引用）: %v: %s\n", repo, tag, err, o)
+			}
+		}
+	}
+}
+
+// oldImageTags 从 tag 列表挑出需删除的历史版本：非空、非当前版本、非 <none>。
+// <none>（悬空 tag）不主动碰，保持最小干预；纯函数便于单测。
+func oldImageTags(tags []string, keep string) []string {
+	var stale []string
+	for _, tag := range tags {
+		if tag != "" && tag != keep && tag != "<none>" {
+			stale = append(stale, tag)
+		}
+	}
+	return stale
 }
 
 func splitLines(s string) []string {

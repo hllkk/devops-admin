@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -976,6 +977,40 @@ func BackfillAiKeyHashes(db *gorm.DB) {
 	}
 }
 
+// HealEmptyKeyModels 存量空授权 Key 自愈（启动期幂等）：LiteLLM 对缺 models 字段的
+// key 语义是"不限模型"（全量放行），哨兵投影(toLitellmModels)仅对新同步生效，
+// 历史上已同步的空 models 行在 LiteLLM 侧仍是全量放行——这里重推 /key/update
+// 覆盖为哨兵。DB models 保持空（语义正确，可见模型自愈差集仍会回加），故每次
+// 启动重复推同样哨兵，顺带充当一致性纠偏；LiteLLM 未配置直通，失败仅记日志
+// 不阻断启动，重启重试。总超时兜底防 LiteLLM 未就绪拖慢启动。
+func HealEmptyKeyModels(db *gorm.DB) {
+	cli := litellm.Default()
+	if cli == nil {
+		return
+	}
+	var rows []gateway.AiKey
+	if err := db.Where(`litellm_key_id <> '' AND (models IS NULL OR models::text IN ('[]','null','""'))`).
+		Find(&rows).Error; err != nil {
+		logger.Bg().Mod("gateway").Err(err).Error("heal empty models keys: 查询存量行失败")
+		return
+	}
+	if len(rows) == 0 {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	fixed := 0
+	for i := range rows {
+		if err := syncKeyToLitellm(ctx, cli, db, &rows[i], false); err != nil {
+			logger.Bg().Mod("gateway").Err(err).Field("aiKeyId", rows[i].AiKeyId).
+				Error("heal empty models keys: 重推哨兵失败")
+			continue
+		}
+		fixed++
+	}
+	logger.Bg().Mod("gateway").Info(fmt.Sprintf("gateway_ai_key 空 models 存量自愈完成: %d/%d 行已重推哨兵", fixed, len(rows)))
+}
+
 // findAiKeyByPlain 凭 Key 明文定位行(Agent 直连端点鉴权)：sha256 索引等值查询，
 // 不解密不暴露明文。命中返回行，未命中返回 nil(调用方按 401 处理)。软删行天然
 // 被 GORM 过滤(删除的 Key 立即失效)。
@@ -1301,14 +1336,35 @@ func renameKeyReferences(models []string, budgets, limits map[string]any, oldKey
 	return renamed, nb, nl, changed || bChanged || lChanged
 }
 
+// litellmNoDefaultModels LiteLLM 空授权哨兵：key 缺 models 字段/空列表在 LiteLLM 侧
+// 语义是"不限模型"（全量放行）而非零授权，空授权必须下发哨兵值才能 deny-all
+// （AIHelms 同款方案；与 client.go allowed_mcp_servers 推空清权是同一类坑）。
+const litellmNoDefaultModels = "no-default-models"
+
+// toLitellmModels 平台授权 models → LiteLLM 下发值（纯函数，可单测）：
+// 空 → [哨兵]；非空 → 过滤空串与混入的哨兵值（防脏数据把哨兵当真模型下发），
+// 过滤后为空同样落哨兵。恒非空保证 create(omitempty)与 update(len>0 判定)两路都下发。
+func toLitellmModels(models []string) []string {
+	filtered := make([]string, 0, len(models))
+	for _, m := range models {
+		if m != "" && m != litellmNoDefaultModels {
+			filtered = append(filtered, m)
+		}
+	}
+	if len(filtered) == 0 {
+		return []string{litellmNoDefaultModels}
+	}
+	return filtered
+}
+
 // syncKeyToLitellm 同步密钥到 LiteLLM：isCreate=true 走 CreateKey(返回明文加密落库)，
-// 否则 UpdateKey(改授权/预算/限流/启停)。models 即授权 modelKey 原样下发(路由名无协议变体，
-// 协议混组由 LiteLLM 按部署前缀处理)；max_budget 按硬限/启停语义，
+// 否则 UpdateKey(改授权/预算/限流/启停)。models 授权 modelKey 经 toLitellmModels 投影下发
+// (空授权→哨兵 deny-all；路由名无协议变体，协议混组由 LiteLLM 按部署前缀处理)；max_budget 按硬限/启停语义，
 // ¥ 按汇率换算 USD 下发(LiteLLM spend 记 USD，部署定价推送时已同口径换算)；
 // budget_duration 一并下发，LiteLLM 窗口到期自动重置 spend，与平台 budget_used 滚动窗口对齐
 // (不下发则 LiteLLM 永久累计，第 N+1 周期起误拒且与平台预算看板永不收敛)。
 func syncKeyToLitellm(ctx context.Context, cli *litellm.Client, tx *gorm.DB, k *gateway.AiKey, isCreate bool) error {
-	models := jsonToSlice(k.Models)
+	models := toLitellmModels(jsonToSlice(k.Models))
 
 	// max_budget 语义：停用→0；硬限+有额度→limit(¥→USD)；否则→nil(不限)
 	var maxBudget *float64
