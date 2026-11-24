@@ -44,6 +44,13 @@ scp 全量包→解压→install.sh。要在产品内集成版本发布能力：
    数据面与 AI 网关转发面持续可用，也不触发 litellm 建表时序问题。
 4. **网络名**：不给 compose 网络加显式 name（会改已部署环境的实际网络名导致全容器
    迁移），updater 的 UPDATER_NETWORK 写推导出的实际名 `devops-admin-prod_prod-net`。
+5. **镜像校验缺失先拉取兜底**（2026-11-24 v1.2.0 升级实测踩坑后加固）：install.go
+   第 5 步与 upgrade.sh 的镜像完整性校验，原"缺失即 fail"假设装机时全量包已装齐
+   第三方镜像——宿主镜像被清理过（如 rustfs_init 的 minio/mc:latest）或 compose
+   后续新增第三方镜像时存量升级必卡死。现改为缺失先 `docker pull` 兜底（install
+   侧 10min 超时限大镜像），拉取失败才 fail（离线环境保护，改用全量包）。
+   注意鸡生蛋边界：install job 容器镜像取自旧 updater daemon 创建时展开的
+   UPDATER_IMAGE env，新代码（如 pruneOldImages）要下一次升级起才在 job 内生效。
 
 ## 产物链
 

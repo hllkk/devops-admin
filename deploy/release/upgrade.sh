@@ -77,14 +77,17 @@ rmdir "$BAK_DIR" 2>/dev/null || true
 
 DC="docker compose -f docker-compose.yml --env-file .env"
 
-# ---- 6. 镜像完整性校验（缺失立即失败，避免 up 卡在拉取超时）-------------------
+# ---- 6. 镜像完整性校验（缺失先拉取兜底，失败才退出；离线环境改用全量包）-------
 log "校验镜像完整性"
 MISSING=0
 while IFS= read -r img; do
   [ -z "$img" ] && continue
-  docker image inspect "$img" >/dev/null 2>&1 || { warn "镜像缺失: $img"; MISSING=1; }
+  if ! docker image inspect "$img" >/dev/null 2>&1; then
+    warn "镜像缺失: $img，尝试拉取兜底"
+    docker pull "$img" || { warn "拉取失败: $img"; MISSING=1; }
+  fi
 done < <($DC config --images)
-[ "$MISSING" -eq 0 ] || die "存在缺失镜像（第三方镜像缺失说明应改用全量包）"
+[ "$MISSING" -eq 0 ] || die "存在缺失镜像且拉取失败（离线环境请改用全量包）"
 
 # ---- 7. 重建自研服务（基础设施容器不动，数据面/转发面持续可用）----------------
 log "重建 web/server/updater"

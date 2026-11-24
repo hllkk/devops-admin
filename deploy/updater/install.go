@@ -102,7 +102,7 @@ func runInstall(args []string) error {
 		return err
 	}
 
-	// ---- 5. 镜像完整性校验（缺失立即失败，避免 up 卡在 registry 拉取超时）----
+	// ---- 5. 镜像完整性校验（缺失先 docker pull 兜底，拉取失败才失败；离线环境改用全量包）----
 	compose, err := composeBaseArgs()
 	if err != nil {
 		fail(*version, err.Error())
@@ -119,8 +119,15 @@ func runInstall(args []string) error {
 			continue
 		}
 		if o, err := runCmd(time.Minute, "docker", "image", "inspect", img); err != nil {
-			fail(*version, fmt.Sprintf("镜像缺失: %s（第三方镜像缺失说明包类型选错，应改用全量包）: %s", img, o))
-			return err
+			// 缺失先拉取兜底再校验失败：增量包只带自研三镜像，compose 后续引入
+			// 新第三方镜像时（如 rustfs_init 的 minio/mc），存量宿主升级不因此卡死
+			// （v1.2.0 升级实测踩坑：镜像曾被清理/未装全，直接 fail 需人工补拉）。
+			// 拉取超时 10 分钟限大镜像；离线环境拉取失败才 fail（改用全量包）。
+			fmt.Printf("[install] 镜像缺失 %s，尝试拉取兜底: %s\n", img, o)
+			if o, err := runCmd(10*time.Minute, "docker", "pull", img); err != nil {
+				fail(*version, fmt.Sprintf("镜像缺失且拉取失败: %s（离线环境请改用全量包）: %s", img, o))
+				return err
+			}
 		}
 	}
 
