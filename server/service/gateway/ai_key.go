@@ -338,7 +338,7 @@ func (s *AiKeyService) CreateSceneKey(ctx context.Context, req gatewayReq.AiKeyO
 	if !validKeyType(req.KeyType, req.OwnerType) {
 		return gatewayResp.AiKeyView{}, errors.New("密钥类型与归属类型不匹配(user→personal/dept→dept)")
 	}
-	if err := s.ensureOwnerExists(ctx, req.OwnerType, req.OwnerId); err != nil {
+	if err := s.ensureOwnerUsable(ctx, req.OwnerType, req.OwnerId); err != nil {
 		return gatewayResp.AiKeyView{}, err
 	}
 	// 主 Key 唯一性(每 owner 仅一个 main)
@@ -579,6 +579,13 @@ func (s *AiKeyService) UpdateAiKey(ctx context.Context, req gatewayReq.AiKeyOper
 		k.BudgetHardLimit = *req.BudgetHardLimit
 	}
 	if req.IsActive != nil {
+		// 启用方向校验归属状态：停用归属的 Key 单独启用=绕过用户级联停用(明文 Key
+		// 直连网关数据面,管理面登录挡不住)，与建 Key 的 ensureOwnerUsable 同口径
+		if *req.IsActive {
+			if err := s.ensureOwnerUsable(ctx, k.OwnerType, k.OwnerId); err != nil {
+				return gatewayResp.AiKeyView{}, err
+			}
+		}
 		updates["is_active"] = *req.IsActive
 		// 手动启停覆盖被动停用标记(管理员显式意志接管，此后用户重新启用不再联动该 Key)
 		updates["disabled_by_cascade"] = false
@@ -1647,26 +1654,28 @@ func normalizeRateLimitMode(m string) string {
 	return gateway.RateLimitModeNone
 }
 
-// ensureOwnerExists 校验归属存在(user/dept)。
-func (s *AiKeyService) ensureOwnerExists(ctx context.Context, ownerType string, ownerId int64) error {
+// ensureOwnerUsable 校验归属存在且未停用(user/dept 对称)：给停用归属建 Key 无意义——
+// 用户级联停用只在状态变化瞬间触发，之后新建/启用的 Key 不会被级联收口，明文 Key
+// 仍可直连网关数据面(管理面登录挡不住数据面)。软删由 gorm 自动过滤(计不存在)。
+func (s *AiKeyService) ensureOwnerUsable(ctx context.Context, ownerType string, ownerId int64) error {
 	switch ownerType {
 	case gateway.OwnerTypeUser:
 		var cnt int64
 		if err := global.OPS_DB.WithContext(ctx).Model(&system.SysUser{}).
-			Where("id = ?", ownerId).Count(&cnt).Error; err != nil { // SysUser.UserId 列复用 id
+			Where("id = ? AND status = ?", ownerId, "0").Count(&cnt).Error; err != nil { // SysUser.UserId 列复用 id
 			return err
 		}
 		if cnt == 0 {
-			return errors.New("归属用户不存在")
+			return errors.New("归属用户不存在或已停用")
 		}
 	case gateway.OwnerTypeDept:
 		var cnt int64
 		if err := global.OPS_DB.WithContext(ctx).Model(&system.SysDepartment{}).
-			Where("dept_id = ?", ownerId).Count(&cnt).Error; err != nil {
+			Where("dept_id = ? AND status = ?", ownerId, "0").Count(&cnt).Error; err != nil {
 			return err
 		}
 		if cnt == 0 {
-			return errors.New("归属部门不存在")
+			return errors.New("归属部门不存在或已停用")
 		}
 	default:
 		return errors.New("归属类型非法(user/dept)")
